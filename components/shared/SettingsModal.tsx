@@ -29,6 +29,9 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 
 import { farmerProfile } from '@/lib/mockData';
+import useLocalStorage from '@/hooks/useLocalStorage';
+
+const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
 const SETTINGS_TABS = [
   { id: 'profil', label: 'Edit Profil', icon: <PersonOutlineIcon /> },
@@ -52,12 +55,19 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>('system');
   const [languageMode, setLanguageMode] = useState<LanguageMode>('id');
+  const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
+  const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
+  const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(searchParams.get('tab') || 'general');
     }
   }, [isOpen, searchParams]);
+
+  useEffect(() => {
+    setProfileWhatsappPhone(weatherWhatsappPhone);
+  }, [weatherWhatsappPhone]);
 
   const handleClose = () => {
     // Reset back to exactly the current pathname without the query Param
@@ -72,6 +82,11 @@ export default function SettingsModal() {
 
   const handleLanguageChange = (event: SelectChangeEvent<LanguageMode>) => {
     setLanguageMode(event.target.value as LanguageMode);
+  };
+
+  const handleSaveProfile = () => {
+    setWeatherWhatsappPhone(profileWhatsappPhone.trim());
+    setPhoneSaveSuccess(true);
   };
 
   return (
@@ -249,7 +264,7 @@ export default function SettingsModal() {
                     </Box>
                   </Box>
                   
-                  <Grid container spacing={3}>
+                  <Grid container spacing={3} sx={{ mt: 1 }}>
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
@@ -266,6 +281,21 @@ export default function SettingsModal() {
                         variant="standard"
                       />
                     </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Nomor WhatsApp Notifikasi Cuaca"
+                        placeholder="Contoh: 08123456789"
+                        value={profileWhatsappPhone}
+                        onChange={(event) => {
+                          setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
+                          setPhoneSaveSuccess(false);
+                        }}
+                        helperText="Nomor ini dipakai untuk notifikasi cuaca"
+                        slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                        variant="standard"
+                      />
+                    </Grid>
                   </Grid>
                   
                   <Box
@@ -275,16 +305,28 @@ export default function SettingsModal() {
                       borderTop: '1px solid',
                       borderColor: 'divider',
                       display: 'flex',
-                      justifyContent: 'flex-end',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       gap: 1.5,
                     }}
                   >
-                    <Button variant="text" sx={{ textTransform: 'none', color: 'text.secondary' }}>
-                      Batal
-                    </Button>
+                    <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
+                      {phoneSaveSuccess ? 'Nomor WhatsApp berhasil diperbarui.' : 'Simpan untuk menerapkan nomor notifikasi cuaca yang baru.'}
+                    </Typography>
                     <Button
                       variant="contained"
-                      sx={{ px: 4, borderRadius: 6, textTransform: 'none', bgcolor: '#111827', color: 'white', fontWeight: 700 }}
+                      onClick={handleSaveProfile}
+                      sx={{
+                        width: 210,
+                        height: 56,
+                        borderRadius: 6,
+                        textTransform: 'none',
+                        bgcolor: '#111827',
+                        color: 'white',
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
                     >
                       Simpan Perubahan
                     </Button>

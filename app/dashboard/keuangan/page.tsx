@@ -186,9 +186,13 @@ export default function KeuanganPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const monthFilteredTransactions = transactions.filter(
+    (t) => filterBulan === 'semua' || t.tanggal.startsWith(filterBulan)
+  );
+
   // Summaries
-  const totalPendapatan = transactions.filter((t) => t.jenis === 'pendapatan').reduce((a, t) => a + t.nominal, 0);
-  const totalPengeluaran = transactions.filter((t) => t.jenis === 'pengeluaran').reduce((a, t) => a + t.nominal, 0);
+  const totalPendapatan = monthFilteredTransactions.filter((t) => t.jenis === 'pendapatan').reduce((a, t) => a + t.nominal, 0);
+  const totalPengeluaran = monthFilteredTransactions.filter((t) => t.jenis === 'pengeluaran').reduce((a, t) => a + t.nominal, 0);
   const labaBersih = totalPendapatan - totalPengeluaran;
 
   // HPP & BEP calculations
@@ -215,7 +219,7 @@ export default function KeuanganPage() {
   const expenseStats = pieCategories
     .map((k, i) => ({
       id: k,
-      value: transactions.filter((t) => t.jenis === 'pengeluaran' && t.kategori === k).reduce((a, b) => a + b.nominal, 0),
+      value: monthFilteredTransactions.filter((t) => t.jenis === 'pengeluaran' && t.kategori === k).reduce((a, b) => a + b.nominal, 0),
       label: k,
       color: pieColors[i],
     }))
@@ -242,9 +246,8 @@ export default function KeuanganPage() {
   };
 
   // Filtered table data
-  const displayedTransactions = transactions.filter(
+  const displayedTransactions = monthFilteredTransactions.filter(
     (t) => (filterJenis === 'semua' || t.jenis === filterJenis)
-      && (filterBulan === 'semua' || t.tanggal.startsWith(filterBulan))
   );
 
   return (

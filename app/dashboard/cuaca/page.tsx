@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -29,6 +29,9 @@ import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
 import { formatDateShort } from '@/lib/formatters';
+import useLocalStorage from '@/hooks/useLocalStorage';
+
+const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const fontSize = size === 'small' ? 20 : size === 'large' ? 48 : 32;
@@ -39,9 +42,15 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
 }
 
 export default function CuacaPage() {
-  const [hp, setHp] = useState('');
+  const [savedPhone, setSavedPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
+  const [hp, setHp] = useState(savedPhone);
   const [notifAktif, setNotifAktif] = useState(true);
-  const [savedHp, setSavedHp] = useState(false);
+  const isWhatsappConfigured = savedPhone.trim().length > 0;
+  const isCurrentPhoneSaved = hp.trim().length > 0 && hp.trim() === savedPhone.trim();
+
+  useEffect(() => {
+    setHp(savedPhone);
+  }, [savedPhone]);
 
   const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
@@ -49,7 +58,7 @@ export default function CuacaPage() {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          Notifikasi Cuaca
+          Cuaca
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Pantau cuaca dan terima peringatan otomatis di WhatsApp
@@ -58,7 +67,7 @@ export default function CuacaPage() {
 
       <Grid container spacing={3}>
         {/* Current Weather */}
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid size={{ xs: 12, lg: isWhatsappConfigured ? 12 : 8 }}>
           <Card sx={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)', color: '#fff' }}>
             <CardContent sx={{ p: 3 }}>
               <Box className="flex items-start justify-between">
@@ -106,7 +115,15 @@ export default function CuacaPage() {
           <Card sx={{ mt: 3 }}>
             <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Prakiraan 7 Hari</Typography>} />
             <CardContent sx={{ pt: 0 }}>
-              <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  overflowX: 'auto',
+                  pb: 1,
+                  width: '100%',
+                }}
+              >
                 {weatherForecast.map((day) => {
                   const date = new Date(day.tanggal);
                   const dayName = dayNames[date.getDay()];
@@ -116,14 +133,14 @@ export default function CuacaPage() {
                     <Box
                       key={day.tanggal}
                       sx={{
-                        minWidth: 90,
+                        flex: { xs: '0 0 90px', md: '1 1 0' },
+                        minWidth: { xs: 90, md: 0 },
                         p: 2,
                         borderRadius: 2,
                         textAlign: 'center',
                         border: '1px solid',
                         borderColor: isToday ? 'primary.main' : 'divider',
                         backgroundColor: isToday ? 'primary.light' : 'transparent',
-                        flexShrink: 0,
                       }}
                     >
                       <Typography variant="caption" color={isToday ? 'primary.main' : 'text.secondary'} sx={{ fontWeight: 600 }}>
@@ -189,73 +206,76 @@ export default function CuacaPage() {
         </Grid>
 
         {/* WhatsApp Integration */}
-        <Grid size={{ xs: 12, lg: 4 }}>
-          <Card>
-            <CardHeader
-              avatar={<WhatsAppIcon sx={{ color: '#25d366' }} />}
-              title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Integrasi WhatsApp</Typography>}
-            />
-            <CardContent sx={{ pt: 0 }}>
-              <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 2, mb: 2.5, border: '1px solid #bbf7d0' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Notifikasi dikirim otomatis via WhatsApp menggunakan <strong>n8n workflow</strong> saat kondisi cuaca ekstrem terdeteksi.
-                </Typography>
-              </Box>
-
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={notifAktif}
-                    onChange={(e) => setNotifAktif(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    Aktifkan notifikasi otomatis
-                  </Typography>
-                }
-                sx={{ mb: 2.5, display: 'flex' }}
+        {!isWhatsappConfigured && (
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <Card>
+              <CardHeader
+                avatar={<WhatsAppIcon sx={{ color: '#25d366' }} />}
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Integrasi WhatsApp</Typography>}
               />
-
-              <TextField
-                fullWidth
-                label="Nomor Telpon"
-                placeholder="Contoh: 08123456789"
-                value={hp}
-                onChange={(e) => { setHp(e.target.value); setSavedHp(false); }}
-                helperText="Nomor yang akan menerima notifikasi cuaca"
-                disabled={!notifAktif}
-                sx={{ mb: 2 }}
-              />
-
-              <Button
-                fullWidth
-                variant={savedHp ? 'outlined' : 'contained'}
-                color={savedHp ? 'success' : 'primary'}
-                disabled={!notifAktif || !hp}
-                onClick={() => setSavedHp(true)}
-                startIcon={<WhatsAppIcon />}
-              >
-                {savedHp ? '✓ Nomor Tersimpan' : 'Simpan & Aktifkan'}
-              </Button>
-
-              {notifAktif && (
-                <Box sx={{ mt: 3 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                    Jenis peringatan aktif
+              <CardContent sx={{ pt: 0 }}>
+                <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 2, mb: 2.5, border: '1px solid #bbf7d0' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    Notifikasi dikirim otomatis via WhatsApp menggunakan <strong>n8n workflow</strong> saat kondisi cuaca ekstrem terdeteksi.
                   </Typography>
-                  {['Hujan Lebat (> 20mm)', 'Angin Kencang (> 12 km/j)', 'Suhu Ekstrem (> 32°C)', 'Kelembapan Rendah (< 50%)'].map((item) => (
-                    <Box key={item} className="flex items-center gap-2 mt-2">
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
-                      <Typography variant="caption" color="text.secondary">{item}</Typography>
-                    </Box>
-                  ))}
                 </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
+
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={notifAktif}
+                      onChange={(e) => setNotifAktif(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Aktifkan notifikasi otomatis
+                    </Typography>
+                  }
+                  sx={{ mb: 2.5, display: 'flex' }}
+                />
+
+                <TextField
+                  fullWidth
+                  label="Nomor Telpon"
+                  placeholder="Contoh: 08123456789"
+                  value={hp}
+                  onChange={(e) => setHp(e.target.value.replace(/\D/g, ''))}
+                  helperText="Nomor yang akan menerima notifikasi cuaca"
+                  slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                  disabled={!notifAktif}
+                  sx={{ mb: 2 }}
+                />
+
+                <Button
+                  fullWidth
+                  variant={isCurrentPhoneSaved ? 'outlined' : 'contained'}
+                  color={isCurrentPhoneSaved ? 'success' : 'primary'}
+                  disabled={!notifAktif || !hp.trim()}
+                  onClick={() => setSavedPhone(hp.trim())}
+                  startIcon={<WhatsAppIcon />}
+                >
+                  {isCurrentPhoneSaved ? '✓ Nomor Tersimpan' : 'Simpan & Aktifkan'}
+                </Button>
+
+                {notifAktif && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                      Jenis peringatan aktif
+                    </Typography>
+                    {['Hujan Lebat (> 20mm)', 'Angin Kencang (> 12 km/j)', 'Suhu Ekstrem (> 32°C)', 'Kelembapan Rendah (< 50%)'].map((item) => (
+                      <Box key={item} className="flex items-center gap-2 mt-2">
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
+                        <Typography variant="caption" color="text.secondary">{item}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
       </Grid>
     </Box>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -21,6 +21,9 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TuneIcon from '@mui/icons-material/Tune';
 
 import { farmerProfile } from '@/lib/mockData';
+import useLocalStorage from '@/hooks/useLocalStorage';
+
+const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
 const SETTINGS_TABS = [
   { id: 'general', label: 'General', icon: <TuneIcon /> },
@@ -31,6 +34,18 @@ const SETTINGS_TABS = [
 
 export default function PengaturanPage() {
   const [activeTab, setActiveTab] = useState('general');
+  const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
+  const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
+  const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    setProfileWhatsappPhone(weatherWhatsappPhone);
+  }, [weatherWhatsappPhone]);
+
+  const handleSaveProfile = () => {
+    setWeatherWhatsappPhone(profileWhatsappPhone.trim());
+    setPhoneSaveSuccess(true);
+  };
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -154,10 +169,30 @@ export default function PengaturanPage() {
                   <Grid size={{ xs: 12, md: 6 }}>
                     <TextField fullWidth label="Luas Lahan" defaultValue={farmerProfile.luasLahan} variant="standard" />
                   </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Nomor WhatsApp Notifikasi Cuaca"
+                      placeholder="Contoh: 08123456789"
+                      value={profileWhatsappPhone}
+                      onChange={(e) => {
+                        setProfileWhatsappPhone(e.target.value.replace(/\D/g, ''));
+                        setPhoneSaveSuccess(false);
+                      }}
+                      helperText="Nomor ini dipakai untuk notifikasi cuaca di halaman Cuaca"
+                      slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                      variant="standard"
+                    />
+                  </Grid>
                 </Grid>
                 
-                <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button variant="contained" sx={{ px: 4, borderRadius: 2 }}>Simpan Perubahan</Button>
+                <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
+                    {phoneSaveSuccess ? 'Nomor WhatsApp berhasil diperbarui.' : 'Simpan untuk menerapkan nomor notifikasi cuaca yang baru.'}
+                  </Typography>
+                  <Button variant="contained" sx={{ px: 4, borderRadius: 2 }} onClick={handleSaveProfile}>
+                    Simpan Perubahan
+                  </Button>
                 </Box>
               </Box>
            )}

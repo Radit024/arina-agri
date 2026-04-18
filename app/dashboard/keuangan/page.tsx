@@ -212,6 +212,8 @@ export default function KeuanganPage() {
   const bepRupiah = marginKontribusiRasio !== null && marginKontribusiRasio > 0 ? biayaTetap / marginKontribusiRasio : null;
 
   const formatAngka = (value: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(value);
+  const biayaTetapDisplayValue = getBepHppInputDisplayValue(bepHppInputs.biayaTetap);
+  const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
   const pieCategories = ['Pupuk', 'Pestisida', 'Tenaga Kerja', 'Irigasi & Air', 'Alat Tani', 'Lainnya'];
@@ -251,7 +253,7 @@ export default function KeuanganPage() {
   );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: { md: 'calc(100dvh - 96px)' }, display: 'flex', flexDirection: 'column' }}>
       {/* Page Header */}
       <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2 }}>
         <Box>
@@ -273,10 +275,10 @@ export default function KeuanganPage() {
         </Button>
       </Box>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ flex: 1, alignItems: 'stretch' }}>
         {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
-        <Grid size={{ xs: 12, lg: 8 }}>
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
+          <Card sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -458,7 +460,7 @@ export default function KeuanganPage() {
         </Grid>
 
         {/* ─── KANAN: Ringkasan & Grafik ─── */}
-        <Grid size={{ xs: 12, lg: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex', flexDirection: 'column' }}>
           {/* Kartu Ringkasan */}
           <Card sx={{ mb: 3 }}>
             <CardHeader
@@ -561,7 +563,7 @@ export default function KeuanganPage() {
           </Card>
 
           {/* Grafik Distribusi Pengeluaran */}
-          <Card>
+          <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -569,7 +571,7 @@ export default function KeuanganPage() {
                 </Typography>
               }
             />
-            <CardContent sx={{ pt: 0, display: 'flex', justifyContent: 'center' }}>
+            <CardContent sx={{ pt: 0, flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <PieChart
                 series={[
                   {
@@ -801,18 +803,20 @@ export default function KeuanganPage() {
               <TextField
                 label="Biaya Tetap Periode"
                 type="number"
-                value={getBepHppInputDisplayValue(bepHppInputs.biayaTetap)}
+                value={biayaTetapDisplayValue}
                 placeholder="0"
                 onChange={(e) => handleBepHppInputChange('biayaTetap', e.target.value)}
                 fullWidth
                 slotProps={{
                   input: {
                     inputProps: { min: 0 },
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
-                      </InputAdornment>
-                    ),
+                    startAdornment: biayaTetapDisplayValue
+                      ? (
+                        <InputAdornment position="start">
+                          <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                        </InputAdornment>
+                      )
+                      : undefined,
                   },
                 }}
               />
@@ -841,18 +845,20 @@ export default function KeuanganPage() {
               <TextField
                 label="Harga Jual per Kg"
                 type="number"
-                value={getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit)}
+                value={hargaJualDisplayValue}
                 placeholder="0"
                 onChange={(e) => handleBepHppInputChange('hargaJualPerUnit', e.target.value)}
                 fullWidth
                 slotProps={{
                   input: {
                     inputProps: { min: 0 },
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
-                      </InputAdornment>
-                    ),
+                    startAdornment: hargaJualDisplayValue
+                      ? (
+                        <InputAdornment position="start">
+                          <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                        </InputAdornment>
+                      )
+                      : undefined,
                   },
                 }}
               />

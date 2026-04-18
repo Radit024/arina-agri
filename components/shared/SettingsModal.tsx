@@ -30,14 +30,15 @@ import TuneIcon from '@mui/icons-material/Tune';
 
 import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
+import { useTranslations, useLocale } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
 const SETTINGS_TABS = [
-  { id: 'profil', label: 'Edit Profil', icon: <PersonOutlineIcon /> },
-  { id: 'general', label: 'General', icon: <TuneIcon /> },
-  { id: 'notifikasi', label: 'Notifikasi', icon: <NotificationsNoneIcon /> },
-  { id: 'info', label: 'Informasi Sistem', icon: <InfoOutlinedIcon /> },
+  { id: 'profil', key: 'profile.tab', icon: <PersonOutlineIcon /> },
+  { id: 'general', key: 'general.tab', icon: <TuneIcon /> },
+  { id: 'notifikasi', key: 'notification.tab', icon: <NotificationsNoneIcon /> },
+  { id: 'info', key: 'system.tab', icon: <InfoOutlinedIcon /> },
 ];
 
 const TAB_CONTENT_MIN_HEIGHT = 460;
@@ -48,13 +49,15 @@ export default function SettingsModal() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const t = useTranslations('Settings');
+  const locale = useLocale();
   
   const isOpen = searchParams.get('settings') === 'true';
   const initialTab = searchParams.get('tab') || 'general';
   
   const [activeTab, setActiveTab] = useState(initialTab);
   const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>('system');
-  const [languageMode, setLanguageMode] = useState<LanguageMode>('id');
+  const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
   const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
@@ -70,7 +73,6 @@ export default function SettingsModal() {
   }, [weatherWhatsappPhone]);
 
   const handleClose = () => {
-    // Reset back to exactly the current pathname without the query Param
     router.push(pathname, { scroll: false });
   };
 
@@ -81,7 +83,10 @@ export default function SettingsModal() {
   };
 
   const handleLanguageChange = (event: SelectChangeEvent<LanguageMode>) => {
-    setLanguageMode(event.target.value as LanguageMode);
+    const nextLocale = event.target.value as LanguageMode;
+    setLanguageMode(nextLocale);
+    document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    router.refresh();
   };
 
   const handleSaveProfile = () => {
@@ -114,7 +119,7 @@ export default function SettingsModal() {
         {/* Left Navigation (Inner Sidebar) */}
         <Box sx={{ width: { xs: '100%', md: 240 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2, display: 'flex', flexDirection: 'column' }}>
            <Typography variant="body2" sx={{ px: 2, mb: 2, mt: 1, display: 'block', color: 'text.primary', fontSize: '1rem', fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-             Settings
+             {t('title')}
            </Typography>
            
            <List disablePadding sx={{ flex: 1 }}>
@@ -134,7 +139,7 @@ export default function SettingsModal() {
                      {tab.icon}
                    </ListItemIcon>
                    <ListItemText 
-                     primary={tab.label} 
+                     primary={t(tab.key)} 
                      slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } } }} 
                    />
                  </ListItemButton>
@@ -159,12 +164,12 @@ export default function SettingsModal() {
              {/* GENERAL SETTINGS */}
              {activeTab === 'general' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>General</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('general.tab')}</Typography>
                   
                   {/* Simulated MFA / Security Box like reference */}
                   <Box sx={{ mb: 4 }}>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Appearance</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.appearance')}</Typography>
                       <ToggleButtonGroup
                         value={appearanceMode}
                         exclusive
@@ -192,7 +197,7 @@ export default function SettingsModal() {
                       </ToggleButtonGroup>
                     </Box>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Language</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.language')}</Typography>
                       <Select
                         size="small"
                         value={languageMode}
@@ -284,7 +289,7 @@ export default function SettingsModal() {
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
-                        label="Nomor WhatsApp Notifikasi Cuaca"
+                        label="Nomor Telepon"
                         placeholder="Contoh: 08123456789"
                         value={profileWhatsappPhone}
                         onChange={(event) => {

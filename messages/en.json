@@ -1,0 +1,36 @@
+{
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "keuangan": "Financial Logs",
+    "cuaca": "Weather",
+    "ensiklopedia": "AI Encyclopedia",
+    "kalender": "Smart Calendar",
+    "pengaturan": "Settings",
+    "logout": "Log Out",
+    "farmer": "Farmer"
+  },
+  "Settings": {
+    "title": "Settings",
+    "general": {
+      "tab": "General",
+      "appearance": "Appearance",
+      "contrast": "Screen Contrast",
+      "accent": "Accent Color",
+      "language": "Language"
+    },
+    "profile": {
+      "tab": "Edit Profile",
+      "title": "Change Profile Info"
+    },
+    "notification": {
+      "tab": "Notifications",
+      "title": "Notification Preferences"
+    },
+    "system": {
+      "tab": "System Info",
+      "title": "About Application"
+    },
+    "secureAccount": "Secure Your Account",
+    "setupMFA": "Setup 2-Step Auto"
+  }
+}

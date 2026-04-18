@@ -28,19 +28,21 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 import { farmerProfile } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
 
 const navItems = [
-  { label: 'Dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
-  { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
-  { label: 'Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
-  { label: 'Ensiklopedia AI', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
-  { label: 'Smart Kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
+  { key: 'dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
+  { key: 'keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
+  { key: 'cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
+  { key: 'ensiklopedia', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
+  { key: 'kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
 ];
 
 export default function Sidebar() {
+  const t = useTranslations('Sidebar');
   const [isOpen, setIsOpen] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
@@ -148,7 +150,7 @@ export default function Sidebar() {
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
-                    primary={item.label}
+                    primary={t(item.key)}
                     sx={{
                       display: isOpen ? 'block' : 'none',
                       opacity: isOpen ? 1 : 0,
@@ -174,7 +176,7 @@ export default function Sidebar() {
             }
 
             return (
-              <Tooltip key={item.path} title={item.label} placement="right" arrow>
+              <Tooltip key={item.path} title={t(item.key)} placement="right" arrow>
                 {navButton}
               </Tooltip>
             );
@@ -198,7 +200,7 @@ export default function Sidebar() {
                     <SettingsOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Pengaturan"
+                    primary={t('pengaturan')}
                     slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
                   />
                 </ListItemButton>
@@ -213,7 +215,7 @@ export default function Sidebar() {
                     <LogoutOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Log Out"
+                    primary={t('logout')}
                     slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#dc2626' } } }}
                   />
                 </ListItemButton>
@@ -259,7 +261,7 @@ export default function Sidebar() {
                   {farmerProfile.nama}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
-                  Farmer
+                  {t('farmer')}
                 </Typography>
               </Box>
             )}

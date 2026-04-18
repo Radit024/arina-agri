@@ -33,15 +33,23 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="id" className={`${plusJakartaSans.variable} ${sora.variable}`}>
+    <html lang={locale} className={`${plusJakartaSans.variable} ${sora.variable}`}>
       <body className="antialiased">
-        <MuiProvider>{children}</MuiProvider>
+        <NextIntlClientProvider messages={messages}>
+          <MuiProvider>{children}</MuiProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

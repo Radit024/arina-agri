@@ -1,0 +1,36 @@
+{
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "keuangan": "Pencatatan Keuangan",
+    "cuaca": "Cuaca",
+    "ensiklopedia": "Ensiklopedia AI",
+    "kalender": "Smart Kalender",
+    "pengaturan": "Pengaturan",
+    "logout": "Keluar",
+    "farmer": "Petani"
+  },
+  "Settings": {
+    "title": "Pengaturan",
+    "general": {
+      "tab": "Umum",
+      "appearance": "TampilanTema",
+      "contrast": "Kontras Layar",
+      "accent": "Warna Aksen",
+      "language": "Bahasa"
+    },
+    "profile": {
+      "tab": "Edit Profil",
+      "title": "Ubah Informasi Profil"
+    },
+    "notification": {
+      "tab": "Notifikasi",
+      "title": "Pengaturan Notifikasi"
+    },
+    "system": {
+      "tab": "Informasi Sistem",
+      "title": "Tentang Aplikasi"
+    },
+    "secureAccount": "Amankan Akun Anda",
+    "setupMFA": "Atur Autentikasi 2 Langkah"
+  }
+}

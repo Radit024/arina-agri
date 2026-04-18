@@ -61,7 +61,7 @@ export default function CuacaPage() {
           Cuaca
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Pantau cuaca dan terima peringatan otomatis di WhatsApp
+          Pantau Cuaca Di Daerah Anda 
         </Typography>
       </Box>
 

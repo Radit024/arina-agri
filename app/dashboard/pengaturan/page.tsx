@@ -35,7 +35,7 @@ export default function PengaturanPage() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
           Pengaturan
         </Typography>
         <Typography variant="body2" color="text.secondary">Personalisasi tampilan, profil, dan opsi akun Anda</Typography>
@@ -46,7 +46,7 @@ export default function PengaturanPage() {
         
         {/* Left Navigation (Inner Sidebar) */}
         <Box sx={{ width: { xs: '100%', md: 280 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
-           <Typography variant="caption" fontWeight={700} sx={{ px: 2, mb: 1, display: 'block', color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+           <Typography variant="caption" sx={{ px: 2, mb: 1, display: 'block', color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 700 }}>
              Menu Pengaturan
            </Typography>
            <List disablePadding>
@@ -66,7 +66,7 @@ export default function PengaturanPage() {
                    </ListItemIcon>
                    <ListItemText 
                      primary={tab.label} 
-                     slotProps={{ primary: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } }} 
+                     slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } } }} 
                    />
                  </ListItemButton>
                </ListItem>
@@ -80,11 +80,11 @@ export default function PengaturanPage() {
            {/* GENERAL SETTINGS */}
            {activeTab === 'general' && (
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>General</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>General</Typography>
                 
                 {/* Simulated MFA / Security Box like reference */}
                 <Box sx={{ bgcolor: '#111827', color: 'white', p: 3, borderRadius: 3, mb: 5 }}>
-                   <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>🔒 Amankan Akun Anda</Typography>
+                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>🔒 Amankan Akun Anda</Typography>
                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
                      Tambahkan autentikasi multi-faktor (MFA) seperti passkey atau kode SMS untuk melindungi akun Anda saat fitur backend diaktifkan.
                    </Typography>
@@ -95,22 +95,22 @@ export default function PengaturanPage() {
 
                 <Box sx={{ mb: 4 }}>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight={500}>Appearance (Tema)</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Appearance (Tema)</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight={500}>Contrast</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Contrast</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight={500}>Accent Color</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Accent Color</Typography>
                     <Box className="flex items-center gap-1.5 cursor-pointer">
                       <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'primary.main' }} />
-                      <Typography variant="body2" color="primary.main" fontWeight={600}>Arina Green</Typography>
+                      <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>Arina Green</Typography>
                     </Box>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" fontWeight={500}>Language</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Language</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>Bahasa Indonesia</Typography>
                   </Box>
                 </Box>
@@ -120,7 +120,7 @@ export default function PengaturanPage() {
            {/* EDIT PROFIL */}
            {activeTab === 'profil' && (
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Edit Profil</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Edit Profil</Typography>
                 
                 <Box className="flex items-center gap-4 mb-6">
                   <Avatar
@@ -137,7 +137,7 @@ export default function PengaturanPage() {
                   </Avatar>
                   <Box>
                     <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2 }}>Ganti Foto</Button>
-                    <Typography variant="caption" display="block" color="text.secondary">Format JPG, PNG, atau GIF. Ukuran maks 2MB.</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Format JPG, PNG, atau GIF. Ukuran maks 2MB.</Typography>
                   </Box>
                 </Box>
                 
@@ -165,7 +165,7 @@ export default function PengaturanPage() {
            {/* NOTIFIKASI */}
            {activeTab === 'notifikasi' && (
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Pengaturan Notifikasi</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Pengaturan Notifikasi</Typography>
                 
                 {[
                   { label: 'Notifikasi Cuaca Ekstrem', desc: 'Terima peringatan cuaca via WhatsApp jika ada mendung lebat / badai.' },
@@ -176,7 +176,7 @@ export default function PengaturanPage() {
                   <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box className="flex items-start justify-between gap-4">
                       <Box>
-                        <Typography variant="body1" fontWeight={600} sx={{ mb: 0.5 }}>{item.label}</Typography>
+                        <Typography variant="body1" sx={{ mb: 0.5, fontWeight: 600 }}>{item.label}</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{item.desc}</Typography>
                       </Box>
                       <Switch defaultChecked color="primary" sx={{ mt: -1 }} />
@@ -189,14 +189,14 @@ export default function PengaturanPage() {
            {/* INFO APLIKASI */}
            {activeTab === 'info' && (
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Informasi Sistem</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Informasi Sistem</Typography>
                 
                 <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
                    <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'primary.light', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                      <InfoOutlinedIcon sx={{ fontSize: 32, color: 'primary.main' }} />
                    </Box>
                    <Box>
-                     <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.dark' }}>Arina Web Platform</Typography>
+                     <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700 }}>Arina Web Platform</Typography>
                      <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>Versi 1.0.0 (Beta) · Local Storage Environment</Typography>
                    </Box>
                 </Box>
@@ -209,7 +209,7 @@ export default function PengaturanPage() {
                 ].map((item) => (
                   <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
                     <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                    <Typography variant="body2" fontWeight={600}>{item.value}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.value}</Typography>
                   </Box>
                 ))}
               </Box>

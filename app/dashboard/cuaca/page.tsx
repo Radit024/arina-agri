@@ -48,7 +48,7 @@ export default function CuacaPage() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
           Notifikasi Cuaca
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -66,7 +66,7 @@ export default function CuacaPage() {
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     Cuaca Saat Ini
                   </Typography>
-                  <Typography variant="h3" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff' }}>
+                  <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff', fontWeight: 700 }}>
                     {currentWeather.suhu}°C
                   </Typography>
                   <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
@@ -93,7 +93,7 @@ export default function CuacaPage() {
                       <Box sx={{ color: 'rgba(255,255,255,0.7)' }}>{item.icon}</Box>
                       <Box>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{item.label}</Typography>
-                        <Typography variant="body2" fontWeight={600} sx={{ color: '#fff' }}>{item.value}</Typography>
+                        <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>{item.value}</Typography>
                       </Box>
                     </Box>
                   </Grid>
@@ -104,7 +104,7 @@ export default function CuacaPage() {
 
           {/* 7-Day Forecast */}
           <Card sx={{ mt: 3 }}>
-            <CardHeader title={<Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>Prakiraan 7 Hari</Typography>} />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Prakiraan 7 Hari</Typography>} />
             <CardContent sx={{ pt: 0 }}>
               <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
                 {weatherForecast.map((day) => {
@@ -126,16 +126,16 @@ export default function CuacaPage() {
                         flexShrink: 0,
                       }}
                     >
-                      <Typography variant="caption" fontWeight={600} color={isToday ? 'primary.main' : 'text.secondary'}>
+                      <Typography variant="caption" color={isToday ? 'primary.main' : 'text.secondary'} sx={{ fontWeight: 600 }}>
                         {isToday ? 'Hari ini' : `${dayName} ${dateNum}`}
                       </Typography>
                       <Box sx={{ my: 1 }}>
                         <WeatherIcon kondisi={day.kondisi} size="small" />
                       </Box>
-                      <Typography variant="caption" display="block" fontWeight={700}>{day.suhuMax}°</Typography>
-                      <Typography variant="caption" display="block" color="text.secondary">{day.suhuMin}°</Typography>
+                      <Typography variant="caption" sx={{ display: 'block', fontWeight: 700 }}>{day.suhuMax}°</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{day.suhuMin}°</Typography>
                       {day.curahHujan > 0 && (
-                        <Typography variant="caption" display="block" sx={{ color: '#3b82f6', mt: 0.5 }}>
+                        <Typography variant="caption" sx={{ display: 'block', color: '#3b82f6', mt: 0.5 }}>
                           💧{day.curahHujan}mm
                         </Typography>
                       )}
@@ -148,7 +148,7 @@ export default function CuacaPage() {
 
           {/* Alert History */}
           <Card sx={{ mt: 3 }}>
-            <CardHeader title={<Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>Riwayat Notifikasi</Typography>} />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Riwayat Notifikasi</Typography>} />
             <CardContent sx={{ pt: 0 }}>
               <TableContainer>
                 <Table size="small">
@@ -165,7 +165,7 @@ export default function CuacaPage() {
                         <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{formatDateShort(alert.tanggal)}</TableCell>
                         <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{alert.jenisPeringatan}</TableCell>
                         <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary', maxWidth: 280 }}>
-                          <Typography variant="caption" noWrap display="block">{alert.pesan}</Typography>
+                          <Typography variant="caption" noWrap sx={{ display: 'block' }}>{alert.pesan}</Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -193,7 +193,7 @@ export default function CuacaPage() {
           <Card>
             <CardHeader
               avatar={<WhatsAppIcon sx={{ color: '#25d366' }} />}
-              title={<Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>Integrasi WhatsApp</Typography>}
+              title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Integrasi WhatsApp</Typography>}
             />
             <CardContent sx={{ pt: 0 }}>
               <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 2, mb: 2.5, border: '1px solid #bbf7d0' }}>
@@ -211,7 +211,7 @@ export default function CuacaPage() {
                   />
                 }
                 label={
-                  <Typography variant="body2" fontWeight={500}>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
                     Aktifkan notifikasi otomatis
                   </Typography>
                 }
@@ -242,7 +242,7 @@ export default function CuacaPage() {
 
               {notifAktif && (
                 <Box sx={{ mt: 3 }}>
-                  <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                     Jenis peringatan aktif
                   </Typography>
                   {['Hujan Lebat (> 20mm)', 'Angin Kencang (> 12 km/j)', 'Suhu Ekstrem (> 32°C)', 'Kelembapan Rendah (< 50%)'].map((item) => (

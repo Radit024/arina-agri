@@ -41,7 +41,7 @@ import type { Transaction } from '@/lib/mockData';
 import { PieChart } from '@mui/x-charts/PieChart';
 
 const transactionSchema = z.object({
-  jenis: z.enum(['pengeluaran', 'pendapatan'], { required_error: 'Pilih jenis transaksi' }),
+  jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'Pilih jenis transaksi' }),
   kategori: z.string().min(1, 'Pilih kategori'),
   nominal: z.string().min(1, 'Masukkan nominal').refine((v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0, 'Nominal harus lebih dari 0'),
   tanggal: z.string().min(1, 'Pilih tanggal'),
@@ -159,7 +159,7 @@ export default function KeuanganPage() {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'flex-end' }, gap: 2 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
             Manajemen Keuangan
           </Typography>
           <Typography variant="body2" color="text.secondary">Kelola pemasukan dan telusuri profil pengeluaran kebun Anda secara terpadu.</Typography>
@@ -177,7 +177,7 @@ export default function KeuanganPage() {
           {/* Laporan Laba Rugi Visuals */}
           <Card sx={{ mb: 3, position: 'relative', overflow: 'visible', borderColor: 'primary.main', borderWidth: 2 }}>
             <CardHeader
-              title={<Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>Ringkasan Bisnis</Typography>}
+              title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Ringkasan Bisnis</Typography>}
               action={
                 <IconButton onClick={() => setAiDialogOpen(true)} sx={{ color: 'primary.dark', bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}>
                   <AutoFixHighIcon fontSize="small"/>
@@ -187,28 +187,28 @@ export default function KeuanganPage() {
             <CardContent sx={{ pt: 0 }}>
               <Box className="flex justify-between items-end mb-4">
                 <Box>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>Total Pemasukan</Typography>
-                  <Typography variant="h6" fontWeight={800} color="success.main">{formatRupiah(totalPendapatan)}</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Total Pemasukan</Typography>
+                  <Typography variant="h6" color="success.main" sx={{ fontWeight: 800 }}>{formatRupiah(totalPendapatan)}</Typography>
                 </Box>
-                <Box textAlign="right">
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>Total Pengeluaran</Typography>
-                  <Typography variant="h6" fontWeight={800} color="error.main">{formatRupiah(totalPengeluaran)}</Typography>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Total Pengeluaran</Typography>
+                  <Typography variant="h6" color="error.main" sx={{ fontWeight: 800 }}>{formatRupiah(totalPengeluaran)}</Typography>
                 </Box>
               </Box>
 
               <Box sx={{ p: 2, bgcolor: labaBersih >= 0 ? 'rgba(22, 163, 74, 0.08)' : 'rgba(220, 38, 38, 0.08)', borderRadius: 3, mb: 1, border: '1px solid', borderColor: labaBersih >= 0 ? '#bbf7d0' : '#fecaca' }}>
                 <Box className="flex justify-between items-center">
-                  <Typography variant="body2" fontWeight={800} sx={{ color: labaBersih >= 0 ? '#15803d' : '#991b1b' }}>
+                  <Typography variant="body2" sx={{ color: labaBersih >= 0 ? '#15803d' : '#991b1b', fontWeight: 800 }}>
                     {labaBersih >= 0 ? 'Estimasi Laba Bersih' : 'Defisit Anggaran'}
                   </Typography>
-                  <Typography variant="h5" fontWeight={900} sx={{ fontFamily: 'var(--font-sora)', color: labaBersih >= 0 ? 'success.main' : 'error.main' }}>
+                  <Typography variant="h5" sx={{ fontFamily: 'var(--font-sora)', color: labaBersih >= 0 ? 'success.main' : 'error.main', fontWeight: 900 }}>
                     {formatRupiah(Math.abs(labaBersih))}
                   </Typography>
                 </Box>
               </Box>
 
               <Box sx={{ mt: 3 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ display: 'block', textAlign: 'center', mb: 1 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 1, fontWeight: 700 }}>
                   Distribusi Pengeluaran
                 </Typography>
                 <PieChart
@@ -243,7 +243,7 @@ export default function KeuanganPage() {
 
           {/* Form Create/Edit */}
           <Card>
-            <CardHeader title={<Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
               {editingId ? 'Edit Transaksi' : 'Catat Transaksi Baru'}
             </Typography>} />
             <CardContent sx={{ pt: 0 }}>
@@ -323,7 +323,7 @@ export default function KeuanganPage() {
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
-              title={<Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>Buku Besar Transaksi</Typography>}
+              title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Buku Besar Transaksi</Typography>}
               subheader={`${displayedTransactions.length} rekaman ditampilkan`}
               action={
                 <FormControl size="small" sx={{ minWidth: 160, mt: 1 }}>
@@ -371,7 +371,7 @@ export default function KeuanganPage() {
                           {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                         </TableCell>
                         <TableCell>
-                          <Box display="flex" gap={1}>
+                          <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton size="small" aria-label="Edit Transaksi" onClick={() => handleEdit(tx)} sx={{ borderRadius: 2, color: 'primary.main', bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}>
                               <EditOutlinedIcon fontSize="small" />
                             </IconButton>
@@ -391,7 +391,7 @@ export default function KeuanganPage() {
       </Grid>
 
       {/* AI Analysis Dialog */}
-      <Dialog open={aiDialogOpen} onClose={() => setAiDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 4, bgcolor: 'background.paper' } }}>
+      <Dialog open={aiDialogOpen} onClose={() => setAiDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4, bgcolor: 'background.paper' } } }}>
         <DialogTitle sx={{ pb: 1 }}>
           <Box className="flex items-center justify-between">
             <Box className="flex items-center gap-2">
@@ -399,8 +399,8 @@ export default function KeuanganPage() {
                 <AutoFixHighIcon sx={{ color: 'primary.dark' }} />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight={800} sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2 }}>Insights Bisnis AI</Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>Rekomendasi Pintar Arina Agri</Typography>
+                <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2, fontWeight: 800 }}>Insights Bisnis AI</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Rekomendasi Pintar Arina Agri</Typography>
               </Box>
             </Box>
             <IconButton onClick={() => setAiDialogOpen(false)} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}><CloseIcon /></IconButton>

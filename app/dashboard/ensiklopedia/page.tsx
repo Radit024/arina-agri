@@ -75,7 +75,7 @@ export default function EnsiklopediaPage() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
           Ensiklopedia AI Cabai
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -116,8 +116,8 @@ export default function EnsiklopediaPage() {
                 <AutoAwesomeIcon sx={{ color: '#fff', fontSize: 18 }} />
               </Box>
               <Box>
-                <Typography variant="body1" fontWeight={600}>Arina AI Assistant</Typography>
-                <Typography variant="caption" color="success.main" fontWeight={500}>● Online</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>Arina AI Assistant</Typography>
+                <Typography variant="caption" color="success.main" sx={{ fontWeight: 500 }}>● Online</Typography>
               </Box>
             </Box>
 
@@ -206,7 +206,7 @@ export default function EnsiklopediaPage() {
 
         {/* Disease Quick Reference */}
         <Grid size={{ xs: 12, lg: 5 }}>
-          <Typography variant="h6" fontWeight={600} sx={{ mb: 2, fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             Referensi Cepat Penyakit Cabai
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -222,7 +222,7 @@ export default function EnsiklopediaPage() {
               >
                 <CardContent sx={{ p: 2 }}>
                   <Box className="flex items-start justify-between mb-1.5">
-                    <Typography variant="subtitle2" fontWeight={700}>{disease.nama}</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{disease.nama}</Typography>
                     <Chip
                       label={`Kerugian ${disease.kehilangan}`}
                       size="small"
@@ -234,14 +234,14 @@ export default function EnsiklopediaPage() {
                       }}
                     />
                   </Box>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
                     <strong>Penyebab:</strong> {disease.penyebab}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                     <strong>Gejala:</strong> {disease.gejala}
                   </Typography>
                   <Box sx={{ backgroundColor: '#f8fafc', borderRadius: 1.5, px: 1.5, py: 1 }}>
-                    <Typography variant="caption" color="primary.main" fontWeight={600}>
+                    <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
                       💊 {disease.penanganan}
                     </Typography>
                   </Box>

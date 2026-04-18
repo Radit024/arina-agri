@@ -33,13 +33,12 @@ export default function KPICard({ title, value, subtitle, icon, color = '#16a34a
       <CardContent sx={{ p: 2.5 }}>
         <Box className="flex items-start justify-between">
           <Box>
-            <Typography variant="caption" color="text.secondary" fontWeight={500} sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
               {title}
             </Typography>
             <Typography
               variant="h5"
-              fontWeight={700}
-              sx={{ mt: 0.5, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}
+              sx={{ mt: 0.5, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2, fontWeight: 700 }}
             >
               {value}
             </Typography>

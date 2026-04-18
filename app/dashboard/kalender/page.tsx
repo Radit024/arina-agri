@@ -143,7 +143,7 @@ export default function KalenderPage() {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box className="flex items-center justify-between" sx={{ mb: 3 }}>
         <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
             Smart Kalender
           </Typography>
           <Typography variant="body2" color="text.secondary">Jadwal kegiatan pertanian Anda</Typography>
@@ -169,7 +169,7 @@ export default function KalenderPage() {
                     <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month - 1))}>
                       <ChevronLeftIcon />
                     </IconButton>
-                    <Typography variant="h6" fontWeight={700} sx={{ fontFamily: 'var(--font-sora)', minWidth: 180, textAlign: 'center' }}>
+                    <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', minWidth: 180, textAlign: 'center', fontWeight: 700 }}>
                       {monthNames[month]} {year}
                     </Typography>
                     <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month + 1))}>
@@ -187,7 +187,7 @@ export default function KalenderPage() {
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
                 {dayNames.map((d) => (
                   <Box key={d} sx={{ textAlign: 'center', py: 1 }}>
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">{d}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{d}</Typography>
                   </Box>
                 ))}
               </Box>
@@ -218,8 +218,7 @@ export default function KalenderPage() {
                     >
                       <Typography
                         variant="caption"
-                        fontWeight={isToday ? 700 : 500}
-                        sx={{ color: isToday ? 'primary.main' : 'text.primary', display: 'block', mb: 0.5 }}
+                        sx={{ color: isToday ? 'primary.main' : 'text.primary', display: 'block', mb: 0.5, fontWeight: isToday ? 700 : 500 }}
                       >
                         {day}
                       </Typography>
@@ -279,7 +278,7 @@ export default function KalenderPage() {
           </Button>
 
           <Card>
-            <CardHeader title={<Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>Jadwal Mendatang</Typography>} subheader="7 hari ke depan" />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Jadwal Mendatang</Typography>} subheader="7 hari ke depan" />
             <CardContent sx={{ pt: 0 }}>
               {upcomingEvents.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -302,7 +301,7 @@ export default function KalenderPage() {
                         }}
                       >
                         <Box className="flex items-start justify-between">
-                          <Typography variant="body2" fontWeight={600} sx={{ color: colors.text }}>
+                          <Typography variant="body2" sx={{ color: colors.text, fontWeight: 600 }}>
                             {ev.judul}
                           </Typography>
                           <Box className="flex items-center gap-1">
@@ -338,7 +337,7 @@ export default function KalenderPage() {
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <Box className="flex items-center justify-between">
-            <Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
               {editingEventId ? 'Edit Jadwal Kegiatan' : 'Tambah Jadwal Kegiatan'}
             </Typography>
             <IconButton size="small" onClick={() => setDialogOpen(false)}>
@@ -368,10 +367,10 @@ export default function KalenderPage() {
 
             <Box className="flex gap-3">
               <Controller name="tanggal" control={control} render={({ field }) => (
-                <TextField {...field} type="date" label="Tanggal" error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth InputLabelProps={{ shrink: true }} />
+                <TextField {...field} type="date" label="Tanggal" error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
               <Controller name="waktu" control={control} render={({ field }) => (
-                <TextField {...field} type="time" label="Waktu (opsional)" fullWidth InputLabelProps={{ shrink: true }} />
+                <TextField {...field} type="time" label="Waktu (opsional)" fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
             </Box>
 

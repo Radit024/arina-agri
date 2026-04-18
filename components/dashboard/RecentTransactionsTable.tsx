@@ -21,7 +21,7 @@ export default function RecentTransactionsTable() {
     <Card>
       <CardHeader
         title={
-          <Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             Transaksi Terkini
           </Typography>
         }
@@ -51,7 +51,7 @@ export default function RecentTransactionsTable() {
                   <TableCell sx={{ color: 'text.secondary' }}>{formatDateShort(tx.tanggal)}</TableCell>
                   <TableCell>{tx.kategori}</TableCell>
                   <TableCell sx={{ color: 'text.secondary', maxWidth: 200 }} >
-                    <Typography variant="caption" noWrap display="block">{tx.keterangan}</Typography>
+                    <Typography variant="caption" noWrap sx={{ display: 'block' }}>{tx.keterangan}</Typography>
                   </TableCell>
                   <TableCell>
                     <Chip

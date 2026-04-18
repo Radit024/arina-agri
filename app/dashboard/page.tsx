@@ -33,8 +33,7 @@ export default function DashboardPage() {
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h4"
-          fontWeight={700}
-          sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary' }}
+          sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 700 }}
         >
           Selamat datang, Pak {farmerProfile.nama.split(' ')[0]} 👋
         </Typography>

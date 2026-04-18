@@ -50,20 +50,20 @@ export default function NotFound() {
 
         <Typography 
            variant="h1" 
-           fontWeight={900} 
            sx={{ 
              fontFamily: 'var(--font-sora)',
              fontSize: { xs: '6rem', md: '8rem' },
              background: 'linear-gradient(90deg, #16a34a, #15803d)',
              WebkitBackgroundClip: 'text',
              WebkitTextFillColor: 'transparent',
-             lineHeight: 1
+             lineHeight: 1,
+             fontWeight: 900,
            }}
         >
           404
         </Typography>
 
-        <Typography variant="h5" fontWeight={700} sx={{ mt: 2, mb: 1.5, color: '#064e3b', fontFamily: 'var(--font-sora)' }}>
+        <Typography variant="h5" sx={{ mt: 2, mb: 1.5, color: '#064e3b', fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
           Halaman Tidak Ditemukan!
         </Typography>
 

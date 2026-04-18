@@ -25,7 +25,7 @@ export function TrendChart() {
     <Card>
       <CardHeader
         title={
-          <Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             Tren Keuangan
           </Typography>
         }
@@ -36,7 +36,7 @@ export function TrendChart() {
           {[{ color: '#16a34a', label: 'Pendapatan' }, { color: '#f59e0b', label: 'Pengeluaran' }].map((item) => (
             <Box key={item.label} className="flex items-center gap-1.5">
               <Box sx={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color }} />
-              <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.label}</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>{item.label}</Typography>
             </Box>
           ))}
         </Box>
@@ -67,7 +67,7 @@ export function TrendChart() {
             '& .MuiLineElement-root': { strokeWidth: 2.5 },
             '& .MuiMarkElement-root': { strokeWidth: 2 },
           }}
-          yAxis={[{ valueFormatter: (v) => `${(v / 1000000).toFixed(1)}Jt` }]}
+          yAxis={[{ valueFormatter: (v: number | null) => `${((v ?? 0) / 1000000).toFixed(1)}Jt` }]}
         />
       </CardContent>
     </Card>
@@ -88,7 +88,7 @@ export function KategoriChart() {
     <Card>
       <CardHeader
         title={
-          <Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             Kategori Pengeluaran
           </Typography>
         }

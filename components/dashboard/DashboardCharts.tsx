@@ -10,7 +10,7 @@ import Skeleton from '@mui/material/Skeleton';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 
-const LineChart = dynamic(() => import('@mui/x-charts').then((m) => ({ default: m.LineChart })), {
+const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })), {
   ssr: false,
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
 });
@@ -63,6 +63,9 @@ export function TrendChart() {
           height={260}
           margin={{ left: 60, right: 16, top: 8, bottom: 40 }}
           hideLegend
+          disableLineItemHighlight
+          axisHighlight={{ x: 'none', y: 'none' }}
+          slotProps={{ tooltip: { trigger: 'none' } }}
           sx={{
             '& .MuiLineElement-root': { strokeWidth: 2.5 },
             '& .MuiMarkElement-root': { strokeWidth: 2 },
@@ -95,44 +98,58 @@ export function KategoriChart() {
         subheader="Bulan April 2026"
       />
       <CardContent sx={{ pt: 0 }}>
-        <PieChart
-          series={[
-            {
-              data: pieData,
-              arcLabel: (item) => `${Math.round((item.value / totalPengeluaran) * 100)}%`,
-              arcLabelMinAngle: 14,
-              innerRadius: 46,
-              outerRadius: 100,
-              paddingAngle: 2,
-              cornerRadius: 4,
-            },
-          ]}
-          colors={pieColors}
-          height={260}
-          margin={{ left: 16, right: 16, top: 8, bottom: 8 }}
+        <Box
           sx={{
-            '& .MuiPieArcLabel-root': {
-              fill: '#0f172a',
-              fontSize: 11,
-              fontWeight: 600,
-            },
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '260px 1fr' },
+            alignItems: 'center',
+            columnGap: 2,
+            rowGap: 1.5,
           }}
-        />
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <PieChart
+              series={[
+                {
+                  data: pieData,
+                  arcLabel: (item) => `${Math.round((item.value / totalPengeluaran) * 100)}%`,
+                  arcLabelMinAngle: 14,
+                  innerRadius: 46,
+                  outerRadius: 100,
+                  paddingAngle: 2,
+                  cornerRadius: 4,
+                },
+              ]}
+              colors={pieColors}
+              hideLegend
+              width={260}
+              height={260}
+              margin={{ left: 8, right: 8, top: 8, bottom: 8 }}
+              sx={{
+                '& .MuiPieArcLabel-root': {
+                  fill: '#0f172a',
+                  fontSize: 11,
+                  fontWeight: 600,
+                },
+              }}
+            />
+          </Box>
 
-        <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
-          {kategoriChartData.map((item, index) => (
-            <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length] }} />
-                <Typography variant="caption" color="text.secondary">
-                  {item.kategori}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr' }, gap: 1 }}>
+            {kategoriChartData.map((item, index) => (
+              <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length] }} />
+                  <Typography variant="caption" color="text.secondary">
+                    {item.kategori}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  {formatRupiah(item.jumlah)}
                 </Typography>
               </Box>
-              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                {formatRupiah(item.jumlah)}
-              </Typography>
-            </Box>
-          ))}
+            ))}
+          </Box>
         </Box>
       </CardContent>
     </Card>

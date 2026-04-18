@@ -60,6 +60,14 @@ const transactionSchema = z.object({
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
 
+type BepHppInputs = {
+  biayaTetap: number;
+  jumlahProduksi: number;
+  hargaJualPerUnit: number;
+};
+
+const BULAN_LABELS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
 const AI_ANALYSIS = `Berdasarkan pantauan arus kas Anda saat ini, laporan menunjukkan performa yang cukup baik. Terdapat kas positif yang masuk stabil.
 Komponen biaya terbesar Anda didominasi oleh sarana pemeliharaan konvensional (Pupuk & Pestisida).
 
@@ -70,9 +78,16 @@ Komponen biaya terbesar Anda didominasi oleh sarana pemeliharaan konvensional (P
 
 export default function KeuanganPage() {
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('arina-transactions', mockTransactions);
+  const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>('arina-bep-hpp-inputs', {
+    biayaTetap: 0,
+    jumlahProduksi: 0,
+    hargaJualPerUnit: 0,
+  });
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
   const [txDialogOpen, setTxDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
 
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<TransactionFormData>({
@@ -147,6 +162,16 @@ export default function KeuanganPage() {
     onChange(formatted);
   };
 
+  const handleBepHppInputChange = (field: keyof BepHppInputs, rawValue: string) => {
+    const numericValue = Math.max(0, Number(rawValue) || 0);
+    setBepHppInputs({
+      ...bepHppInputs,
+      [field]: numericValue,
+    });
+  };
+
+  const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
+
   const handleExportCSV = () => {
     const headers = 'Tanggal,Kategori,Keterangan,Jenis,Nominal';
     const csvStr = transactions
@@ -166,6 +191,24 @@ export default function KeuanganPage() {
   const totalPengeluaran = transactions.filter((t) => t.jenis === 'pengeluaran').reduce((a, t) => a + t.nominal, 0);
   const labaBersih = totalPendapatan - totalPengeluaran;
 
+  // HPP & BEP calculations
+  const biayaTetap = bepHppInputs.biayaTetap;
+  const jumlahProduksi = bepHppInputs.jumlahProduksi;
+  const hargaJualPerUnit = bepHppInputs.hargaJualPerUnit;
+
+  const totalBiayaProduksi = totalPengeluaran;
+  const biayaVariabelTotal = Math.max(totalPengeluaran - biayaTetap, 0);
+  const biayaVariabelPerUnit = jumlahProduksi > 0 ? biayaVariabelTotal / jumlahProduksi : 0;
+  const hppPerUnit = jumlahProduksi > 0 ? totalBiayaProduksi / jumlahProduksi : 0;
+
+  const marginKontribusiPerUnit = hargaJualPerUnit - biayaVariabelPerUnit;
+  const bepUnit = marginKontribusiPerUnit > 0 ? biayaTetap / marginKontribusiPerUnit : null;
+
+  const marginKontribusiRasio = totalPendapatan > 0 ? 1 - (biayaVariabelTotal / totalPendapatan) : null;
+  const bepRupiah = marginKontribusiRasio !== null && marginKontribusiRasio > 0 ? biayaTetap / marginKontribusiRasio : null;
+
+  const formatAngka = (value: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(value);
+
   // Pie chart data
   const pieCategories = ['Pupuk', 'Pestisida', 'Tenaga Kerja', 'Irigasi & Air', 'Alat Tani', 'Lainnya'];
   const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
@@ -181,9 +224,27 @@ export default function KeuanganPage() {
   const finalPieData = expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: 'Belum Ada Data', color: '#e2e8f0' }];
   const finalPieColors = expenseStats.length > 0 ? expenseStats.map((e) => e.color) : ['#e2e8f0'];
 
+  const bulanOptions = Array.from(
+    new Set(
+      transactions
+        .map((t) => t.tanggal.slice(0, 7))
+        .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
+    )
+  ).sort((a, b) => b.localeCompare(a));
+
+  const getBulanLabel = (bulanKey: string) => {
+    const [tahun, bulan] = bulanKey.split('-');
+    const monthIndex = Number(bulan) - 1;
+    if (monthIndex < 0 || monthIndex > 11 || Number.isNaN(monthIndex)) {
+      return bulanKey;
+    }
+    return `${BULAN_LABELS[monthIndex]} ${tahun}`;
+  };
+
   // Filtered table data
   const displayedTransactions = transactions.filter(
-    (t) => filterJenis === 'semua' || t.jenis === filterJenis
+    (t) => (filterJenis === 'semua' || t.jenis === filterJenis)
+      && (filterBulan === 'semua' || t.tanggal.startsWith(filterBulan))
   );
 
   return (
@@ -221,7 +282,24 @@ export default function KeuanganPage() {
               }
               subheader={`${displayedTransactions.length} transaksi ditampilkan`}
               action={
-                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                  {/* Filter Bulan */}
+                  <FormControl size="small" sx={{ minWidth: 170 }}>
+                    <InputLabel>Filter Bulan</InputLabel>
+                    <Select
+                      value={filterBulan}
+                      label="Filter Bulan"
+                      onChange={(e) => setFilterBulan(e.target.value)}
+                    >
+                      <MenuItem value="semua">Semua Bulan</MenuItem>
+                      {bulanOptions.map((bulanKey) => (
+                        <MenuItem key={bulanKey} value={bulanKey}>
+                          {getBulanLabel(bulanKey)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
                   {/* Filter */}
                   <FormControl size="small" sx={{ minWidth: 170 }}>
                     <InputLabel>Filter Tipe</InputLabel>
@@ -235,6 +313,17 @@ export default function KeuanganPage() {
                       <MenuItem value="pengeluaran">Pengeluaran</MenuItem>
                     </Select>
                   </FormControl>
+
+                  {/* Tombol Modal HPP & BEP */}
+                  <Button
+                    id="btn-hpp-bep"
+                    variant="outlined"
+                    startIcon={<AccountBalanceIcon />}
+                    onClick={() => setBepHppDialogOpen(true)}
+                    sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
+                  >
+                    Perhitungan HPP & BEP
+                  </Button>
 
                   {/* Tombol Tambah Transaksi */}
                   <Button
@@ -675,6 +764,156 @@ export default function KeuanganPage() {
                 {editingId ? 'Perbarui Data' : 'Simpan Transaksi'}
               </Button>
             </Box>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL: Kalkulator HPP & BEP ─── */}
+      <Dialog
+        open={bepHppDialogOpen}
+        onClose={() => setBepHppDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 4 } } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800, lineHeight: 1.2 }}>
+                Perhitungan HPP & BEP
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Menggunakan data transaksi + input produksi
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={() => setBepHppDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ pt: '12px !important' }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Biaya Tetap Periode"
+                type="number"
+                value={getBepHppInputDisplayValue(bepHppInputs.biayaTetap)}
+                placeholder="0"
+                onChange={(e) => handleBepHppInputChange('biayaTetap', e.target.value)}
+                fullWidth
+                slotProps={{
+                  input: {
+                    inputProps: { min: 0 },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Total Produksi Periode"
+                type="number"
+                value={getBepHppInputDisplayValue(bepHppInputs.jumlahProduksi)}
+                placeholder="0"
+                onChange={(e) => handleBepHppInputChange('jumlahProduksi', e.target.value)}
+                fullWidth
+                slotProps={{
+                  input: {
+                    inputProps: { min: 0 },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>kg</Typography>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                label="Harga Jual per Kg"
+                type="number"
+                value={getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit)}
+                placeholder="0"
+                onChange={(e) => handleBepHppInputChange('hargaJualPerUnit', e.target.value)}
+                fullWidth
+                slotProps={{
+                  input: {
+                    inputProps: { min: 0 },
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+              HPP = Total Biaya Produksi / Jumlah Produksi
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+              BEP Unit = Biaya Tetap / (Harga Jual per Unit - Biaya Variabel per Unit)
+            </Typography>
+            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+              BEP Rupiah = Biaya Tetap / (1 - Biaya Variabel / Penjualan)
+            </Typography>
+          </Box>
+
+          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.2 }}>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Biaya Variabel Total</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatRupiah(biayaVariabelTotal)}</Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Biaya Variabel per Kg</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {jumlahProduksi > 0 ? formatRupiah(biayaVariabelPerUnit) : 'Isi produksi'}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfdf3', border: '1px solid #bbf7d0' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>HPP per Kg</Typography>
+              <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 800 }}>
+                {jumlahProduksi > 0 ? formatRupiah(hppPerUnit) : 'Isi produksi'}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfeff', border: '1px solid #bae6fd' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>BEP Unit</Typography>
+              <Typography variant="body2" sx={{ color: 'info.main', fontWeight: 800 }}>
+                {bepUnit !== null ? `${formatAngka(bepUnit)} kg` : 'Belum dapat dihitung'}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa', gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>BEP Rupiah</Typography>
+              <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 800 }}>
+                {bepRupiah !== null ? formatRupiah(bepRupiah) : 'Belum dapat dihitung'}
+              </Typography>
+            </Box>
+          </Box>
+
+          {marginKontribusiPerUnit <= 0 && jumlahProduksi > 0 && (
+            <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: 'error.main' }}>
+              BEP unit belum valid. Pastikan harga jual per kg lebih besar dari biaya variabel per kg.
+            </Typography>
+          )}
+          {(marginKontribusiRasio === null || marginKontribusiRasio <= 0) && (
+            <Typography variant="caption" sx={{ mt: 0.8, display: 'block', color: 'error.main' }}>
+              BEP rupiah membutuhkan data penjualan yang cukup dan rasio margin kontribusi positif.
+            </Typography>
+          )}
+
+          <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button variant="contained" onClick={() => setBepHppDialogOpen(false)} sx={{ borderRadius: 8 }}>
+              Tutup Kalkulator
+            </Button>
           </Box>
         </DialogContent>
       </Dialog>

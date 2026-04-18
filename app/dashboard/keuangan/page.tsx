@@ -15,6 +15,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
 import Button from '@mui/material/Button';
 import FormHelperText from '@mui/material/FormHelperText';
 import Table from '@mui/material/Table';
@@ -150,12 +151,28 @@ export default function KeuanganPage() {
                     error={!!errors.nominal}
                     helperText={errors.nominal?.message}
                     fullWidth
-                    InputProps={{ startAdornment: <Typography sx={{ mr: 1, color: 'text.secondary' }}>Rp</Typography> }}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Typography sx={{ color: 'text.secondary' }}>Rp</Typography>
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
                   />
                 )} />
 
                 <Controller name="tanggal" control={control} render={({ field }) => (
-                  <TextField {...field} type="date" label="Tanggal" error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth InputLabelProps={{ shrink: true }} />
+                  <TextField
+                    {...field}
+                    type="date"
+                    label="Tanggal"
+                    error={!!errors.tanggal}
+                    helperText={errors.tanggal?.message}
+                    fullWidth
+                    slotProps={{ inputLabel: { shrink: true } }}
+                  />
                 )} />
 
                 <Controller name="keterangan" control={control} render={({ field }) => (

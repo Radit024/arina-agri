@@ -25,7 +25,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 import { farmerProfile } from '@/lib/mockData';
 
@@ -197,21 +197,6 @@ export default function Sidebar() {
             <List sx={{ p: 0.5 }}>
               <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
-                  onClick={() => router.push(pathname + '?settings=true&tab=profil')}
-                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
-                >
-                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>
-                    <MenuBookOutlinedIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="Edit Profile"
-                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
-                  />
-                </ListItemButton>
-              </ListItem>
-
-              <ListItem disablePadding>
-                <ListItemButton
                   onClick={() => router.push(pathname + '?settings=true&tab=general')}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
                 >
@@ -221,6 +206,21 @@ export default function Sidebar() {
                   <ListItemText
                     primary="Pengaturan"
                     slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
+                  />
+                </ListItemButton>
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => router.push('/')}
+                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#fef2f2' } }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#dc2626' }}>
+                    <LogoutOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Log Out"
+                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#dc2626' } } }}
                   />
                 </ListItemButton>
               </ListItem>

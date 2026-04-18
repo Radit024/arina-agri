@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -17,6 +17,10 @@ import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
+import Select, { type SelectChangeEvent } from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import CloseIcon from '@mui/icons-material/Close';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -27,13 +31,15 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { farmerProfile } from '@/lib/mockData';
 
 const SETTINGS_TABS = [
-  { id: 'general', label: 'General', icon: <TuneIcon /> },
   { id: 'profil', label: 'Edit Profil', icon: <PersonOutlineIcon /> },
+  { id: 'general', label: 'General', icon: <TuneIcon /> },
   { id: 'notifikasi', label: 'Notifikasi', icon: <NotificationsNoneIcon /> },
   { id: 'info', label: 'Informasi Sistem', icon: <InfoOutlinedIcon /> },
 ];
 
 const TAB_CONTENT_MIN_HEIGHT = 460;
+type AppearanceMode = 'light' | 'dark' | 'system';
+type LanguageMode = 'id' | 'en';
 
 export default function SettingsModal() {
   const router = useRouter();
@@ -44,6 +50,8 @@ export default function SettingsModal() {
   const initialTab = searchParams.get('tab') || 'general';
   
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>('system');
+  const [languageMode, setLanguageMode] = useState<LanguageMode>('id');
 
   useEffect(() => {
     if (isOpen) {
@@ -56,29 +64,41 @@ export default function SettingsModal() {
     router.push(pathname, { scroll: false });
   };
 
+  const handleAppearanceChange = (_: MouseEvent<HTMLElement>, nextMode: AppearanceMode | null) => {
+    if (nextMode) {
+      setAppearanceMode(nextMode);
+    }
+  };
+
+  const handleLanguageChange = (event: SelectChangeEvent<LanguageMode>) => {
+    setLanguageMode(event.target.value as LanguageMode);
+  };
+
   return (
     <Dialog 
       open={isOpen} 
       onClose={handleClose} 
       maxWidth="md" 
       fullWidth 
-      PaperProps={{
-        sx: { 
-          borderRadius: { xs: 0, md: 4 }, 
-          overflow: 'hidden', 
-          width: '100%',
-          height: { xs: '100%', md: '650px' }, 
-          minHeight: { xs: '100%', md: '650px' }, 
-          maxHeight: { xs: '100%', md: '650px' },
-          m: { xs: 0, md: 2 } 
-        }
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: { xs: 0, md: 4 },
+            overflow: 'hidden',
+            width: '100%',
+            height: { xs: '100%', md: '650px' },
+            minHeight: { xs: '100%', md: '650px' },
+            maxHeight: { xs: '100%', md: '650px' },
+            m: { xs: 0, md: 2 },
+          },
+        },
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100%', flex: 1 }}>
         
         {/* Left Navigation (Inner Sidebar) */}
         <Box sx={{ width: { xs: '100%', md: 240 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2, display: 'flex', flexDirection: 'column' }}>
-           <Typography variant="body2" fontWeight={700} sx={{ px: 2, mb: 2, mt: 1, display: 'block', color: 'text.primary', fontSize: '1rem', fontFamily: 'var(--font-sora)' }}>
+           <Typography variant="body2" sx={{ px: 2, mb: 2, mt: 1, display: 'block', color: 'text.primary', fontSize: '1rem', fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
              Settings
            </Typography>
            
@@ -100,7 +120,7 @@ export default function SettingsModal() {
                    </ListItemIcon>
                    <ListItemText 
                      primary={tab.label} 
-                     slotProps={{ primary: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } }} 
+                     slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } } }} 
                    />
                  </ListItemButton>
                </ListItem>
@@ -124,28 +144,56 @@ export default function SettingsModal() {
              {/* GENERAL SETTINGS */}
              {activeTab === 'general' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>General</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>General</Typography>
                   
                   {/* Simulated MFA / Security Box like reference */}
                   <Box sx={{ mb: 4 }}>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" fontWeight={500}>Appearance</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Appearance</Typography>
+                      <ToggleButtonGroup
+                        value={appearanceMode}
+                        exclusive
+                        onChange={handleAppearanceChange}
+                        size="small"
+                        sx={{
+                          '& .MuiToggleButton-root': {
+                            textTransform: 'none',
+                            px: 1.4,
+                            py: 0.4,
+                            fontSize: '0.75rem',
+                            borderColor: 'divider',
+                            color: 'text.secondary',
+                          },
+                          '& .Mui-selected': {
+                            bgcolor: '#e8f5e9',
+                            color: 'primary.main',
+                            fontWeight: 600,
+                          },
+                        }}
+                      >
+                        <ToggleButton value="light">Light Mode</ToggleButton>
+                        <ToggleButton value="dark">Dark Mode</ToggleButton>
+                        <ToggleButton value="system">System</ToggleButton>
+                      </ToggleButtonGroup>
                     </Box>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" fontWeight={500}>Contrast</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
-                    </Box>
-                    <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" fontWeight={500}>Accent Color</Typography>
-                      <Box className="flex items-center gap-1.5 cursor-pointer">
-                        <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#3b82f6' }} />
-                        <Typography variant="body2" color="#3b82f6" fontWeight={600}>Blue</Typography>
-                      </Box>
-                    </Box>
-                    <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                      <Typography variant="body2" fontWeight={500}>Language</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>Auto-detect</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>Language</Typography>
+                      <Select
+                        size="small"
+                        value={languageMode}
+                        onChange={handleLanguageChange}
+                        sx={{
+                          minWidth: 170,
+                          height: 34,
+                          '& .MuiSelect-select': {
+                            py: 0.6,
+                            fontSize: '0.82rem',
+                          },
+                        }}
+                      >
+                        <MenuItem value="id">Bahasa Indonesia</MenuItem>
+                        <MenuItem value="en">English</MenuItem>
+                      </Select>
                     </Box>
                   </Box>
                 </Box>
@@ -154,9 +202,27 @@ export default function SettingsModal() {
              {/* EDIT PROFIL */}
              {activeTab === 'profil' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT }, display: 'flex', flexDirection: 'column' }}>
-                  <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Edit Profil</Typography>
-                  
-                  <Box className="flex items-center gap-4 mb-6">
+                  <Typography variant="h5" sx={{ mb: 1, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+                    Edit Profil
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                    Perbarui informasi profil Anda agar data akun tetap akurat.
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 2,
+                      mb: 4,
+                      p: 2,
+                      borderRadius: 3,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: '#f8fafc',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                    }}
+                  >
                     <Avatar
                       sx={{
                         width: 80,
@@ -170,28 +236,58 @@ export default function SettingsModal() {
                       {farmerProfile.nama.substring(0, 2).toUpperCase()}
                     </Avatar>
                     <Box>
-                      <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2, color: 'text.primary', borderColor: 'divider' }}>Ganti Foto</Button>
-                      <Typography variant="caption" display="block" color="text.secondary">Format JPG, PNG, atau GIF. Maksimal 2MB.</Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        sx={{ mb: 1, borderRadius: 2, color: 'text.primary', borderColor: 'divider', textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Ganti Foto
+                      </Button>
+                      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                        Format JPG, PNG, atau GIF. Maksimal 2MB.
+                      </Typography>
                     </Box>
                   </Box>
                   
-                  <Grid container spacing={4}>
+                  <Grid container spacing={3}>
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField fullWidth label="Nama Lengkap" defaultValue={farmerProfile.nama} variant="standard" />
+                      <TextField
+                        fullWidth
+                        label="Nama Lengkap"
+                        defaultValue={farmerProfile.nama}
+                        variant="standard"
+                      />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField fullWidth label="Lokasi / Desa" defaultValue={farmerProfile.lokasi} variant="standard" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField fullWidth label="Komoditas Utama" defaultValue={farmerProfile.komoditas} variant="standard" />
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField fullWidth label="Luas Lahan" defaultValue={farmerProfile.luasLahan} variant="standard" />
+                      <TextField
+                        fullWidth
+                        label="Komoditas Utama"
+                        defaultValue={farmerProfile.komoditas}
+                        variant="standard"
+                      />
                     </Grid>
                   </Grid>
                   
-                  <Box sx={{ mt: 'auto', pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button variant="contained" sx={{ px: 4, borderRadius: 6, textTransform: 'none', bgcolor: '#111827', color: 'white' }}>Simpan Perubahan</Button>
+                  <Box
+                    sx={{
+                      mt: 'auto',
+                      pt: 3,
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 1.5,
+                    }}
+                  >
+                    <Button variant="text" sx={{ textTransform: 'none', color: 'text.secondary' }}>
+                      Batal
+                    </Button>
+                    <Button
+                      variant="contained"
+                      sx={{ px: 4, borderRadius: 6, textTransform: 'none', bgcolor: '#111827', color: 'white', fontWeight: 700 }}
+                    >
+                      Simpan Perubahan
+                    </Button>
                   </Box>
                 </Box>
              )}
@@ -199,7 +295,7 @@ export default function SettingsModal() {
              {/* NOTIFIKASI */}
              {activeTab === 'notifikasi' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Notifikasi</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Notifikasi</Typography>
                   
                   {[
                     { label: 'Notifikasi Cuaca Ekstrem', desc: 'Peringatan cuaca bahaya via WhatsApp' },
@@ -209,7 +305,7 @@ export default function SettingsModal() {
                     <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Box className="flex items-start justify-between gap-4">
                         <Box>
-                          <Typography variant="body1" fontWeight={500} sx={{ mb: 0.5 }}>{item.label}</Typography>
+                          <Typography variant="body1" sx={{ mb: 0.5, fontWeight: 500 }}>{item.label}</Typography>
                           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{item.desc}</Typography>
                         </Box>
                         <Switch defaultChecked color="primary" sx={{ mt: -1 }} />
@@ -222,14 +318,14 @@ export default function SettingsModal() {
              {/* INFO APLIKASI */}
              {activeTab === 'info' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Informasi Sistem</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Informasi Sistem</Typography>
                   
                   <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
                      <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                        <InfoOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
                      </Box>
                      <Box>
-                       <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary' }}>Arina Web Platform</Typography>
+                       <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>Arina Web Platform</Typography>
                        <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>Versi 1.0.0 (Beta)</Typography>
                      </Box>
                   </Box>
@@ -240,7 +336,7 @@ export default function SettingsModal() {
                   ].map((item) => (
                     <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
                       <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                      <Typography variant="body2" fontWeight={600}>{item.value}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.value}</Typography>
                     </Box>
                   ))}
                 </Box>

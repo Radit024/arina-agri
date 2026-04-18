@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Animals/Seedling.png" width="100" height="100" alt="Seedling"/>
+  <img src="public/logo arina.svg" width="100" height="100" alt="Seedling"/>
 
   <h1 align="center">Arina Agri</h1>
 
   <p align="center">
     <strong>🌾 Asisten Cerdas Petani & Pelaku Agribisnis UMKM Indonesia 🌾</strong><br>
-    <em>Tingkatkan produktivitas pertanian Anda dengan panduan AI, ramalan cuaca real-time,<br>dan manajamen pencatatan finansial digital premium.</em>
+    <em>Bantu aktivitas tani harian jadi lebih rapi lewat panduan AI, info cuaca real-time,<br>dan pencatatan keuangan yang praktis.</em>
   </p>
 
   <p align="center">
@@ -27,68 +27,69 @@
 
 ## ✨ Sekilas Tentang Arina Agri
 
-**Arina Agri** adalah platform digital kolaboratif yang dirancang khusus untuk memodernisasi kehidupan petani desa dan para pelaku Usaha Mikro, Kecil, dan Menengah (UMKM) bidang Agribisnis. 
-Kami mengkombinasikan intuisi tradisional dengan kekuatan **A.I. (Artificial Intelligence)** untuk menyuguhkan sebuah Dashboard *one-stop-solution* dengan alur navigasi yang halus dan sangat ramah pengguna.
+**Arina Agri** adalah aplikasi dashboard buat petani dan pelaku agribisnis UMKM.
+Tujuannya simpel: bantu ngatur aktivitas tani harian biar lebih terarah, dari catatan keuangan sampai pengingat cuaca dan jadwal.
+
+Di sini, pengalaman bertani di lapangan dipadukan sama bantuan AI supaya pengambilan keputusan jadi lebih cepat dan nggak ribet.
 
 ## 🚀 Fitur Unggulan
 
 - **📈 Pencatatan Keuangan Digital**  
-  Pantau *cash flow* harian secara detail (mulai dari beli pupuk/bibit, upah alat berat, hingga omzet panen mingguan). Dilengkapi dengan **Grafik Lingkar (*Pie Chart*) interaktif** dan dukungan Export Laporan berbentuk `.CSV`.
+  Catat pemasukan dan pengeluaran harian tanpa drama. Bisa lihat ringkasan lewat **pie chart** dan ekspor laporan ke file `.csv`.
 
 - **🤖 Ensiklopedia Edukasi AI**  
-  Lupakan kebingungan masalah hama atau cuaca ekstrim! Tanyakan apa saja yang membebani proses bertani, dan AI siap memberikan *insight* spesifik sesuai komoditas (misal: solusi kuning daun cabai).
+  Lagi bingung soal hama, penyakit tanaman, atau strategi budidaya? Tinggal tanya, AI bantu kasih arahan awal yang relevan.
 
 - **🌤️ Cuaca & Smart Kalender**  
-  Dapatkan notifikasi intensitas hujan yang presisi setiap harinya, dan atur agenda panen atau pemupukan menggunakan Smart Kalender.
+  Cek prakiraan cuaca dan atur agenda tani (panen, pemupukan, dll.) dalam satu tempat.
 
 - **🌐 Bebas Hambatan Bahasa**  
-  Mendukung **Bilingual i18n (Indonesia / English)**. Cukup ubah di pengaturan, seluruh tulisan antarmuka akan berganti dengan mulus!
+  Mendukung **Bahasa Indonesia dan English**. Tinggal ganti di pengaturan, tampilan aplikasi ikut berubah.
 
 - **🌓 Tampilan Responsif + Mode Malam**  
-  Pilihan antarmuka terang, gelap (*Dark Mode*), atau ikuti setelan bawaan HP agar tak menyilaukan saat dibaca di ladang siang bolong.
+  Tetap nyaman dipakai di HP maupun desktop, termasuk opsi tampilan terang dan gelap.
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" />
 
 ## 🛠️ Teknologi Yang Digunakan
 
-Arina Agri menggunakan tumpukan (*stack*) arsitektur peranti lunak performa tinggi:
+Project ini dibangun dengan stack modern yang fokus ke performa dan kemudahan pengembangan:
 
 | Bagian | *Technologies* | Deskripsi Singkat |
 | :--- | :--- | :--- |
-| **Kerangka Inti** | ![Next.js](https://img.shields.io/badge/Next.js-white?logo=next.js&logoColor=black&style=flat-square) ![React](https://img.shields.io/badge/React-%2320232a.svg?logo=react&logoColor=%2361DAFB&style=flat-square) | Berjalan menggunakan fondasi Next.js (App Router). |
-| **Logika UI** | ![MUI](https://img.shields.io/badge/MUI-%230081CB.svg?logo=mui&logoColor=white&style=flat-square) ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?logo=tailwind-css&logoColor=white&style=flat-square) | Desain super halus bertema "Nature Green", elegan layaknya aplikasi level Enterprise. |
-| **Pengaman Data** | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white&style=flat-square) `Zod`  `RHF` | Data validasi (*Data Types & Form Schemas*) menggunakan standar TS Strict Mode. |
-| **Peralatan Lebar** | `next-intl` `@mui/x-charts` | Dukungan multibahasa, Grafik, Ikon animasi bawaan MUI, dsb. |
+| **Kerangka Inti** | ![Next.js](https://img.shields.io/badge/Next.js-white?logo=next.js&logoColor=black&style=flat-square) ![React](https://img.shields.io/badge/React-%2320232a.svg?logo=react&logoColor=%2361DAFB&style=flat-square) | Fondasi utama aplikasi berbasis App Router. |
+| **UI & Komponen** | ![MUI](https://img.shields.io/badge/MUI-%230081CB.svg?logo=mui&logoColor=white&style=flat-square) ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-%2338B2AC.svg?logo=tailwind-css&logoColor=white&style=flat-square) | Untuk tampilan antarmuka yang konsisten dan responsif. |
+| **Validasi Data** | ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white&style=flat-square) `Zod` `React Hook Form` | Menjaga input dan tipe data tetap aman. |
+| **Pendukung** | `next-intl` `@mui/x-charts` | Multibahasa dan visualisasi data. |
 
 <br>
 
 ## 💻 Panduan Instalasi
 
-Apakah Anda tertarik mencoba dan berkontribusi terhadap platform kebanggaan petani kita ini? Ikuti instruksi mudah ini:
+Kalau mau coba jalanin project ini secara lokal, ikuti langkah berikut:
 
-1. **Jemput Repositori Ajaib:**
+1. **Clone repo-nya dulu:**
    ```bash
    git clone https://github.com/nama-akun-anda/arina-agri.git
    cd arina-agri
    ```
 
-2. **Muat Seluruh Peralatan Tani (*Install Dependencies*):**
+2. **Install dependencies:**
    ```bash
    npm install
-   # Jika Anda fans Yarn/Pnpm: yarn install / pnpm install
+  # Kalau pakai Yarn/Pnpm, silakan sesuaikan
    ```
 
-3. **Hidupkan Traktor (*Jalankan Development Server*):**
+3. **Jalankan development server:**
    ```bash
    npm run dev
    ```
 
-4. **Nikmati Ladang Digital Anda:**  
-   Buka portal <kbd>http://localhost:3000</kbd> di browser modern Anda sekalian! Jangan lupa seduh kopi. ☕
+4. **Buka aplikasinya di browser:**  
+  Akses <kbd>http://localhost:3000</kbd>.
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/grass.png" width="100%" />
 
-<p align="center">🌱 <strong>Dibangun Dengan Gotong-Royong untuk Kemajuan Pertanian Nasional</strong> 🌱</p>
 <p align="center"><em>Hak Cipta © 2026 Arina Agri</em></p>

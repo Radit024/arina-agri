@@ -15,7 +15,7 @@ const LineChart = dynamic(() => import('@mui/x-charts').then((m) => ({ default: 
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
 });
 
-const BarChart = dynamic(() => import('@mui/x-charts').then((m) => ({ default: m.BarChart })), {
+const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
 });
@@ -75,6 +75,15 @@ export function TrendChart() {
 }
 
 export function KategoriChart() {
+  const totalPengeluaran = pieDataTotal(kategoriChartData);
+  const pieData = kategoriChartData.map((item, index) => ({
+    id: index,
+    value: item.jumlah,
+    label: item.kategori,
+  }));
+
+  const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
+
   return (
     <Card>
       <CardHeader
@@ -86,22 +95,51 @@ export function KategoriChart() {
         subheader="Bulan April 2026"
       />
       <CardContent sx={{ pt: 0 }}>
-        <BarChart
-          xAxis={[{ data: kategoriChartData.map((d) => d.kategori), scaleType: 'band' }]}
+        <PieChart
           series={[
             {
-              data: kategoriChartData.map((d) => d.jumlah),
-              label: 'Pengeluaran',
-              color: '#16a34a',
-              valueFormatter: (v) => formatRupiah(v ?? 0),
+              data: pieData,
+              arcLabel: (item) => `${Math.round((item.value / totalPengeluaran) * 100)}%`,
+              arcLabelMinAngle: 14,
+              innerRadius: 46,
+              outerRadius: 100,
+              paddingAngle: 2,
+              cornerRadius: 4,
             },
           ]}
+          colors={pieColors}
           height={260}
-          margin={{ left: 60, right: 16, top: 8, bottom: 40 }}
-          hideLegend
-          yAxis={[{ valueFormatter: (v) => `${(v / 1000).toFixed(0)}rb` }]}
+          margin={{ left: 16, right: 16, top: 8, bottom: 8 }}
+          sx={{
+            '& .MuiPieArcLabel-root': {
+              fill: '#0f172a',
+              fontSize: 11,
+              fontWeight: 600,
+            },
+          }}
         />
+
+        <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
+          {kategoriChartData.map((item, index) => (
+            <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length] }} />
+                <Typography variant="caption" color="text.secondary">
+                  {item.kategori}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                {formatRupiah(item.jumlah)}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       </CardContent>
     </Card>
   );
+}
+
+function pieDataTotal(data: typeof kategoriChartData) {
+  const total = data.reduce((sum, item) => sum + item.jumlah, 0);
+  return total > 0 ? total : 1;
 }

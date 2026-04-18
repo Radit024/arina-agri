@@ -171,7 +171,7 @@ export default function PengaturanPage() {
                   { label: 'Notifikasi Cuaca Ekstrem', desc: 'Terima peringatan cuaca via WhatsApp jika ada mendung lebat / badai.' },
                   { label: 'Pengingat Jadwal Kegiatan', desc: 'Notifikasi H-1 sebelum jadwal pertanian (pemupukan, panen, dsb).' },
                   { label: 'Laporan Keuangan Mingguan', desc: 'Ringkasan otomatis laba rugi mingguan setiap hari Senin.' },
-                  { label: 'Tips Budidaya dari Arina AI', desc: 'Saran mingguan berdasarkan kondisi lahan dan fase tanaman Anda.' },
+                  { label: 'Tips Budidaya dari AI Arina', desc: 'Saran mingguan berdasarkan kondisi lahan dan fase tanaman Anda.' },
                 ].map((item) => (
                   <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box className="flex items-start justify-between gap-4">

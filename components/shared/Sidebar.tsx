@@ -100,24 +100,18 @@ export default function Sidebar() {
           }}
         >
           <Box
+            component="img"
+            src="/logo%20arina.svg"
+            alt="Logo Arina Agri"
             sx={{
               width: 36,
               height: 36,
-              borderRadius: '50%',
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              objectFit: 'contain',
+              display: 'block',
             }}
-          >
-            {/* Custom SVG logo based on reference */}
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 22h20L12 2zm0 3.83L18.17 20H5.83L12 5.83z" fill="white" />
-              <circle cx="12" cy="15" r="3" fill="white" />
-            </svg>
-          </Box>
+          />
           <Typography variant="h6" sx={{ color: '#064e3b', letterSpacing: '-0.5px', fontWeight: 800 }}>
-            Arina
+            Arina Agri
           </Typography>
         </Box>
         <IconButton size="small" onClick={handleToggleSidebar} sx={{ color: '#064e3b' }}>
@@ -272,7 +266,7 @@ export default function Sidebar() {
           </Box>
           {isOpen && (
             <Box sx={{ color: '#64748b', display: 'flex', alignItems: 'center' }}>
-              {isProfileDropdownOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+              {isProfileDropdownOpen ? <ExpandMoreIcon fontSize="small" /> : <ExpandLessIcon fontSize="small" />}
             </Box>
           )}
         </ListItemButton>

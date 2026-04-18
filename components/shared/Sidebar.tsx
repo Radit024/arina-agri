@@ -35,55 +35,23 @@ import { farmerProfile } from '@/lib/mockData';
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
 
-const navGroups = [
-  {
-    type: 'item',
-    label: 'Overview',
-    icon: <DashboardOutlinedIcon />,
-    path: '/dashboard',
-  },
-  {
-    type: 'group',
-    label: 'Information Hub',
-    icon: <MenuBookOutlinedIcon />,
-    children: [
-      { label: 'Notifikasi Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
-      { label: 'Ensiklopedia AI', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
-      { label: 'Smart Kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
-    ],
-  },
-  {
-    type: 'group',
-    label: 'Alat Analisis',
-    icon: <AnalyticsOutlinedIcon />,
-    children: [
-      { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
-    ],
-  },
+const navItems = [
+  { label: 'Dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
+  { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
+  { label: 'Notifikasi Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
+  { label: 'Ensiklopedia AI', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
+  { label: 'Smart Kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
 ];
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'Information Hub': true,
-    'Alat Analisis': true,
-  });
 
   const pathname = usePathname();
   const router = useRouter();
 
-  const handleToggleGroup = (label: string) => {
-    if (!isOpen) setIsOpen(true);
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
-
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(path);
-  };
-
-  const isGroupActive = (children: { path: string }[]) => {
-    return children.some((child) => isActive(child.path));
   };
 
   return (
@@ -138,155 +106,68 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <Box sx={{ flex: 1, overflowY: 'auto', px: 2, mt: 1 }}>
         <List sx={{ pt: 0 }}>
-          {navGroups.map((group, index) => {
-            if (group.type === 'item') {
-              const active = isActive(group.path as string);
-              return (
-                <Tooltip key={group.label} title={!isOpen ? group.label : ''} placement="right" arrow>
-                  <ListItem disablePadding sx={{ mb: 1 }}>
-                    <ListItemButton
-                      onClick={() => router.push(group.path as string)}
-                      sx={{
-                        borderRadius: 3,
-                        py: 1.2,
-                        minHeight: 48,
-                        justifyContent: isOpen ? 'initial' : 'center',
-                        bgcolor: active ? '#f0fdf4' : 'transparent',
-                        '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
-                      }}
-                    >
-                      <ListItemIcon
-                        sx={{
-                          minWidth: 0,
-                          mr: isOpen ? 2 : 'auto',
-                          justifyContent: 'center',
-                          color: active ? 'primary.dark' : '#475569',
-                        }}
-                      >
-                        {group.icon}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={group.label}
-                        sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
-                        slotProps={{
-                          primary: {
-                            fontSize: '0.875rem',
-                            fontWeight: active ? 600 : 500,
-                            color: active ? '#16a34a' : '#475569',
-                          },
-                        }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                </Tooltip>
-              );
-            }
-
-            if (group.type === 'group' && group.children) {
-              const groupActive = isGroupActive(group.children);
-              const open = openGroups[group.label] && isOpen;
-
-              return (
-                <Box
-                  key={group.label}
+          {!isOpen && (
+            <Tooltip title="Buka Sidebar" placement="right" arrow>
+              <ListItem disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  onClick={() => setIsOpen(true)}
                   sx={{
-                    bgcolor: groupActive && isOpen ? '#f4fbf4' : 'transparent',
-                    borderRadius: 4,
-                    mb: 1,
-                    py: groupActive && isOpen ? 0.5 : 0,
-                    transition: 'all 0.2s',
+                    borderRadius: 3,
+                    py: 1.2,
+                    minHeight: 48,
+                    justifyContent: 'center',
+                    '&:hover': { bgcolor: '#f8fafc' },
                   }}
                 >
-                  <Tooltip title={!isOpen ? group.label : ''} placement="right" arrow>
-                    <ListItemButton
-                      onClick={() => handleToggleGroup(group.label)}
+                  <ListItemIcon sx={{ minWidth: 0, color: '#064e3b', justifyContent: 'center' }}>
+                    <ViewSidebarIcon />
+                  </ListItemIcon>
+                </ListItemButton>
+              </ListItem>
+            </Tooltip>
+          )}
+
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            return (
+              <Tooltip key={item.path} title={!isOpen ? item.label : ''} placement="right" arrow>
+                <ListItem disablePadding sx={{ mb: 1 }}>
+                  <ListItemButton
+                    onClick={() => router.push(item.path)}
+                    sx={{
+                      borderRadius: 3,
+                      py: 1.2,
+                      minHeight: 48,
+                      justifyContent: isOpen ? 'initial' : 'center',
+                      bgcolor: active ? '#f0fdf4' : 'transparent',
+                      '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
+                    }}
+                  >
+                    <ListItemIcon
                       sx={{
-                        borderRadius: 3,
-                        py: 1.2,
-                        minHeight: 48,
-                        justifyContent: isOpen ? 'initial' : 'center',
-                        '&:hover': { bgcolor: groupActive && isOpen ? 'transparent' : '#f8fafc' },
+                        minWidth: 0,
+                        mr: isOpen ? 2 : 'auto',
+                        justifyContent: 'center',
+                        color: active ? 'primary.dark' : '#475569',
                       }}
                     >
-                      <ListItemIcon
-                        sx={{
-                          minWidth: 0,
-                          mr: isOpen ? 2 : 'auto',
-                          justifyContent: 'center',
-                          color: groupActive ? 'primary.dark' : '#475569',
-                        }}
-                      >
-                        {group.icon}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={group.label}
-                        sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
-                        slotProps={{
-                          primary: {
-                            fontSize: '0.875rem',
-                            fontWeight: 500,
-                            color: groupActive ? 'primary.dark' : '#475569',
-                          },
-                        }}
-                      />
-                      {isOpen && (
-                        <Box sx={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-                          {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-                        </Box>
-                      )}
-                    </ListItemButton>
-                  </Tooltip>
-                  <Collapse in={open} timeout="auto" unmountOnExit>
-                    <List component="div" disablePadding>
-                      {group.children.map((child) => {
-                        const childActive = isActive(child.path);
-                        return (
-                          <ListItemButton
-                            key={child.path}
-                            onClick={() => router.push(child.path)}
-                            sx={{
-                              borderRadius: 3,
-                              py: 1,
-                              pl: isOpen ? 5.5 : 2,
-                              pr: 2,
-                              mx: isOpen ? 1 : 0,
-                              mb: 0.5,
-                              justifyContent: isOpen ? 'initial' : 'center',
-                              bgcolor: childActive ? '#e6f3eb' : 'transparent',
-                              '&:hover': { bgcolor: childActive ? '#e6f3eb' : 'rgba(0,0,0,0.02)' },
-                              display: isOpen ? 'flex' : 'none',
-                            }}
-                          >
-                            <ListItemIcon
-                              sx={{
-                                minWidth: 0,
-                                mr: 1.5,
-                                justifyContent: 'center',
-                                color: childActive ? 'primary.dark' : '#64748b',
-                              }}
-                            >
-                              {child.icon}
-                            </ListItemIcon>
-                            <ListItemText
-                              primary={child.label}
-                              sx={{ m: 0 }}
-                              slotProps={{
-                                primary: {
-                                  fontSize: '0.8125rem',
-                                  fontWeight: childActive ? 600 : 500,
-                                  color: childActive ? '#15803d' : '#64748b',
-                                },
-                              }}
-                            />
-                          </ListItemButton>
-                        );
-                      })}
-                    </List>
-                  </Collapse>
-                </Box>
-              );
-            }
-            return null;
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={item.label}
+                      sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
+                      slotProps={{
+                        primary: {
+                          fontSize: '0.875rem',
+                          fontWeight: active ? 600 : 500,
+                          color: active ? '#16a34a' : '#475569',
+                        },
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </Tooltip>
+            );
           })}
         </List>
       </Box>

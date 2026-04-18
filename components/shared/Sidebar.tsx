@@ -195,7 +195,7 @@ export default function Sidebar() {
             <List sx={{ p: 0.5 }}>
               <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
-                  onClick={() => router.push('/dashboard/pengaturan?tab=profil')}
+                  onClick={() => router.push(pathname + '?settings=true&tab=profil')}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>
@@ -210,7 +210,7 @@ export default function Sidebar() {
 
               <ListItem disablePadding>
                 <ListItemButton
-                  onClick={() => router.push('/dashboard/pengaturan')}
+                  onClick={() => router.push(pathname + '?settings=true&tab=general')}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>

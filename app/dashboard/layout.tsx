@@ -3,6 +3,8 @@
 import Box from '@mui/material/Box';
 import Sidebar from '@/components/shared/Sidebar';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
+import SettingsModal from '@/components/shared/SettingsModal';
+import { Suspense } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,6 +22,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </Box>
       <MobileBottomNav />
+      {/* Suspense boundary is needed for useSearchParams in SettingsModal */}
+      <Suspense fallback={null}>
+        <SettingsModal />
+      </Suspense>
     </Box>
   );
 }

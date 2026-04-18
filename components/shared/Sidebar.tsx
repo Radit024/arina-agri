@@ -38,13 +38,14 @@ const DRAWER_WIDTH_CLOSED = 88;
 const navItems = [
   { label: 'Dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
   { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
-  { label: 'Notifikasi Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
+  { label: 'Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
   { label: 'Ensiklopedia AI', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
   { label: 'Smart Kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
 ];
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -76,7 +77,18 @@ export default function Sidebar() {
     >
       {/* Header */}
       <Box sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            opacity: isOpen ? 1 : 0,
+            width: isOpen ? 'auto' : 0,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            transition: 'opacity 0.2s, width 0.2s',
+          }}
+        >
           <Box
             sx={{
               width: 36,
@@ -94,7 +106,7 @@ export default function Sidebar() {
               <circle cx="12" cy="15" r="3" fill="white"/>
             </svg>
           </Box>
-          <Typography variant="h6" fontWeight={800} sx={{ color: '#064e3b', letterSpacing: '-0.5px' }}>
+          <Typography variant="h6" sx={{ color: '#064e3b', letterSpacing: '-0.5px', fontWeight: 800 }}>
             Arina
           </Typography>
         </Box>
@@ -104,7 +116,7 @@ export default function Sidebar() {
       </Box>
 
       {/* Main Navigation */}
-      <Box sx={{ flex: 1, overflowY: 'auto', px: 2, mt: 1 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 2, mt: 1 }}>
         <List sx={{ pt: 0 }}>
           {!isOpen && (
             <Tooltip title="Buka Sidebar" placement="right" arrow>
@@ -158,9 +170,11 @@ export default function Sidebar() {
                       sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
                       slotProps={{
                         primary: {
-                          fontSize: '0.875rem',
-                          fontWeight: active ? 600 : 500,
-                          color: active ? '#16a34a' : '#475569',
+                          sx: {
+                            fontSize: '0.875rem',
+                            fontWeight: active ? 600 : 500,
+                            color: active ? '#16a34a' : '#475569',
+                          },
                         },
                       }}
                     />
@@ -174,33 +188,51 @@ export default function Sidebar() {
 
       {/* Bottom Area */}
       <Box sx={{ p: 2 }}>
-        {/* Subscription / Pengaturan */}
-        <Tooltip title={!isOpen ? "Pengaturan" : ''} placement="right" arrow>
-          <ListItemButton
-            onClick={() => router.push('/dashboard/pengaturan')}
-            sx={{
-              borderRadius: 3,
-              mb: 2,
-              py: 1.2,
-              justifyContent: isOpen ? 'initial' : 'center',
-              '&:hover': { bgcolor: '#f8fafc' },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 0, mr: isOpen ? 2 : 'auto', color: '#475569' }}>
-              <SettingsOutlinedIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Pengaturan"
-              sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
-              slotProps={{ primary: { fontSize: '0.875rem', fontWeight: 600, color: '#475569' } }}
-            />
-          </ListItemButton>
-        </Tooltip>
-
         {isOpen && <Divider sx={{ mb: 2, mx: 1 }} />}
 
+        {isOpen && (
+          <Collapse in={isProfileDropdownOpen} timeout="auto" unmountOnExit>
+            <List sx={{ p: 0.5 }}>
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => router.push('/dashboard/pengaturan?tab=profil')}
+                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>
+                    <MenuBookOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Edit Profile"
+                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
+                  />
+                </ListItemButton>
+              </ListItem>
+
+              <ListItem disablePadding>
+                <ListItemButton
+                  onClick={() => router.push('/dashboard/pengaturan')}
+                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
+                >
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>
+                    <SettingsOutlinedIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Pengaturan"
+                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            </List>
+          </Collapse>
+        )}
+
         {/* User Profile */}
-        <Box
+        <ListItemButton
+          onClick={() => {
+            if (isOpen) {
+              setIsProfileDropdownOpen((prev) => !prev);
+            }
+          }}
           sx={{
             display: 'flex',
             alignItems: 'center',
@@ -209,7 +241,8 @@ export default function Sidebar() {
             borderRadius: 4,
             bgcolor: '#f4fbf4', // Light green bg for profile like reference
             justifyContent: isOpen ? 'space-between' : 'center',
-            transition: 'all 0.2s'
+            transition: 'all 0.2s',
+            '&:hover': { bgcolor: '#ecf5ee' },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -226,7 +259,7 @@ export default function Sidebar() {
             </Avatar>
             {isOpen && (
               <Box>
-                <Typography variant="body2" fontWeight={700} sx={{ color: '#064e3b', lineHeight: 1.2 }}>
+                <Typography variant="body2" sx={{ color: '#064e3b', lineHeight: 1.2, fontWeight: 700 }}>
                   {farmerProfile.nama}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
@@ -236,11 +269,11 @@ export default function Sidebar() {
             )}
           </Box>
           {isOpen && (
-            <IconButton size="small" sx={{ color: '#64748b' }}>
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
+            <Box sx={{ color: '#64748b', display: 'flex', alignItems: 'center' }}>
+              {isProfileDropdownOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+            </Box>
           )}
-        </Box>
+        </ListItemButton>
       </Box>
     </Drawer>
   );

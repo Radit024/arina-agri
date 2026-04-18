@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -12,213 +13,354 @@ import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import CloudIcon from '@mui/icons-material/Cloud';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import SettingsIcon from '@mui/icons-material/Settings';
-import GrassIcon from '@mui/icons-material/Grass';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
+
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
+import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SubscriptionsOutlinedIcon from '@mui/icons-material/SubscriptionsOutlined';
+
 import { farmerProfile } from '@/lib/mockData';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH_OPEN = 280;
+const DRAWER_WIDTH_CLOSED = 88;
 
-const navItems = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletIcon />, path: '/dashboard/keuangan' },
-  { label: 'Notifikasi Cuaca', icon: <CloudIcon />, path: '/dashboard/cuaca' },
-  { label: 'Ensiklopedia AI', icon: <AutoStoriesIcon />, path: '/dashboard/ensiklopedia' },
-  { label: 'Smart Kalender', icon: <CalendarMonthIcon />, path: '/dashboard/kalender' },
-  { label: 'Pengaturan', icon: <SettingsIcon />, path: '/dashboard/pengaturan' },
+const navGroups = [
+  {
+    type: 'item',
+    label: 'Overview',
+    icon: <DashboardOutlinedIcon />,
+    path: '/dashboard',
+  },
+  {
+    type: 'group',
+    label: 'Information Hub',
+    icon: <MenuBookOutlinedIcon />,
+    children: [
+      { label: 'Notifikasi Cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
+      { label: 'Ensiklopedia AI', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
+      { label: 'Smart Kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Alat Analisis',
+    icon: <AnalyticsOutlinedIcon />,
+    children: [
+      { label: 'Pencatatan Keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
+    ],
+  },
 ];
 
 export default function Sidebar() {
+  const [isOpen, setIsOpen] = useState(true);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    'Information Hub': true,
+    'Alat Analisis': true,
+  });
+
   const pathname = usePathname();
   const router = useRouter();
+
+  const handleToggleGroup = (label: string) => {
+    if (!isOpen) setIsOpen(true);
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(path);
   };
 
+  const isGroupActive = (children: { path: string }[]) => {
+    return children.some((child) => isActive(child.path));
+  };
+
   return (
     <Drawer
       variant="permanent"
       sx={{
-        width: DRAWER_WIDTH,
+        width: isOpen ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED,
         flexShrink: 0,
         display: { xs: 'none', md: 'block' },
+        transition: 'width 0.25s ease-in-out',
         '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
+          width: isOpen ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED,
+          transition: 'width 0.25s ease-in-out',
           boxSizing: 'border-box',
-          border: 'none',
-          boxShadow: '1px 0 20px 0 rgb(0 0 0 / 0.06)',
+          borderRight: '1px solid #f1f5f9',
           backgroundColor: '#ffffff',
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
-      {/* Logo Header */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #16a34a 0%, #15803d 60%, #166534 100%)',
-          px: 3,
-          py: 2.5,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Decorative leaf circles */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -20,
-            right: -20,
-            width: 100,
-            height: 100,
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.08)',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            bottom: -30,
-            right: 20,
-            width: 70,
-            height: 70,
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255,255,255,0.05)',
-          }}
-        />
-
-        {/* Logo */}
-        <Box className="flex items-center gap-2.5" sx={{ position: 'relative', zIndex: 1 }}>
+      {/* Header */}
+      <Box sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s' }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              bgcolor: 'primary.main',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <GrassIcon sx={{ color: '#ffffff', fontSize: 24 }} />
+            {/* Custom SVG logo based on reference */}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 22h20L12 2zm0 3.83L18.17 20H5.83L12 5.83z" fill="white"/>
+              <circle cx="12" cy="15" r="3" fill="white"/>
+            </svg>
           </Box>
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                color: '#ffffff',
-                fontFamily: 'var(--font-sora)',
-                fontWeight: 700,
-                lineHeight: 1.1,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              ARINA
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500, letterSpacing: '0.05em' }}
-            >
-              Agri Platform
-            </Typography>
-          </Box>
+          <Typography variant="h6" fontWeight={800} sx={{ color: '#064e3b', letterSpacing: '-0.5px' }}>
+            Arina
+          </Typography>
         </Box>
+        <IconButton size="small" onClick={() => setIsOpen(!isOpen)} sx={{ color: '#064e3b' }}>
+          <ViewSidebarIcon />
+        </IconButton>
       </Box>
 
-      {/* Navigation */}
-      <Box sx={{ flex: 1, py: 2, overflow: 'auto' }}>
-        <List dense>
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <ListItem key={item.path} disablePadding sx={{ px: 1.5, mb: 0.5 }}>
-                <Tooltip title={item.label} placement="right" arrow disableHoverListener>
-                  <ListItemButton
-                    onClick={() => router.push(item.path)}
-                    sx={{
-                      borderRadius: 2,
-                      py: 1.2,
-                      backgroundColor: active ? 'primary.light' : 'transparent',
-                      '&:hover': {
-                        backgroundColor: active ? 'primary.light' : '#f8fafc',
-                      },
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <ListItemIcon
+      {/* Main Navigation */}
+      <Box sx={{ flex: 1, overflowY: 'auto', px: 2, mt: 1 }}>
+        <List sx={{ pt: 0 }}>
+          {navGroups.map((group, index) => {
+            if (group.type === 'item') {
+              const active = isActive(group.path as string);
+              return (
+                <Tooltip key={group.label} title={!isOpen ? group.label : ''} placement="right" arrow>
+                  <ListItem disablePadding sx={{ mb: 1 }}>
+                    <ListItemButton
+                      onClick={() => router.push(group.path as string)}
                       sx={{
-                        minWidth: 36,
-                        color: active ? 'primary.main' : 'text.secondary',
+                        borderRadius: 3,
+                        py: 1.2,
+                        minHeight: 48,
+                        justifyContent: isOpen ? 'initial' : 'center',
+                        bgcolor: active ? '#f0fdf4' : 'transparent',
+                        '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
                       }}
                     >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      slotProps={{
-                        primary: {
-                          style: {
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: isOpen ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: active ? 'primary.dark' : '#475569',
+                        }}
+                      >
+                        {group.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={group.label}
+                        sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
+                        slotProps={{
+                          primary: {
                             fontSize: '0.875rem',
                             fontWeight: active ? 600 : 500,
-                            color: active ? 'inherit' : undefined,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
+                            color: active ? '#16a34a' : '#475569',
                           },
-                        },
-                      }}
-                      sx={{ color: active ? 'primary.main' : 'text.primary' }}
-                    />
-                    {active && (
-                      <Box
-                        sx={{
-                          width: 4,
-                          height: 20,
-                          borderRadius: 2,
-                          backgroundColor: 'primary.main',
-                          ml: 1,
                         }}
                       />
-                    )}
-                  </ListItemButton>
+                    </ListItemButton>
+                  </ListItem>
                 </Tooltip>
-              </ListItem>
-            );
+              );
+            }
+
+            if (group.type === 'group' && group.children) {
+              const groupActive = isGroupActive(group.children);
+              const open = openGroups[group.label] && isOpen;
+
+              return (
+                <Box
+                  key={group.label}
+                  sx={{
+                    bgcolor: groupActive && isOpen ? '#f4fbf4' : 'transparent',
+                    borderRadius: 4,
+                    mb: 1,
+                    py: groupActive && isOpen ? 0.5 : 0,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <Tooltip title={!isOpen ? group.label : ''} placement="right" arrow>
+                    <ListItemButton
+                      onClick={() => handleToggleGroup(group.label)}
+                      sx={{
+                        borderRadius: 3,
+                        py: 1.2,
+                        minHeight: 48,
+                        justifyContent: isOpen ? 'initial' : 'center',
+                        '&:hover': { bgcolor: groupActive && isOpen ? 'transparent' : '#f8fafc' },
+                      }}
+                    >
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 0,
+                          mr: isOpen ? 2 : 'auto',
+                          justifyContent: 'center',
+                          color: groupActive ? 'primary.dark' : '#475569',
+                        }}
+                      >
+                        {group.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={group.label}
+                        sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
+                        slotProps={{
+                          primary: {
+                            fontSize: '0.875rem',
+                            fontWeight: 500,
+                            color: groupActive ? 'primary.dark' : '#475569',
+                          },
+                        }}
+                      />
+                      {isOpen && (
+                        <Box sx={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                          {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                        </Box>
+                      )}
+                    </ListItemButton>
+                  </Tooltip>
+                  <Collapse in={open} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {group.children.map((child) => {
+                        const childActive = isActive(child.path);
+                        return (
+                          <ListItemButton
+                            key={child.path}
+                            onClick={() => router.push(child.path)}
+                            sx={{
+                              borderRadius: 3,
+                              py: 1,
+                              pl: isOpen ? 5.5 : 2,
+                              pr: 2,
+                              mx: isOpen ? 1 : 0,
+                              mb: 0.5,
+                              justifyContent: isOpen ? 'initial' : 'center',
+                              bgcolor: childActive ? '#e6f3eb' : 'transparent',
+                              '&:hover': { bgcolor: childActive ? '#e6f3eb' : 'rgba(0,0,0,0.02)' },
+                              display: isOpen ? 'flex' : 'none',
+                            }}
+                          >
+                            <ListItemIcon
+                              sx={{
+                                minWidth: 0,
+                                mr: 1.5,
+                                justifyContent: 'center',
+                                color: childActive ? 'primary.dark' : '#64748b',
+                              }}
+                            >
+                              {child.icon}
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={child.label}
+                              sx={{ m: 0 }}
+                              slotProps={{
+                                primary: {
+                                  fontSize: '0.8125rem',
+                                  fontWeight: childActive ? 600 : 500,
+                                  color: childActive ? '#15803d' : '#64748b',
+                                },
+                              }}
+                            />
+                          </ListItemButton>
+                        );
+                      })}
+                    </List>
+                  </Collapse>
+                </Box>
+              );
+            }
+            return null;
           })}
         </List>
       </Box>
 
-      <Divider />
+      {/* Bottom Area */}
+      <Box sx={{ p: 2 }}>
+        {/* Subscription / Pengaturan */}
+        <Tooltip title={!isOpen ? "Pengaturan" : ''} placement="right" arrow>
+          <ListItemButton
+            onClick={() => router.push('/dashboard/pengaturan')}
+            sx={{
+              borderRadius: 3,
+              mb: 2,
+              py: 1.2,
+              justifyContent: isOpen ? 'initial' : 'center',
+              '&:hover': { bgcolor: '#f8fafc' },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 0, mr: isOpen ? 2 : 'auto', color: '#475569' }}>
+              <SettingsOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Pengaturan"
+              sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
+              slotProps={{ primary: { fontSize: '0.875rem', fontWeight: 600, color: '#475569' } }}
+            />
+          </ListItemButton>
+        </Tooltip>
 
-      {/* User Profile */}
-      <Box className="flex items-center gap-3 px-4 py-3">
-        <Avatar
+        {isOpen && <Divider sx={{ mb: 2, mx: 1 }} />}
+
+        {/* User Profile */}
+        <Box
           sx={{
-            width: 38,
-            height: 38,
-            backgroundColor: 'primary.light',
-            color: 'primary.main',
-            fontSize: '0.875rem',
-            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            p: isOpen ? 1.5 : 1,
+            mb: 1,
+            borderRadius: 4,
+            bgcolor: '#f4fbf4', // Light green bg for profile like reference
+            justifyContent: isOpen ? 'space-between' : 'center',
+            transition: 'all 0.2s'
           }}
         >
-          BS
-        </Avatar>
-        <Box flex={1} minWidth={0}>
-          <Typography variant="body2" fontWeight={600} noWrap>
-            {farmerProfile.nama}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {farmerProfile.komoditas} · {farmerProfile.luasLahan}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Avatar
+              sx={{
+                width: 36,
+                height: 36,
+                bgcolor: '#9ca3af', // Grayish avatar like the image
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              }}
+            >
+              {farmerProfile.nama.substring(0, 2).toUpperCase()}
+            </Avatar>
+            {isOpen && (
+              <Box>
+                <Typography variant="body2" fontWeight={700} sx={{ color: '#064e3b', lineHeight: 1.2 }}>
+                  {farmerProfile.nama}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                  Farmer
+                </Typography>
+              </Box>
+            )}
+          </Box>
+          {isOpen && (
+            <IconButton size="small" sx={{ color: '#64748b' }}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+          )}
         </Box>
       </Box>
     </Drawer>
   );
 }
-
-export { DRAWER_WIDTH };

@@ -24,6 +24,8 @@ import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
 import FormHelperText from '@mui/material/FormHelperText';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
@@ -65,6 +67,7 @@ export default function KalenderPage() {
   const [events, setEvents] = useLocalStorage<CalendarEvent[]>('arina-events', mockCalendarEvents);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -89,18 +92,46 @@ export default function KalenderPage() {
     defaultValues: { judul: '', jenis: 'pemupukan', tanggal: todayStr, waktu: '', catatan: '' },
   });
 
+  const openAddDialog = (dateStr?: string) => {
+    setEditingEventId(null);
+    reset({ judul: '', jenis: 'pemupukan', tanggal: dateStr || todayStr, waktu: '', catatan: '' });
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (ev: CalendarEvent) => {
+    setEditingEventId(ev.id);
+    reset({
+      judul: ev.judul,
+      jenis: ev.jenis as any,
+      tanggal: ev.tanggal,
+      waktu: ev.waktu || '',
+      catatan: ev.catatan || '',
+    });
+    setDialogOpen(true);
+  };
+
   const onSubmit = (data: EventFormData) => {
-    const newEvent: CalendarEvent = {
-      id: Date.now().toString(),
-      judul: data.judul,
-      jenis: data.jenis,
-      tanggal: data.tanggal,
-      waktu: data.waktu,
-      catatan: data.catatan,
-    };
-    setEvents((prev) => [...prev, newEvent]);
-    reset();
+    if (editingEventId) {
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.id === editingEventId ? { ...ev, ...data } : ev
+        )
+      );
+    } else {
+      const newEvent: CalendarEvent = {
+        id: Date.now().toString(),
+        ...data,
+      };
+      setEvents((prev) => [...prev, newEvent]);
+    }
     setDialogOpen(false);
+  };
+
+  const handleDelete = () => {
+    if (editingEventId) {
+      setEvents((prev) => prev.filter((ev) => ev.id !== editingEventId));
+      setDialogOpen(false);
+    }
   };
 
   const upcomingEvents = events
@@ -120,7 +151,7 @@ export default function KalenderPage() {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setDialogOpen(true)}
+          onClick={() => openAddDialog()}
           sx={{ display: { xs: 'none', sm: 'flex' } }}
         >
           Tambah Jadwal
@@ -183,7 +214,7 @@ export default function KalenderPage() {
                         cursor: 'pointer',
                         transition: 'background-color 0.1s',
                       }}
-                      onClick={() => { setDialogOpen(true); }}
+                      onClick={() => openAddDialog(dateStr)}
                     >
                       <Typography
                         variant="caption"
@@ -193,20 +224,27 @@ export default function KalenderPage() {
                         {day}
                       </Typography>
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                        {dayEvents.slice(0, 2).map((ev) => (
+                        {dayEvents.slice(0, 3).map((ev) => (
                           <Box
                             key={ev.id}
+                            onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }}
                             sx={{
-                              height: 5,
-                              borderRadius: 3,
-                              backgroundColor: jenisColors[ev.jenis]?.dot || '#94a3b8',
-                              opacity: 0.85,
+                              borderRadius: 1,
+                              backgroundColor: jenisColors[ev.jenis]?.bg || '#f1f5f9',
+                              borderLeft: '2px solid',
+                              borderLeftColor: jenisColors[ev.jenis]?.dot || '#94a3b8',
+                              px: 0.5,
+                              py: 0.25,
+                              overflow: 'hidden',
+                              '&:hover': { filter: 'brightness(0.95)' }
                             }}
-                          />
+                          >
+                             <Typography noWrap variant="caption" sx={{ fontSize: '0.65rem', display: 'block', color: jenisColors[ev.jenis]?.text, fontWeight: 600 }}>{ev.judul}</Typography>
+                          </Box>
                         ))}
-                        {dayEvents.length > 2 && (
-                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem' }}>
-                            +{dayEvents.length - 2}
+                        {dayEvents.length > 3 && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', pl: 0.5 }}>
+                            +{dayEvents.length - 3} lagi
                           </Typography>
                         )}
                       </Box>
@@ -233,7 +271,7 @@ export default function KalenderPage() {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
+            onClick={() => openAddDialog()}
             fullWidth
             sx={{ mb: 2, display: { xs: 'flex', sm: 'none' } }}
           >
@@ -246,7 +284,7 @@ export default function KalenderPage() {
               {upcomingEvents.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <Typography variant="body2" color="text.secondary">Belum ada jadwal mendatang</Typography>
-                  <Button size="small" sx={{ mt: 1 }} onClick={() => setDialogOpen(true)}>+ Tambah Jadwal</Button>
+                  <Button size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ Tambah Jadwal</Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -267,11 +305,16 @@ export default function KalenderPage() {
                           <Typography variant="body2" fontWeight={600} sx={{ color: colors.text }}>
                             {ev.judul}
                           </Typography>
-                          <Chip
-                            label={jenisLabels[ev.jenis]}
-                            size="small"
-                            sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: colors.text, fontWeight: 600, fontSize: '0.65rem' }}
-                          />
+                          <Box className="flex items-center gap-1">
+                            <Chip
+                              label={jenisLabels[ev.jenis]}
+                              size="small"
+                              sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: colors.text, fontWeight: 600, fontSize: '0.65rem' }}
+                            />
+                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ ml: 0.5, color: colors.text, p: 0.5 }}>
+                              <EditIcon sx={{ fontSize: '1.25rem' }} />
+                            </IconButton>
+                          </Box>
                         </Box>
                         <Typography variant="caption" sx={{ color: colors.text, opacity: 0.8, mt: 0.5, display: 'block' }}>
                           📅 {formatDateLong(ev.tanggal)}{ev.waktu ? ` · ${ev.waktu}` : ''}
@@ -296,7 +339,7 @@ export default function KalenderPage() {
         <DialogTitle>
           <Box className="flex items-center justify-between">
             <Typography variant="h6" fontWeight={600} sx={{ fontFamily: 'var(--font-sora)' }}>
-              Tambah Jadwal Kegiatan
+              {editingEventId ? 'Edit Jadwal Kegiatan' : 'Tambah Jadwal Kegiatan'}
             </Typography>
             <IconButton size="small" onClick={() => setDialogOpen(false)}>
               <CloseIcon />
@@ -337,9 +380,16 @@ export default function KalenderPage() {
             )} />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setDialogOpen(false)} color="inherit">Batal</Button>
-          <Button type="submit" form="event-form" variant="contained">Simpan Jadwal</Button>
+        <DialogActions sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between' }}>
+          <Box>
+            {editingEventId && (
+              <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>Hapus</Button>
+            )}
+          </Box>
+          <Box className="flex gap-2">
+            <Button onClick={() => setDialogOpen(false)} color="inherit">Batal</Button>
+            <Button type="submit" form="event-form" variant="contained">Simpan Jadwal</Button>
+          </Box>
         </DialogActions>
       </Dialog>
     </Box>

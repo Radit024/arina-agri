@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Sidebar, { DRAWER_WIDTH } from '@/components/shared/Sidebar';
+import Sidebar from '@/components/shared/Sidebar';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

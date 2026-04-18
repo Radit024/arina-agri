@@ -33,6 +33,7 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { mockCalendarEvents } from '@/lib/mockData';
 import { formatDateLong } from '@/lib/formatters';
 import type { CalendarEvent } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
 
 const eventSchema = z.object({
   judul: z.string().min(1, 'Masukkan judul kegiatan'),
@@ -64,6 +65,7 @@ const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Jul
 const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 export default function KalenderPage() {
+  const t = useTranslations('Calendar');
   const [events, setEvents] = useLocalStorage<CalendarEvent[]>('arina-events', mockCalendarEvents);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -144,9 +146,9 @@ export default function KalenderPage() {
       <Box className="flex items-center justify-between" sx={{ mb: 3 }}>
         <Box>
           <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            Smart Kalender
+              {t('title')}
           </Typography>
-          <Typography variant="body2" color="text.secondary">Jadwal kegiatan pertanian Anda</Typography>
+            <Typography variant="body2" color="text.secondary">{t('subtitle')}</Typography>
         </Box>
         <Button
           variant="contained"
@@ -154,7 +156,7 @@ export default function KalenderPage() {
           onClick={() => openAddDialog()}
           sx={{ display: { xs: 'none', sm: 'flex' } }}
         >
-          Tambah Jadwal
+          {t('addSchedule')}
         </Button>
       </Box>
 
@@ -177,7 +179,7 @@ export default function KalenderPage() {
                     </IconButton>
                   </Box>
                   <Button size="small" onClick={() => setCurrentDate(new Date())} variant="outlined">
-                    Hari ini
+                    {t('today')}
                   </Button>
                 </Box>
               }
@@ -243,7 +245,7 @@ export default function KalenderPage() {
                         ))}
                         {dayEvents.length > 3 && (
                           <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', pl: 0.5 }}>
-                            +{dayEvents.length - 3} lagi
+                            +{dayEvents.length - 3} {t('more')}
                           </Typography>
                         )}
                       </Box>
@@ -274,16 +276,16 @@ export default function KalenderPage() {
             fullWidth
             sx={{ mb: 2, display: { xs: 'flex', sm: 'none' } }}
           >
-            Tambah Jadwal
+            {t('addSchedule')}
           </Button>
 
           <Card>
-            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Jadwal Mendatang</Typography>} subheader="7 hari ke depan" />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('upcomingTitle')}</Typography>} subheader={t('next7Days')} />
             <CardContent sx={{ pt: 0 }}>
               {upcomingEvents.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">Belum ada jadwal mendatang</Typography>
-                  <Button size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ Tambah Jadwal</Button>
+                  <Typography variant="body2" color="text.secondary">{t('emptyUpcoming')}</Typography>
+                  <Button size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -338,7 +340,7 @@ export default function KalenderPage() {
         <DialogTitle>
           <Box className="flex items-center justify-between">
             <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
-              {editingEventId ? 'Edit Jadwal Kegiatan' : 'Tambah Jadwal Kegiatan'}
+              {editingEventId ? t('dialog.editTitle') : t('dialog.addTitle')}
             </Typography>
             <IconButton size="small" onClick={() => setDialogOpen(false)}>
               <CloseIcon />
@@ -348,13 +350,13 @@ export default function KalenderPage() {
         <DialogContent dividers>
           <Box component="form" id="event-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Controller name="judul" control={control} render={({ field }) => (
-              <TextField {...field} label="Judul Kegiatan" placeholder="Contoh: Pemupukan Susulan NPK" error={!!errors.judul} helperText={errors.judul?.message} fullWidth />
+              <TextField {...field} label={t('dialog.fields.title')} placeholder={t('dialog.fields.titlePlaceholder')} error={!!errors.judul} helperText={errors.judul?.message} fullWidth />
             )} />
 
             <Controller name="jenis" control={control} render={({ field }) => (
               <FormControl fullWidth error={!!errors.jenis}>
-                <InputLabel>Jenis Kegiatan</InputLabel>
-                <Select {...field} label="Jenis Kegiatan">
+                <InputLabel>{t('dialog.fields.type')}</InputLabel>
+                <Select {...field} label={t('dialog.fields.type')}>
                   <MenuItem value="pemupukan">🌿 Pemupukan</MenuItem>
                   <MenuItem value="penyemprotan">💧 Penyemprotan Pestisida</MenuItem>
                   <MenuItem value="irigasi">🚿 Irigasi</MenuItem>
@@ -367,27 +369,27 @@ export default function KalenderPage() {
 
             <Box className="flex gap-3">
               <Controller name="tanggal" control={control} render={({ field }) => (
-                <TextField {...field} type="date" label="Tanggal" error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
               <Controller name="waktu" control={control} render={({ field }) => (
-                <TextField {...field} type="time" label="Waktu (opsional)" fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField {...field} type="time" label={t('dialog.fields.timeOptional')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
             </Box>
 
             <Controller name="catatan" control={control} render={({ field }) => (
-              <TextField {...field} label="Catatan (opsional)" multiline rows={3} placeholder="Tambahkan catatan tambahan..." fullWidth />
+              <TextField {...field} label={t('dialog.fields.noteOptional')} multiline rows={3} placeholder={t('dialog.fields.notePlaceholder')} fullWidth />
             )} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between' }}>
           <Box>
             {editingEventId && (
-              <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>Hapus</Button>
+              <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>{t('delete')}</Button>
             )}
           </Box>
           <Box className="flex gap-2">
-            <Button onClick={() => setDialogOpen(false)} color="inherit">Batal</Button>
-            <Button type="submit" form="event-form" variant="contained">Simpan Jadwal</Button>
+            <Button onClick={() => setDialogOpen(false)} color="inherit">{t('cancel')}</Button>
+            <Button type="submit" form="event-form" variant="contained">{t('saveSchedule')}</Button>
           </Box>
         </DialogActions>
       </Dialog>

@@ -191,9 +191,9 @@ export default function SettingsModal() {
                           },
                         }}
                       >
-                        <ToggleButton value="light">Light Mode</ToggleButton>
-                        <ToggleButton value="dark">Dark Mode</ToggleButton>
-                        <ToggleButton value="system">System</ToggleButton>
+                        <ToggleButton value="light">{t('general.modeLight')}</ToggleButton>
+                        <ToggleButton value="dark">{t('general.modeDark')}</ToggleButton>
+                        <ToggleButton value="system">{t('general.modeSystem')}</ToggleButton>
                       </ToggleButtonGroup>
                     </Box>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -211,7 +211,7 @@ export default function SettingsModal() {
                           },
                         }}
                       >
-                        <MenuItem value="id">Bahasa Indonesia</MenuItem>
+                        <MenuItem value="id">{t('general.languageId')}</MenuItem>
                         <MenuItem value="en">English</MenuItem>
                       </Select>
                     </Box>
@@ -223,10 +223,10 @@ export default function SettingsModal() {
              {activeTab === 'profil' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT }, display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="h5" sx={{ mb: 1, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                    Edit Profil
+                    {t('profile.tab')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-                    Perbarui informasi profil Anda agar data akun tetap akurat.
+                    {t('profile.subtitle')}
                   </Typography>
 
                   <Box
@@ -261,10 +261,10 @@ export default function SettingsModal() {
                         size="small"
                         sx={{ mb: 1, borderRadius: 2, color: 'text.primary', borderColor: 'divider', textTransform: 'none', fontWeight: 600 }}
                       >
-                        Ganti Foto
+                        {t('profile.changePhoto')}
                       </Button>
                       <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-                        Format JPG, PNG, atau GIF. Maksimal 2MB.
+                        {t('profile.photoHint')}
                       </Typography>
                     </Box>
                   </Box>
@@ -273,7 +273,7 @@ export default function SettingsModal() {
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
-                        label="Nama Lengkap"
+                        label={t('profile.fullName')}
                         defaultValue={farmerProfile.nama}
                         variant="standard"
                       />
@@ -281,7 +281,7 @@ export default function SettingsModal() {
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
-                        label="Komoditas Utama"
+                        label={t('profile.mainCommodity')}
                         defaultValue={farmerProfile.komoditas}
                         variant="standard"
                       />
@@ -289,14 +289,14 @@ export default function SettingsModal() {
                     <Grid size={{ xs: 12, md: 6 }}>
                       <TextField
                         fullWidth
-                        label="Nomor Telepon"
-                        placeholder="Contoh: 08123456789"
+                        label={t('profile.phone')}
+                        placeholder={t('profile.phonePlaceholder')}
                         value={profileWhatsappPhone}
                         onChange={(event) => {
                           setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
                           setPhoneSaveSuccess(false);
                         }}
-                        helperText="Nomor ini dipakai untuk notifikasi cuaca"
+                        helperText={t('profile.phoneHelper')}
                         slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
                         variant="standard"
                       />
@@ -316,7 +316,7 @@ export default function SettingsModal() {
                     }}
                   >
                     <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
-                      {phoneSaveSuccess ? 'Nomor WhatsApp berhasil diperbarui.' : 'Simpan untuk menerapkan nomor notifikasi cuaca yang baru.'}
+                      {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                     </Typography>
                     <Button
                       variant="contained"
@@ -333,7 +333,7 @@ export default function SettingsModal() {
                         flexShrink: 0,
                       }}
                     >
-                      Simpan Perubahan
+                      {t('profile.saveChanges')}
                     </Button>
                   </Box>
                 </Box>
@@ -342,12 +342,12 @@ export default function SettingsModal() {
              {/* NOTIFIKASI */}
              {activeTab === 'notifikasi' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Notifikasi</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('notification.tab')}</Typography>
                   
                   {[
-                    { label: 'Notifikasi Cuaca Ekstrem', desc: 'Peringatan cuaca bahaya via WhatsApp' },
-                    { label: 'Pengingat Jadwal Kegiatan', desc: 'Notifikasi H-1 sebelum jadwal pertanian' },
-                    { label: 'Tips Budidaya dari Arina AI', desc: 'Saran mingguan kondisi lahan Anda' },
+                    { label: t('notification.items.weather.label'), desc: t('notification.items.weather.desc') },
+                    { label: t('notification.items.schedule.label'), desc: t('notification.items.schedule.desc') },
+                    { label: t('notification.items.tips.label'), desc: t('notification.items.tips.desc') },
                   ].map((item) => (
                     <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Box className="flex items-start justify-between gap-4">
@@ -365,21 +365,21 @@ export default function SettingsModal() {
              {/* INFO APLIKASI */}
              {activeTab === 'info' && (
                 <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
-                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Informasi Sistem</Typography>
+                  <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('system.tab')}</Typography>
                   
                   <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
                      <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                        <InfoOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
                      </Box>
                      <Box>
-                       <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>Arina Web Platform</Typography>
-                       <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>Versi 1.0.0 (Beta)</Typography>
+                       <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 700 }}>{t('system.appName')}</Typography>
+                       <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>{t('system.version')}</Typography>
                      </Box>
                   </Box>
 
                   {[
-                    { label: 'Platform Backend', value: 'Browser LocalStorage' },
-                    { label: 'Desain Layout', value: 'Dialog Modal Concept' },
+                    { label: t('system.backendLabel'), value: t('system.backendValue') },
+                    { label: t('system.layoutLabel'), value: t('system.layoutValue') },
                   ].map((item) => (
                     <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
                       <Typography variant="body2" color="text.secondary">{item.label}</Typography>

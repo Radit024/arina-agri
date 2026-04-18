@@ -9,26 +9,321 @@
     "logout": "Keluar",
     "farmer": "Petani"
   },
+  "MobileNav": {
+    "dashboard": "Dashboard",
+    "keuangan": "Keuangan",
+    "cuaca": "Cuaca",
+    "ensiklopedia": "Ensiklopedia",
+    "kalender": "Kalender",
+    "pengaturan": "Pengaturan"
+  },
+  "Dashboard": {
+    "home": {
+      "welcome": "Selamat datang, Pak {name} 👋",
+      "kpi": {
+        "totalExpense": {
+          "title": "Total Pengeluaran Bulan Ini",
+          "subtitle": "April 2026",
+          "trend": "12% dari bulan lalu"
+        },
+        "netProfit": {
+          "title": "Estimasi Laba Bersih",
+          "subtitle": "Pendapatan - Pengeluaran",
+          "trend": "18% dari bulan lalu"
+        },
+        "harvest": {
+          "title": "Hari Menuju Panen",
+          "value": "{days} Hari",
+          "subtitle": "Pemetikan perdana: 25 April"
+        },
+        "weather": {
+          "title": "Status Cuaca Hari Ini",
+          "value": "24°C · Gerimis",
+          "subtitle": "Kelembapan 78%"
+        }
+      }
+    },
+    "weatherBanner": {
+      "title": "Peringatan Cuaca",
+      "defaultMessage": "⛈️ Prakiraan hujan lebat 2 hari ke depan di wilayah Malang. Tunda pemupukan dan penyemprotan pestisida. Pastikan drainase lahan dalam kondisi baik."
+    },
+    "recentTransactions": {
+      "title": "Transaksi Terkini",
+      "subheader": "5 transaksi terakhir",
+      "columns": {
+        "date": "Tanggal",
+        "category": "Kategori",
+        "note": "Keterangan",
+        "type": "Jenis",
+        "amount": "Nominal"
+      },
+      "type": {
+        "income": "Pendapatan",
+        "expense": "Pengeluaran"
+      }
+    },
+    "charts": {
+      "common": {
+        "income": "Pendapatan",
+        "expense": "Pengeluaran"
+      },
+      "trend": {
+        "title": "Tren Keuangan",
+        "subheader": "Pengeluaran vs Pendapatan (6 bulan terakhir)"
+      },
+      "category": {
+        "title": "Kategori Pengeluaran",
+        "subheader": "Bulan April 2026"
+      }
+    }
+  },
+  "Weather": {
+    "title": "Cuaca",
+    "subtitle": "Pantau Cuaca di Daerah Anda",
+    "days": {
+      "sun": "Min",
+      "mon": "Sen",
+      "tue": "Sel",
+      "wed": "Rab",
+      "thu": "Kam",
+      "fri": "Jum",
+      "sat": "Sab"
+    },
+    "current": {
+      "title": "Cuaca Saat Ini",
+      "drizzle": "Gerimis Ringan",
+      "humidity": "Kelembapan",
+      "rainfall": "Curah Hujan",
+      "windSpeed": "Kec. Angin",
+      "temperature": "Suhu"
+    },
+    "forecast": {
+      "title": "Prakiraan 7 Hari",
+      "today": "Hari ini"
+    },
+    "history": {
+      "title": "Riwayat Notifikasi",
+      "columns": {
+        "date": "Tanggal",
+        "alertType": "Jenis Peringatan",
+        "message": "Pesan",
+        "status": "Status"
+      },
+      "status": {
+        "sent": "Terkirim",
+        "failed": "Gagal"
+      }
+    },
+    "whatsapp": {
+      "title": "Integrasi WhatsApp",
+      "note": "Notifikasi dikirim otomatis via WhatsApp menggunakan <strong>n8n workflow</strong> saat kondisi cuaca ekstrem terdeteksi.",
+      "enable": "Aktifkan notifikasi otomatis",
+      "phoneLabel": "Nomor Telpon",
+      "phonePlaceholder": "Contoh: 08123456789",
+      "phoneHelper": "Nomor yang akan menerima notifikasi cuaca",
+      "saved": "✓ Nomor Tersimpan",
+      "saveAndEnable": "Simpan & Aktifkan",
+      "activeAlertTypes": "Jenis peringatan aktif",
+      "alerts": {
+        "heavyRain": "Hujan Lebat (> 20mm)",
+        "strongWind": "Angin Kencang (> 12 km/j)",
+        "extremeTemp": "Suhu Ekstrem (> 32°C)",
+        "lowHumidity": "Kelembapan Rendah (< 50%)"
+      }
+    }
+  },
+  "Finance": {
+    "title": "Manajemen Keuangan",
+    "subtitle": "Pantau arus kas, analisis biaya, dan telusuri profil pengeluaran kebun Anda.",
+    "exportCsv": "Ekspor CSV",
+    "common": {
+      "income": "Pemasukan",
+      "expense": "Pengeluaran",
+      "cancel": "Batal"
+    },
+    "categories": {
+      "harvestSales": "Penjualan Hasil Panen",
+      "service": "Layanan Jasa",
+      "other": "Lainnya",
+      "fertilizer": "Pupuk",
+      "pesticide": "Pestisida",
+      "labor": "Tenaga Kerja",
+      "irrigation": "Irigasi & Air",
+      "tools": "Alat Tani"
+    },
+    "filters": {
+      "month": "Filter Bulan",
+      "allMonths": "Semua Bulan",
+      "type": "Filter Tipe",
+      "allTypes": "Semua"
+    },
+    "buttons": {
+      "hppBep": "Perhitungan HPP & BEP",
+      "addTransaction": "Catat Transaksi"
+    },
+    "ledger": {
+      "title": "Buku Besar Transaksi",
+      "subheader": "{count} transaksi ditampilkan",
+      "columns": {
+        "date": "Tanggal",
+        "category": "Kategori",
+        "note": "Detail / Catatan",
+        "type": "Tipe",
+        "value": "Nilai (Rp)",
+        "action": "Opsi"
+      },
+      "empty": "Belum ada transaksi untuk filter ini.",
+      "addFirst": "Tambah pertama"
+    },
+    "summary": {
+      "title": "Ringkasan Bisnis",
+      "totalIncome": "Total Pemasukan",
+      "totalExpense": "Total Pengeluaran",
+      "netProfit": "ESTIMASI LABA BERSIH",
+      "deficit": "DEFISIT ANGGARAN"
+    },
+    "distribution": {
+      "title": "Distribusi Pengeluaran"
+    },
+    "transactionDialog": {
+      "addTitle": "Catat Transaksi Baru",
+      "editTitle": "Edit Transaksi",
+      "addSubtitle": "Tambahkan pemasukan atau pengeluaran baru",
+      "editSubtitle": "Perbarui data transaksi yang sudah ada",
+      "fields": {
+        "type": "Jenis Transaksi",
+        "date": "Tanggal",
+        "category": "Kategori",
+        "amount": "Nominal",
+        "noteOptional": "Catatan (opsional)"
+      },
+      "options": {
+        "income": "Pemasukan (+)",
+        "expense": "Pengeluaran (−)"
+      },
+      "placeholders": {
+        "income": "Cth: Laku 50kg tomat ke tengkulak pak Darwis",
+        "expense": "Cth: Beli 2 sak Phonska di toko pak tani"
+      },
+      "save": "Simpan Transaksi",
+      "update": "Perbarui Data"
+    },
+    "hppDialog": {
+      "title": "Perhitungan HPP & BEP",
+      "subtitle": "Menggunakan data transaksi + input produksi",
+      "fields": {
+        "fixedCost": "Biaya Tetap Periode",
+        "totalProduction": "Total Produksi Periode",
+        "unitPrice": "Harga Jual per Kg"
+      }
+    }
+  },
+  "Calendar": {
+    "title": "Smart Kalender",
+    "subtitle": "Jadwal kegiatan pertanian Anda",
+    "addSchedule": "Tambah Jadwal",
+    "today": "Hari ini",
+    "more": "lagi",
+    "upcomingTitle": "Jadwal Mendatang",
+    "next7Days": "7 hari ke depan",
+    "emptyUpcoming": "Belum ada jadwal mendatang",
+    "dialog": {
+      "addTitle": "Tambah Jadwal Kegiatan",
+      "editTitle": "Edit Jadwal Kegiatan",
+      "fields": {
+        "title": "Judul Kegiatan",
+        "titlePlaceholder": "Contoh: Pemupukan Susulan NPK",
+        "type": "Jenis Kegiatan",
+        "date": "Tanggal",
+        "timeOptional": "Waktu (opsional)",
+        "noteOptional": "Catatan (opsional)",
+        "notePlaceholder": "Tambahkan catatan tambahan..."
+      }
+    },
+    "delete": "Hapus",
+    "cancel": "Batal",
+    "saveSchedule": "Simpan Jadwal"
+  },
+  "Encyclopedia": {
+    "title": "Ensiklopedia AI Cabai",
+    "subtitle": "Tanya jawab seputar penyakit, hama, dan budidaya cabai rawit",
+    "notice": "AI ini dilatih khusus untuk komoditas <strong>cabai rawit</strong>. Untuk tanaman lain, akurasi bisa berbeda.",
+    "online": "● Online",
+    "typing": "Arina sedang mengetik...",
+    "inputPlaceholder": "Tanya Arina tentang cabai...",
+    "quickReferenceTitle": "Referensi Cepat Penyakit Cabai",
+    "lossLabel": "Kerugian {value}",
+    "cause": "Penyebab",
+    "symptoms": "Gejala",
+    "prompts": {
+      "p1": "Cara mengatasi antraknosa?",
+      "p2": "Jadwal pemupukan cabai",
+      "p3": "Gejala kutu kebul",
+      "p4": "Cara panen yang benar"
+    }
+  },
+  "NotFound": {
+    "title": "Halaman Tidak Ditemukan!",
+    "description": "Sepertinya traktor kami salah belok arah. Lahan web yang Anda cari belum ditanami atau alamat yang diakses keliru.",
+    "backToDashboard": "Kembali ke Dashboard"
+  },
   "Settings": {
     "title": "Pengaturan",
+    "pageSubtitle": "Personalisasi tampilan, profil, dan opsi akun Anda",
+    "menuLabel": "Menu Pengaturan",
     "general": {
       "tab": "Umum",
-      "appearance": "TampilanTema",
+      "appearance": "Tampilan",
       "contrast": "Kontras Layar",
       "accent": "Warna Aksen",
-      "language": "Bahasa"
+      "language": "Bahasa",
+      "modeLight": "Mode Terang",
+      "modeDark": "Mode Gelap",
+      "modeSystem": "Sistem",
+      "languageId": "Bahasa Indonesia"
     },
     "profile": {
       "tab": "Edit Profil",
-      "title": "Ubah Informasi Profil"
+      "title": "Ubah Informasi Profil",
+      "subtitle": "Perbarui informasi profil Anda agar data akun tetap akurat.",
+      "changePhoto": "Ganti Foto",
+      "photoHint": "Format JPG, PNG, atau GIF. Maksimal 2MB.",
+      "fullName": "Nama Lengkap",
+      "mainCommodity": "Komoditas Utama",
+      "phone": "Nomor Telepon",
+      "phonePlaceholder": "Contoh: 08123456789",
+      "phoneHelper": "Nomor ini dipakai untuk notifikasi cuaca",
+      "phoneSaved": "Nomor WhatsApp berhasil diperbarui.",
+      "phoneSaveHint": "Simpan untuk menerapkan nomor notifikasi cuaca yang baru.",
+      "saveChanges": "Simpan Perubahan"
     },
     "notification": {
       "tab": "Notifikasi",
-      "title": "Pengaturan Notifikasi"
+      "title": "Pengaturan Notifikasi",
+      "items": {
+        "weather": {
+          "label": "Notifikasi Cuaca Ekstrem",
+          "desc": "Peringatan cuaca bahaya via WhatsApp"
+        },
+        "schedule": {
+          "label": "Pengingat Jadwal Kegiatan",
+          "desc": "Notifikasi H-1 sebelum jadwal pertanian"
+        },
+        "tips": {
+          "label": "Tips Budidaya dari Arina AI",
+          "desc": "Saran mingguan kondisi lahan Anda"
+        }
+      }
     },
     "system": {
       "tab": "Informasi Sistem",
-      "title": "Tentang Aplikasi"
+      "title": "Tentang Aplikasi",
+      "appName": "Arina Web Platform",
+      "version": "Versi 1.0.0 (Beta)",
+      "backendLabel": "Platform Backend",
+      "backendValue": "Browser LocalStorage",
+      "layoutLabel": "Desain Layout",
+      "layoutValue": "Konsep Dialog Modal"
     },
     "secureAccount": "Amankan Akun Anda",
     "setupMFA": "Atur Autentikasi 2 Langkah"

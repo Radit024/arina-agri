@@ -15,8 +15,10 @@ import RecentTransactionsTable from '@/components/dashboard/RecentTransactionsTa
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import { farmerProfile, mockTransactions } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
+import { useTranslations } from 'next-intl';
 
 export default function DashboardPage() {
+  const t = useTranslations('Dashboard.home');
   const totalPengeluaran = mockTransactions
     .filter((t) => t.jenis === 'pengeluaran')
     .reduce((acc, t) => acc + t.nominal, 0);
@@ -35,7 +37,7 @@ export default function DashboardPage() {
           variant="h4"
           sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 700 }}
         >
-          Selamat datang, Pak {farmerProfile.nama.split(' ')[0]} 👋
+          {t('welcome', { name: farmerProfile.nama.split(' ')[0] })}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {farmerProfile.lokasi} · {farmerProfile.komoditas} · {farmerProfile.luasLahan}
@@ -51,38 +53,38 @@ export default function DashboardPage() {
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
-            title="Total Pengeluaran Bulan Ini"
+            title={t('kpi.totalExpense.title')}
             value={formatRupiah(totalPengeluaran)}
-            subtitle="April 2026"
+            subtitle={t('kpi.totalExpense.subtitle')}
             icon={<AccountBalanceWalletIcon />}
             color="#ef4444"
-            trend={{ value: '12% dari bulan lalu', positive: false }}
+            trend={{ value: t('kpi.totalExpense.trend'), positive: false }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
-            title="Estimasi Laba Bersih"
+            title={t('kpi.netProfit.title')}
             value={formatRupiah(labaBersih)}
-            subtitle="Pendapatan - Pengeluaran"
+            subtitle={t('kpi.netProfit.subtitle')}
             icon={<TrendingUpIcon />}
             color="#16a34a"
-            trend={{ value: '18% dari bulan lalu', positive: true }}
+            trend={{ value: t('kpi.netProfit.trend'), positive: true }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
-            title="Hari Menuju Panen"
-            value={`${farmerProfile.hariMenujuPanen} Hari`}
-            subtitle="Pemetikan perdana: 25 April"
+            title={t('kpi.harvest.title')}
+            value={t('kpi.harvest.value', { days: farmerProfile.hariMenujuPanen })}
+            subtitle={t('kpi.harvest.subtitle')}
             icon={<AgricultureIcon />}
             color="#16a34a"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
-            title="Status Cuaca Hari Ini"
-            value="24°C · Gerimis"
-            subtitle="Kelembapan 78%"
+            title={t('kpi.weather.title')}
+            value={t('kpi.weather.value')}
+            subtitle={t('kpi.weather.subtitle')}
             icon={<WbCloudyIcon />}
             color="#3b82f6"
           />

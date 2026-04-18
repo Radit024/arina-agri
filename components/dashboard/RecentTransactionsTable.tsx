@@ -13,8 +13,10 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { mockTransactions } from '@/lib/mockData';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
+import { useTranslations } from 'next-intl';
 
 export default function RecentTransactionsTable() {
+  const t = useTranslations('Dashboard.recentTransactions');
   const recent = mockTransactions.slice(0, 5);
 
   return (
@@ -22,21 +24,21 @@ export default function RecentTransactionsTable() {
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
-            Transaksi Terkini
+            {t('title')}
           </Typography>
         }
-        subheader="5 transaksi terakhir"
+        subheader={t('subheader')}
       />
       <CardContent sx={{ pt: 0 }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow sx={{ '& th': { fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', borderBottom: '2px solid', borderColor: 'divider' } }}>
-                <TableCell>Tanggal</TableCell>
-                <TableCell>Kategori</TableCell>
-                <TableCell>Keterangan</TableCell>
-                <TableCell>Jenis</TableCell>
-                <TableCell align="right">Nominal</TableCell>
+                <TableCell>{t('columns.date')}</TableCell>
+                <TableCell>{t('columns.category')}</TableCell>
+                <TableCell>{t('columns.note')}</TableCell>
+                <TableCell>{t('columns.type')}</TableCell>
+                <TableCell align="right">{t('columns.amount')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -55,7 +57,7 @@ export default function RecentTransactionsTable() {
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={tx.jenis === 'pendapatan' ? 'Pendapatan' : 'Pengeluaran'}
+                      label={tx.jenis === 'pendapatan' ? t('type.income') : t('type.expense')}
                       size="small"
                       sx={{
                         backgroundColor: tx.jenis === 'pendapatan' ? '#dcfce7' : '#fee2e2',

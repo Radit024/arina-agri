@@ -9,26 +9,321 @@
     "logout": "Log Out",
     "farmer": "Farmer"
   },
+  "MobileNav": {
+    "dashboard": "Dashboard",
+    "keuangan": "Finance",
+    "cuaca": "Weather",
+    "ensiklopedia": "Encyclopedia",
+    "kalender": "Calendar",
+    "pengaturan": "Settings"
+  },
+  "Dashboard": {
+    "home": {
+      "welcome": "Welcome, Mr. {name} 👋",
+      "kpi": {
+        "totalExpense": {
+          "title": "Total Monthly Expenses",
+          "subtitle": "April 2026",
+          "trend": "12% from last month"
+        },
+        "netProfit": {
+          "title": "Estimated Net Profit",
+          "subtitle": "Income - Expenses",
+          "trend": "18% from last month"
+        },
+        "harvest": {
+          "title": "Days to Harvest",
+          "value": "{days} Days",
+          "subtitle": "First harvest: April 25"
+        },
+        "weather": {
+          "title": "Today's Weather Status",
+          "value": "24°C · Drizzle",
+          "subtitle": "Humidity 78%"
+        }
+      }
+    },
+    "weatherBanner": {
+      "title": "Weather Alert",
+      "defaultMessage": "⛈️ Heavy rain is forecast for the next 2 days in Malang. Delay fertilizing and pesticide spraying. Ensure field drainage is in good condition."
+    },
+    "recentTransactions": {
+      "title": "Recent Transactions",
+      "subheader": "Last 5 transactions",
+      "columns": {
+        "date": "Date",
+        "category": "Category",
+        "note": "Description",
+        "type": "Type",
+        "amount": "Amount"
+      },
+      "type": {
+        "income": "Income",
+        "expense": "Expense"
+      }
+    },
+    "charts": {
+      "common": {
+        "income": "Income",
+        "expense": "Expense"
+      },
+      "trend": {
+        "title": "Financial Trend",
+        "subheader": "Expenses vs Income (last 6 months)"
+      },
+      "category": {
+        "title": "Expense Categories",
+        "subheader": "April 2026"
+      }
+    }
+  },
+  "Weather": {
+    "title": "Weather",
+    "subtitle": "Monitor weather in your area",
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "current": {
+      "title": "Current Weather",
+      "drizzle": "Light Drizzle",
+      "humidity": "Humidity",
+      "rainfall": "Rainfall",
+      "windSpeed": "Wind Speed",
+      "temperature": "Temperature"
+    },
+    "forecast": {
+      "title": "7-Day Forecast",
+      "today": "Today"
+    },
+    "history": {
+      "title": "Notification History",
+      "columns": {
+        "date": "Date",
+        "alertType": "Alert Type",
+        "message": "Message",
+        "status": "Status"
+      },
+      "status": {
+        "sent": "Sent",
+        "failed": "Failed"
+      }
+    },
+    "whatsapp": {
+      "title": "WhatsApp Integration",
+      "note": "Notifications are automatically sent via WhatsApp using an <strong>n8n workflow</strong> when extreme weather is detected.",
+      "enable": "Enable automatic notifications",
+      "phoneLabel": "Phone Number",
+      "phonePlaceholder": "Example: 08123456789",
+      "phoneHelper": "This number will receive weather alerts",
+      "saved": "✓ Number Saved",
+      "saveAndEnable": "Save & Enable",
+      "activeAlertTypes": "Active alert types",
+      "alerts": {
+        "heavyRain": "Heavy Rain (> 20mm)",
+        "strongWind": "Strong Wind (> 12 km/h)",
+        "extremeTemp": "Extreme Temperature (> 32°C)",
+        "lowHumidity": "Low Humidity (< 50%)"
+      }
+    }
+  },
+  "Finance": {
+    "title": "Financial Management",
+    "subtitle": "Track cash flow, analyze costs, and review farm spending profiles.",
+    "exportCsv": "Export CSV",
+    "common": {
+      "income": "Income",
+      "expense": "Expense",
+      "cancel": "Cancel"
+    },
+    "categories": {
+      "harvestSales": "Harvest Sales",
+      "service": "Service",
+      "other": "Other",
+      "fertilizer": "Fertilizer",
+      "pesticide": "Pesticide",
+      "labor": "Labor",
+      "irrigation": "Irrigation & Water",
+      "tools": "Farm Tools"
+    },
+    "filters": {
+      "month": "Month Filter",
+      "allMonths": "All Months",
+      "type": "Type Filter",
+      "allTypes": "All"
+    },
+    "buttons": {
+      "hppBep": "HPP & BEP Calculation",
+      "addTransaction": "Record Transaction"
+    },
+    "ledger": {
+      "title": "Transaction Ledger",
+      "subheader": "{count} transactions displayed",
+      "columns": {
+        "date": "Date",
+        "category": "Category",
+        "note": "Detail / Note",
+        "type": "Type",
+        "value": "Value (Rp)",
+        "action": "Action"
+      },
+      "empty": "No transactions for this filter.",
+      "addFirst": "Add first"
+    },
+    "summary": {
+      "title": "Business Summary",
+      "totalIncome": "Total Income",
+      "totalExpense": "Total Expense",
+      "netProfit": "ESTIMATED NET PROFIT",
+      "deficit": "BUDGET DEFICIT"
+    },
+    "distribution": {
+      "title": "Expense Distribution"
+    },
+    "transactionDialog": {
+      "addTitle": "Record New Transaction",
+      "editTitle": "Edit Transaction",
+      "addSubtitle": "Add a new income or expense",
+      "editSubtitle": "Update existing transaction data",
+      "fields": {
+        "type": "Transaction Type",
+        "date": "Date",
+        "category": "Category",
+        "amount": "Amount",
+        "noteOptional": "Notes (optional)"
+      },
+      "options": {
+        "income": "Income (+)",
+        "expense": "Expense (−)"
+      },
+      "placeholders": {
+        "income": "e.g.: Sold 50kg tomatoes to local buyer",
+        "expense": "e.g.: Bought 2 bags of fertilizer"
+      },
+      "save": "Save Transaction",
+      "update": "Update Data"
+    },
+    "hppDialog": {
+      "title": "HPP & BEP Calculation",
+      "subtitle": "Uses transaction data + production input",
+      "fields": {
+        "fixedCost": "Fixed Cost Per Period",
+        "totalProduction": "Total Production Per Period",
+        "unitPrice": "Selling Price per Kg"
+      }
+    }
+  },
+  "Calendar": {
+    "title": "Smart Calendar",
+    "subtitle": "Your agricultural activity schedule",
+    "addSchedule": "Add Schedule",
+    "today": "Today",
+    "more": "more",
+    "upcomingTitle": "Upcoming Schedule",
+    "next7Days": "next 7 days",
+    "emptyUpcoming": "No upcoming schedule",
+    "dialog": {
+      "addTitle": "Add Activity Schedule",
+      "editTitle": "Edit Activity Schedule",
+      "fields": {
+        "title": "Activity Title",
+        "titlePlaceholder": "Example: Follow-up NPK fertilization",
+        "type": "Activity Type",
+        "date": "Date",
+        "timeOptional": "Time (optional)",
+        "noteOptional": "Notes (optional)",
+        "notePlaceholder": "Add extra notes..."
+      }
+    },
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "saveSchedule": "Save Schedule"
+  },
+  "Encyclopedia": {
+    "title": "AI Chili Encyclopedia",
+    "subtitle": "Q&A about chili diseases, pests, and cultivation",
+    "notice": "This AI is specially trained for <strong>chili pepper</strong>. Accuracy may vary for other crops.",
+    "online": "● Online",
+    "typing": "Arina is typing...",
+    "inputPlaceholder": "Ask Arina about chili...",
+    "quickReferenceTitle": "Quick Chili Disease Reference",
+    "lossLabel": "Loss {value}",
+    "cause": "Cause",
+    "symptoms": "Symptoms",
+    "prompts": {
+      "p1": "How to handle anthracnose?",
+      "p2": "Chili fertilization schedule",
+      "p3": "Whitefly symptoms",
+      "p4": "How to harvest properly"
+    }
+  },
+  "NotFound": {
+    "title": "Page Not Found!",
+    "description": "Looks like our tractor took a wrong turn. The page you are looking for might not be planted yet, or the URL is incorrect.",
+    "backToDashboard": "Back to Dashboard"
+  },
   "Settings": {
     "title": "Settings",
+    "pageSubtitle": "Customize appearance, profile, and account options",
+    "menuLabel": "Settings Menu",
     "general": {
       "tab": "General",
       "appearance": "Appearance",
       "contrast": "Screen Contrast",
       "accent": "Accent Color",
-      "language": "Language"
+      "language": "Language",
+      "modeLight": "Light Mode",
+      "modeDark": "Dark Mode",
+      "modeSystem": "System",
+      "languageId": "Bahasa Indonesia"
     },
     "profile": {
       "tab": "Edit Profile",
-      "title": "Change Profile Info"
+      "title": "Change Profile Info",
+      "subtitle": "Update your profile information to keep account data accurate.",
+      "changePhoto": "Change Photo",
+      "photoHint": "JPG, PNG, or GIF format. Max 2MB.",
+      "fullName": "Full Name",
+      "mainCommodity": "Main Commodity",
+      "phone": "Phone Number",
+      "phonePlaceholder": "Example: 08123456789",
+      "phoneHelper": "This number is used for weather notifications",
+      "phoneSaved": "WhatsApp number updated successfully.",
+      "phoneSaveHint": "Save to apply the new weather notification number.",
+      "saveChanges": "Save Changes"
     },
     "notification": {
       "tab": "Notifications",
-      "title": "Notification Preferences"
+      "title": "Notification Preferences",
+      "items": {
+        "weather": {
+          "label": "Extreme Weather Notification",
+          "desc": "Severe weather warning via WhatsApp"
+        },
+        "schedule": {
+          "label": "Activity Schedule Reminder",
+          "desc": "H-1 reminder before farming schedule"
+        },
+        "tips": {
+          "label": "Arina AI Cultivation Tips",
+          "desc": "Weekly suggestions for your field condition"
+        }
+      }
     },
     "system": {
       "tab": "System Info",
-      "title": "About Application"
+      "title": "About Application",
+      "appName": "Arina Web Platform",
+      "version": "Version 1.0.0 (Beta)",
+      "backendLabel": "Backend Platform",
+      "backendValue": "Browser LocalStorage",
+      "layoutLabel": "Layout Design",
+      "layoutValue": "Modal Dialog Concept"
     },
     "secureAccount": "Secure Your Account",
     "setupMFA": "Setup 2-Step Auto"

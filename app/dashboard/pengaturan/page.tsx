@@ -22,6 +22,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 
 import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
+import { useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -33,6 +34,7 @@ const SETTINGS_TABS = [
 ];
 
 export default function PengaturanPage() {
+  const t = useTranslations('Settings');
   const [activeTab, setActiveTab] = useState('general');
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
@@ -51,9 +53,9 @@ export default function PengaturanPage() {
     <Box sx={{ p: { xs: 2, md: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          Pengaturan
+          {t('title')}
         </Typography>
-        <Typography variant="body2" color="text.secondary">Personalisasi tampilan, profil, dan opsi akun Anda</Typography>
+        <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
       </Box>
 
       {/* Main Settings Card Layout */}
@@ -62,7 +64,7 @@ export default function PengaturanPage() {
         {/* Left Navigation (Inner Sidebar) */}
         <Box sx={{ width: { xs: '100%', md: 280 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
            <Typography variant="caption" sx={{ px: 2, mb: 1, display: 'block', color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 700 }}>
-             Menu Pengaturan
+             {t('menuLabel')}
            </Typography>
            <List disablePadding>
              {SETTINGS_TABS.map((tab) => (
@@ -80,7 +82,7 @@ export default function PengaturanPage() {
                      {tab.icon}
                    </ListItemIcon>
                    <ListItemText 
-                     primary={tab.label} 
+                     primary={tab.id === 'general' ? t('general.tab') : tab.id === 'profil' ? t('profile.tab') : tab.id === 'notifikasi' ? t('notification.tab') : t('system.tab')} 
                      slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: activeTab === tab.id ? 600 : 500 } } }} 
                    />
                  </ListItemButton>

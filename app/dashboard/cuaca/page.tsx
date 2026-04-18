@@ -30,6 +30,7 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
 import { formatDateShort } from '@/lib/formatters';
 import useLocalStorage from '@/hooks/useLocalStorage';
+import { useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -42,6 +43,7 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
 }
 
 export default function CuacaPage() {
+  const t = useTranslations('Weather');
   const [savedPhone, setSavedPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [hp, setHp] = useState(savedPhone);
   const [notifAktif, setNotifAktif] = useState(true);
@@ -52,16 +54,16 @@ export default function CuacaPage() {
     setHp(savedPhone);
   }, [savedPhone]);
 
-  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const dayNames = [t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')];
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          Cuaca
+          {t('title')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Pantau Cuaca Di Daerah Anda 
+          {t('subtitle')}
         </Typography>
       </Box>
 
@@ -73,13 +75,13 @@ export default function CuacaPage() {
               <Box className="flex items-start justify-between">
                 <Box>
                   <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Cuaca Saat Ini
+                    {t('current.title')}
                   </Typography>
                   <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff', fontWeight: 700 }}>
                     {currentWeather.suhu}°C
                   </Typography>
                   <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
-                    {currentWeather.kondisi === 'gerimis' ? 'Gerimis Ringan' : currentWeather.kondisi}
+                    {currentWeather.kondisi === 'gerimis' ? t('current.drizzle') : currentWeather.kondisi}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
                     📍 {currentWeather.lokasi}
@@ -92,10 +94,10 @@ export default function CuacaPage() {
 
               <Grid container spacing={2}>
                 {[
-                  { icon: <WaterDropIcon />, label: 'Kelembapan', value: `${currentWeather.kelembapan}%` },
-                  { icon: <GrainIcon />, label: 'Curah Hujan', value: `${currentWeather.curahHujan} mm` },
-                  { icon: <AirIcon />, label: 'Kec. Angin', value: `${currentWeather.kecepatanAngin} km/j` },
-                  { icon: <ThermostatIcon />, label: 'Suhu', value: `${currentWeather.suhu}°C` },
+                  { icon: <WaterDropIcon />, label: t('current.humidity'), value: `${currentWeather.kelembapan}%` },
+                  { icon: <GrainIcon />, label: t('current.rainfall'), value: `${currentWeather.curahHujan} mm` },
+                  { icon: <AirIcon />, label: t('current.windSpeed'), value: `${currentWeather.kecepatanAngin} km/j` },
+                  { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${currentWeather.suhu}°C` },
                 ].map((item) => (
                   <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
                     <Box className="flex items-center gap-2">
@@ -113,7 +115,7 @@ export default function CuacaPage() {
 
           {/* 7-Day Forecast */}
           <Card sx={{ mt: 3 }}>
-            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Prakiraan 7 Hari</Typography>} />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('forecast.title')}</Typography>} />
             <CardContent sx={{ pt: 0 }}>
               <Box
                 sx={{
@@ -144,7 +146,7 @@ export default function CuacaPage() {
                       }}
                     >
                       <Typography variant="caption" color={isToday ? 'primary.main' : 'text.secondary'} sx={{ fontWeight: 600 }}>
-                        {isToday ? 'Hari ini' : `${dayName} ${dateNum}`}
+                        {isToday ? t('forecast.today') : `${dayName} ${dateNum}`}
                       </Typography>
                       <Box sx={{ my: 1 }}>
                         <WeatherIcon kondisi={day.kondisi} size="small" />
@@ -165,13 +167,13 @@ export default function CuacaPage() {
 
           {/* Alert History */}
           <Card sx={{ mt: 3 }}>
-            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Riwayat Notifikasi</Typography>} />
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('history.title')}</Typography>} />
             <CardContent sx={{ pt: 0 }}>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      {['Tanggal', 'Jenis Peringatan', 'Pesan', 'Status'].map((h) => (
+                      {[t('history.columns.date'), t('history.columns.alertType'), t('history.columns.message'), t('history.columns.status')].map((h) => (
                         <TableCell key={h} sx={{ fontWeight: 600, fontSize: '0.75rem', color: 'text.secondary' }}>{h}</TableCell>
                       ))}
                     </TableRow>
@@ -186,7 +188,7 @@ export default function CuacaPage() {
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={alert.status === 'terkirim' ? 'Terkirim' : 'Gagal'}
+                            label={alert.status === 'terkirim' ? t('history.status.sent') : t('history.status.failed')}
                             size="small"
                             sx={{
                               backgroundColor: alert.status === 'terkirim' ? '#dcfce7' : '#fee2e2',
@@ -211,12 +213,12 @@ export default function CuacaPage() {
             <Card>
               <CardHeader
                 avatar={<WhatsAppIcon sx={{ color: '#25d366' }} />}
-                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Integrasi WhatsApp</Typography>}
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.title')}</Typography>}
               />
               <CardContent sx={{ pt: 0 }}>
                 <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 2, mb: 2.5, border: '1px solid #bbf7d0' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    Notifikasi dikirim otomatis via WhatsApp menggunakan <strong>n8n workflow</strong> saat kondisi cuaca ekstrem terdeteksi.
+                    {t.rich('whatsapp.note', { strong: (chunks) => <strong>{chunks}</strong> })}
                   </Typography>
                 </Box>
 
@@ -230,7 +232,7 @@ export default function CuacaPage() {
                   }
                   label={
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Aktifkan notifikasi otomatis
+                      {t('whatsapp.enable')}
                     </Typography>
                   }
                   sx={{ mb: 2.5, display: 'flex' }}
@@ -238,11 +240,11 @@ export default function CuacaPage() {
 
                 <TextField
                   fullWidth
-                  label="Nomor Telpon"
-                  placeholder="Contoh: 08123456789"
+                  label={t('whatsapp.phoneLabel')}
+                  placeholder={t('whatsapp.phonePlaceholder')}
                   value={hp}
                   onChange={(e) => setHp(e.target.value.replace(/\D/g, ''))}
-                  helperText="Nomor yang akan menerima notifikasi cuaca"
+                  helperText={t('whatsapp.phoneHelper')}
                   slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
                   disabled={!notifAktif}
                   sx={{ mb: 2 }}
@@ -256,15 +258,15 @@ export default function CuacaPage() {
                   onClick={() => setSavedPhone(hp.trim())}
                   startIcon={<WhatsAppIcon />}
                 >
-                  {isCurrentPhoneSaved ? '✓ Nomor Tersimpan' : 'Simpan & Aktifkan'}
+                  {isCurrentPhoneSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
                 </Button>
 
                 {notifAktif && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                      Jenis peringatan aktif
+                      {t('whatsapp.activeAlertTypes')}
                     </Typography>
-                    {['Hujan Lebat (> 20mm)', 'Angin Kencang (> 12 km/j)', 'Suhu Ekstrem (> 32°C)', 'Kelembapan Rendah (< 50%)'].map((item) => (
+                    {[t('whatsapp.alerts.heavyRain'), t('whatsapp.alerts.strongWind'), t('whatsapp.alerts.extremeTemp'), t('whatsapp.alerts.lowHumidity')].map((item) => (
                       <Box key={item} className="flex items-center gap-2 mt-2">
                         <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
                         <Typography variant="caption" color="text.secondary">{item}</Typography>

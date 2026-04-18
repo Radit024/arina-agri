@@ -15,6 +15,7 @@ import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { initialChatMessages, diseaseCards } from '@/lib/mockData';
 import type { ChatMessage } from '@/lib/mockData';
+import { useTranslations } from 'next-intl';
 
 const AI_RESPONSES: Record<string, string> = {
   default:
@@ -33,6 +34,7 @@ function getBotReply(message: string): string {
 }
 
 export default function EnsiklopediaPage() {
+  const t = useTranslations('Encyclopedia');
   const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -76,15 +78,15 @@ export default function EnsiklopediaPage() {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          Ensiklopedia AI Cabai
+          {t('title')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Tanya jawab seputar penyakit, hama, dan budidaya cabai rawit
+          {t('subtitle')}
         </Typography>
       </Box>
 
       <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-        AI ini dilatih khusus untuk komoditas <strong>cabai rawit</strong>. Untuk tanaman lain, akurasi bisa berbeda.
+        {t.rich('notice', { strong: (chunks) => <strong>{chunks}</strong> })}
       </Alert>
 
       <Grid container spacing={3}>
@@ -117,7 +119,7 @@ export default function EnsiklopediaPage() {
               </Box>
               <Box>
                 <Typography variant="body1" sx={{ fontWeight: 600 }}>Arina AI Assistant</Typography>
-                <Typography variant="caption" color="success.main" sx={{ fontWeight: 500 }}>● Online</Typography>
+                <Typography variant="caption" color="success.main" sx={{ fontWeight: 500 }}>{t('online')}</Typography>
               </Box>
             </Box>
 
@@ -149,7 +151,7 @@ export default function EnsiklopediaPage() {
               {isTyping && (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <Box sx={{ px: 2, py: 1.5, borderRadius: '16px 16px 16px 4px', backgroundColor: '#f1f5f9' }}>
-                    <Typography variant="caption" color="text.secondary">Arina sedang mengetik...</Typography>
+                    <Typography variant="caption" color="text.secondary">{t('typing')}</Typography>
                   </Box>
                 </Box>
               )}
@@ -162,7 +164,7 @@ export default function EnsiklopediaPage() {
             <Box sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
               <TextField
                 fullWidth
-                placeholder="Tanya Arina tentang cabai..."
+                placeholder={t('inputPlaceholder')}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -191,7 +193,7 @@ export default function EnsiklopediaPage() {
 
           {/* Quick prompts */}
           <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {['Cara mengatasi antraknosa?', 'Jadwal pemupukan cabai', 'Gejala kutu kebul', 'Cara panen yang benar'].map((prompt) => (
+            {[t('prompts.p1'), t('prompts.p2'), t('prompts.p3'), t('prompts.p4')].map((prompt) => (
               <Chip
                 key={prompt}
                 label={prompt}
@@ -208,6 +210,7 @@ export default function EnsiklopediaPage() {
         <Grid size={{ xs: 12, lg: 5 }}>
           <Typography variant="h6" sx={{ mb: 2, fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             Referensi Cepat Penyakit Cabai
+            {t('quickReferenceTitle')}
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {diseaseCards.map((disease) => (
@@ -224,7 +227,7 @@ export default function EnsiklopediaPage() {
                   <Box className="flex items-start justify-between mb-1.5">
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{disease.nama}</Typography>
                     <Chip
-                      label={`Kerugian ${disease.kehilangan}`}
+                      label={t('lossLabel', { value: disease.kehilangan })}
                       size="small"
                       sx={{
                         backgroundColor: disease.tingkatSeveritas === 'tinggi' ? '#fee2e2' : '#fef3c7',
@@ -235,10 +238,10 @@ export default function EnsiklopediaPage() {
                     />
                   </Box>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                    <strong>Penyebab:</strong> {disease.penyebab}
+                    <strong>{t('cause')}:</strong> {disease.penyebab}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                    <strong>Gejala:</strong> {disease.gejala}
+                    <strong>{t('symptoms')}:</strong> {disease.gejala}
                   </Typography>
                   <Box sx={{ backgroundColor: '#f8fafc', borderRadius: 1.5, px: 1.5, py: 1 }}>
                     <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>

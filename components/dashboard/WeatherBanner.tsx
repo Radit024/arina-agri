@@ -4,14 +4,16 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { useTranslations } from 'next-intl';
 
 interface WeatherBannerProps {
   message?: string;
 }
 
 export default function WeatherBanner({ message }: WeatherBannerProps) {
+  const t = useTranslations('Dashboard.weatherBanner');
   const defaultMessage =
-    '⛈️ Prakiraan hujan lebat 2 hari ke depan di wilayah Malang. Tunda pemupukan dan penyemprotan pestisida. Pastikan drainase lahan dalam kondisi baik.';
+    t('defaultMessage');
 
   return (
     <Alert
@@ -25,7 +27,7 @@ export default function WeatherBanner({ message }: WeatherBannerProps) {
         '& .MuiAlert-icon': { color: '#f59e0b' },
       }}
     >
-      <AlertTitle sx={{ fontWeight: 600, color: '#92400e' }}>Peringatan Cuaca</AlertTitle>
+      <AlertTitle sx={{ fontWeight: 600, color: '#92400e' }}>{t('title')}</AlertTitle>
       <Typography variant="body2" color="#78350f">
         {message || defaultMessage}
       </Typography>

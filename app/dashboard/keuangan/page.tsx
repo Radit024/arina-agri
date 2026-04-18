@@ -46,6 +46,7 @@ import { mockTransactions } from '@/lib/mockData';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import type { Transaction } from '@/lib/mockData';
 import { PieChart } from '@mui/x-charts/PieChart';
+import { useTranslations } from 'next-intl';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'Pilih jenis transaksi' }),
@@ -77,6 +78,7 @@ Komponen biaya terbesar Anda didominasi oleh sarana pemeliharaan konvensional (P
 • Kas Anda terlihat positif bulan ini. Sangat disarankan menyisihkan 20% dari dana segar untuk dijadikan "Dana Darurat Lahan" guna modal perbaikan alat atau perubahan iklim ekstrem di depan.`;
 
 export default function KeuanganPage() {
+  const t = useTranslations('Finance');
   const [transactions, setTransactions] = useLocalStorage<Transaction[]>('arina-transactions', mockTransactions);
   const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>('arina-bep-hpp-inputs', {
     biayaTetap: 0,
@@ -105,8 +107,8 @@ export default function KeuanganPage() {
 
   const kategoriFiltered =
     selectedJenis === 'pendapatan'
-      ? ['Penjualan Hasil Panen', 'Layanan Jasa', 'Lainnya']
-      : ['Pupuk', 'Pestisida', 'Tenaga Kerja', 'Irigasi & Air', 'Alat Tani', 'Lainnya'];
+      ? [t('categories.harvestSales'), t('categories.service'), t('categories.other')]
+      : [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')];
 
   const openAddDialog = () => {
     setEditingId(null);
@@ -216,7 +218,7 @@ export default function KeuanganPage() {
   const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
-  const pieCategories = ['Pupuk', 'Pestisida', 'Tenaga Kerja', 'Irigasi & Air', 'Alat Tani', 'Lainnya'];
+  const pieCategories = [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')];
   const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
   const expenseStats = pieCategories
     .map((k, i) => ({
@@ -258,10 +260,10 @@ export default function KeuanganPage() {
       <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            Manajemen Keuangan
+              {t('title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Pantau arus kas, analisis biaya, dan telusuri profil pengeluaran kebun Anda.
+              {t('subtitle')}
           </Typography>
         </Box>
         <Button
@@ -271,7 +273,7 @@ export default function KeuanganPage() {
           color="success"
           sx={{ borderRadius: 8, bgcolor: 'background.paper', boxShadow: 1, whiteSpace: 'nowrap' }}
         >
-          Ekspor CSV
+          {t('exportCsv')}
         </Button>
       </Box>
 
@@ -282,10 +284,10 @@ export default function KeuanganPage() {
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                  Buku Besar Transaksi
+                  {t('ledger.title')}
                 </Typography>
               }
-              subheader={`${displayedTransactions.length} transaksi ditampilkan`}
+              subheader={t('ledger.subheader', { count: displayedTransactions.length })}
               action={
                 <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   {/* Filter Bulan */}
@@ -293,10 +295,10 @@ export default function KeuanganPage() {
                     <InputLabel>Filter Bulan</InputLabel>
                     <Select
                       value={filterBulan}
-                      label="Filter Bulan"
+                      label={t('filters.month')}
                       onChange={(e) => setFilterBulan(e.target.value)}
                     >
-                      <MenuItem value="semua">Semua Bulan</MenuItem>
+                      <MenuItem value="semua">{t('filters.allMonths')}</MenuItem>
                       {bulanOptions.map((bulanKey) => (
                         <MenuItem key={bulanKey} value={bulanKey}>
                           {getBulanLabel(bulanKey)}
@@ -307,15 +309,15 @@ export default function KeuanganPage() {
 
                   {/* Filter */}
                   <FormControl size="small" sx={{ minWidth: 170 }}>
-                    <InputLabel>Filter Tipe</InputLabel>
+                    <InputLabel>{t('filters.type')}</InputLabel>
                     <Select
                       value={filterJenis}
-                      label="Filter Tipe"
+                      label={t('filters.type')}
                       onChange={(e) => setFilterJenis(e.target.value as typeof filterJenis)}
                     >
-                      <MenuItem value="semua">Semua</MenuItem>
-                      <MenuItem value="pendapatan">Pemasukan</MenuItem>
-                      <MenuItem value="pengeluaran">Pengeluaran</MenuItem>
+                      <MenuItem value="semua">{t('filters.allTypes')}</MenuItem>
+                      <MenuItem value="pendapatan">{t('common.income')}</MenuItem>
+                      <MenuItem value="pengeluaran">{t('common.expense')}</MenuItem>
                     </Select>
                   </FormControl>
 
@@ -327,7 +329,7 @@ export default function KeuanganPage() {
                     onClick={() => setBepHppDialogOpen(true)}
                     sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
                   >
-                    Perhitungan HPP & BEP
+                    {t('buttons.hppBep')}
                   </Button>
 
                   {/* Tombol Tambah Transaksi */}
@@ -338,7 +340,7 @@ export default function KeuanganPage() {
                     onClick={openAddDialog}
                     sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
                   >
-                    Catat Transaksi
+                    {t('buttons.addTransaction')}
                   </Button>
                 </Box>
               }
@@ -350,7 +352,7 @@ export default function KeuanganPage() {
                 <Table size="medium" stickyHeader>
                   <TableHead>
                     <TableRow>
-                      {['Tanggal', 'Kategori', 'Detail / Catatan', 'Tipe', 'Nilai (Rp)', 'Opsi'].map((h) => (
+                      {[t('ledger.columns.date'), t('ledger.columns.category'), t('ledger.columns.note'), t('ledger.columns.type'), t('ledger.columns.value'), t('ledger.columns.action')].map((h) => (
                         <TableCell
                           key={h}
                           sx={{
@@ -374,10 +376,10 @@ export default function KeuanganPage() {
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                             <Typography variant="body2" color="text.secondary">
-                              Belum ada transaksi untuk filter ini.
+                              {t('ledger.empty')}
                             </Typography>
                             <Button size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
-                              Tambah pertama
+                              {t('ledger.addFirst')}
                             </Button>
                           </Box>
                         </TableCell>
@@ -398,7 +400,7 @@ export default function KeuanganPage() {
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={tx.jenis === 'pendapatan' ? 'Pemasukan' : 'Pengeluaran'}
+                              label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
                               size="small"
                               sx={{
                                 backgroundColor: tx.jenis === 'pendapatan' ? '#dcfce7' : '#fee2e2',
@@ -466,7 +468,7 @@ export default function KeuanganPage() {
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                  Ringkasan Bisnis
+                  {t('summary.title')}
                 </Typography>
               }
               action={
@@ -500,7 +502,7 @@ export default function KeuanganPage() {
                   <TrendingUpIcon sx={{ color: 'white', fontSize: 20 }} />
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Total Pemasukan</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('summary.totalIncome')}</Typography>
                   <Typography variant="h6" color="success.main" sx={{ lineHeight: 1.2, fontWeight: 800 }}>
                     {formatRupiah(totalPendapatan)}
                   </Typography>
@@ -524,7 +526,7 @@ export default function KeuanganPage() {
                   <TrendingDownIcon sx={{ color: 'white', fontSize: 20 }} />
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>Total Pengeluaran</Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('summary.totalExpense')}</Typography>
                   <Typography variant="h6" color="error.main" sx={{ lineHeight: 1.2, fontWeight: 800 }}>
                     {formatRupiah(totalPengeluaran)}
                   </Typography>
@@ -544,7 +546,7 @@ export default function KeuanganPage() {
                 }}
               >
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                  {labaBersih >= 0 ? 'ESTIMASI LABA BERSIH' : 'DEFISIT ANGGARAN'}
+                  {labaBersih >= 0 ? t('summary.netProfit') : t('summary.deficit')}
                 </Typography>
                 <Typography
                   variant="h4"
@@ -567,7 +569,7 @@ export default function KeuanganPage() {
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                  Distribusi Pengeluaran
+                  {t('distribution.title')}
                 </Typography>
               }
             />
@@ -627,10 +629,10 @@ export default function KeuanganPage() {
               </Box>
               <Box>
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2, fontWeight: 800 }}>
-                  {editingId ? 'Edit Transaksi' : 'Catat Transaksi Baru'}
+                  {editingId ? t('transactionDialog.editTitle') : t('transactionDialog.addTitle')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {editingId ? 'Perbarui data transaksi yang sudah ada' : 'Tambahkan pemasukan atau pengeluaran baru'}
+                  {editingId ? t('transactionDialog.editSubtitle') : t('transactionDialog.addSubtitle')}
                 </Typography>
               </Box>
             </Box>
@@ -654,10 +656,10 @@ export default function KeuanganPage() {
                   control={control}
                   render={({ field }) => (
                     <FormControl fullWidth error={!!errors.jenis}>
-                      <InputLabel>Jenis Transaksi</InputLabel>
-                      <Select {...field} label="Jenis Transaksi">
-                        <MenuItem value="pendapatan">Pemasukan (+)</MenuItem>
-                        <MenuItem value="pengeluaran">Pengeluaran (−)</MenuItem>
+                      <InputLabel>{t('transactionDialog.fields.type')}</InputLabel>
+                      <Select {...field} label={t('transactionDialog.fields.type')}>
+                        <MenuItem value="pendapatan">{t('transactionDialog.options.income')}</MenuItem>
+                        <MenuItem value="pengeluaran">{t('transactionDialog.options.expense')}</MenuItem>
                       </Select>
                       {errors.jenis && <FormHelperText>{errors.jenis.message}</FormHelperText>}
                     </FormControl>
@@ -672,7 +674,7 @@ export default function KeuanganPage() {
                     <TextField
                       {...field}
                       type="date"
-                      label="Tanggal"
+                      label={t('transactionDialog.fields.date')}
                       fullWidth
                       error={!!errors.tanggal}
                       helperText={errors.tanggal?.message}
@@ -689,8 +691,8 @@ export default function KeuanganPage() {
               control={control}
               render={({ field }) => (
                 <FormControl fullWidth error={!!errors.kategori}>
-                  <InputLabel>Kategori</InputLabel>
-                  <Select {...field} label="Kategori">
+                  <InputLabel>{t('transactionDialog.fields.category')}</InputLabel>
+                  <Select {...field} label={t('transactionDialog.fields.category')}>
                     {kategoriFiltered.map((k) => (
                       <MenuItem key={k} value={k}>{k}</MenuItem>
                     ))}
@@ -709,7 +711,7 @@ export default function KeuanganPage() {
                   {...rest}
                   value={value}
                   onChange={(e) => handleNominalChange(e.target.value, onChange)}
-                  label="Nominal"
+                  label={t('transactionDialog.fields.amount')}
                   placeholder="250.000"
                   error={!!errors.nominal}
                   helperText={errors.nominal?.message}
@@ -734,14 +736,14 @@ export default function KeuanganPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Catatan (opsional)"
+                  label={t('transactionDialog.fields.noteOptional')}
                   multiline
                   rows={2}
                   fullWidth
                   placeholder={
                     selectedJenis === 'pengeluaran'
-                      ? 'Cth: Beli 2 sak Phonska di toko pak tani'
-                      : 'Cth: Laku 50kg tomat ke tengkulak pak Darwis'
+                      ? t('transactionDialog.placeholders.expense')
+                      : t('transactionDialog.placeholders.income')
                   }
                 />
               )}
@@ -755,7 +757,7 @@ export default function KeuanganPage() {
                 onClick={() => { setTxDialogOpen(false); setEditingId(null); }}
                 sx={{ flex: 1, borderRadius: 8 }}
               >
-                Batal
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -766,7 +768,7 @@ export default function KeuanganPage() {
                   bgcolor: selectedJenis === 'pendapatan' ? 'success.main' : '#1e293b',
                 }}
               >
-                {editingId ? 'Perbarui Data' : 'Simpan Transaksi'}
+                {editingId ? t('transactionDialog.update') : t('transactionDialog.save')}
               </Button>
             </Box>
           </Box>
@@ -785,10 +787,10 @@ export default function KeuanganPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
               <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800, lineHeight: 1.2 }}>
-                Perhitungan HPP & BEP
+                {t('hppDialog.title')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Menggunakan data transaksi + input produksi
+                {t('hppDialog.subtitle')}
               </Typography>
             </Box>
             <IconButton size="small" onClick={() => setBepHppDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
@@ -801,7 +803,7 @@ export default function KeuanganPage() {
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label="Biaya Tetap Periode"
+                label={t('hppDialog.fields.fixedCost')}
                 type="number"
                 value={biayaTetapDisplayValue}
                 placeholder="0"
@@ -823,7 +825,7 @@ export default function KeuanganPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label="Total Produksi Periode"
+                label={t('hppDialog.fields.totalProduction')}
                 type="number"
                 value={getBepHppInputDisplayValue(bepHppInputs.jumlahProduksi)}
                 placeholder="0"
@@ -843,7 +845,7 @@ export default function KeuanganPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label="Harga Jual per Kg"
+                label={t('hppDialog.fields.unitPrice')}
                 type="number"
                 value={hargaJualDisplayValue}
                 placeholder="0"

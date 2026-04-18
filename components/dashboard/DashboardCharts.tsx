@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
+import { useTranslations } from 'next-intl';
 
 const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })), {
   ssr: false,
@@ -21,19 +22,21 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 });
 
 export function TrendChart() {
+  const t = useTranslations('Dashboard.charts');
+
   return (
     <Card>
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
-            Tren Keuangan
+            {t('trend.title')}
           </Typography>
         }
-        subheader="Pengeluaran vs Pendapatan (6 bulan terakhir)"
+        subheader={t('trend.subheader')}
       />
       <CardContent sx={{ pt: 0 }}>
         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          {[{ color: '#16a34a', label: 'Pendapatan' }, { color: '#f59e0b', label: 'Pengeluaran' }].map((item) => (
+          {[{ color: '#16a34a', label: t('common.income') }, { color: '#f59e0b', label: t('common.expense') }].map((item) => (
             <Box key={item.label} className="flex items-center gap-1.5">
               <Box sx={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color }} />
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>{item.label}</Typography>
@@ -45,7 +48,7 @@ export function TrendChart() {
           series={[
             {
               data: trendChartData.map((d) => d.pendapatan),
-              label: 'Pendapatan',
+              label: t('common.income'),
               color: '#16a34a',
               showMark: true,
               curve: 'monotoneX',
@@ -53,7 +56,7 @@ export function TrendChart() {
             },
             {
               data: trendChartData.map((d) => d.pengeluaran),
-              label: 'Pengeluaran',
+              label: t('common.expense'),
               color: '#f59e0b',
               showMark: true,
               curve: 'monotoneX',
@@ -78,6 +81,7 @@ export function TrendChart() {
 }
 
 export function KategoriChart() {
+  const t = useTranslations('Dashboard.charts');
   const totalPengeluaran = pieDataTotal(kategoriChartData);
   const pieData = kategoriChartData.map((item, index) => ({
     id: index,
@@ -92,10 +96,10 @@ export function KategoriChart() {
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
-            Kategori Pengeluaran
+            {t('category.title')}
           </Typography>
         }
-        subheader="Bulan April 2026"
+        subheader={t('category.subheader')}
       />
       <CardContent sx={{ pt: 0 }}>
         <Box

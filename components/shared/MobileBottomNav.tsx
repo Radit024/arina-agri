@@ -11,24 +11,26 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { useTranslations } from 'next-intl';
 
 interface MobileNavItem {
-  label: string;
+  key: string;
   icon: ReactNode;
   path: string;
   type?: 'route' | 'settings';
 }
 
 const mobileNavItems: MobileNavItem[] = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { label: 'Keuangan', icon: <AccountBalanceWalletIcon />, path: '/dashboard/keuangan' },
-  { label: 'Cuaca', icon: <CloudIcon />, path: '/dashboard/cuaca' },
-  { label: 'Ensiklopedia', icon: <AutoStoriesIcon />, path: '/dashboard/ensiklopedia' },
-  { label: 'Kalender', icon: <CalendarMonthIcon />, path: '/dashboard/kalender' },
-  { label: 'Pengaturan', icon: <SettingsIcon />, path: '/dashboard/pengaturan', type: 'settings' },
+  { key: 'dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+  { key: 'keuangan', icon: <AccountBalanceWalletIcon />, path: '/dashboard/keuangan' },
+  { key: 'cuaca', icon: <CloudIcon />, path: '/dashboard/cuaca' },
+  { key: 'ensiklopedia', icon: <AutoStoriesIcon />, path: '/dashboard/ensiklopedia' },
+  { key: 'kalender', icon: <CalendarMonthIcon />, path: '/dashboard/kalender' },
+  { key: 'pengaturan', icon: <SettingsIcon />, path: '/dashboard/pengaturan', type: 'settings' },
 ];
 
 export default function MobileBottomNav() {
+  const t = useTranslations('MobileNav');
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -73,7 +75,7 @@ export default function MobileBottomNav() {
         {mobileNavItems.map((item) => (
           <BottomNavigationAction
             key={item.path}
-            label={item.label}
+            label={t(item.key)}
             icon={item.icon}
             sx={{
               '&.Mui-selected': {

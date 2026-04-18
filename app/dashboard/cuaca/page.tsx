@@ -220,7 +220,7 @@ export default function CuacaPage() {
 
               <TextField
                 fullWidth
-                label="Nomor WhatsApp"
+                label="Nomor Telpon"
                 placeholder="Contoh: 08123456789"
                 value={hp}
                 onChange={(e) => { setHp(e.target.value); setSavedHp(false); }}

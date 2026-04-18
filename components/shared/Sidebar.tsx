@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -48,6 +48,13 @@ export default function Sidebar() {
 
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    navItems.forEach((item) => {
+      router.prefetch(item.path);
+    });
+    router.prefetch('/dashboard/pengaturan');
+  }, [router]);
 
   const isActive = (path: string) => {
     if (path === '/dashboard') return pathname === '/dashboard';
@@ -129,7 +136,11 @@ export default function Sidebar() {
             const navButton = (
               <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
                 <ListItemButton
-                  onClick={() => router.push(item.path)}
+                  onClick={() => {
+                    if (pathname !== item.path) {
+                      router.push(item.path);
+                    }
+                  }}
                   sx={{
                     borderRadius: 3,
                     py: 1.2,

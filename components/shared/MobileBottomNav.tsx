@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
@@ -36,6 +37,12 @@ export default function MobileBottomNav() {
   const searchParams = useSearchParams();
   const isSettingsOpen = searchParams.get('settings') === 'true';
 
+  useEffect(() => {
+    mobileNavItems.forEach((item) => {
+      router.prefetch(item.path);
+    });
+  }, [router]);
+
   const currentValue = mobileNavItems.findIndex((item) => {
     if (item.type === 'settings') {
       return isSettingsOpen || pathname === '/dashboard/pengaturan';
@@ -65,10 +72,16 @@ export default function MobileBottomNav() {
         onChange={(_, newValue) => {
           const item = mobileNavItems[newValue];
           if (item.type === 'settings') {
-            router.push(`${pathname}?settings=true&tab=general`);
+            const next = `${pathname}?settings=true&tab=general`;
+            const current = `${pathname}?${searchParams.toString()}`;
+            if (current !== next) {
+              router.push(next);
+            }
             return;
           }
-          router.push(item.path);
+          if (pathname !== item.path) {
+            router.push(item.path);
+          }
         }}
         sx={{ height: 64, px: 0.5 }}
       >

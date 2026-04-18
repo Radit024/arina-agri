@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -105,10 +105,13 @@ export default function KeuanganPage() {
 
   const selectedJenis = watch('jenis');
 
-  const kategoriFiltered =
-    selectedJenis === 'pendapatan'
-      ? [t('categories.harvestSales'), t('categories.service'), t('categories.other')]
-      : [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')];
+  const kategoriFiltered = useMemo(
+    () =>
+      selectedJenis === 'pendapatan'
+        ? [t('categories.harvestSales'), t('categories.service'), t('categories.other')]
+        : [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')],
+    [selectedJenis, t]
+  );
 
   const openAddDialog = () => {
     setEditingId(null);
@@ -164,13 +167,13 @@ export default function KeuanganPage() {
     onChange(formatted);
   };
 
-  const handleBepHppInputChange = (field: keyof BepHppInputs, rawValue: string) => {
+  const handleBepHppInputChange = useCallback((field: keyof BepHppInputs, rawValue: string) => {
     const numericValue = Math.max(0, Number(rawValue) || 0);
-    setBepHppInputs({
-      ...bepHppInputs,
+    setBepHppInputs((prev) => ({
+      ...prev,
       [field]: numericValue,
-    });
-  };
+    }));
+  }, [setBepHppInputs]);
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
@@ -188,13 +191,24 @@ export default function KeuanganPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const monthFilteredTransactions = transactions.filter(
-    (t) => filterBulan === 'semua' || t.tanggal.startsWith(filterBulan)
+  const monthFilteredTransactions = useMemo(
+    () => transactions.filter((t) => filterBulan === 'semua' || t.tanggal.startsWith(filterBulan)),
+    [transactions, filterBulan]
   );
 
   // Summaries
-  const totalPendapatan = monthFilteredTransactions.filter((t) => t.jenis === 'pendapatan').reduce((a, t) => a + t.nominal, 0);
-  const totalPengeluaran = monthFilteredTransactions.filter((t) => t.jenis === 'pengeluaran').reduce((a, t) => a + t.nominal, 0);
+  const { totalPendapatan, totalPengeluaran } = useMemo(() => {
+    let pendapatan = 0;
+    let pengeluaran = 0;
+    monthFilteredTransactions.forEach((tx) => {
+      if (tx.jenis === 'pendapatan') {
+        pendapatan += tx.nominal;
+      } else if (tx.jenis === 'pengeluaran') {
+        pengeluaran += tx.nominal;
+      }
+    });
+    return { totalPendapatan: pendapatan, totalPengeluaran: pengeluaran };
+  }, [monthFilteredTransactions]);
   const labaBersih = totalPendapatan - totalPengeluaran;
 
   // HPP & BEP calculations
@@ -218,43 +232,63 @@ export default function KeuanganPage() {
   const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
-  const expenseCategoryConfig = [
-    { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'] },
-    { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'] },
-    { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'] },
-    { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'] },
-    { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'] },
-    { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'] },
-  ] as const;
+  const expenseCategoryConfig = useMemo(
+    () => [
+      { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'] },
+      { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'] },
+      { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'] },
+      { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'] },
+      { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'] },
+      { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'] },
+    ] as const,
+    [t]
+  );
 
   const normalizeCategory = (value: string) => value.trim().toLowerCase();
   const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
-  const expenseStats = expenseCategoryConfig
-    .map((category, i) => {
-      const aliases = category.aliases.map(normalizeCategory);
-      const value = monthFilteredTransactions
-        .filter((tx) => tx.jenis === 'pengeluaran' && aliases.includes(normalizeCategory(tx.kategori)))
-        .reduce((sum, tx) => sum + tx.nominal, 0);
+  const expenseStats = useMemo(
+    () =>
+      expenseCategoryConfig
+        .map((category, i) => {
+          const aliases = category.aliases.map(normalizeCategory);
+          let value = 0;
+          monthFilteredTransactions.forEach((tx) => {
+            if (tx.jenis === 'pengeluaran' && aliases.includes(normalizeCategory(tx.kategori))) {
+              value += tx.nominal;
+            }
+          });
 
-      return {
-      id: category.id,
-      value,
-      label: category.label,
-      color: pieColors[i],
-      };
-    })
-    .filter((item) => item.value > 0);
+          return {
+            id: category.id,
+            value,
+            label: category.label,
+            color: pieColors[i],
+          };
+        })
+        .filter((item) => item.value > 0),
+    [expenseCategoryConfig, monthFilteredTransactions]
+  );
 
-  const finalPieData = expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: 'Belum Ada Data', color: '#e2e8f0' }];
-  const finalPieColors = expenseStats.length > 0 ? expenseStats.map((e) => e.color) : ['#e2e8f0'];
+  const finalPieData = useMemo(
+    () => (expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: 'Belum Ada Data', color: '#e2e8f0' }]),
+    [expenseStats]
+  );
+  const finalPieColors = useMemo(
+    () => (expenseStats.length > 0 ? expenseStats.map((e) => e.color) : ['#e2e8f0']),
+    [expenseStats]
+  );
 
-  const bulanOptions = Array.from(
-    new Set(
-      transactions
-        .map((t) => t.tanggal.slice(0, 7))
-        .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
-    )
-  ).sort((a, b) => b.localeCompare(a));
+  const bulanOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          transactions
+            .map((t) => t.tanggal.slice(0, 7))
+            .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
+        )
+      ).sort((a, b) => b.localeCompare(a)),
+    [transactions]
+  );
 
   const getBulanLabel = (bulanKey: string) => {
     const [tahun, bulan] = bulanKey.split('-');
@@ -266,8 +300,9 @@ export default function KeuanganPage() {
   };
 
   // Filtered table data
-  const displayedTransactions = monthFilteredTransactions.filter(
-    (t) => (filterJenis === 'semua' || t.jenis === filterJenis)
+  const displayedTransactions = useMemo(
+    () => monthFilteredTransactions.filter((t) => (filterJenis === 'semua' || t.jenis === filterJenis)),
+    [monthFilteredTransactions, filterJenis]
   );
 
   return (

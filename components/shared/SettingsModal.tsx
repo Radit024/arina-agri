@@ -33,6 +33,8 @@ const SETTINGS_TABS = [
   { id: 'info', label: 'Informasi Sistem', icon: <InfoOutlinedIcon /> },
 ];
 
+const TAB_CONTENT_MIN_HEIGHT = 460;
+
 export default function SettingsModal() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,14 +64,17 @@ export default function SettingsModal() {
       fullWidth 
       PaperProps={{
         sx: { 
-          borderRadius: 4, 
+          borderRadius: { xs: 0, md: 4 }, 
           overflow: 'hidden', 
-          height: { xs: '100%', md: 600 }, 
-          maxHeight: '90vh' 
+          width: '100%',
+          height: { xs: '100%', md: '650px' }, 
+          minHeight: { xs: '100%', md: '650px' }, 
+          maxHeight: { xs: '100%', md: '650px' },
+          m: { xs: 0, md: 2 } 
         }
       }}
     >
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100%' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100%', flex: 1 }}>
         
         {/* Left Navigation (Inner Sidebar) */}
         <Box sx={{ width: { xs: '100%', md: 240 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2, display: 'flex', flexDirection: 'column' }}>
@@ -114,26 +119,14 @@ export default function SettingsModal() {
              </IconButton>
            </Box>
 
-           <DialogContent sx={{ p: { xs: 3, md: 5 }, pt: { md: 2 }, overflowY: 'auto' }}>
+           <DialogContent sx={{ p: { xs: 3, md: 5 }, pt: { md: 2 }, overflowY: 'scroll', display: 'flex', flexDirection: 'column' }}>
              
              {/* GENERAL SETTINGS */}
              {activeTab === 'general' && (
-                <Box>
+                <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
                   <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>General</Typography>
                   
                   {/* Simulated MFA / Security Box like reference */}
-                  <Box sx={{ bgcolor: '#111827', color: 'white', p: 3, borderRadius: 3, mb: 5 }}>
-                    <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <span className="material-icons" style={{ fontSize: 18 }}>security</span> Secure your account
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
-                      Add multi-factor authentication (MFA), like a passkey or text message, to help protect your account when logging in.
-                    </Typography>
-                    <Button variant="contained" sx={{ bgcolor: 'white', color: 'black', '&:hover': { bgcolor: '#e5e7eb' }, borderRadius: 6, textTransform: 'none', fontWeight: 600, px: 3 }}>
-                      Set up MFA
-                    </Button>
-                  </Box>
-
                   <Box sx={{ mb: 4 }}>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Typography variant="body2" fontWeight={500}>Appearance</Typography>
@@ -160,7 +153,7 @@ export default function SettingsModal() {
 
              {/* EDIT PROFIL */}
              {activeTab === 'profil' && (
-                <Box>
+                <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT }, display: 'flex', flexDirection: 'column' }}>
                   <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Edit Profil</Typography>
                   
                   <Box className="flex items-center gap-4 mb-6">
@@ -197,7 +190,7 @@ export default function SettingsModal() {
                     </Grid>
                   </Grid>
                   
-                  <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
+                  <Box sx={{ mt: 'auto', pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
                     <Button variant="contained" sx={{ px: 4, borderRadius: 6, textTransform: 'none', bgcolor: '#111827', color: 'white' }}>Simpan Perubahan</Button>
                   </Box>
                 </Box>
@@ -205,7 +198,7 @@ export default function SettingsModal() {
 
              {/* NOTIFIKASI */}
              {activeTab === 'notifikasi' && (
-                <Box>
+                <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
                   <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Notifikasi</Typography>
                   
                   {[
@@ -228,7 +221,7 @@ export default function SettingsModal() {
 
              {/* INFO APLIKASI */}
              {activeTab === 'info' && (
-                <Box>
+                <Box sx={{ minHeight: { md: TAB_CONTENT_MIN_HEIGHT } }}>
                   <Typography variant="h5" fontWeight={700} sx={{ mb: 4, fontFamily: 'var(--font-sora)' }}>Informasi Sistem</Typography>
                   
                   <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>

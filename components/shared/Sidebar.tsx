@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -26,9 +26,6 @@ import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
-import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import SubscriptionsOutlinedIcon from '@mui/icons-material/SubscriptionsOutlined';
 
 import { farmerProfile } from '@/lib/mockData';
 
@@ -55,6 +52,16 @@ export default function Sidebar() {
     return pathname.startsWith(path);
   };
 
+  const handleToggleSidebar = useCallback(() => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        setIsProfileDropdownOpen(false);
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <Drawer
       variant="permanent"
@@ -63,9 +70,12 @@ export default function Sidebar() {
         flexShrink: 0,
         display: { xs: 'none', md: 'block' },
         transition: 'width 0.25s ease-in-out',
+        willChange: 'width',
         '& .MuiDrawer-paper': {
           width: isOpen ? DRAWER_WIDTH_OPEN : DRAWER_WIDTH_CLOSED,
           transition: 'width 0.25s ease-in-out',
+          willChange: 'width',
+          contain: 'layout paint',
           boxSizing: 'border-box',
           borderRight: '1px solid #f1f5f9',
           backgroundColor: '#ffffff',
@@ -102,15 +112,15 @@ export default function Sidebar() {
           >
             {/* Custom SVG logo based on reference */}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 22h20L12 2zm0 3.83L18.17 20H5.83L12 5.83z" fill="white"/>
-              <circle cx="12" cy="15" r="3" fill="white"/>
+              <path d="M12 2L2 22h20L12 2zm0 3.83L18.17 20H5.83L12 5.83z" fill="white" />
+              <circle cx="12" cy="15" r="3" fill="white" />
             </svg>
           </Box>
           <Typography variant="h6" sx={{ color: '#064e3b', letterSpacing: '-0.5px', fontWeight: 800 }}>
             Arina
           </Typography>
         </Box>
-        <IconButton size="small" onClick={() => setIsOpen(!isOpen)} sx={{ color: '#064e3b' }}>
+        <IconButton size="small" onClick={handleToggleSidebar} sx={{ color: '#064e3b' }}>
           <ViewSidebarIcon />
         </IconButton>
       </Box>
@@ -118,68 +128,60 @@ export default function Sidebar() {
       {/* Main Navigation */}
       <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 2, mt: 1 }}>
         <List sx={{ pt: 0 }}>
-          {!isOpen && (
-            <Tooltip title="Buka Sidebar" placement="right" arrow>
-              <ListItem disablePadding sx={{ mb: 1 }}>
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const navButton = (
+              <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
                 <ListItemButton
-                  onClick={() => setIsOpen(true)}
+                  onClick={() => router.push(item.path)}
                   sx={{
                     borderRadius: 3,
                     py: 1.2,
                     minHeight: 48,
-                    justifyContent: 'center',
-                    '&:hover': { bgcolor: '#f8fafc' },
+                    justifyContent: isOpen ? 'initial' : 'center',
+                    bgcolor: active ? '#f0fdf4' : 'transparent',
+                    '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, color: '#064e3b', justifyContent: 'center' }}>
-                    <ViewSidebarIcon />
-                  </ListItemIcon>
-                </ListItemButton>
-              </ListItem>
-            </Tooltip>
-          )}
-
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            return (
-              <Tooltip key={item.path} title={!isOpen ? item.label : ''} placement="right" arrow>
-                <ListItem disablePadding sx={{ mb: 1 }}>
-                  <ListItemButton
-                    onClick={() => router.push(item.path)}
+                  <ListItemIcon
                     sx={{
-                      borderRadius: 3,
-                      py: 1.2,
-                      minHeight: 48,
-                      justifyContent: isOpen ? 'initial' : 'center',
-                      bgcolor: active ? '#f0fdf4' : 'transparent',
-                      '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
+                      minWidth: 0,
+                      mr: isOpen ? 2 : 'auto',
+                      justifyContent: 'center',
+                      color: active ? 'primary.dark' : '#475569',
                     }}
                   >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: 0,
-                        mr: isOpen ? 2 : 'auto',
-                        justifyContent: 'center',
-                        color: active ? 'primary.dark' : '#475569',
-                      }}
-                    >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      sx={{ opacity: isOpen ? 1 : 0, transition: 'opacity 0.2s', m: 0 }}
-                      slotProps={{
-                        primary: {
-                          sx: {
-                            fontSize: '0.875rem',
-                            fontWeight: active ? 600 : 500,
-                            color: active ? '#16a34a' : '#475569',
-                          },
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.label}
+                    sx={{
+                      display: isOpen ? 'block' : 'none',
+                      opacity: isOpen ? 1 : 0,
+                      transition: 'opacity 0.2s',
+                      m: 0,
+                    }}
+                    slotProps={{
+                      primary: {
+                        sx: {
+                          fontSize: '0.875rem',
+                          fontWeight: active ? 600 : 500,
+                          color: active ? '#16a34a' : '#475569',
                         },
-                      }}
-                    />
-                  </ListItemButton>
-                </ListItem>
+                      },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+
+            if (isOpen) {
+              return navButton;
+            }
+
+            return (
+              <Tooltip key={item.path} title={item.label} placement="right" arrow>
+                {navButton}
               </Tooltip>
             );
           })}

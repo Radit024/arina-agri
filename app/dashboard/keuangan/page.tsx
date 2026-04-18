@@ -286,7 +286,7 @@ export default function KeuanganPage() {
             .map((t) => t.tanggal.slice(0, 7))
             .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
         )
-      ).sort((a, b) => b.localeCompare(a)),
+      ).sort((a, b) => a.localeCompare(b)),
     [transactions]
   );
 

@@ -55,6 +55,17 @@ export default function CuacaPage() {
   }, [savedPhone]);
 
   const dayNames = [t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')];
+  const currentCondition = currentWeather.kondisi.toLowerCase();
+  const isRainy = currentCondition === 'hujan' || currentCondition === 'gerimis';
+  const isSunny = currentCondition === 'cerah';
+  const isCloudy = currentCondition === 'berawan' || currentCondition === 'mendung';
+
+  const currentWeatherCardBackground =
+    currentCondition === 'cerah'
+      ? 'linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #f59e0b 100%)'
+      : currentCondition === 'berawan' || currentCondition === 'mendung'
+        ? 'linear-gradient(135deg, #334155 0%, #475569 55%, #94a3b8 100%)'
+        : 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)';
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -70,7 +81,38 @@ export default function CuacaPage() {
       <Grid container spacing={3}>
         {/* Current Weather */}
         <Grid size={{ xs: 12, lg: isWhatsappConfigured ? 12 : 8 }}>
-          <Card sx={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)', color: '#fff' }}>
+          <Card sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+            {isRainy && (
+              <Box className="weather-rain-layer" aria-hidden>
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <Box
+                    key={`rain-drop-${i}`}
+                    className="weather-rain-drop"
+                    sx={{
+                      left: `${6 + i * 6}%`,
+                      animationDelay: `${(i % 5) * 0.2}s`,
+                      animationDuration: `${1.05 + (i % 3) * 0.2}s`,
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+
+            {isSunny && (
+              <Box className="weather-sun-layer" aria-hidden>
+                <Box className="weather-sun-ring" />
+                <Box className="weather-sun-core" />
+              </Box>
+            )}
+
+            {isCloudy && (
+              <Box className="weather-cloud-layer" aria-hidden>
+                <Box className="weather-cloud weather-cloud-a" />
+                <Box className="weather-cloud weather-cloud-b" />
+                <Box className="weather-cloud weather-cloud-c" />
+              </Box>
+            )}
+
             <CardContent sx={{ p: 3 }}>
               <Box className="flex items-start justify-between">
                 <Box>

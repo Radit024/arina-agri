@@ -39,3 +39,131 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Weather card condition animations */
+@keyframes weather-rain-fall {
+  0% {
+    transform: translateY(-24px) rotate(12deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateY(240px) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+@keyframes weather-sun-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes weather-sun-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+@keyframes weather-cloud-float {
+  0% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+  100% {
+    transform: translateX(0px);
+  }
+}
+
+.weather-rain-layer,
+.weather-sun-layer,
+.weather-cloud-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.weather-rain-drop {
+  position: absolute;
+  top: -14px;
+  width: 2px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, rgba(191, 219, 254, 0), rgba(191, 219, 254, 0.9));
+  animation-name: weather-rain-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.weather-sun-layer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 18px 26px 0 0;
+}
+
+.weather-sun-ring {
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  border: 2px dashed rgba(254, 243, 199, 0.65);
+  animation: weather-sun-spin 11s linear infinite;
+}
+
+.weather-sun-core {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fde68a 0%, #f59e0b 70%);
+  box-shadow: 0 0 26px rgba(251, 191, 36, 0.55);
+  animation: weather-sun-pulse 3s ease-in-out infinite;
+}
+
+.weather-cloud-layer {
+  overflow: hidden;
+}
+
+.weather-cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.42);
+  filter: blur(0.2px);
+  animation: weather-cloud-float 7.5s ease-in-out infinite;
+}
+
+.weather-cloud-a {
+  top: 22px;
+  right: 132px;
+  width: 86px;
+  height: 26px;
+}
+
+.weather-cloud-b {
+  top: 46px;
+  right: 48px;
+  width: 112px;
+  height: 30px;
+  animation-delay: 0.8s;
+}
+
+.weather-cloud-c {
+  top: 74px;
+  right: 188px;
+  width: 72px;
+  height: 22px;
+  animation-delay: 1.4s;
+}

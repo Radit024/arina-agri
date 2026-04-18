@@ -218,15 +218,31 @@ export default function KeuanganPage() {
   const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
-  const pieCategories = [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')];
+  const expenseCategoryConfig = [
+    { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'] },
+    { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'] },
+    { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'] },
+    { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'] },
+    { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'] },
+    { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'] },
+  ] as const;
+
+  const normalizeCategory = (value: string) => value.trim().toLowerCase();
   const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
-  const expenseStats = pieCategories
-    .map((k, i) => ({
-      id: k,
-      value: monthFilteredTransactions.filter((t) => t.jenis === 'pengeluaran' && t.kategori === k).reduce((a, b) => a + b.nominal, 0),
-      label: k,
+  const expenseStats = expenseCategoryConfig
+    .map((category, i) => {
+      const aliases = category.aliases.map(normalizeCategory);
+      const value = monthFilteredTransactions
+        .filter((tx) => tx.jenis === 'pengeluaran' && aliases.includes(normalizeCategory(tx.kategori)))
+        .reduce((sum, tx) => sum + tx.nominal, 0);
+
+      return {
+      id: category.id,
+      value,
+      label: category.label,
       color: pieColors[i],
-    }))
+      };
+    })
     .filter((item) => item.value > 0);
 
   const finalPieData = expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: 'Belum Ada Data', color: '#e2e8f0' }];

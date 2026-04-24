@@ -1,10 +1,24 @@
+import { auth } from '@/lib/firebase';
+
 // ─── API Base Configuration ───────────────────────────────────────
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // ─── Generic fetcher with error handling ─────────────────────────
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  if (options?.headers) {
+    const incomingHeaders = new Headers(options.headers);
+    incomingHeaders.forEach((value, key) => headers.set(key, value));
+  }
+
+  const user = auth.currentUser;
+  if (user) {
+    const token = await user.getIdToken();
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options,
   });
 
@@ -63,6 +77,11 @@ export interface StokSummary {
   batchHampirKadaluarsa: number;
 }
 
+export interface GeminiChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+}
+
 // ─── Transaction API ──────────────────────────────────────────────
 export const transactionApi = {
   getAll: () => apiFetch<ApiTransaction[]>('/transactions'),
@@ -104,5 +123,13 @@ export const stokApi = {
     apiFetch<{ batch: ApiHarvestBatch; mutation: ApiStockMutation }>(`/stok/${batchId}/keluar`, {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+};
+
+export const aiApi = {
+  askGemini: (payload: { prompt: string; history?: GeminiChatMessage[] }) =>
+    apiFetch<{ reply: string; model: string }>('/ai/gemini', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     }),
 };

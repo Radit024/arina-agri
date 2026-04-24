@@ -15,6 +15,7 @@ import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { initialChatMessages, diseaseCards } from '@/lib/mockData';
 import type { ChatMessage } from '@/lib/mockData';
+import { aiApi } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
 const AI_RESPONSES: Record<string, string> = {
@@ -38,33 +39,54 @@ export default function EnsiklopediaPage() {
   const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
+    setChatError(null);
+
+    const prompt = inputValue;
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: prompt,
       timestamp: new Date().toISOString(),
     };
+
+    const historyPayload = messages.slice(-10).map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInputValue('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    try {
+      const result = await aiApi.askGemini({ prompt, history: historyPayload });
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'ai',
-        content: getBotReply(inputValue),
+        content: result.reply,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMsg]);
+    } catch {
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'ai',
+        content: getBotReply(prompt),
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+      setChatError('Gemini belum aktif atau terjadi kendala jaringan. Menampilkan jawaban fallback.');
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -125,6 +147,11 @@ export default function EnsiklopediaPage() {
 
             {/* Messages */}
             <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {chatError && (
+                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                  {chatError}
+                </Alert>
+              )}
               {messages.map((msg) => (
                 <Box
                   key={msg.id}

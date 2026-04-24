@@ -35,6 +35,7 @@ export const viewport: Viewport = {
 
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { AuthProvider } from '@/context/AuthContext';
 
 export default async function RootLayout({
   children,
@@ -47,9 +48,11 @@ export default async function RootLayout({
   return (
     <html lang={locale} className={`${plusJakartaSans.variable} ${sora.variable}`}>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages}>
-          <MuiProvider>{children}</MuiProvider>
-        </NextIntlClientProvider>
+        <AuthProvider>
+          <NextIntlClientProvider messages={messages}>
+            <MuiProvider>{children}</MuiProvider>
+          </NextIntlClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );

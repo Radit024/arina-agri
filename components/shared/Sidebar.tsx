@@ -21,6 +21,7 @@ import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalance
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -36,6 +37,7 @@ const DRAWER_WIDTH_CLOSED = 88;
 const navItems = [
   { key: 'dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
   { key: 'keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
+  { key: 'stok', icon: <InventoryOutlinedIcon />, path: '/dashboard/stok' },
   { key: 'cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
   { key: 'ensiklopedia', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
   { key: 'kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },

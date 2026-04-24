@@ -1,10 +1,14 @@
-Build a full Next.js 14 web application called "Arina Agri" — an AI-powered smart assistant platform for Indonesian farmers and agribusiness (UMKM). Use shadcn/ui as the primary component library, Tailwind CSS for styling, and TypeScript throughout.
+Build a full Next.js 16 web application called "Arina Agri" — an AI-powered smart assistant platform for Indonesian farmers and agribusiness (UMKM). Use shadcn/ui as the primary component library, Tailwind CSS for styling, and TypeScript throughout.
 
 ---
 
 ## TECH STACK
 
 - Framework: Next.js 16 (App Router)
+- Backend: Express.js Latest Version (monolith server)
+- Database: MongoDB
+- Authentication: Firebase Authentication
+- AI LLM: Gemini 3.0
 - UI Library: Material UI (MUI) v6 — @mui/material, @mui/icons-material
 - Styling: Tailwind CSS + MUI sx prop (hybrid approach)
 - Language: TypeScript
@@ -44,6 +48,7 @@ Main layout with sidebar navigation. Sidebar items:
 - Notifikasi Cuaca
 - Ensiklopedia AI
 - Smart Calendar
+- Manajemen Stok Panen
 - Pengaturan
 
 Dashboard home shows:
@@ -123,6 +128,36 @@ Dashboard home shows:
   - Amber: Pemetikan/Panen
 - Empty state with illustration placeholder and CTA if no events
 
+### 6. Manajemen Stok Hasil Panen Cabai `/dashboard/stok`
+
+- Summary cards:
+  - Total Stok Siap Jual (kg)
+  - Stok Terjual Minggu Ini (kg)
+  - Estimasi Nilai Stok (Rupiah)
+  - Batch Mendekati Kadaluarsa
+- Form input batch panen (shadcn Form + react-hook-form):
+  - Tanggal Panen
+  - Grade Cabai: A / B / C
+  - Berat Masuk (kg)
+  - Harga Modal per kg (Rupiah)
+  - Estimasi Harga Jual per kg (Rupiah)
+  - Lokasi Penyimpanan (Gudang Utama / Gudang Cadangan)
+  - Estimasi Kadaluarsa (tanggal)
+  - Catatan
+  - Submit button
+- Tabel stok per batch:
+  - Columns: ID Batch, Tanggal Panen, Grade, Berat Awal, Stok Tersisa, Harga Jual, Status
+  - Status badge: Aman / Menipis / Hampir Kadaluarsa / Habis
+  - Row actions: Detail, Edit, Hapus
+- Form catat keluar stok (stok out):
+  - Pilih batch
+  - Berat keluar (kg)
+  - Tujuan (Pasar Lokal / Distributor / Restoran / Lainnya)
+  - Tanggal transaksi
+  - Catatan
+- Riwayat mutasi stok (in/out) dengan filter tanggal dan grade
+- Alert card untuk rekomendasi restock atau percepat penjualan saat ada batch hampir kadaluarsa
+
 ---
 
 ## COMPONENTS TO BUILD
@@ -145,6 +180,7 @@ Use shadcn/ui for all of these:
 - Avatar (for user profile in sidebar)
 - Skeleton (for loading states)
 - Tooltip
+- DataGrid/Table untuk stok batch dan mutasi
 
 ---
 
@@ -182,7 +218,7 @@ Hindari penggunaan any
 State Management
 
 Gunakan React useState dan useReducer untuk local state
-Gunakan localStorage untuk persistence (pilot scale — no backend)
+Gunakan localStorage untuk cache/UI state, dan simpan data utama ke backend Express + MongoDB
 Buat custom hooks di folder hooks/ untuk logic yang reusable
 
 Komponen
@@ -207,6 +243,8 @@ Use realistic Indonesian agri data:
 - Transactions: mix of pengeluaran (pupuk Rp450.000, pestisida Rp320.000, tenaga kerja Rp750.000) and pendapatan (penjualan cabai Rp3.200.000)
 - Weather: Malang, suhu 24°C, kelembapan 78%, prakiraan hujan ringan 2 hari ke depan
 - Calendar events: jadwal pemupukan, penyemprotan, irigasi minggu ini
+- Stok panen: 4 batch cabai rawit aktif (grade A/B/C) dengan total stok 1.250 kg
+- Mutasi stok: data masuk panen pagi dan pengeluaran ke pasar lokal/distributor selama 14 hari terakhir
 
 ---
 
@@ -216,6 +254,7 @@ Use realistic Indonesian agri data:
 - All cards stack vertically on mobile
 - Calendar switches to week view on mobile
 - Chat interface takes full screen on mobile
+- Tabel stok mendukung horizontal scroll pada mobile dan filter dipindahkan ke drawer/sheet
 
 ---
 

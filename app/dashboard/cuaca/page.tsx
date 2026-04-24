@@ -44,6 +44,7 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
 
 export default function CuacaPage() {
   const t = useTranslations('Weather');
+  const todayDate = new Date().toISOString().split('T')[0];
   const [savedPhone, setSavedPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [hp, setHp] = useState(savedPhone);
   const [notifAktif, setNotifAktif] = useState(true);
@@ -54,8 +55,19 @@ export default function CuacaPage() {
     setHp(savedPhone);
   }, [savedPhone]);
 
+  // Keep current card in sync with the forecast tile marked as "Today".
+  const todayForecast = weatherForecast.find((day) => day.tanggal === todayDate);
+  const displayedCurrentWeather = todayForecast
+    ? {
+        ...currentWeather,
+        suhu: todayForecast.suhuMax,
+        kondisi: todayForecast.kondisi,
+        curahHujan: todayForecast.curahHujan,
+      }
+    : currentWeather;
+
   const dayNames = [t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')];
-  const currentCondition = currentWeather.kondisi.toLowerCase();
+  const currentCondition = displayedCurrentWeather.kondisi.toLowerCase();
   const isRainy = currentCondition === 'hujan' || currentCondition === 'gerimis';
   const isSunny = currentCondition === 'cerah';
   const isCloudy = currentCondition === 'berawan' || currentCondition === 'mendung';
@@ -120,26 +132,26 @@ export default function CuacaPage() {
                     {t('current.title')}
                   </Typography>
                   <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff', fontWeight: 700 }}>
-                    {currentWeather.suhu}°C
+                    {displayedCurrentWeather.suhu}°C
                   </Typography>
                   <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
-                    {currentWeather.kondisi === 'gerimis' ? t('current.drizzle') : currentWeather.kondisi}
+                    {displayedCurrentWeather.kondisi === 'gerimis' ? t('current.drizzle') : displayedCurrentWeather.kondisi}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
-                    📍 {currentWeather.lokasi}
+                    📍 {displayedCurrentWeather.lokasi}
                   </Typography>
                 </Box>
-                <WeatherIcon kondisi={currentWeather.kondisi} size="large" />
+                <WeatherIcon kondisi={displayedCurrentWeather.kondisi} size="large" />
               </Box>
 
               <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2.5 }} />
 
               <Grid container spacing={2}>
                 {[
-                  { icon: <WaterDropIcon />, label: t('current.humidity'), value: `${currentWeather.kelembapan}%` },
-                  { icon: <GrainIcon />, label: t('current.rainfall'), value: `${currentWeather.curahHujan} mm` },
-                  { icon: <AirIcon />, label: t('current.windSpeed'), value: `${currentWeather.kecepatanAngin} km/j` },
-                  { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${currentWeather.suhu}°C` },
+                  { icon: <WaterDropIcon />, label: t('current.humidity'), value: `${displayedCurrentWeather.kelembapan}%` },
+                  { icon: <GrainIcon />, label: t('current.rainfall'), value: `${displayedCurrentWeather.curahHujan} mm` },
+                  { icon: <AirIcon />, label: t('current.windSpeed'), value: `${displayedCurrentWeather.kecepatanAngin} km/j` },
+                  { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${displayedCurrentWeather.suhu}°C` },
                 ].map((item) => (
                   <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
                     <Box className="flex items-center gap-2">
@@ -172,7 +184,7 @@ export default function CuacaPage() {
                   const date = new Date(day.tanggal);
                   const dayName = dayNames[date.getDay()];
                   const dateNum = date.getDate();
-                  const isToday = day.tanggal === new Date().toISOString().split('T')[0];
+                  const isToday = day.tanggal === todayDate;
                   return (
                     <Box
                       key={day.tanggal}

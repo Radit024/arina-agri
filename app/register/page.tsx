@@ -44,6 +44,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const googleProvider = new GoogleAuthProvider();
+  const isFirebaseConfigured = auth.app.options.apiKey && auth.app.options.apiKey !== 'mock-api-key';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -64,7 +65,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'mock-api-key') {
+      if (isFirebaseConfigured) {
          await createUserWithEmailAndPassword(auth, data.email, data.password);
          // You could also store the user's full name in a user profile document in Firestore here.
       } else {
@@ -83,7 +84,7 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'mock-api-key') {
+      if (isFirebaseConfigured) {
         await signInWithPopup(auth, googleProvider);
       } else {
         await new Promise(resolve => setTimeout(resolve, 1000));

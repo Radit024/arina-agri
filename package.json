@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
-    "frontend": "next dev",
-    "backend": "nodemon server/index.js",
-    "build": "next build",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "next dev",
+    "dev:api": "npm --prefix backend run dev",
+    "build": "npm run build:web",
+    "build:web": "next build",
+    "build:api": "npm --prefix backend run build",
+    "build:all": "npm run build:web && npm run build:api",
     "start": "next start",
+    "start:api": "npm --prefix backend run start",
     "lint": "eslint"
   },
   "dependencies": {

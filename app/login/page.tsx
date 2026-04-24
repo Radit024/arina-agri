@@ -38,6 +38,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const googleProvider = new GoogleAuthProvider();
+  const isFirebaseConfigured = auth.app.options.apiKey && auth.app.options.apiKey !== 'mock-api-key';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -57,7 +58,7 @@ export default function LoginPage() {
     try {
       // For now, mock a successful login if using dummy credentials
       // Or uncomment this to use actual Firebase
-      if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'mock-api-key') {
+      if (isFirebaseConfigured) {
          await signInWithEmailAndPassword(auth, data.email, data.password);
       } else {
          // Mock login delay
@@ -75,7 +76,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY && process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'mock-api-key') {
+      if (isFirebaseConfigured) {
         await signInWithPopup(auth, googleProvider);
       } else {
         await new Promise(resolve => setTimeout(resolve, 1000));

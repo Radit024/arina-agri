@@ -44,10 +44,24 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const firebaseClientConfig = {
+    apiKey: process.env.FIREBASE_CLIENT_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'mock-api-key',
+    authDomain: process.env.FIREBASE_CLIENT_AUTH_DOMAIN || process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'mock.firebaseapp.com',
+    projectId: process.env.FIREBASE_CLIENT_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'mock-project-id',
+    storageBucket: process.env.FIREBASE_CLIENT_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'mock.appspot.com',
+    messagingSenderId:
+      process.env.FIREBASE_CLIENT_MESSAGING_SENDER_ID || process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '123456789',
+    appId: process.env.FIREBASE_CLIENT_APP_ID || process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:abcdef',
+  };
 
   return (
     <html lang={locale} className={`${plusJakartaSans.variable} ${sora.variable}`}>
       <body className="antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__ARINA_FIREBASE_CONFIG__ = ${JSON.stringify(firebaseClientConfig)};`,
+          }}
+        />
         <AuthProvider>
           <NextIntlClientProvider messages={messages}>
             <MuiProvider>{children}</MuiProvider>

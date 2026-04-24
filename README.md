@@ -81,13 +81,33 @@ Kalau mau coba jalanin project ini secara lokal, ikuti langkah berikut:
    # Kalau pakai Yarn/Pnpm, silakan sesuaikan
    ```
 
-3. **Jalankan development server**
+3. **Install dependencies backend**
+  ```bash
+  cd backend
+  npm install
+  cd ..
+  ```
+
+4. **Jalankan development (frontend + backend)**
    ```bash
    npm run dev
    ```
 
-4. **Buka aplikasi di browser**
+5. **Buka aplikasi di browser**
    Akses <kbd>http://localhost:3000</kbd>
+
+Tambahan perintah monorepo:
+
+```bash
+# Build frontend saja
+npm run build:web
+
+# Build backend saja
+npm run build:api
+
+# Build keduanya
+npm run build:all
+```
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/grass.png" width="100%" />

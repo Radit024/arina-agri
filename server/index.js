@@ -11,7 +11,7 @@ const {
   toObjectId,
 } = require('./services/db');
 const { initFirebaseAdmin, verifyFirebaseToken } = require('./services/firebaseAdmin');
-const { generateGeminiReply } = require('./services/gemini');
+const { generateGeminiReply, generateFinancialAnalysis } = require('./services/gemini');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -70,6 +70,20 @@ app.post('/api/ai/gemini', verifyFirebaseToken, async (req, res) => {
     return res.json(response({ reply, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' }));
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message || 'Gagal memanggil Gemini.' });
+  }
+});
+
+app.post('/api/ai/financial-report', verifyFirebaseToken, async (req, res) => {
+  try {
+    const reportData = req.body;
+    if (!reportData || !Array.isArray(reportData.transactions)) {
+      return res.status(400).json({ success: false, message: 'Data laporan tidak valid.' });
+    }
+
+    const analysis = await generateFinancialAnalysis({ reportData });
+    return res.json(response({ analysis, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' }));
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Gagal menganalisis laporan keuangan.' });
   }
 });
 
@@ -350,6 +364,79 @@ app.post('/api/stok/:id/keluar', verifyFirebaseToken, async (req, res) => {
       'Stock out recorded'
     )
   );
+});
+
+// ─── Events API ──────────────────────────────────────────────────
+const eventsMem = [];
+
+app.get('/api/events', verifyFirebaseToken, async (_req, res) => {
+  if (!isMongoConnected()) return res.json(response(eventsMem));
+  const rows = await getDb().collection('events').find({}).toArray();
+  return res.json(response(rows.map(mapDoc)));
+});
+
+app.post('/api/events', verifyFirebaseToken, async (req, res) => {
+  const payload = req.body;
+  const created = {
+    _id: id(),
+    judul: payload.judul,
+    tanggal: payload.tanggal,
+    jenis: payload.jenis,
+    waktu: payload.waktu || '',
+    catatan: payload.catatan || '',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  };
+
+  if (!isMongoConnected()) {
+    eventsMem.unshift(created);
+    return res.json(response(created, 'Event created (memory)'));
+  }
+
+  const db = getDb();
+  const insertResult = await db.collection('events').insertOne({ ...created, _id: undefined });
+  return res.json(response({ ...created, _id: insertResult.insertedId.toString() }, 'Event created'));
+});
+
+app.put('/api/events/:id', verifyFirebaseToken, async (req, res) => {
+  const payload = req.body;
+  if (!isMongoConnected()) {
+    const idx = eventsMem.findIndex((x) => x._id === req.params.id);
+    if (idx === -1) return res.status(404).json({ success: false, message: 'Event not found' });
+    eventsMem[idx] = { ...eventsMem[idx], ...payload, updatedAt: nowIso() };
+    return res.json(response(eventsMem[idx], 'Event updated (memory)'));
+  }
+
+  const oid = toObjectId(req.params.id);
+  if (!oid) return res.status(404).json({ success: false, message: 'Event not found' });
+
+  const db = getDb();
+  const updateDoc = { ...payload, updatedAt: nowIso() };
+  delete updateDoc._id;
+
+  const result = await db.collection('events').findOneAndUpdate(
+    { _id: oid },
+    { $set: updateDoc },
+    { returnDocument: 'after' }
+  );
+
+  if (!result) return res.status(404).json({ success: false, message: 'Event not found' });
+  return res.json(response(mapDoc(result), 'Event updated'));
+});
+
+app.delete('/api/events/:id', verifyFirebaseToken, async (req, res) => {
+  if (!isMongoConnected()) {
+    const idx = eventsMem.findIndex((x) => x._id === req.params.id);
+    if (idx !== -1) eventsMem.splice(idx, 1);
+    return res.json(response(null, 'Event deleted (memory)'));
+  }
+
+  const oid = toObjectId(req.params.id);
+  if (!oid) return res.status(404).json({ success: false, message: 'Event not found' });
+
+  const db = getDb();
+  await db.collection('events').deleteOne({ _id: oid });
+  return res.json(response(null, 'Event deleted'));
 });
 
 async function bootstrap() {

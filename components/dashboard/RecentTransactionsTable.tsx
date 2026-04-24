@@ -11,13 +11,13 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
-import { mockTransactions } from '@/lib/mockData';
+import type { ApiTransaction } from '@/lib/api';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 
-export default function RecentTransactionsTable() {
+export default function RecentTransactionsTable({ transactions }: { transactions: ApiTransaction[] }) {
   const t = useTranslations('Dashboard.recentTransactions');
-  const recent = mockTransactions.slice(0, 5);
+  const recent = transactions.slice(0, 5);
 
   return (
     <Card>
@@ -44,7 +44,7 @@ export default function RecentTransactionsTable() {
             <TableBody>
               {recent.map((tx) => (
                 <TableRow
-                  key={tx.id}
+                  key={tx._id}
                   sx={{
                     '&:hover': { backgroundColor: '#f8fafc' },
                     '& td': { borderColor: '#f1f5f9', fontSize: '0.875rem' },

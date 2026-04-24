@@ -179,12 +179,12 @@ export default function StokPage() {
           <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
             Manajemen Stok Panen
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Box sx={{ typography: 'body2', color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
             Cabai Rawit — Desa Wonorejo, Malang
             {!backendOnline && (
               <Chip label="Mode Offline" size="small" sx={{ ml: 1.5, bgcolor: '#fef9c3', color: '#ca8a04', fontWeight: 600, fontSize: '0.65rem' }} />
             )}
-          </Typography>
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
           <Button variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)} sx={{ borderRadius: 8 }}>

@@ -41,6 +41,17 @@ export interface ApiTransaction {
   updatedAt: string;
 }
 
+export interface ApiCalendarEvent {
+  _id: string;
+  judul: string;
+  tanggal: string;
+  jenis: 'pemupukan' | 'penyemprotan' | 'irigasi' | 'pemetikan' | 'lainnya';
+  waktu?: string;
+  catatan?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiHarvestBatch {
   _id: string;
   batchCode: string;
@@ -126,9 +137,41 @@ export const stokApi = {
     }),
 };
 
+// ─── Kalender Events API ──────────────────────────────────────────
+export const eventApi = {
+  getAll: () => apiFetch<ApiCalendarEvent[]>('/events'),
+
+  create: (data: Omit<ApiCalendarEvent, '_id' | 'createdAt' | 'updatedAt'>) =>
+    apiFetch<ApiCalendarEvent>('/events', { method: 'POST', body: JSON.stringify(data) }),
+
+  update: (id: string, data: Partial<ApiCalendarEvent>) =>
+    apiFetch<ApiCalendarEvent>(`/events/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  delete: (id: string) =>
+    apiFetch<null>(`/events/${id}`, { method: 'DELETE' }),
+};
+
 export const aiApi = {
   askGemini: (payload: { prompt: string; history?: GeminiChatMessage[] }) =>
     apiFetch<{ reply: string; model: string }>('/ai/gemini', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+
+  generateFinancialReport: (payload: {
+    periode: string;
+    totalPendapatan: number;
+    totalPengeluaran: number;
+    labaBersih: number;
+    transactions: Array<{
+      jenis: string;
+      kategori: string;
+      nominal: number;
+      tanggal: string;
+      keterangan?: string;
+    }>;
+  }) =>
+    apiFetch<{ analysis: string; model: string }>('/ai/financial-report', {
       method: 'POST',
       body: JSON.stringify(payload),
     }),

@@ -27,7 +27,6 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import GoogleIcon from '@mui/icons-material/Google';
-import SpaOutlinedIcon from '@mui/icons-material/SpaOutlined';
 
 const loginSchema = z.object({
   email: z.string().email('Format email tidak valid'),
@@ -132,7 +131,12 @@ export default function LoginPage() {
           }} 
         />
 
-        <SpaOutlinedIcon sx={{ fontSize: 80, mb: 2, zIndex: 1 }} />
+        <Box 
+          component="img" 
+          src="/logo%20arina.svg" 
+          alt="Arina Agri Logo" 
+          sx={{ width: 80, height: 80, mb: 2, zIndex: 1, filter: 'brightness(0) invert(1)' }} 
+        />
         <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', zIndex: 1, textAlign: 'center', fontWeight: 800 }}>
           Arina Agri
         </Typography>

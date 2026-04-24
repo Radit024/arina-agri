@@ -173,7 +173,7 @@
         "value": "Nilai (Rp)",
         "action": "Opsi"
       },
-      "empty": "Belum ada transaksi untuk filter ini.",
+      "empty": "Belum ada Catatan transaksi .",
       "addFirst": "Tambah pertama"
     },
     "summary": {

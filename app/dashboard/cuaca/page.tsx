@@ -42,8 +42,11 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
   return <GrainIcon sx={{ fontSize, color: '#60a5fa' }} />;
 }
 
+import { useAuth } from '@/context/AuthContext';
+
 export default function CuacaPage() {
   const t = useTranslations('Weather');
+  const { user } = useAuth();
   const todayDate = new Date().toISOString().split('T')[0];
   const [savedPhone, setSavedPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [hp, setHp] = useState(savedPhone);
@@ -55,16 +58,20 @@ export default function CuacaPage() {
     setHp(savedPhone);
   }, [savedPhone]);
 
+  const fForecast = weatherForecast;
+  const fAlerts = weatherAlerts;
+  const fCurrent = currentWeather;
+
   // Keep current card in sync with the forecast tile marked as "Today".
-  const todayForecast = weatherForecast.find((day) => day.tanggal === todayDate);
+  const todayForecast = fForecast.find((day) => day.tanggal === todayDate);
   const displayedCurrentWeather = todayForecast
     ? {
-        ...currentWeather,
+        ...fCurrent,
         suhu: todayForecast.suhuMax,
         kondisi: todayForecast.kondisi,
         curahHujan: todayForecast.curahHujan,
       }
-    : currentWeather;
+    : fCurrent;
 
   const dayNames = [t('days.sun'), t('days.mon'), t('days.tue'), t('days.wed'), t('days.thu'), t('days.fri'), t('days.sat')];
   const currentCondition = displayedCurrentWeather.kondisi.toLowerCase();
@@ -180,7 +187,7 @@ export default function CuacaPage() {
                   width: '100%',
                 }}
               >
-                {weatherForecast.map((day) => {
+                {fForecast.map((day) => {
                   const date = new Date(day.tanggal);
                   const dayName = dayNames[date.getDay()];
                   const dateNum = date.getDate();
@@ -233,7 +240,7 @@ export default function CuacaPage() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {weatherAlerts.map((alert) => (
+                    {fAlerts.map((alert) => (
                       <TableRow key={alert.id} sx={{ '&:hover': { backgroundColor: '#f8fafc' } }}>
                         <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{formatDateShort(alert.tanggal)}</TableCell>
                         <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{alert.jenisPeringatan}</TableCell>

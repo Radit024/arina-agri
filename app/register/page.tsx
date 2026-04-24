@@ -28,7 +28,6 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import GoogleIcon from '@mui/icons-material/Google';
-import SpaOutlinedIcon from '@mui/icons-material/SpaOutlined';
 
 const registerSchema = z.object({
   fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
@@ -116,7 +115,12 @@ export default function RegisterPage() {
       >
         <Box sx={{ position: 'absolute', top: -100, left: -100, width: 400, height: 400, borderRadius: '50%', bgcolor: 'primary.light', opacity: 0.1 }} />
         <Box sx={{ position: 'absolute', bottom: -150, right: -100, width: 500, height: 500, borderRadius: '50%', bgcolor: 'primary.dark', opacity: 0.2 }} />
-        <SpaOutlinedIcon sx={{ fontSize: 80, mb: 2, zIndex: 1 }} />
+        <Box 
+          component="img" 
+          src="/logo%20arina.svg" 
+          alt="Arina Agri Logo" 
+          sx={{ width: 80, height: 80, mb: 2, zIndex: 1, filter: 'brightness(0) invert(1)' }} 
+        />
         <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', zIndex: 1, textAlign: 'center', fontWeight: 800 }}>
           Arina Agri
         </Typography>
@@ -142,7 +146,7 @@ export default function RegisterPage() {
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', mb: 1, color: 'text.primary', fontWeight: 700 }}>
-              Buat Akun Baru 🌱
+              Buat Akun Baru 
             </Typography>
             <Typography variant="body1" color="text.secondary">
               Isi data di bawah ini untuk memulai.

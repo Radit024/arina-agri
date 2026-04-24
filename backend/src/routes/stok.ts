@@ -168,7 +168,7 @@ router.get('/mutations', async (req: Request, res: Response) => {
     }
     let mutations = await StockMutation.find(filter).sort({ tanggal: -1, createdAt: -1 });
     if (grade && grade !== 'semua') {
-      const batchCodes = (await HarvestBatch.find({ grade })).map((b) => b.batchCode);
+      const batchCodes = (await HarvestBatch.find({ grade: grade as string })).map((b) => b.batchCode);
       mutations = mutations.filter((m) => batchCodes.includes(m.batchCode));
     }
     res.json({ success: true, data: mutations });

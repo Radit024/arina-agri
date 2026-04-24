@@ -82,7 +82,10 @@ const MOCK_MUTATIONS: ApiStockMutation[] = [
 ];
 
 // ─── useStok Hook ─────────────────────────────────────────────────
+import { useAuth } from '@/context/AuthContext';
+
 export function useStok() {
+  const { user, loading: authLoading } = useAuth();
   const [batches, setBatches] = useState<ApiHarvestBatch[]>([]);
   const [mutations, setMutations] = useState<ApiStockMutation[]>([]);
   const [summary, setSummary] = useState<StokSummary>({
@@ -103,6 +106,7 @@ export function useStok() {
   }, []);
 
   const loadData = useCallback(async () => {
+    if (authLoading) return;
     setLoading(true);
     try {
       const [batchData, summaryData, mutationData] = await Promise.all([
@@ -116,16 +120,18 @@ export function useStok() {
       setBackendOnline(true);
       setError(null);
     } catch {
-      // Backend offline — use mock data
-      setBatches(MOCK_BATCHES);
-      setMutations(MOCK_MUTATIONS);
-      computeLocalSummary(MOCK_BATCHES);
+      // Backend offline — use mock data only if not logged in
+      const fallbackBatches = user ? [] : MOCK_BATCHES;
+      const fallbackMutations = user ? [] : MOCK_MUTATIONS;
+      setBatches(fallbackBatches);
+      setMutations(fallbackMutations);
+      computeLocalSummary(fallbackBatches);
       setBackendOnline(false);
       setError(null); // silent fallback
     } finally {
       setLoading(false);
     }
-  }, [computeLocalSummary]);
+  }, [computeLocalSummary, user, authLoading]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

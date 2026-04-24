@@ -23,6 +23,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -36,6 +37,11 @@ const SETTINGS_TABS = [
 export default function PengaturanPage() {
   const t = useTranslations('Settings');
   const [activeTab, setActiveTab] = useState('general');
+
+  const { user } = useAuth();
+  const userName = user?.displayName || farmerProfile.nama;
+  const userInitials = userName.substring(0, 2).toUpperCase();
+  const userAvatar = user?.photoURL;
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
   const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
@@ -73,12 +79,12 @@ export default function PengaturanPage() {
                    onClick={() => setActiveTab(tab.id)}
                    sx={{
                      borderRadius: 2,
-                     bgcolor: activeTab === tab.id ? 'rgba(22, 163, 74, 0.08)' : 'transparent',
-                     color: activeTab === tab.id ? 'primary.main' : 'text.primary',
-                     '&:hover': { bgcolor: activeTab === tab.id ? 'rgba(22, 163, 74, 0.12)' : 'rgba(0,0,0,0.04)' }
+                     bgcolor: activeTab === tab.id ? '#f0fdf4' : 'transparent',
+                     color: activeTab === tab.id ? '#16a34a' : 'text.primary',
+                     '&:hover': { bgcolor: activeTab === tab.id ? '#f0fdf4' : '#f8fafc' }
                    }}
                  >
-                   <ListItemIcon sx={{ minWidth: 40, color: activeTab === tab.id ? 'primary.main' : '#64748b' }}>
+                   <ListItemIcon sx={{ minWidth: 40, color: activeTab === tab.id ? '#16a34a' : '#64748b' }}>
                      {tab.icon}
                    </ListItemIcon>
                    <ListItemText 
@@ -105,7 +111,7 @@ export default function PengaturanPage() {
                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
                      Tambahkan autentikasi multi-faktor (MFA) seperti passkey atau kode SMS untuk melindungi akun Anda saat fitur backend diaktifkan.
                    </Typography>
-                   <Button variant="contained" sx={{ bgcolor: 'white', color: 'black', '&:hover': { bgcolor: '#e5e7eb' }, borderRadius: 2 }}>
+                   <Button variant="contained" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2 }}>
                      Set up MFA (Segera)
                    </Button>
                 </Box>
@@ -113,17 +119,17 @@ export default function PengaturanPage() {
                 <Box sx={{ mb: 4 }}>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>Appearance (Tema)</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>System</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>Contrast</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}>System</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>System</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>Accent Color</Typography>
                     <Box className="flex items-center gap-1.5 cursor-pointer">
-                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: 'primary.main' }} />
-                      <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>Arina Green</Typography>
+                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#16a34a' }} />
+                      <Typography variant="body2" color="#16a34a" sx={{ fontWeight: 600 }}>Arina Green</Typography>
                     </Box>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -141,16 +147,17 @@ export default function PengaturanPage() {
                 
                 <Box className="flex items-center gap-4 mb-6">
                   <Avatar
+                    src={userAvatar || undefined}
                     sx={{
                       width: 80,
                       height: 80,
-                      backgroundColor: 'primary.light',
-                      color: 'primary.main',
+                      backgroundColor: '#f0fdf4',
+                      color: '#16a34a',
                       fontSize: '1.5rem',
                       fontWeight: 700,
                     }}
                   >
-                    BS
+                    {!userAvatar && userInitials}
                   </Avatar>
                   <Box>
                     <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2 }}>Ganti Foto</Button>
@@ -160,7 +167,7 @@ export default function PengaturanPage() {
                 
                 <Grid container spacing={4}>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Nama Lengkap" defaultValue={farmerProfile.nama} variant="standard" />
+                    <TextField fullWidth label="Nama Lengkap" defaultValue={userName} variant="standard" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <TextField fullWidth label="Lokasi / Desa" defaultValue={farmerProfile.lokasi} variant="standard" />
@@ -192,7 +199,7 @@ export default function PengaturanPage() {
                   <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
                     {phoneSaveSuccess ? 'Nomor WhatsApp berhasil diperbarui.' : 'Simpan untuk menerapkan nomor notifikasi cuaca yang baru.'}
                   </Typography>
-                  <Button variant="contained" sx={{ px: 4, borderRadius: 2 }} onClick={handleSaveProfile}>
+                  <Button variant="contained" sx={{ px: 4, borderRadius: 2, bgcolor: '#16a34a', '&:hover': { bgcolor: 'primary.dark' } }} onClick={handleSaveProfile}>
                     Simpan Perubahan
                   </Button>
                 </Box>
@@ -229,8 +236,8 @@ export default function PengaturanPage() {
                 <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Informasi Sistem</Typography>
                 
                 <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                   <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'primary.light', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <InfoOutlinedIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+                   <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <InfoOutlinedIcon sx={{ fontSize: 32, color: '#16a34a' }} />
                    </Box>
                    <Box>
                      <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700 }}>Arina Web Platform</Typography>

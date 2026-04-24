@@ -64,9 +64,16 @@ const jenisLabels = {
 const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+import { useAuth } from '@/context/AuthContext';
+import { useCalendar } from '@/hooks/useCalendar';
+import type { ApiCalendarEvent } from '@/lib/api';
+
 export default function KalenderPage() {
   const t = useTranslations('Calendar');
-  const [events, setEvents] = useLocalStorage<CalendarEvent[]>('arina-events', mockCalendarEvents);
+  const { user } = useAuth();
+  
+  const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
+  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -100,11 +107,11 @@ export default function KalenderPage() {
     setDialogOpen(true);
   };
 
-  const openEditDialog = (ev: CalendarEvent) => {
-    setEditingEventId(ev.id);
+  const openEditDialog = (ev: ApiCalendarEvent) => {
+    setEditingEventId(ev._id);
     reset({
       judul: ev.judul,
-      jenis: ev.jenis as any,
+      jenis: ev.jenis,
       tanggal: ev.tanggal,
       waktu: ev.waktu || '',
       catatan: ev.catatan || '',
@@ -112,26 +119,18 @@ export default function KalenderPage() {
     setDialogOpen(true);
   };
 
-  const onSubmit = (data: EventFormData) => {
+  const onSubmit = async (data: EventFormData) => {
     if (editingEventId) {
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.id === editingEventId ? { ...ev, ...data } : ev
-        )
-      );
+      await updateEvent(editingEventId, data);
     } else {
-      const newEvent: CalendarEvent = {
-        id: Date.now().toString(),
-        ...data,
-      };
-      setEvents((prev) => [...prev, newEvent]);
+      await addEvent(data);
     }
     setDialogOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (editingEventId) {
-      setEvents((prev) => prev.filter((ev) => ev.id !== editingEventId));
+      await deleteEvent(editingEventId);
       setDialogOpen(false);
     }
   };
@@ -227,7 +226,7 @@ export default function KalenderPage() {
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
                         {dayEvents.slice(0, 3).map((ev) => (
                           <Box
-                            key={ev.id}
+                            key={ev._id}
                             onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }}
                             sx={{
                               borderRadius: 1,
@@ -293,7 +292,7 @@ export default function KalenderPage() {
                     const colors = jenisColors[ev.jenis] || jenisColors.lainnya;
                     return (
                       <Box
-                        key={ev.id}
+                        key={ev._id}
                         sx={{
                           p: 1.5,
                           borderRadius: 2,

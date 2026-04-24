@@ -47,6 +47,14 @@ import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import type { Transaction } from '@/lib/mockData';
 import { PieChart } from '@mui/x-charts/PieChart';
 import { useTranslations } from 'next-intl';
+import { aiApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
+import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
+
+import { useTransactions } from '@/hooks/useTransactions';
+import type { ApiTransaction } from '@/lib/api';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'Pilih jenis transaksi' }),
@@ -69,23 +77,32 @@ type BepHppInputs = {
 
 const BULAN_LABELS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-const AI_ANALYSIS = `Berdasarkan pantauan arus kas Anda saat ini, laporan menunjukkan performa yang cukup baik. Terdapat kas positif yang masuk stabil.
-Komponen biaya terbesar Anda didominasi oleh sarana pemeliharaan konvensional (Pupuk & Pestisida).
+const AI_REPORT_QUOTA_KEY = 'arina-ai-report-quota';
+const MAX_AI_REPORTS_PER_MONTH = 3;
 
-💡 Rekomendasi Arina AI:
-• Pertahankan efisiensi biaya pupuk dengan menyelingi penggunaan pupuk organik kompos limbah (potensi hemat 10-15%).
-• Pencatatan transaksi disarankan dilakukan maksimal setiap 3 hari sekali agar tidak ada nota yang hilang.
-• Kas Anda terlihat positif bulan ini. Sangat disarankan menyisihkan 20% dari dana segar untuk dijadikan "Dana Darurat Lahan" guna modal perbaikan alat atau perubahan iklim ekstrem di depan.`;
+interface QuotaState {
+  month: string; // format YYYY-MM
+  used: number;
+}
 
 export default function KeuanganPage() {
   const t = useTranslations('Finance');
-  const [transactions, setTransactions] = useLocalStorage<Transaction[]>('arina-transactions', mockTransactions);
+  const { user } = useAuth();
+  
+  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
+  
   const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>('arina-bep-hpp-inputs', {
     biayaTetap: 0,
     jumlahProduksi: 0,
     hargaJualPerUnit: 0,
   });
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [aiReportQuota, setAiReportQuota] = useLocalStorage<QuotaState>(
+    AI_REPORT_QUOTA_KEY,
+    { month: '', used: 0 }
+  );
   const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
   const [txDialogOpen, setTxDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -125,10 +142,10 @@ export default function KeuanganPage() {
     setTxDialogOpen(true);
   };
 
-  const handleEdit = (tx: Transaction) => {
-    setEditingId(tx.id);
+  const handleEdit = (tx: ApiTransaction) => {
+    setEditingId(tx._id);
     reset({
-      jenis: tx.jenis as 'pengeluaran' | 'pendapatan',
+      jenis: tx.jenis,
       kategori: tx.kategori,
       nominal: tx.nominal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
       tanggal: tx.tanggal,
@@ -137,9 +154,8 @@ export default function KeuanganPage() {
     setTxDialogOpen(true);
   };
 
-  const onSubmit = (data: TransactionFormData) => {
-    const txData: Transaction = {
-      id: editingId ? editingId : Date.now().toString(),
+  const onSubmit = async (data: TransactionFormData) => {
+    const txData = {
       jenis: data.jenis,
       kategori: data.kategori,
       nominal: Number(data.nominal.replace(/\./g, '')),
@@ -148,17 +164,17 @@ export default function KeuanganPage() {
     };
 
     if (editingId) {
-      setTransactions((prev) => prev.map((t) => (t.id === editingId ? txData : t)));
+      await updateTransaction(editingId, txData);
     } else {
-      setTransactions((prev) => [txData, ...prev]);
+      await addTransaction(txData);
     }
 
     setTxDialogOpen(false);
     setEditingId(null);
   };
 
-  const handleDelete = (id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteTransaction(id);
   };
 
   const handleNominalChange = (value: string, onChange: (v: string) => void) => {
@@ -189,6 +205,74 @@ export default function KeuanganPage() {
     a.download = `Laporan_Keuangan_Arina_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  // ─── AI Quota helpers ──────────────────────────────────────────
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const quotaThisMonth = aiReportQuota.month === currentMonth ? aiReportQuota.used : 0;
+  const aiQuotaRemaining = MAX_AI_REPORTS_PER_MONTH - quotaThisMonth;
+
+  const consumeAiQuota = () => {
+    setAiReportQuota({ month: currentMonth, used: quotaThisMonth + 1 });
+  };
+
+  // ─── Generate PDF (manual, tanpa AI) ──────────────────────────
+  const handleGeneratePdfManual = async () => {
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      await generatePdfReport({
+        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
+        periodeLabel: filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan),
+        totalPendapatan,
+        totalPengeluaran,
+        labaBersih,
+        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        userName: user?.displayName || undefined,
+      });
+    } catch {
+      setReportError('Gagal membuat PDF. Coba lagi.');
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  // ─── Generate PDF (dengan AI Saran) ────────────────────────────
+  const handleGeneratePdfAI = async () => {
+    if (aiQuotaRemaining <= 0) return;
+    setReportLoading(true);
+    setReportError(null);
+    try {
+      const periodeLabel = filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan);
+      const result = await aiApi.generateFinancialReport({
+        periode: periodeLabel,
+        totalPendapatan,
+        totalPengeluaran,
+        labaBersih,
+        transactions: monthFilteredTransactions.map((tx) => ({
+          jenis: tx.jenis,
+          kategori: tx.kategori,
+          nominal: tx.nominal,
+          tanggal: tx.tanggal,
+          keterangan: tx.keterangan,
+        })),
+      });
+      consumeAiQuota();
+      await generatePdfReport({
+        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
+        periodeLabel,
+        totalPendapatan,
+        totalPengeluaran,
+        labaBersih,
+        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        userName: user?.displayName || undefined,
+        aiAnalysis: result.analysis,
+      });
+    } catch {
+      setReportError('Gagal mendapatkan saran AI. Coba generate tanpa AI atau cek koneksi backend.');
+    } finally {
+      setReportLoading(false);
+    }
   };
 
   const monthFilteredTransactions = useMemo(
@@ -437,7 +521,7 @@ export default function KeuanganPage() {
                       </TableRow>
                     ) : (
                       displayedTransactions.map((tx) => (
-                        <TableRow key={tx.id} sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' } }}>
+                        <TableRow key={tx._id} sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' } }}>
                           <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 90 }}>
                             {formatDateShort(tx.tanggal)}
                           </TableCell>
@@ -490,7 +574,7 @@ export default function KeuanganPage() {
                               <IconButton
                                 size="small"
                                 aria-label="Hapus Transaksi"
-                                onClick={() => handleDelete(tx.id)}
+                                onClick={() => handleDelete(tx._id)}
                                 sx={{
                                   borderRadius: 2,
                                   color: 'error.main',
@@ -980,10 +1064,10 @@ export default function KeuanganPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL: Analisis AI ─── */}
+      {/* ─── MODAL: Laporan Keuangan PDF ─── */}
       <Dialog
         open={aiDialogOpen}
-        onClose={() => setAiDialogOpen(false)}
+        onClose={() => { if (!reportLoading) setAiDialogOpen(false); }}
         maxWidth="sm"
         fullWidth
         slotProps={{ paper: { sx: { borderRadius: 4 } } }}
@@ -996,34 +1080,140 @@ export default function KeuanganPage() {
               </Box>
               <Box>
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2, fontWeight: 800 }}>
-                  Insights Keuangan AI
+                  Buat Laporan Keuangan PDF
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Rekomendasi Pintar Arina Agri
+                  Periode: {filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan)}
                 </Typography>
               </Box>
             </Box>
-            <IconButton size="small" onClick={() => setAiDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
-              <CloseIcon />
-            </IconButton>
+            {!reportLoading && (
+              <IconButton size="small" onClick={() => setAiDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+                <CloseIcon />
+              </IconButton>
+            )}
           </Box>
         </DialogTitle>
+
         <DialogContent sx={{ pt: 2 }}>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden', mb: 2 }}>
-            <Box sx={{ bgcolor: '#f0fdf4', borderBottom: '1px solid', borderColor: 'divider', p: 1.5 }}>
-              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Analisa Tren Saat Ini
+          {reportLoading && (
+            <Box sx={{ mb: 2 }}>
+              <LinearProgress color="success" />
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
+                Sedang menyiapkan laporan...
               </Typography>
             </Box>
-            <Box sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.primary" sx={{ lineHeight: 1.8, whiteSpace: 'pre-line' }}>
-                {AI_ANALYSIS}
-              </Typography>
+          )}
+
+          {reportError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setReportError(null)}>
+              {reportError}
+            </Alert>
+          )}
+
+          {/* Ringkasan data */}
+          <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Data yang akan dicetak
+            </Typography>
+            <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Total Pendapatan</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>{formatRupiah(totalPendapatan)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Total Pengeluaran</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>{formatRupiah(totalPengeluaran)}</Typography>
+              </Box>
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <Typography variant="caption" color="text.secondary">{labaBersih >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, color: labaBersih >= 0 ? 'success.main' : 'error.main' }}>
+                  {formatRupiah(Math.abs(labaBersih))}
+                </Typography>
+              </Box>
+              <Box sx={{ gridColumn: '1 / -1' }}>
+                <Typography variant="caption" color="text.secondary">Jumlah Transaksi</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{monthFilteredTransactions.length} transaksi</Typography>
+              </Box>
             </Box>
           </Box>
-          <Button fullWidth variant="contained" onClick={() => setAiDialogOpen(false)} sx={{ borderRadius: 8 }}>
-            Tutup Laporan
-          </Button>
+
+          {/* Opsi 1: Manual PDF */}
+          <Box
+            sx={{
+              p: 2.5,
+              border: '2px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              mb: 2,
+              transition: 'border-color 0.2s',
+              '&:hover': { borderColor: 'primary.main' },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+              <DownloadIcon sx={{ color: 'primary.main' }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Laporan Manual (Tanpa AI)</Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              Cetak laporan PDF berisi ringkasan keuangan dan rincian transaksi lengkap. Tanpa analisis AI.
+            </Typography>
+            <Button
+              variant="outlined"
+              color="success"
+              fullWidth
+              startIcon={<DownloadIcon />}
+              onClick={handleGeneratePdfManual}
+              disabled={reportLoading || monthFilteredTransactions.length === 0}
+              sx={{ borderRadius: 8 }}
+            >
+              Download PDF (Manual)
+            </Button>
+          </Box>
+
+          {/* Opsi 2: AI PDF */}
+          <Box
+            sx={{
+              p: 2.5,
+              border: '2px solid',
+              borderColor: aiQuotaRemaining > 0 ? 'primary.light' : 'divider',
+              borderRadius: 3,
+              bgcolor: aiQuotaRemaining > 0 ? '#f0fdf4' : '#f8fafc',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <AutoFixHighIcon sx={{ color: aiQuotaRemaining > 0 ? 'primary.dark' : 'text.disabled' }} />
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: aiQuotaRemaining > 0 ? 'text.primary' : 'text.disabled' }}>
+                  Laporan + Saran AI
+                </Typography>
+              </Box>
+              <Chip
+                label={`${aiQuotaRemaining}/${MAX_AI_REPORTS_PER_MONTH} sisa bulan ini`}
+                size="small"
+                sx={{
+                  bgcolor: aiQuotaRemaining > 0 ? '#dcfce7' : '#fee2e2',
+                  color: aiQuotaRemaining > 0 ? '#16a34a' : '#dc2626',
+                  fontWeight: 700,
+                  fontSize: '0.68rem',
+                }}
+              />
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+              {aiQuotaRemaining > 0
+                ? 'Gemini AI akan menganalisis data keuangan Anda dan memberikan rekomendasi dalam PDF. Kuota: 3x/bulan.'
+                : 'Kuota generate laporan AI bulan ini sudah habis. Tersedia lagi bulan depan.'}
+            </Typography>
+            <Button
+              variant="contained"
+              fullWidth
+              startIcon={<AutoFixHighIcon />}
+              onClick={handleGeneratePdfAI}
+              disabled={reportLoading || aiQuotaRemaining <= 0 || monthFilteredTransactions.length === 0}
+              sx={{ borderRadius: 8, bgcolor: '#111827', '&:hover': { bgcolor: '#1e293b' } }}
+            >
+              Download PDF + Saran AI
+            </Button>
+          </Box>
         </DialogContent>
       </Dialog>
     </Box>

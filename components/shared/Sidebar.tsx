@@ -30,6 +30,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
@@ -47,6 +48,11 @@ export default function Sidebar() {
   const t = useTranslations('Sidebar');
   const [isOpen, setIsOpen] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const { user } = useAuth();
+
+  const userName = user?.displayName || farmerProfile.nama;
+  const userInitials = userName.substring(0, 2).toUpperCase();
+  const userAvatar = user?.photoURL;
 
   const pathname = usePathname();
   const router = useRouter();
@@ -221,7 +227,14 @@ export default function Sidebar() {
 
               <ListItem disablePadding>
                 <ListItemButton
-                  onClick={() => router.push('/')}
+                  onClick={() => {
+                    import('firebase/auth').then(({ getAuth, signOut }) => {
+                      const auth = getAuth();
+                      signOut(auth).then(() => {
+                        router.push('/');
+                      });
+                    });
+                  }}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#fef2f2' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#dc2626' }}>
@@ -258,6 +271,7 @@ export default function Sidebar() {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar
+              src={userAvatar || undefined}
               sx={{
                 width: 36,
                 height: 36,
@@ -266,12 +280,12 @@ export default function Sidebar() {
                 fontWeight: 600,
               }}
             >
-              {farmerProfile.nama.substring(0, 2).toUpperCase()}
+              {!userAvatar && userInitials}
             </Avatar>
             {isOpen && (
               <Box>
                 <Typography variant="body2" sx={{ color: '#064e3b', lineHeight: 1.2, fontWeight: 700 }}>
-                  {farmerProfile.nama}
+                  {userName}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
                   {t('farmer')}

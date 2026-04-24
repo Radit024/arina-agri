@@ -10,6 +10,7 @@ import Skeleton from '@mui/material/Skeleton';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
 
 const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })), {
   ssr: false,
@@ -23,6 +24,8 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 
 export function TrendChart() {
   const t = useTranslations('Dashboard.charts');
+  const { user, loading } = useAuth();
+  const data = user || loading ? [] : trendChartData;
 
   return (
     <Card>
@@ -44,10 +47,10 @@ export function TrendChart() {
           ))}
         </Box>
         <LineChart
-          xAxis={[{ data: trendChartData.map((d) => d.bulan), scaleType: 'point' }]}
+          xAxis={[{ data: data.map((d) => d.bulan), scaleType: 'point' }]}
           series={[
             {
-              data: trendChartData.map((d) => d.pendapatan),
+              data: data.map((d) => d.pendapatan),
               label: t('common.income'),
               color: '#16a34a',
               showMark: true,
@@ -55,7 +58,7 @@ export function TrendChart() {
               valueFormatter: (v) => formatRupiah(v ?? 0),
             },
             {
-              data: trendChartData.map((d) => d.pengeluaran),
+              data: data.map((d) => d.pengeluaran),
               label: t('common.expense'),
               color: '#f59e0b',
               showMark: true,
@@ -82,8 +85,10 @@ export function TrendChart() {
 
 export function KategoriChart() {
   const t = useTranslations('Dashboard.charts');
-  const totalPengeluaran = pieDataTotal(kategoriChartData);
-  const pieData = kategoriChartData.map((item, index) => ({
+  const { user, loading } = useAuth();
+  const data = user || loading ? [] : kategoriChartData;
+  const totalPengeluaran = pieDataTotal(data);
+  const pieData = data.map((item, index) => ({
     id: index,
     value: item.jumlah,
     label: item.kategori,
@@ -140,7 +145,7 @@ export function KategoriChart() {
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr' }, gap: 1 }}>
-            {kategoriChartData.map((item, index) => (
+            {data.map((item, index) => (
               <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length] }} />

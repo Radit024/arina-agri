@@ -23,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'Arina Agri Backend is running 🌱',
+    message: 'Arina Agri Backend is running',
     timestamp: new Date().toISOString(),
     dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
@@ -44,8 +44,8 @@ async function startServer() {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB terhubung:', MONGODB_URI);
     app.listen(PORT, () => {
-      console.log(`🌱 Arina Agri Backend berjalan di http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`Arina Agri Backend berjalan di http://localhost:${PORT}`);
+      console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
     console.error('❌ Gagal terhubung ke MongoDB:', error);

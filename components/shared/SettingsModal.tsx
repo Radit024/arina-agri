@@ -31,6 +31,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useTranslations, useLocale } from 'next-intl';
+import { useAuth } from '@/context/AuthContext';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -55,6 +56,11 @@ export default function SettingsModal() {
   const isOpen = searchParams.get('settings') === 'true';
   const initialTab = searchParams.get('tab') || 'general';
   
+  const { user } = useAuth();
+  const userName = user?.displayName || farmerProfile.nama;
+  const userInitials = userName.substring(0, 2).toUpperCase();
+  const userAvatar = user?.photoURL;
+
   const [activeTab, setActiveTab] = useState(initialTab);
   const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>('system');
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
@@ -244,6 +250,7 @@ export default function SettingsModal() {
                     }}
                   >
                     <Avatar
+                      src={userAvatar || undefined}
                       sx={{
                         width: 80,
                         height: 80,
@@ -253,7 +260,7 @@ export default function SettingsModal() {
                         fontWeight: 700,
                       }}
                     >
-                      {farmerProfile.nama.substring(0, 2).toUpperCase()}
+                      {!userAvatar && userInitials}
                     </Avatar>
                     <Box>
                       <Button
@@ -274,7 +281,7 @@ export default function SettingsModal() {
                       <TextField
                         fullWidth
                         label={t('profile.fullName')}
-                        defaultValue={farmerProfile.nama}
+                        defaultValue={userName}
                         variant="standard"
                       />
                     </Grid>

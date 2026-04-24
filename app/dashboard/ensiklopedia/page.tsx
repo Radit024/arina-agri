@@ -20,11 +20,11 @@ import { useTranslations } from 'next-intl';
 
 const AI_RESPONSES: Record<string, string> = {
   default:
-    'Terima kasih atas pertanyaannya, Pak Budi! Saya akan membantu memberikan informasi tentang budidaya cabai. Bisa lebih spesifik mengenai gejala atau kondisi yang Anda alami?',
+    'Maaf, koneksi ke Arina AI sedang tidak tersedia. Silakan cek koneksi internet dan pastikan backend berjalan, kemudian coba lagi. Pertanyaan Anda akan langsung dijawab oleh Gemini AI yang sudah dilatih untuk pertanian cabai.',
   antraknosa:
-    '**Antraknosa (Patek)** disebabkan oleh jamur *Colletotrichum capsici*. Gejalanya: bercak coklat kehitaman pada buah, biasanya mulai dari ujung. \n\nPenanganan:\n1. Semprot dengan fungisida berbahan aktif Mankozeb dosis 2g/liter\n2. Buang dan bakar buah yang terinfeksi\n3. Hindari melukai buah saat pemetikan\n4. Jaga jarak tanam agar sirkulasi udara baik',
+    '**Antraknosa (Patek)** disebabkan oleh jamur *Colletotrichum capsici*.\n\nGejala: bercak coklat kehitaman pada buah, biasanya mulai dari ujung buah.\n\nPenanganan darurat:\n• Semprot fungisida Mankozeb dosis 2 g/liter air\n• Buang dan bakar buah yang terinfeksi\n• Hindari melukai buah saat pemetikan\n• Jaga jarak tanam agar sirkulasi udara baik\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.',
   pupuk:
-    'Untuk cabai rawit pada fase generatif (berbunga-berbuah), rekomendasi pemupukan:\n\n• **NPK** 16-16-16 → 5 gram/tanaman, setiap 2 minggu\n• **Kalsium Boron** → semprot daun 2ml/liter, untuk mencegah blossom end rot\n• **KCl** → 3 gram/tanaman untuk memperkuat buah\n\nWaktu terbaik: pagi hari sebelum jam 9.',
+    'Rekomendasi pemupukan cabai rawit (fase generatif):\n\n• NPK 16-16-16 → 5 g/tanaman, tiap 2 minggu\n• Kalsium Boron → semprot daun 2 ml/liter\n• KCl → 3 g/tanaman untuk memperkuat buah\n\nWaktu terbaik: pagi hari sebelum jam 9.\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.',
 };
 
 function getBotReply(message: string): string {
@@ -34,9 +34,19 @@ function getBotReply(message: string): string {
   return AI_RESPONSES.default;
 }
 
+import { useAuth } from '@/context/AuthContext';
+
 export default function EnsiklopediaPage() {
   const t = useTranslations('Encyclopedia');
-  const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const { user, loading: authLoading } = useAuth();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    if (!authLoading) {
+      setMessages(user ? [] : initialChatMessages);
+    }
+  }, [user, authLoading]);
+
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);

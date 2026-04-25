@@ -145,17 +145,17 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
       tx.kategori,
       tx.keterangan || '—',
       tx.jenis === 'pendapatan' ? 'Pendapatan' : 'Pengeluaran',
-      (tx.jenis === 'pendapatan' ? '+ ' : '− ') + formatRp(tx.nominal),
+      (tx.jenis === 'pendapatan' ? '+ ' : '- ') + formatRp(tx.nominal),
     ]),
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: [6, 78, 59], textColor: 255, fontStyle: 'bold' },
+    styles: { fontSize: 8.5, cellPadding: 4, font: 'helvetica' },
+    headStyles: { fillColor: [6, 78, 59], textColor: 255, fontStyle: 'bold', halign: 'left' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 22 },
+      0: { cellWidth: 24 },
       1: { cellWidth: 28 },
-      2: { cellWidth: 60 },
+      2: { cellWidth: 'auto' },
       3: { cellWidth: 26 },
-      4: { cellWidth: 36, halign: 'right' },
+      4: { cellWidth: 38, halign: 'right', fontStyle: 'bold' },
     },
     didParseCell: (hookData) => {
       if (hookData.column.index === 4 && hookData.section === 'body') {
@@ -178,19 +178,42 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
       doc.addPage();
     }
 
-    const analysisY = finalY > doc.internal.pageSize.getHeight() - 40 ? 20 : finalY;
+    let currentY = finalY > doc.internal.pageSize.getHeight() - 40 ? 20 : finalY;
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(6, 78, 59);
-    doc.text('ANALISIS & REKOMENDASI AI', marginX, analysisY);
+    doc.text('ANALISIS & REKOMENDASI AI', marginX, currentY);
 
-    doc.setFontSize(8.5);
+    currentY += 7;
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 30, 30);
 
-    const lines = doc.splitTextToSize(data.aiAnalysis, pageW - marginX * 2);
-    doc.text(lines, marginX, analysisY + 7);
+    // Clean up Markdown and unsupported characters for jsPDF
+    const cleanAnalysis = data.aiAnalysis
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
+      .replace(/###/g, '')
+      .replace(/##/g, '')
+      .replace(/#/g, '')
+      .replace(/^\s*[-*]\s/gm, '• ')   // Convert markdown lists to bullets
+      .replace(/“|”/g, '"')
+      .replace(/‘|’/g, "'")
+      .replace(/—/g, '-')
+      .replace(/[^\x20-\x7E\n\r•]/g, ''); // Strip emojis and unsupported unicode
+
+    const lines = doc.splitTextToSize(cleanAnalysis.trim(), pageW - marginX * 2);
+    const pageH = doc.internal.pageSize.getHeight();
+
+    for (let i = 0; i < lines.length; i++) {
+      if (currentY > pageH - 20) {
+        doc.addPage();
+        currentY = 20;
+      }
+      doc.text(lines[i], marginX, currentY);
+      currentY += 4.5; // Custom line height
+    }
   }
 
   // ── Footer ──────────────────────────────────────────────────────

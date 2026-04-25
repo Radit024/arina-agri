@@ -94,3 +94,31 @@ const stockMutationSchema = new Schema<IStockMutation>(
 );
 
 export const StockMutation = mongoose.model<IStockMutation>('StockMutation', stockMutationSchema);
+
+// ─── Calendar Event ──────────────────────────────────────────────
+export interface ICalendarEvent extends Document {
+  title: string;
+  date: string;
+  category: 'tanam' | 'pupuk' | 'panen' | 'obat' | 'lainnya';
+  description: string;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const calendarEventSchema = new Schema<ICalendarEvent>(
+  {
+    title: { type: String, required: true },
+    date: { type: String, required: true },
+    category: { 
+      type: String, 
+      enum: ['tanam', 'pupuk', 'panen', 'obat', 'lainnya'], 
+      default: 'lainnya' 
+    },
+    description: { type: String, default: '' },
+    completed: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+export const CalendarEvent = mongoose.model<ICalendarEvent>('CalendarEvent', calendarEventSchema);

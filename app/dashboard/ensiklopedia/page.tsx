@@ -13,6 +13,10 @@ import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import PersonIcon from '@mui/icons-material/Person';
+import SpaIcon from '@mui/icons-material/Spa';
+import Avatar from '@mui/material/Avatar';
+import ReactMarkdown from 'react-markdown';
 import { initialChatMessages, diseaseCards } from '@/lib/mockData';
 import type { ChatMessage } from '@/lib/mockData';
 import { aiApi } from '@/lib/api';
@@ -107,9 +111,9 @@ export default function EnsiklopediaPage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+    <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
+      <Box sx={{ mb: { xs: 2, md: 3 } }}>
+        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
           {t('title')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -121,74 +125,153 @@ export default function EnsiklopediaPage() {
         {t.rich('notice', { strong: (chunks) => <strong>{chunks}</strong> })}
       </Alert>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
         {/* Chat Interface */}
         <Grid size={{ xs: 12, lg: 7 }}>
-          <Card sx={{ height: { xs: 'calc(100dvh - 200px)', md: 600 }, display: 'flex', flexDirection: 'column' }}>
+          <Card 
+            elevation={0}
+            sx={{ 
+              height: { xs: 500, sm: 600, md: 640 }, 
+              display: 'flex', 
+              flexDirection: 'column',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: { xs: 3, sm: 4 },
+              overflow: 'hidden'
+            }}
+          >
+            {/* Header Chat */}
             <Box
               sx={{
-                px: 2.5,
-                py: 2,
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1.5, sm: 2 },
                 borderBottom: '1px solid',
                 borderColor: 'divider',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
+                bgcolor: '#f8fafc'
               }}
             >
               <Box
                 sx={{
-                  width: 36,
-                  height: 36,
+                  bgcolor: '#16a34a',
+                  width: { xs: 36, sm: 42 },
+                  height: { xs: 36, sm: 42 },
                   borderRadius: 2,
-                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)'
                 }}
               >
-                <AutoAwesomeIcon sx={{ color: '#fff', fontSize: 18 }} />
+                <AutoAwesomeIcon sx={{ color: '#fff', fontSize: { xs: 18, sm: 20 } }} />
               </Box>
               <Box>
-                <Typography variant="body1" sx={{ fontWeight: 600 }}>Arina AI Assistant</Typography>
-                <Typography variant="caption" color="success.main" sx={{ fontWeight: 500 }}>{t('online')}</Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: '#0f172a', lineHeight: 1.2 }}>
+                  Arina AI
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                    {t('online')}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
 
-            {/* Messages */}
-            <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* Messages Area */}
+            <Box 
+              sx={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                p: { xs: 1.5, sm: 2.5 }, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 2,
+                bgcolor: '#fff' 
+              }}
+            >
               {chatError && (
-                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                <Alert severity="warning" sx={{ borderRadius: 3 }}>
                   {chatError}
                 </Alert>
               )}
-              {messages.map((msg) => (
-                <Box
-                  key={msg.id}
-                  sx={{
-                    display: 'flex',
-                    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  }}
-                >
+              {messages.map((msg) => {
+                const isUser = msg.role === 'user';
+                return (
                   <Box
+                    key={msg.id}
                     sx={{
-                      maxWidth: '80%',
-                      p: 1.5,
-                      borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      backgroundColor: msg.role === 'user' ? 'primary.main' : '#f1f5f9',
-                      color: msg.role === 'user' ? '#fff' : 'text.primary',
+                      display: 'flex',
+                      gap: 1.5,
+                      alignItems: 'flex-end',
+                      justifyContent: isUser ? 'flex-end' : 'flex-start',
                     }}
                   >
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line', lineHeight: 1.6 }}>
-                      {msg.content}
-                    </Typography>
+                    {!isUser && (
+                      <Box 
+                        sx={{ 
+                          display: { xs: 'none', sm: 'flex' },
+                          width: 28, height: 28, borderRadius: '50%', 
+                          bgcolor: '#f0fdf4', color: '#16a34a', 
+                          alignItems: 'center', justifyContent: 'center', mb: 0.5 
+                        }}
+                      >
+                        <AutoAwesomeIcon sx={{ fontSize: 16 }} />
+                      </Box>
+                    )}
+                    
+                    <Box
+                      sx={{
+                        maxWidth: { xs: '90%', sm: '75%' },
+                        p: { xs: 1.5, sm: 2 },
+                        borderRadius: isUser ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                        backgroundColor: isUser ? '#16a34a' : '#f8fafc',
+                        color: isUser ? '#fff' : '#1e293b',
+                        boxShadow: isUser ? '0 4px 12px rgba(22, 163, 74, 0.15)' : '0 2px 8px rgba(0,0,0,0.03)',
+                        border: isUser ? 'none' : '1px solid #e2e8f0'
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                          lineHeight: 1.6,
+                          '& p': { m: 0, mb: 1.5, '&:last-of-type': { mb: 0 } },
+                          '& ul, & ol': { m: 0, pl: 2.5, mb: 1.5 },
+                          '& li': { mb: 0.5 },
+                          '& strong': { fontWeight: 700 },
+                        }}
+                      >
+                        {msg.content.includes('*') || msg.content.includes('- ') ? (
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        ) : (
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>{msg.content}</Typography>
+                        )}
+                      </Box>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                );
+              })}
+              
               {isTyping && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <Box sx={{ px: 2, py: 1.5, borderRadius: '16px 16px 16px 4px', backgroundColor: '#f1f5f9' }}>
-                    <Typography variant="caption" color="text.secondary">{t('typing')}</Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end', justifyContent: 'flex-start' }}>
+                  <Box 
+                    sx={{ 
+                      display: { xs: 'none', sm: 'flex' },
+                      width: 28, height: 28, borderRadius: '50%', 
+                      bgcolor: '#f0fdf4', color: '#16a34a', 
+                      alignItems: 'center', justifyContent: 'center', mb: 0.5 
+                    }}
+                  >
+                    <AutoAwesomeIcon sx={{ fontSize: 16 }} />
+                  </Box>
+                  <Box sx={{ px: 2.5, py: 1.5, borderRadius: '20px 20px 20px 4px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </Typography>
                   </Box>
                 </Box>
               )}
@@ -197,39 +280,73 @@ export default function EnsiklopediaPage() {
 
             <Divider />
 
-            {/* Input */}
-            <Box sx={{ p: 2, display: 'flex', gap: 1.5, alignItems: 'flex-end' }}>
-              <TextField
-                fullWidth
-                placeholder={t('inputPlaceholder')}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                multiline
-                maxRows={3}
-                size="small"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
-              />
-              <IconButton
-                onClick={handleSend}
-                disabled={!inputValue.trim()}
-                sx={{
-                  backgroundColor: 'primary.main',
-                  color: '#fff',
-                  width: 40,
-                  height: 40,
-                  '&:hover': { backgroundColor: 'primary.dark' },
-                  '&:disabled': { backgroundColor: '#e2e8f0', color: '#94a3b8' },
-                  flexShrink: 0,
+            {/* Input Area */}
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc' }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  gap: 1.5, 
+                  alignItems: 'flex-end',
+                  bgcolor: '#fff',
+                  p: { xs: 0.5, sm: 1 },
+                  borderRadius: { xs: 3, sm: 4 },
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
                 }}
               >
-                <SendIcon fontSize="small" />
-              </IconButton>
+                <TextField
+                  fullWidth
+                  placeholder={t('inputPlaceholder')}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  multiline
+                  maxRows={4}
+                  variant="standard"
+                  slotProps={{
+                    input: {
+                      disableUnderline: true,
+                      sx: { px: 1, py: { xs: 0.75, sm: 0.5 }, fontSize: { xs: '0.875rem', sm: '0.95rem' } }
+                    }
+                  }}
+                />
+                <IconButton
+                  onClick={handleSend}
+                  disabled={!inputValue.trim()}
+                  sx={{
+                    bgcolor: inputValue.trim() ? '#16a34a' : '#f1f5f9',
+                    color: inputValue.trim() ? '#fff' : '#94a3b8',
+                    width: { xs: 36, sm: 44 },
+                    height: { xs: 36, sm: 44 },
+                    borderRadius: '12px',
+                    '&:hover': { bgcolor: inputValue.trim() ? '#15803d' : '#f1f5f9' },
+                    flexShrink: 0,
+                    transition: 'all 0.2s',
+                    mb: { xs: 0.25, sm: 0.5 },
+                    mr: { xs: 0.25, sm: 0.5 }
+                  }}
+                >
+                  <SendIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, ml: 0.5 }} />
+                </IconButton>
+              </Box>
             </Box>
           </Card>
 
           {/* Quick prompts */}
-          <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Box 
+            sx={{ 
+              mt: 2, 
+              display: 'flex', 
+              flexWrap: { xs: 'nowrap', sm: 'wrap' }, 
+              gap: 1,
+              overflowX: { xs: 'auto', sm: 'visible' },
+              pb: { xs: 1, sm: 0 },
+              '::-webkit-scrollbar': { display: 'none' },
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
             {[t('prompts.p1'), t('prompts.p2'), t('prompts.p3'), t('prompts.p4')].map((prompt) => (
               <Chip
                 key={prompt}
@@ -237,52 +354,70 @@ export default function EnsiklopediaPage() {
                 size="small"
                 clickable
                 onClick={() => setInputValue(prompt)}
-                sx={{ backgroundColor: '#f0fdf4', color: 'primary.dark', border: '1px solid #bbf7d0', fontWeight: 500 }}
+                sx={{ 
+                  backgroundColor: '#f0fdf4', 
+                  color: 'primary.dark', 
+                  border: '1px solid #bbf7d0', 
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap'
+                }}
               />
             ))}
           </Box>
         </Grid>
 
         {/* Disease Quick Reference */}
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
-            Referensi Cepat Penyakit Cabai
-            {t('quickReferenceTitle')}
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+        <Grid size={{ xs: 12, lg: 5 }} sx={{ mt: { xs: 2, lg: 0 } }}>
+          <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ width: 4, height: 24, bgcolor: '#16a34a', borderRadius: 4 }} />
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: '#0f172a', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+              Referensi Cepat Penyakit
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {diseaseCards.map((disease) => (
               <Card
                 key={disease.id}
+                elevation={0}
                 sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3,
                   borderLeft: '4px solid',
                   borderLeftColor: disease.tingkatSeveritas === 'tinggi' ? '#ef4444' : '#f59e0b',
-                  transition: 'transform 0.15s',
-                  '&:hover': { transform: 'translateX(4px)' },
+                  transition: 'all 0.2s ease',
+                  '&:hover': { 
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.06)'
+                  },
                 }}
               >
-                <CardContent sx={{ p: 2 }}>
-                  <Box className="flex items-start justify-between mb-1.5">
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{disease.nama}</Typography>
+                <CardContent sx={{ p: { xs: 2, sm: '20px !important' } }}>
+                  <Box className="flex items-start justify-between mb-2" sx={{ gap: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.nama}</Typography>
                     <Chip
-                      label={t('lossLabel', { value: disease.kehilangan })}
+                      label={`Risiko ${disease.kehilangan}`}
                       size="small"
                       sx={{
                         backgroundColor: disease.tingkatSeveritas === 'tinggi' ? '#fee2e2' : '#fef3c7',
-                        color: disease.tingkatSeveritas === 'tinggi' ? '#dc2626' : '#92400e',
-                        fontWeight: 600,
-                        fontSize: '0.68rem',
+                        color: disease.tingkatSeveritas === 'tinggi' ? '#b91c1c' : '#b45309',
+                        fontWeight: 700,
+                        fontSize: '0.65rem',
+                        height: 22
                       }}
                     />
                   </Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                    <strong>{t('cause')}:</strong> {disease.penyebab}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                    <strong>{t('symptoms')}:</strong> {disease.gejala}
-                  </Typography>
-                  <Box sx={{ backgroundColor: '#f8fafc', borderRadius: 1.5, px: 1.5, py: 1 }}>
-                    <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
-                      💊 {disease.penanganan}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                      <strong style={{ color: '#475569' }}>{t('cause')}:</strong> {disease.penyebab}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                      <strong style={{ color: '#475569' }}>{t('symptoms')}:</strong> {disease.gejala}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 1.5, border: '1px dashed #bbf7d0' }}>
+                    <Typography variant="body2" sx={{ color: '#16a34a', fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                      ✓ {disease.penanganan}
                     </Typography>
                   </Box>
                 </CardContent>

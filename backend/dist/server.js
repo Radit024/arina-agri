@@ -9,6 +9,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const transactions_1 = __importDefault(require("./routes/transactions"));
 const stok_1 = __importDefault(require("./routes/stok"));
+const ai_1 = __importDefault(require("./routes/ai"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -32,6 +33,7 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/transactions', transactions_1.default);
 app.use('/api/stok', stok_1.default);
+app.use('/api/ai', ai_1.default);
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });

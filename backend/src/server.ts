@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import transactionRoutes from './routes/transactions';
 import stokRoutes from './routes/stok';
+import aiRoutes from './routes/ai';
+import eventsRoutes from './routes/events';
 
 dotenv.config();
 
@@ -32,6 +34,8 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/stok', stokRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/events', eventsRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -43,13 +47,13 @@ async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB terhubung:', MONGODB_URI);
+  } catch (error) {
+    console.error('❌ Gagal terhubung ke MongoDB. Server tetap berjalan tanpa DB:', error.message || error);
+  } finally {
     app.listen(PORT, () => {
       console.log(`Arina Agri Backend berjalan di http://localhost:${PORT}`);
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
-  } catch (error) {
-    console.error('❌ Gagal terhubung ke MongoDB:', error);
-    process.exit(1);
   }
 }
 

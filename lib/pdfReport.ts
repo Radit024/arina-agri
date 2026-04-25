@@ -29,10 +29,38 @@ export interface ReportData {
   aiAnalysis?: string;
 }
 
+// Helper to load SVG logo and convert to PNG data URL
+const getLogoDataUrl = (): Promise<string> => {
+  return new Promise((resolve) => {
+    try {
+      const img = new window.Image();
+      img.src = '/logo arina.svg';
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width || 200;
+        canvas.height = img.height || 200;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          resolve('');
+        }
+      };
+      img.onerror = () => resolve('');
+    } catch (e) {
+      resolve('');
+    }
+  });
+};
+
 export async function generatePdfReport(data: ReportData): Promise<void> {
   // Dynamic import so jsPDF does not affect SSR
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
+
+  const logoDataUrl = await getLogoDataUrl();
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -44,96 +72,105 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
     day: '2-digit', month: 'long', year: 'numeric',
   });
 
-  // ── Header ──────────────────────────────────────────────────────
-  doc.setFillColor(6, 78, 59); // dark green
-  doc.rect(0, 0, pageW, 30, 'F');
+  // ── Header (Clean Modern Design) ─────────────────────────────────
+  // Top green accent line
+  doc.setFillColor(22, 163, 74);
+  doc.rect(0, 0, pageW, 5, 'F');
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
+  if (logoDataUrl) {
+    doc.addImage(logoDataUrl, 'PNG', marginX, 12, 18, 18);
+  }
+
+  const titleX = marginX + (logoDataUrl ? 24 : 0);
+  
+  doc.setTextColor(6, 78, 59);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('LAPORAN KEUANGAN', marginX, 13);
+  doc.text('LAPORAN KEUANGAN', titleX, 19);
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Arina Agri — Platform Keuangan Petani', marginX, 20);
-  doc.text(`Dicetak: ${today}`, pageW - marginX, 20, { align: 'right' });
+  doc.setTextColor(100, 100, 100);
+  doc.text('Arina Agri — Platform Pencatatan Pertanian', titleX, 25);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  doc.text(`Dicetak: ${today}`, pageW - marginX, 25, { align: 'right' });
+
+  // Thin separator line
+  doc.setDrawColor(226, 232, 240);
+  doc.line(marginX, 34, pageW - marginX, 34);
 
   // ── Meta info ───────────────────────────────────────────────────
-  doc.setTextColor(30, 30, 30);
-  let y = 40;
+  let y = 44;
 
-  doc.setFontSize(11);
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('PERIODE LAPORAN', marginX, y);
+  doc.text('PERIODE', marginX, y);
   doc.setFont('helvetica', 'normal');
-  doc.text(data.periodeLabel, marginX + 45, y);
+  doc.text(`: ${data.periodeLabel}`, marginX + 25, y);
 
   if (data.userName) {
     y += 7;
     doc.setFont('helvetica', 'bold');
-    doc.text('NAMA PETANI', marginX, y);
+    doc.text('PETANI', marginX, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(data.userName, marginX + 45, y);
+    doc.text(`: ${data.userName}`, marginX + 25, y);
   }
 
   // ── Ringkasan Keuangan ──────────────────────────────────────────
   y += 12;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(6, 78, 59);
+  doc.setTextColor(15, 23, 42); // slate-900
   doc.text('RINGKASAN KEUANGAN', marginX, y);
-  doc.setTextColor(30, 30, 30);
 
-  y += 5;
-  // 3 summary boxes
+  y += 6;
   const boxW = (pageW - marginX * 2 - 8) / 3;
 
   // Income box
   doc.setFillColor(240, 253, 244);
-  doc.roundedRect(marginX, y, boxW, 22, 2, 2, 'F');
+  doc.setDrawColor(187, 247, 208); // green-200
+  doc.roundedRect(marginX, y, boxW, 22, 3, 3, 'FD');
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text('TOTAL PENDAPATAN', marginX + 3, y + 6);
-  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(22, 163, 74);
-  doc.text(formatRp(data.totalPendapatan), marginX + 3, y + 15);
+  doc.text('TOTAL PEMASUKAN', marginX + 4, y + 7);
+  doc.setFontSize(12);
+  doc.text(formatRp(data.totalPendapatan), marginX + 4, y + 16);
 
   // Expense box
   const box2X = marginX + boxW + 4;
-  doc.setFillColor(255, 241, 242);
-  doc.roundedRect(box2X, y, boxW, 22, 2, 2, 'F');
+  doc.setFillColor(254, 242, 242);
+  doc.setDrawColor(254, 202, 202); // red-200
+  doc.roundedRect(box2X, y, boxW, 22, 3, 3, 'FD');
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text('TOTAL PENGELUARAN', box2X + 3, y + 6);
-  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(220, 38, 38);
-  doc.text(formatRp(data.totalPengeluaran), box2X + 3, y + 15);
+  doc.text('TOTAL PENGELUARAN', box2X + 4, y + 7);
+  doc.setFontSize(12);
+  doc.text(formatRp(data.totalPengeluaran), box2X + 4, y + 16);
 
   // Net profit/loss box
   const box3X = marginX + boxW * 2 + 8;
   const isProfit = data.labaBersih >= 0;
-  doc.setFillColor(isProfit ? 240 : 255, isProfit ? 253 : 241, isProfit ? 244 : 242);
-  doc.roundedRect(box3X, y, boxW, 22, 2, 2, 'F');
+  doc.setFillColor(isProfit ? 240 : 254, isProfit ? 253 : 242, isProfit ? 244 : 242);
+  doc.setDrawColor(isProfit ? 187 : 254, isProfit ? 247 : 202, isProfit ? 208 : 202);
+  doc.roundedRect(box3X, y, boxW, 22, 3, 3, 'FD');
   doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(100, 100, 100);
-  doc.text(isProfit ? 'LABA BERSIH' : 'RUGI BERSIH', box3X + 3, y + 6);
-  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(isProfit ? 22 : 220, isProfit ? 163 : 38, isProfit ? 74 : 38);
-  doc.text(formatRp(data.labaBersih), box3X + 3, y + 15);
+  doc.text(isProfit ? 'LABA BERSIH' : 'RUGI BERSIH', box3X + 4, y + 7);
+  doc.setFontSize(12);
+  doc.text(formatRp(data.labaBersih), box3X + 4, y + 16);
 
   // ── Tabel Transaksi ─────────────────────────────────────────────
-  y += 30;
+  y += 32;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(6, 78, 59);
+  doc.setTextColor(15, 23, 42);
   doc.text('RINCIAN TRANSAKSI', marginX, y);
-  doc.setTextColor(30, 30, 30);
 
   const sortedTx = [...data.transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
 
@@ -144,12 +181,12 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
       tx.tanggal,
       tx.kategori,
       tx.keterangan || '—',
-      tx.jenis === 'pendapatan' ? 'Pendapatan' : 'Pengeluaran',
+      tx.jenis === 'pendapatan' ? 'Pemasukan' : 'Pengeluaran',
       (tx.jenis === 'pendapatan' ? '+ ' : '- ') + formatRp(tx.nominal),
     ]),
-    styles: { fontSize: 8.5, cellPadding: 4, font: 'helvetica' },
-    headStyles: { fillColor: [6, 78, 59], textColor: 255, fontStyle: 'bold', halign: 'left' },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
+    styles: { fontSize: 8.5, cellPadding: 4, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.1 },
+    headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', halign: 'left' },
+    alternateRowStyles: { fillColor: [250, 252, 253] },
     columnStyles: {
       0: { cellWidth: 24 },
       1: { cellWidth: 28 },
@@ -172,7 +209,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
   // ── AI Analysis (jika ada) ──────────────────────────────────────
   if (data.aiAnalysis) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const finalY = (doc as any).lastAutoTable.finalY + 12;
+    const finalY = (doc as any).lastAutoTable.finalY + 14;
 
     if (finalY + 20 > doc.internal.pageSize.getHeight() - 20) {
       doc.addPage();
@@ -180,50 +217,124 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
 
     let currentY = finalY > doc.internal.pageSize.getHeight() - 40 ? 20 : finalY;
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(6, 78, 59);
-    doc.text('ANALISIS & REKOMENDASI AI', marginX, currentY);
+    // AI Section Header with light green background
+    doc.setFillColor(240, 253, 244);
+    doc.setDrawColor(187, 247, 208);
+    doc.roundedRect(marginX, currentY - 5, pageW - marginX * 2, 10, 2, 2, 'FD');
 
-    currentY += 7;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(22, 163, 74);
+    doc.text('ANALISIS & REKOMENDASI AI', marginX + 3, currentY + 1.5);
+
+    currentY += 12;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 30, 30);
+    doc.setTextColor(51, 65, 85); // slate-700
 
-    // Clean up Markdown and unsupported characters for jsPDF
-    const cleanAnalysis = data.aiAnalysis
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-      .replace(/\*(.*?)\*/g, '$1')     // Remove italic
-      .replace(/###/g, '')
-      .replace(/##/g, '')
-      .replace(/#/g, '')
-      .replace(/^\s*[-*]\s/gm, '• ')   // Convert markdown lists to bullets
-      .replace(/“|”/g, '"')
-      .replace(/‘|’/g, "'")
-      .replace(/—/g, '-')
-      .replace(/[^\x20-\x7E\n\r•]/g, ''); // Strip emojis and unsupported unicode
-
-    const lines = doc.splitTextToSize(cleanAnalysis.trim(), pageW - marginX * 2);
+    // Custom Markdown-like Parser for jsPDF
+    const rawLines = data.aiAnalysis.split('\n');
     const pageH = doc.internal.pageSize.getHeight();
 
-    for (let i = 0; i < lines.length; i++) {
-      if (currentY > pageH - 20) {
-        doc.addPage();
-        currentY = 20;
+    for (let i = 0; i < rawLines.length; i++) {
+      let line = rawLines[i].trim();
+      
+      // Skip empty lines or horizontal rules
+      if (!line || line.match(/^[-*_]{3,}$/)) {
+        currentY += 2;
+        continue;
       }
-      doc.text(lines[i], marginX, currentY);
-      currentY += 4.5; // Custom line height
+
+      let isHeading = false;
+      let isBullet = false;
+      let bulletChar = '';
+
+      // Detect Headings
+      const strippedLine = line.replace(/\*\*/g, '');
+      if (strippedLine.match(/^#{1,3}\s/)) {
+        isHeading = true;
+        line = strippedLine.replace(/^#{1,3}\s/, '');
+      } else if (line.match(/^\*\*.*?\*\*$/)) {
+        isHeading = true;
+        line = strippedLine;
+      } else if (strippedLine.match(/^[A-Z0-9\s&()\-.,]+$/) && strippedLine.length > 5 && /[A-Z]/.test(strippedLine)) {
+        isHeading = true;
+        line = strippedLine;
+      }
+
+      // Detect Bullets / Lists (only if not a heading)
+      if (!isHeading) {
+        if (line.match(/^[-*]\s/)) {
+          isBullet = true;
+          bulletChar = '•';
+          line = line.replace(/^[-*]\s/, '');
+        } else if (line.match(/^\d+\.\s/)) {
+          isBullet = true;
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          bulletChar = line.match(/^\d+\.\s/)![0];
+          line = line.replace(/^\d+\.\s/, '');
+        }
+      }
+
+      // Clean inline markdown and unsupported unicode
+      line = line
+        .replace(/\*\*(.*?)\*\*/g, '$1') // remove inline bold
+        .replace(/\*(.*?)\*/g, '$1')     // remove inline italic
+        .replace(/“|”/g, '"')
+        .replace(/‘|’/g, "'")
+        .replace(/—/g, '-')
+        .replace(/[^\x20-\x7E\n\r]/g, '');
+
+      // Render Line
+      if (isHeading) {
+        currentY += 6; // Add top spacing for heading
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(22, 163, 74); // green-600
+        doc.setFontSize(10);
+        
+        const splitLines = doc.splitTextToSize(line, pageW - marginX * 2);
+        for (let j = 0; j < splitLines.length; j++) {
+          if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
+          doc.text(splitLines[j], marginX, currentY);
+          currentY += 5;
+        }
+        currentY += 1; // Add bottom spacing
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85); // slate-700
+        doc.setFontSize(9);
+        
+        const indent = isBullet ? (bulletChar.length > 1 ? 6 : 4) : 0;
+        const splitLines = doc.splitTextToSize(line, pageW - marginX * 2 - indent);
+        
+        for (let j = 0; j < splitLines.length; j++) {
+          if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
+          
+          if (j === 0 && isBullet) {
+            // Draw bullet char
+            doc.setFont('helvetica', 'bold');
+            doc.text(bulletChar.trim(), marginX, currentY);
+            doc.setFont('helvetica', 'normal');
+            doc.text(splitLines[j], marginX + indent, currentY);
+          } else {
+            doc.text(splitLines[j], marginX + indent, currentY);
+          }
+          currentY += 4.5;
+        }
+        currentY += 1.5; // Add paragraph spacing
+      }
     }
   }
 
   // ── Footer ──────────────────────────────────────────────────────
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pageCount = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     const footerY = doc.internal.pageSize.getHeight() - 10;
-    doc.setFontSize(7.5);
-    doc.setTextColor(150, 150, 150);
-    doc.text('Laporan ini dibuat otomatis oleh Arina Agri • arina-agri.app', marginX, footerY);
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text('Laporan dibuat secara otomatis oleh Arina Agri', marginX, footerY);
     doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginX, footerY, { align: 'right' });
   }
 

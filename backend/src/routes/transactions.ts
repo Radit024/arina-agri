@@ -5,7 +5,7 @@ import { Transaction } from '../models';
 const router = Router();
 
 // GET all transactions
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     // Check if database is connected (readyState 1 = connected)
     if (mongoose.connection.readyState !== 1) {
@@ -17,7 +17,8 @@ router.get('/', async (_req: Request, res: Response) => {
       });
     }
 
-    const transactions = await Transaction.find().sort({ tanggal: -1, createdAt: -1 });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const transactions = await Transaction.find({ userId }).sort({ tanggal: -1, createdAt: -1 });
     res.json({ success: true, data: transactions });
   } catch (error: any) {
     console.error('[Transactions Error]', error.message);
@@ -44,7 +45,8 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    const transaction = new Transaction({ jenis, kategori, nominal, tanggal, keterangan });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const transaction = new Transaction({ userId, jenis, kategori, nominal, tanggal, keterangan });
     await transaction.save();
     res.status(201).json({ success: true, data: transaction, message: 'Transaksi berhasil disimpan' });
   } catch (error: any) {
@@ -64,10 +66,12 @@ router.put('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    const updated = await Transaction.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const updated = await Transaction.findOneAndUpdate(
+      { _id: req.params.id, userId },
+      req.body,
+      { new: true, runValidators: true }
+    );
     if (!updated) {
       res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan' });
       return;
@@ -86,7 +90,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.json({ success: true, message: 'Database tidak terhubung. Transaksi dihapus (mock).' });
     }
 
-    const deleted = await Transaction.findByIdAndDelete(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const deleted = await Transaction.findOneAndDelete({ _id: req.params.id, userId });
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Transaksi tidak ditemukan' });
       return;

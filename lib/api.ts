@@ -12,10 +12,21 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   }
 
   const user = auth.currentUser;
+  let userId = 'guest';
+
   if (user) {
     const token = await user.getIdToken();
     headers.set('Authorization', `Bearer ${token}`);
+    userId = user.uid;
+  } else if (typeof window !== 'undefined') {
+    const storedUserId = localStorage.getItem('arina_user_id');
+    if (storedUserId) {
+      userId = storedUserId;
+    }
   }
+
+  // Set custom header so backend knows which user this is
+  headers.set('X-User-Id', userId);
 
   const res = await fetch(`${API_BASE}${endpoint}`, {
     headers,

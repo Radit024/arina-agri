@@ -169,10 +169,10 @@ export default function DashboardPage() {
       {/* Charts */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <TrendChart />
+          <TrendChart transactions={transactions} />
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
-          <KategoriChart />
+          <KategoriChart transactions={transactions} />
         </Grid>
       </Grid>
 

@@ -15,6 +15,7 @@ import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import PersonIcon from '@mui/icons-material/Person';
 import SpaIcon from '@mui/icons-material/Spa';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import Avatar from '@mui/material/Avatar';
 import ReactMarkdown from 'react-markdown';
 import { initialChatMessages, diseaseCards } from '@/lib/mockData';
@@ -47,9 +48,37 @@ export default function EnsiklopediaPage() {
 
   useEffect(() => {
     if (!authLoading) {
-      setMessages(user ? [] : initialChatMessages);
+      const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
+      const storageKey = `arina_chat_${arinaUserId}`;
+      const savedChat = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+      
+      if (savedChat) {
+        try {
+          setMessages(JSON.parse(savedChat));
+        } catch (e) {
+          setMessages(initialChatMessages);
+        }
+      } else {
+        setMessages(initialChatMessages);
+      }
     }
   }, [user, authLoading]);
+
+  // Save messages to localStorage whenever they update
+  useEffect(() => {
+    if (messages.length > 0) {
+      const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
+      const storageKey = `arina_chat_${arinaUserId}`;
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  const handleClearChat = () => {
+    const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
+    const storageKey = `arina_chat_${arinaUserId}`;
+    localStorage.removeItem(storageKey);
+    setMessages(initialChatMessages);
+  };
 
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -177,6 +206,17 @@ export default function EnsiklopediaPage() {
                     {t('online')}
                   </Typography>
                 </Box>
+              </Box>
+              
+              <Box sx={{ ml: 'auto' }}>
+                <IconButton 
+                  onClick={handleClearChat} 
+                  size="small" 
+                  title="Hapus Riwayat Chat"
+                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}
+                >
+                  <DeleteOutlinedIcon fontSize="small" />
+                </IconButton>
               </Box>
             </Box>
 

@@ -66,7 +66,8 @@
     "charts": {
       "common": {
         "income": "Pendapatan",
-        "expense": "Pengeluaran"
+        "expense": "Pengeluaran",
+        "noData": "Belum ada data transaksi"
       },
       "trend": {
         "title": "Tren Keuangan",

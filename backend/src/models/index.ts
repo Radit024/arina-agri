@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 // ─── Transaction ──────────────────────────────────────────────────
 export interface ITransaction extends Document {
+  userId: string;
   jenis: 'pengeluaran' | 'pendapatan';
   kategori: string;
   nominal: number;
@@ -13,6 +14,7 @@ export interface ITransaction extends Document {
 
 const transactionSchema = new Schema<ITransaction>(
   {
+    userId: { type: String, required: true, default: 'guest' },
     jenis: { type: String, enum: ['pengeluaran', 'pendapatan'], required: true },
     kategori: { type: String, required: true },
     nominal: { type: Number, required: true, min: 0 },
@@ -26,6 +28,7 @@ export const Transaction = mongoose.model<ITransaction>('Transaction', transacti
 
 // ─── Harvest Stock (Stok Panen) ──────────────────────────────────
 export interface IHarvestBatch extends Document {
+  userId: string;
   batchCode: string;
   tanggalPanen: string;
   grade: 'A' | 'B' | 'C';
@@ -43,6 +46,7 @@ export interface IHarvestBatch extends Document {
 
 const harvestBatchSchema = new Schema<IHarvestBatch>(
   {
+    userId: { type: String, required: true, default: 'guest' },
     batchCode: { type: String, required: true, unique: true },
     tanggalPanen: { type: String, required: true },
     grade: { type: String, enum: ['A', 'B', 'C'], required: true },
@@ -70,6 +74,7 @@ export const HarvestBatch = mongoose.model<IHarvestBatch>('HarvestBatch', harves
 
 // ─── Stock Mutation (Riwayat Mutasi Stok) ─────────────────────────
 export interface IStockMutation extends Document {
+  userId: string;
   batchId: mongoose.Types.ObjectId;
   batchCode: string;
   tipe: 'masuk' | 'keluar';
@@ -82,6 +87,7 @@ export interface IStockMutation extends Document {
 
 const stockMutationSchema = new Schema<IStockMutation>(
   {
+    userId: { type: String, required: true, default: 'guest' },
     batchId: { type: Schema.Types.ObjectId, ref: 'HarvestBatch', required: true },
     batchCode: { type: String, required: true },
     tipe: { type: String, enum: ['masuk', 'keluar'], required: true },
@@ -97,6 +103,7 @@ export const StockMutation = mongoose.model<IStockMutation>('StockMutation', sto
 
 // ─── Calendar Event ──────────────────────────────────────────────
 export interface ICalendarEvent extends Document {
+  userId: string;
   title: string;
   date: string;
   category: 'tanam' | 'pupuk' | 'panen' | 'obat' | 'lainnya';
@@ -108,6 +115,7 @@ export interface ICalendarEvent extends Document {
 
 const calendarEventSchema = new Schema<ICalendarEvent>(
   {
+    userId: { type: String, required: true, default: 'guest' },
     title: { type: String, required: true },
     date: { type: String, required: true },
     category: { 

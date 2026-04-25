@@ -42,12 +42,18 @@ app.use((_req, res) => {
   res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });
 });
 
+// ─── Global Error Handler ────────────────────────────────────────
+app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[Global Error]', error.message || error);
+  res.status(500).json({ success: false, message: 'Internal Server Error' });
+});
+
 // ─── Connect to MongoDB & Start ───────────────────────────────────
 async function startServer() {
   try {
     await mongoose.connect(MONGODB_URI);
     console.log('✅ MongoDB terhubung:', MONGODB_URI);
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Gagal terhubung ke MongoDB. Server tetap berjalan tanpa DB:', error.message || error);
   } finally {
     app.listen(PORT, () => {

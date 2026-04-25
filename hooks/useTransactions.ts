@@ -17,6 +17,8 @@ const MOCK_TRANSACTIONS: ApiTransaction[] = mockTransactions.map((tx) => ({
   updatedAt: new Date().toISOString(),
 }));
 
+const getLocalKey = (userId: string | undefined) => `arina_txs_${userId || 'guest'}`;
+
 export function useTransactions() {
   const { user, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<ApiTransaction[]>([]);
@@ -33,15 +35,30 @@ export function useTransactions() {
       setBackendOnline(true);
       setError(null);
     } catch {
-      // Fallback
-      const fallback = user ? [] : MOCK_TRANSACTIONS;
-      setTransactions(fallback);
+      // Fallback to localStorage or mock
+      const localData = localStorage.getItem(getLocalKey(user?.uid));
+      if (localData) {
+        try {
+          setTransactions(JSON.parse(localData));
+        } catch {
+          setTransactions(user ? [] : MOCK_TRANSACTIONS);
+        }
+      } else {
+        setTransactions(user ? [] : MOCK_TRANSACTIONS);
+      }
       setBackendOnline(false);
       setError(null);
     } finally {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  // Persist to localStorage if offline
+  useEffect(() => {
+    if (!loading && !backendOnline) {
+      localStorage.setItem(getLocalKey(user?.uid), JSON.stringify(transactions));
+    }
+  }, [transactions, backendOnline, loading, user]);
 
   useEffect(() => {
     loadData();

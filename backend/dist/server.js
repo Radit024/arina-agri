@@ -10,6 +10,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const transactions_1 = __importDefault(require("./routes/transactions"));
 const stok_1 = __importDefault(require("./routes/stok"));
 const ai_1 = __importDefault(require("./routes/ai"));
+const events_1 = __importDefault(require("./routes/events"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
@@ -34,23 +35,30 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/transactions', transactions_1.default);
 app.use('/api/stok', stok_1.default);
 app.use('/api/ai', ai_1.default);
+app.use('/api/events', events_1.default);
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });
+});
+// ─── Global Error Handler ────────────────────────────────────────
+app.use((error, req, res, next) => {
+    console.error('[Global Error]', error.message || error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 // ─── Connect to MongoDB & Start ───────────────────────────────────
 async function startServer() {
     try {
         await mongoose_1.default.connect(MONGODB_URI);
         console.log('✅ MongoDB terhubung:', MONGODB_URI);
+    }
+    catch (error) {
+        console.error('❌ Gagal terhubung ke MongoDB. Server tetap berjalan tanpa DB:', error.message || error);
+    }
+    finally {
         app.listen(PORT, () => {
             console.log(`Arina Agri Backend berjalan di http://localhost:${PORT}`);
             console.log(`Health check: http://localhost:${PORT}/api/health`);
         });
-    }
-    catch (error) {
-        console.error('❌ Gagal terhubung ke MongoDB:', error);
-        process.exit(1);
     }
 }
 startServer();

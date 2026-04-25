@@ -33,9 +33,10 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StockMutation = exports.HarvestBatch = exports.Transaction = void 0;
+exports.CalendarEvent = exports.StockMutation = exports.HarvestBatch = exports.Transaction = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const transactionSchema = new mongoose_1.Schema({
+    userId: { type: String, required: true, default: 'guest' },
     jenis: { type: String, enum: ['pengeluaran', 'pendapatan'], required: true },
     kategori: { type: String, required: true },
     nominal: { type: Number, required: true, min: 0 },
@@ -44,6 +45,7 @@ const transactionSchema = new mongoose_1.Schema({
 }, { timestamps: true });
 exports.Transaction = mongoose_1.default.model('Transaction', transactionSchema);
 const harvestBatchSchema = new mongoose_1.Schema({
+    userId: { type: String, required: true, default: 'guest' },
     batchCode: { type: String, required: true, unique: true },
     tanggalPanen: { type: String, required: true },
     grade: { type: String, enum: ['A', 'B', 'C'], required: true },
@@ -66,6 +68,7 @@ const harvestBatchSchema = new mongoose_1.Schema({
 }, { timestamps: true });
 exports.HarvestBatch = mongoose_1.default.model('HarvestBatch', harvestBatchSchema);
 const stockMutationSchema = new mongoose_1.Schema({
+    userId: { type: String, required: true, default: 'guest' },
     batchId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'HarvestBatch', required: true },
     batchCode: { type: String, required: true },
     tipe: { type: String, enum: ['masuk', 'keluar'], required: true },
@@ -75,3 +78,16 @@ const stockMutationSchema = new mongoose_1.Schema({
     catatan: { type: String, default: '' },
 }, { timestamps: true });
 exports.StockMutation = mongoose_1.default.model('StockMutation', stockMutationSchema);
+const calendarEventSchema = new mongoose_1.Schema({
+    userId: { type: String, required: true, default: 'guest' },
+    title: { type: String, required: true },
+    date: { type: String, required: true },
+    category: {
+        type: String,
+        enum: ['tanam', 'pupuk', 'panen', 'obat', 'lainnya'],
+        default: 'lainnya'
+    },
+    description: { type: String, default: '' },
+    completed: { type: Boolean, default: false },
+}, { timestamps: true });
+exports.CalendarEvent = mongoose_1.default.model('CalendarEvent', calendarEventSchema);

@@ -67,9 +67,12 @@ const MOCK_BATCHES: ApiHarvestBatch[] = [
     catatan: 'Grade C untuk pasar lokal, segera jual',
     status: 'hampir_kadaluarsa',
     createdAt: '2026-04-20T06:00:00Z',
-    updatedAt: '2026-04-20T06:00:00Z',
+    updatedAt: '2026-04-18T09:00:00Z',
   },
 ];
+
+const getLocalKeyBatches = (userId: string | undefined) => `arina_stok_batches_${userId || 'guest'}`;
+const getLocalKeyMutations = (userId: string | undefined) => `arina_stok_mutations_${userId || 'guest'}`;
 
 const MOCK_MUTATIONS: ApiStockMutation[] = [
   { _id: 'm1', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'masuk', berat: 400, tanggal: '2026-04-12', catatan: 'Panen awal masuk gudang', createdAt: '2026-04-12T06:00:00Z' },
@@ -120,18 +123,37 @@ export function useStok() {
       setBackendOnline(true);
       setError(null);
     } catch {
-      // Backend offline — use mock data only if not logged in
-      const fallbackBatches = user ? [] : MOCK_BATCHES;
-      const fallbackMutations = user ? [] : MOCK_MUTATIONS;
-      setBatches(fallbackBatches);
-      setMutations(fallbackMutations);
-      computeLocalSummary(fallbackBatches);
+      // Backend offline — use localStorage or mock data
+      let finalBatches = user ? [] : MOCK_BATCHES;
+      let finalMutations = user ? [] : MOCK_MUTATIONS;
+      
+      const localBatches = localStorage.getItem(getLocalKeyBatches(user?.uid));
+      const localMutations = localStorage.getItem(getLocalKeyMutations(user?.uid));
+      
+      if (localBatches) {
+        try { finalBatches = JSON.parse(localBatches); } catch {}
+      }
+      if (localMutations) {
+        try { finalMutations = JSON.parse(localMutations); } catch {}
+      }
+
+      setBatches(finalBatches);
+      setMutations(finalMutations);
+      computeLocalSummary(finalBatches);
       setBackendOnline(false);
       setError(null); // silent fallback
     } finally {
       setLoading(false);
     }
   }, [computeLocalSummary, user, authLoading]);
+
+  // Persist to localStorage if offline
+  useEffect(() => {
+    if (!loading && !backendOnline) {
+      localStorage.setItem(getLocalKeyBatches(user?.uid), JSON.stringify(batches));
+      localStorage.setItem(getLocalKeyMutations(user?.uid), JSON.stringify(mutations));
+    }
+  }, [batches, mutations, backendOnline, loading, user]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

@@ -59,10 +59,12 @@ export default function LoginPage() {
       // For now, mock a successful login if using dummy credentials
       // Or uncomment this to use actual Firebase
       if (isFirebaseConfigured) {
-         await signInWithEmailAndPassword(auth, data.email, data.password);
+         const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+         localStorage.setItem('arina_user_id', userCredential.user.uid);
       } else {
          // Mock login delay
          await new Promise(resolve => setTimeout(resolve, 1000));
+         localStorage.setItem('arina_user_id', data.email);
       }
       router.push('/dashboard');
     } catch (err: any) {
@@ -77,9 +79,11 @@ export default function LoginPage() {
     setError(null);
     try {
       if (isFirebaseConfigured) {
-        await signInWithPopup(auth, googleProvider);
+        const userCredential = await signInWithPopup(auth, googleProvider);
+        localStorage.setItem('arina_user_id', userCredential.user.uid);
       } else {
         await new Promise(resolve => setTimeout(resolve, 1000));
+        localStorage.setItem('arina_user_id', 'google_mock_user');
       }
       router.push('/dashboard');
     } catch (err: any) {

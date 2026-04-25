@@ -16,6 +16,8 @@ const MOCK_EVENTS: ApiCalendarEvent[] = mockCalendarEvents.map((ev) => ({
   updatedAt: new Date().toISOString(),
 }));
 
+const getLocalKey = (userId: string | undefined) => `arina_events_${userId || 'guest'}`;
+
 export function useCalendar() {
   const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState<ApiCalendarEvent[]>([]);
@@ -32,14 +34,29 @@ export function useCalendar() {
       setBackendOnline(true);
       setError(null);
     } catch {
-      const fallback = user ? [] : MOCK_EVENTS;
-      setEvents(fallback);
+      const localData = localStorage.getItem(getLocalKey(user?.uid));
+      if (localData) {
+        try {
+          setEvents(JSON.parse(localData));
+        } catch {
+          setEvents(user ? [] : MOCK_EVENTS);
+        }
+      } else {
+        setEvents(user ? [] : MOCK_EVENTS);
+      }
       setBackendOnline(false);
       setError(null);
     } finally {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  // Persist to localStorage if offline
+  useEffect(() => {
+    if (!loading && !backendOnline) {
+      localStorage.setItem(getLocalKey(user?.uid), JSON.stringify(events));
+    }
+  }, [events, backendOnline, loading, user]);
 
   useEffect(() => {
     loadData();

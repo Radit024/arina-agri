@@ -21,12 +21,13 @@ import { IHarvestBatch } from '../models';
 // ─── BATCH CRUD ────────────────────────────────────────────────────
 
 // GET all batches
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.json({ success: true, data: [], message: 'Database tidak terhubung' });
     }
-    const batches = await HarvestBatch.find().sort({ tanggalPanen: -1 });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const batches = await HarvestBatch.find({ userId }).sort({ tanggalPanen: -1, createdAt: -1 });
     res.json({ success: true, data: batches });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Gagal mengambil data stok', error: error.message });
@@ -34,7 +35,7 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 // GET summary stats
-router.get('/summary', async (_req: Request, res: Response) => {
+router.get('/summary', async (req: Request, res: Response) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.json({ 
@@ -42,7 +43,8 @@ router.get('/summary', async (_req: Request, res: Response) => {
         data: { totalStokSiapJual: 0, stokTerjualMingguIni: 0, estimasiNilaiStok: 0, batchHampirKadaluarsa: 0 } 
       });
     }
-    const batches = await HarvestBatch.find();
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const batches = await HarvestBatch.find({ userId });
     const totalStokSiapJual = batches
       .filter((b) => b.status !== 'habis')
       .reduce((sum, b) => sum + b.stokTersisa, 0);
@@ -50,6 +52,7 @@ router.get('/summary', async (_req: Request, res: Response) => {
     const lastWeek = new Date();
     lastWeek.setDate(lastWeek.getDate() - 7);
     const weeklyMutations = await StockMutation.find({
+      userId,
       tipe: 'keluar',
       tanggal: { $gte: lastWeek.toISOString().split('T')[0] },
     });
@@ -87,15 +90,16 @@ router.post('/', async (req: Request, res: Response) => {
     const batchCode = `BATCH-${String(count + 1).padStart(3, '0')}-${grade}`;
     const status = computeStatus(beratMasuk, beratMasuk, estimasiKadaluarsa);
 
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
     const batch = new HarvestBatch({
-      batchCode, tanggalPanen, grade, beratMasuk, stokTersisa: beratMasuk,
+      userId, batchCode, tanggalPanen, grade, beratMasuk, stokTersisa: beratMasuk,
       hargaModal, hargaJual, lokasiPenyimpanan, estimasiKadaluarsa, catatan, status,
     });
     await batch.save();
 
     // Record stock-in mutation
     await StockMutation.create({
-      batchId: batch._id, batchCode, tipe: 'masuk', berat: beratMasuk, tanggal: tanggalPanen, catatan: 'Panen awal masuk gudang',
+      userId, batchId: batch._id, batchCode, tipe: 'masuk', berat: beratMasuk, tanggal: tanggalPanen, catatan: 'Panen awal masuk gudang',
     });
 
     res.status(201).json({ success: true, data: batch, message: 'Batch panen berhasil dicatat' });
@@ -112,7 +116,8 @@ router.put('/:id', async (req: Request, res: Response) => {
       return res.json({ success: true, data: { _id: req.params.id, ...req.body }, message: 'Database tidak terhubung. Batch berhasil diperbarui (mock).' });
     }
 
-    const existing = await HarvestBatch.findById(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const existing = await HarvestBatch.findOne({ _id: req.params.id, userId });
     if (!existing) {
       res.status(404).json({ success: false, message: 'Batch tidak ditemukan' });
       return;
@@ -121,7 +126,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (updatedData.stokTersisa !== undefined) {
       updatedData.status = computeStatus(updatedData.stokTersisa, existing.beratMasuk, updatedData.estimasiKadaluarsa || existing.estimasiKadaluarsa);
     }
-    const updated = await HarvestBatch.findByIdAndUpdate(req.params.id, updatedData, { new: true, runValidators: true });
+    const updated = await HarvestBatch.findOneAndUpdate({ _id: req.params.id, userId }, updatedData, { new: true, runValidators: true });
     res.json({ success: true, data: updated, message: 'Batch berhasil diperbarui' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Gagal memperbarui batch', error: error.message });
@@ -136,7 +141,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.json({ success: true, message: 'Database tidak terhubung. Batch berhasil dihapus (mock).' });
     }
 
-    const deleted = await HarvestBatch.findByIdAndDelete(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const deleted = await HarvestBatch.findOneAndDelete({ _id: req.params.id, userId });
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Batch tidak ditemukan' });
       return;
@@ -160,7 +166,8 @@ router.post('/:id/keluar', async (req: Request, res: Response) => {
       return res.status(201).json({ success: true, data: { batch: { _id: req.params.id }, mutation: { _id: Date.now().toString() } }, message: 'Database tidak terhubung. Stok berhasil dikeluarkan (mock).' });
     }
 
-    const batch = await HarvestBatch.findById(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const batch = await HarvestBatch.findOne({ _id: req.params.id, userId });
 
     if (!batch) {
       res.status(404).json({ success: false, message: 'Batch tidak ditemukan' });
@@ -176,7 +183,7 @@ router.post('/:id/keluar', async (req: Request, res: Response) => {
     await batch.save();
 
     const mutation = await StockMutation.create({
-      batchId: batch._id, batchCode: batch.batchCode, tipe: 'keluar',
+      userId, batchId: batch._id, batchCode: batch.batchCode, tipe: 'keluar',
       berat, tujuan, tanggal, catatan,
     });
 
@@ -196,8 +203,9 @@ router.get('/mutations', async (req: Request, res: Response) => {
     }
 
     const { grade, from, to } = req.query;
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const filter: any = {};
+    const filter: any = { userId };
     if (from || to) {
       filter.tanggal = {};
       if (from) filter.tanggal.$gte = from as string;

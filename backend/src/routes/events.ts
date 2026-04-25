@@ -5,12 +5,13 @@ import { CalendarEvent } from '../models';
 const router = Router();
 
 // GET all events
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.json({ success: true, data: [], message: 'Database tidak terhubung' });
     }
-    const events = await CalendarEvent.find().sort({ date: 1 });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const events = await CalendarEvent.find({ userId }).sort({ date: 1, createdAt: -1 });
     res.json({ success: true, data: events });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Gagal mengambil data kalender', error: error.message });
@@ -36,7 +37,8 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    const event = new CalendarEvent({ title, date, category, description });
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const event = new CalendarEvent({ userId, title, date, category, description });
     await event.save();
     res.status(201).json({ success: true, data: event, message: 'Kegiatan berhasil dijadwalkan' });
   } catch (error: any) {
@@ -52,7 +54,8 @@ router.patch('/:id/toggle', async (req: Request, res: Response) => {
       return res.json({ success: true, data: { _id: req.params.id, completed: true } });
     }
 
-    const event = await CalendarEvent.findById(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const event = await CalendarEvent.findOne({ _id: req.params.id, userId });
     if (!event) {
       res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
       return;
@@ -73,7 +76,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.json({ success: true, message: 'Database tidak terhubung. Kegiatan berhasil dihapus (mock).' });
     }
 
-    const deleted = await CalendarEvent.findByIdAndDelete(req.params.id);
+    const userId = (req.headers['x-user-id'] as string) || 'guest';
+    const deleted = await CalendarEvent.findOneAndDelete({ _id: req.params.id, userId });
     if (!deleted) {
       res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
       return;

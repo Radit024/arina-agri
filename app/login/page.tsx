@@ -4,12 +4,7 @@ import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  signInWithPopup
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -37,8 +32,6 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const googleProvider = new GoogleAuthProvider();
-  const isFirebaseConfigured = auth.app.options.apiKey && auth.app.options.apiKey !== 'mock-api-key';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -56,19 +49,19 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      // For now, mock a successful login if using dummy credentials
-      // Or uncomment this to use actual Firebase
-      if (isFirebaseConfigured) {
-         const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-         localStorage.setItem('arina_user_id', userCredential.user.uid);
-      } else {
-         // Mock login delay
-         await new Promise(resolve => setTimeout(resolve, 1000));
-         localStorage.setItem('arina_user_id', data.email);
-      }
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      if (authError) throw authError;
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Gagal masuk. Periksa email dan password Anda.');
+      const msg = err?.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        setError('Email atau password salah. Silakan coba lagi.');
+      } else {
+        setError(msg || 'Gagal masuk. Periksa email dan password Anda.');
+      }
     } finally {
       setLoading(false);
     }
@@ -78,17 +71,13 @@ export default function LoginPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      if (isFirebaseConfigured) {
-        const userCredential = await signInWithPopup(auth, googleProvider);
-        localStorage.setItem('arina_user_id', userCredential.user.uid);
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        localStorage.setItem('arina_user_id', 'google_mock_user');
-      }
-      router.push('/dashboard');
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (authError) throw authError;
     } catch (err: any) {
       setError(err.message || 'Gagal masuk dengan Google. Silakan coba lagi.');
-    } finally {
       setGoogleLoading(false);
     }
   };

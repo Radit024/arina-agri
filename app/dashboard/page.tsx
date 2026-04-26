@@ -24,7 +24,7 @@ import { useMemo } from 'react';
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
   const { user } = useAuth();
-  const userName = user?.displayName || farmerProfile.nama;
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const firstName = userName.split(' ')[0];
 
   const { transactions } = useTransactions();

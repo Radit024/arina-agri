@@ -1,17 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import transactionRoutes from './routes/transactions';
-import stokRoutes from './routes/stok';
 import aiRoutes from './routes/ai';
-import eventsRoutes from './routes/events';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/arina-agri';
 
 // ─── Middleware ───────────────────────────────────────────────────
 app.use(cors({
@@ -25,17 +20,13 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,
-    message: 'Arina Agri Backend is running',
+    message: 'Arina Agri AI Proxy Backend is running',
     timestamp: new Date().toISOString(),
-    dbStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
 
 // ─── Routes ───────────────────────────────────────────────────────
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/stok', stokRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/events', eventsRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
@@ -48,19 +39,8 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 
-// ─── Connect to MongoDB & Start ───────────────────────────────────
-async function startServer() {
-  try {
-    await mongoose.connect(MONGODB_URI);
-    console.log('✅ MongoDB terhubung:', MONGODB_URI);
-  } catch (error: any) {
-    console.error('❌ Gagal terhubung ke MongoDB. Server tetap berjalan tanpa DB:', error.message || error);
-  } finally {
-    app.listen(PORT, () => {
-      console.log(`Arina Agri Backend berjalan di http://localhost:${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/api/health`);
-    });
-  }
-}
-
-startServer();
+// ─── Start Server ────────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`Arina Agri Backend berjalan di http://localhost:${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
+});

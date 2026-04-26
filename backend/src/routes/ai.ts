@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/gemini', async (req, res) => {
   try {
-    const { prompt, history } = req.body;
+    const { prompt, history, userName } = req.body;
     
     if (!prompt) {
       return res.status(400).json({ success: false, message: 'Prompt tidak boleh kosong.' });
@@ -16,7 +16,7 @@ router.post('/gemini', async (req, res) => {
       context = history.map((msg: any) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
     }
 
-    const reply = await generateGeminiReply({ prompt, context });
+    const reply = await generateGeminiReply({ prompt, context, userName });
     
     return res.json({ 
       success: true, 

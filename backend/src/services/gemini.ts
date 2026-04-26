@@ -68,7 +68,7 @@ export const SYSTEM_PROMPTS = {
 
 // ─── Generate Gemini Reply (Ensiklopedia) ─────────────────────────
 
-export async function generateGeminiReply({ prompt, context }: { prompt: string, context?: string }) {
+export async function generateGeminiReply({ prompt, context, userName }: { prompt: string, context?: string, userName?: string }) {
   const client = getClient();
   if (!client) {
     throw new Error('GEMINI_API_KEY belum diisi di env backend.');
@@ -77,13 +77,16 @@ export async function generateGeminiReply({ prompt, context }: { prompt: string,
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
 
+  const farmerName = userName ? userName : 'Petani';
+
   const mergedPrompt = [
     SYSTEM_PROMPTS.ensiklopedia,
+    `\nPENTING: Nama pengguna (petani) yang sedang bertanya adalah: ${farmerName}. Sapa pengguna dengan namanya sesekali agar lebih personal.`,
     '',
     'Konteks percakapan sebelumnya:',
     context || '(belum ada percakapan sebelumnya)',
     '',
-    'Pertanyaan petani:',
+    `Pertanyaan ${farmerName}:`,
     prompt,
   ].join('\n');
 
@@ -108,7 +111,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
 
-  const { periode, totalPendapatan, totalPengeluaran, labaBersih, transactions } = reportData;
+  const { periode, totalPendapatan, totalPengeluaran, labaBersih, transactions, userName } = reportData;
 
   // Format kategori pengeluaran dari transaksi
   const pengeluaranPerKategori: Record<string, number> = {};
@@ -126,7 +129,10 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
 
   const formatRp = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
+  const farmerName = userName ? userName : 'Petani';
+
   const dataContext = [
+    `NAMA PETANI / PEMILIK AKUN: ${farmerName}`,
     `PERIODE LAPORAN: ${periode}`,
     `TOTAL PENDAPATAN: ${formatRp(totalPendapatan)}`,
     `TOTAL PENGELUARAN: ${formatRp(totalPengeluaran)}`,
@@ -143,6 +149,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
 
   const mergedPrompt = [
     SYSTEM_PROMPTS.keuangan,
+    `\nPENTING: Analisis laporan ini adalah untuk akun milik "${farmerName}". Berikan saran keuangan yang ditujukan langsung kepadanya dengan menyapanya secara profesional namun ramah.`,
     '',
     'DATA KEUANGAN YANG PERLU DIANALISIS:',
     dataContext,

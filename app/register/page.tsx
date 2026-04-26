@@ -4,12 +4,7 @@ import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -43,8 +38,6 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const googleProvider = new GoogleAuthProvider();
-  const isFirebaseConfigured = auth.app.options.apiKey && auth.app.options.apiKey !== 'mock-api-key';
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -65,16 +58,22 @@ export default function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      if (isFirebaseConfigured) {
-         await createUserWithEmailAndPassword(auth, data.email, data.password);
-         // You could also store the user's full name in a user profile document in Firestore here.
-      } else {
-         // Mock registration delay
-         await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      const { error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: { full_name: data.fullName },
+        },
+      });
+      if (authError) throw authError;
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Gagal mendaftar. Silakan coba lagi.');
+      const msg = err?.message || '';
+      if (msg.includes('already registered')) {
+        setError('Email ini sudah terdaftar. Silakan login atau gunakan email lain.');
+      } else {
+        setError(msg || 'Gagal mendaftar. Silakan coba lagi.');
+      }
     } finally {
       setLoading(false);
     }
@@ -84,15 +83,13 @@ export default function RegisterPage() {
     setGoogleLoading(true);
     setError(null);
     try {
-      if (isFirebaseConfigured) {
-        await signInWithPopup(auth, googleProvider);
-      } else {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      router.push('/dashboard');
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (authError) throw authError;
     } catch (err: any) {
       setError(err.message || 'Gagal masuk dengan Google. Silakan coba lagi.');
-    } finally {
       setGoogleLoading(false);
     }
   };

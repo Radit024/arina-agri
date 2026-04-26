@@ -48,7 +48,8 @@ export default function CuacaPage() {
   const t = useTranslations('Weather');
   const { user } = useAuth();
   const todayDate = new Date().toISOString().split('T')[0];
-  const [savedPhone, setSavedPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
+  const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
+  const [savedPhone, setSavedPhone] = useLocalStorage<string>(weatherPhoneKey, '');
   const [hp, setHp] = useState(savedPhone);
   const [notifAktif, setNotifAktif] = useState(true);
   const isWhatsappConfigured = savedPhone.trim().length > 0;

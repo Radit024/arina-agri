@@ -77,7 +77,6 @@ type BepHppInputs = {
 
 const BULAN_LABELS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
-const AI_REPORT_QUOTA_KEY = 'arina-ai-report-quota';
 const MAX_AI_REPORTS_PER_MONTH = 3;
 
 interface QuotaState {
@@ -91,7 +90,8 @@ export default function KeuanganPage() {
   
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   
-  const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>('arina-bep-hpp-inputs', {
+  const bepKey = `arina-bep-hpp-inputs-${user?.id || 'guest'}`;
+  const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>(bepKey, {
     biayaTetap: 0,
     jumlahProduksi: 0,
     hargaJualPerUnit: 0,
@@ -99,8 +99,9 @@ export default function KeuanganPage() {
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
+  const aiQuotaKey = `arina-ai-report-quota-${user?.id || 'guest'}`;
   const [aiReportQuota, setAiReportQuota] = useLocalStorage<QuotaState>(
-    AI_REPORT_QUOTA_KEY,
+    aiQuotaKey,
     { month: '', used: 0 }
   );
   const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
@@ -228,7 +229,7 @@ export default function KeuanganPage() {
         totalPengeluaran,
         labaBersih,
         transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
-        userName: user?.displayName || undefined,
+        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
       });
     } catch {
       setReportError('Gagal membuat PDF. Coba lagi.');
@@ -249,6 +250,7 @@ export default function KeuanganPage() {
         totalPendapatan,
         totalPengeluaran,
         labaBersih,
+        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
         transactions: monthFilteredTransactions.map((tx) => ({
           jenis: tx.jenis,
           kategori: tx.kategori,
@@ -265,7 +267,7 @@ export default function KeuanganPage() {
         totalPengeluaran,
         labaBersih,
         transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
-        userName: user?.displayName || undefined,
+        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
         aiAnalysis: result.analysis,
       });
     } catch {

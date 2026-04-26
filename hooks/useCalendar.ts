@@ -16,90 +16,63 @@ const MOCK_EVENTS: ApiCalendarEvent[] = mockCalendarEvents.map((ev) => ({
   updatedAt: new Date().toISOString(),
 }));
 
-const getLocalKey = (userId: string | undefined) => `arina_events_${userId || 'guest'}`;
-
 export function useCalendar() {
   const { user, loading: authLoading } = useAuth();
   const [events, setEvents] = useState<ApiCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [backendOnline, setBackendOnline] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (authLoading) return;
     setLoading(true);
     try {
+      if (!user) {
+        setEvents(MOCK_EVENTS);
+        setLoading(false);
+        return;
+      }
       const data = await eventApi.getAll();
       setEvents(data);
-      setBackendOnline(true);
       setError(null);
-    } catch {
-      const localData = localStorage.getItem(getLocalKey(user?.uid));
-      if (localData) {
-        try {
-          setEvents(JSON.parse(localData));
-        } catch {
-          setEvents(user ? [] : MOCK_EVENTS);
-        }
-      } else {
-        setEvents(user ? [] : MOCK_EVENTS);
-      }
-      setBackendOnline(false);
-      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Gagal memuat jadwal');
     } finally {
       setLoading(false);
     }
   }, [user, authLoading]);
-
-  // Persist to localStorage if offline
-  useEffect(() => {
-    if (!loading && !backendOnline) {
-      localStorage.setItem(getLocalKey(user?.uid), JSON.stringify(events));
-    }
-  }, [events, backendOnline, loading, user]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const addEvent = async (data: Parameters<typeof eventApi.create>[0]) => {
-    if (backendOnline) {
-      const created = await eventApi.create(data);
-      setEvents((prev) => [created, ...prev]);
-    } else {
-      const newEv: ApiCalendarEvent = {
-        ...data,
-        _id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setEvents((prev) => [newEv, ...prev]);
-    }
+    const created = await eventApi.create(data);
+    setEvents((prev) => [created, ...prev]);
   };
 
   const updateEvent = async (id: string, data: Partial<ApiCalendarEvent>) => {
-    if (backendOnline) {
-      const updated = await eventApi.update(id, data);
-      setEvents((prev) => prev.map((ev) => (ev._id === id ? updated : ev)));
-    } else {
-      setEvents((prev) => prev.map((ev) => (ev._id === id ? { ...ev, ...data, updatedAt: new Date().toISOString() } : ev)));
-    }
+    const updated = await eventApi.update(id, data);
+    setEvents((prev) => prev.map((ev) => (ev._id === id ? updated : ev)));
+  };
+
+  const toggleEvent = async (id: string) => {
+    const updated = await eventApi.toggleComplete(id);
+    setEvents((prev) => prev.map((ev) => (ev._id === id ? updated : ev)));
   };
 
   const deleteEvent = async (id: string) => {
-    if (backendOnline) {
-      await eventApi.delete(id);
-    }
+    await eventApi.delete(id);
     setEvents((prev) => prev.filter((ev) => ev._id !== id));
   };
 
   return {
     events,
     loading,
-    backendOnline,
+    backendOnline: true,
     error,
     addEvent,
     updateEvent,
+    toggleEvent,
     deleteEvent,
     reload: loadData,
   };

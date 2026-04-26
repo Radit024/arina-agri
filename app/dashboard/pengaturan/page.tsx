@@ -39,10 +39,11 @@ export default function PengaturanPage() {
   const [activeTab, setActiveTab] = useState('general');
 
   const { user } = useAuth();
-  const userName = user?.displayName || farmerProfile.nama;
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
-  const userAvatar = user?.photoURL;
-  const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(WEATHER_WHATSAPP_PHONE_KEY, '');
+  const userAvatar = user?.user_metadata?.avatar_url;
+  const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
+  const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
   const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
 

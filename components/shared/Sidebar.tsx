@@ -27,10 +27,11 @@ import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '@/context/AuthContext';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
@@ -50,9 +51,9 @@ export default function Sidebar() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const { user } = useAuth();
 
-  const userName = user?.displayName || farmerProfile.nama;
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
-  const userAvatar = user?.photoURL;
+  const userAvatar = user?.user_metadata?.avatar_url;
 
   const pathname = usePathname();
   const router = useRouter();
@@ -227,13 +228,9 @@ export default function Sidebar() {
 
               <ListItem disablePadding>
                 <ListItemButton
-                  onClick={() => {
-                    import('firebase/auth').then(({ getAuth, signOut }) => {
-                      const auth = getAuth();
-                      signOut(auth).then(() => {
-                        router.push('/');
-                      });
-                    });
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    router.push('/');
                   }}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#fef2f2' } }}
                 >

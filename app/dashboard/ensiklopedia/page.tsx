@@ -110,7 +110,8 @@ export default function EnsiklopediaPage() {
     setIsTyping(true);
 
     try {
-      const result = await aiApi.askGemini({ prompt, history: historyPayload });
+      const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined;
+      const result = await aiApi.askGemini({ prompt, history: historyPayload, userName });
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'ai',

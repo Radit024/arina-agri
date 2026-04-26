@@ -23,6 +23,7 @@
     "@mui/icons-material": "^9.0.0",
     "@mui/material": "^9.0.0",
     "@mui/x-charts": "^9.0.2",
+    "@supabase/supabase-js": "^2.104.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

@@ -276,14 +276,62 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
         }
       }
 
-      // Clean inline markdown and unsupported unicode
+      // Clean unsupported unicode
       line = line
-        .replace(/\*\*(.*?)\*\*/g, '$1') // remove inline bold
-        .replace(/\*(.*?)\*/g, '$1')     // remove inline italic
         .replace(/“|”/g, '"')
         .replace(/‘|’/g, "'")
         .replace(/—/g, '-')
-        .replace(/[^\x20-\x7E\n\r]/g, '');
+        .replace(/[^\x00-\x7F]/g, ''); // Stick to basic ASCII for standard fonts
+
+      // Helper to render text with inline bold segments
+      const renderRichLine = (textStr: string, xPos: number, yPos: number, maxWidth: number) => {
+        // Split by ** markers
+        const segments = textStr.split(/(\*\*.*?\*\*)/g);
+        let currentX = xPos;
+        let currentY = yPos;
+        const normalFontSize = 9;
+        
+        // We need to handle internal wrapping if a single line is too long
+        // Simplest: use doc.splitTextToSize on a clean version to find wrap points
+        const cleanText = textStr.replace(/\*\*/g, '');
+        const wrappedLines = doc.splitTextToSize(cleanText, maxWidth);
+        
+        // This is a simplified rich text wrapper
+        // It's hard to perfectly map segments to wrapped lines, 
+        // so we'll just render each segment and manually wrap if currentX > xPos + maxWidth
+        
+        doc.setFontSize(normalFontSize);
+        
+        segments.forEach(segment => {
+          if (!segment) return;
+          
+          const isBold = segment.startsWith('**') && segment.endsWith('**');
+          const cleanSegment = isBold ? segment.slice(2, -2) : segment;
+          
+          doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+          
+          // Split segment into words to handle wrapping
+          const words = cleanSegment.split(/(\s+)/);
+          
+          words.forEach(word => {
+            const wordWidth = doc.getTextWidth(word);
+            
+            if (currentX + wordWidth > xPos + maxWidth && currentX > xPos) {
+              currentX = xPos;
+              currentY += 4.5;
+              if (currentY > pageH - 20) {
+                doc.addPage();
+                currentY = 20;
+              }
+            }
+            
+            doc.text(word, currentX, currentY);
+            currentX += wordWidth;
+          });
+        });
+        
+        return currentY + 4.5;
+      };
 
       // Render Line
       if (isHeading) {
@@ -292,7 +340,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
         doc.setTextColor(22, 163, 74); // green-600
         doc.setFontSize(10);
         
-        const splitLines = doc.splitTextToSize(line, pageW - marginX * 2);
+        const splitLines = doc.splitTextToSize(line.replace(/\*\*/g, ''), pageW - marginX * 2);
         for (let j = 0; j < splitLines.length; j++) {
           if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
           doc.text(splitLines[j], marginX, currentY);
@@ -304,22 +352,15 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
         doc.setTextColor(51, 65, 85); // slate-700
         doc.setFontSize(9);
         
-        const indent = isBullet ? (bulletChar.length > 1 ? 6 : 4) : 0;
-        const splitLines = doc.splitTextToSize(line, pageW - marginX * 2 - indent);
+        const indent = isBullet ? (bulletChar.length > 1 ? 8 : 5) : 0;
         
-        for (let j = 0; j < splitLines.length; j++) {
+        if (isBullet) {
           if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
-          
-          if (j === 0 && isBullet) {
-            // Draw bullet char
-            doc.setFont('helvetica', 'bold');
-            doc.text(bulletChar.trim(), marginX, currentY);
-            doc.setFont('helvetica', 'normal');
-            doc.text(splitLines[j], marginX + indent, currentY);
-          } else {
-            doc.text(splitLines[j], marginX + indent, currentY);
-          }
-          currentY += 4.5;
+          doc.setFont('helvetica', 'bold');
+          doc.text(bulletChar.trim(), marginX, currentY);
+          currentY = renderRichLine(line, marginX + indent, currentY, pageW - marginX * 2 - indent);
+        } else {
+          currentY = renderRichLine(line, marginX, currentY, pageW - marginX * 2);
         }
         currentY += 1.5; // Add paragraph spacing
       }

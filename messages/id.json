@@ -137,7 +137,7 @@
   "Finance": {
     "title": "Manajemen Keuangan",
     "subtitle": "Pantau arus kas, analisis biaya, dan telusuri profil pengeluaran kebun Anda.",
-    "exportCsv": "Ekspor CSV",
+    "exportCsv": "Ekspor Excel",
     "common": {
       "income": "Pemasukan",
       "expense": "Pengeluaran",

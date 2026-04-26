@@ -55,6 +55,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 
 import { useTransactions } from '@/hooks/useTransactions';
 import type { ApiTransaction } from '@/lib/api';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'Pilih jenis transaksi' }),
@@ -194,18 +196,68 @@ export default function KeuanganPage() {
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
-  const handleExportCSV = () => {
-    const headers = 'Tanggal,Kategori,Keterangan,Jenis,Nominal';
-    const csvStr = transactions
-      .map((t) => `${t.tanggal},"${t.kategori}","${t.keterangan?.replace(/"/g, '""') || ''}",${t.jenis},${t.nominal}`)
-      .join('\n');
-    const blob = new Blob([headers + '\n' + csvStr], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Laporan_Keuangan_Arina_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const handleExportExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Buku Keuangan');
+
+    // Add Title
+    worksheet.mergeCells('A1:E1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'Laporan Transaksi Keuangan - Arina Agri';
+    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16A34A' } };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    worksheet.addRow([]); // Empty row
+
+    // Add Headers
+    const headerRow = worksheet.addRow(['Tanggal', 'Kategori', 'Keterangan', 'Jenis', 'Nominal']);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+
+    // Add Data
+    transactions.forEach((tx) => {
+      const row = worksheet.addRow([
+        tx.tanggal,
+        tx.kategori,
+        tx.keterangan || '-',
+        tx.jenis === 'pendapatan' ? 'Pendapatan' : 'Pengeluaran',
+        tx.nominal
+      ]);
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+        if (colNumber === 5) {
+          cell.numFmt = '"Rp"#,##0';
+        }
+      });
+    });
+
+    // Adjust column widths
+    worksheet.columns = [
+      { width: 15 },
+      { width: 25 },
+      { width: 40 },
+      { width: 15 },
+      { width: 20 }
+    ];
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `Laporan_Keuangan_Arina_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // ─── AI Quota helpers ──────────────────────────────────────────
@@ -406,7 +458,7 @@ export default function KeuanganPage() {
         <Button
           variant="outlined"
           startIcon={<DownloadIcon />}
-          onClick={handleExportCSV}
+          onClick={handleExportExcel}
           color="success"
           sx={{ borderRadius: 8, bgcolor: 'background.paper', boxShadow: 1, whiteSpace: 'nowrap' }}
         >

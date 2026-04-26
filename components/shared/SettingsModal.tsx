@@ -136,9 +136,9 @@ export default function SettingsModal() {
                    onClick={() => setActiveTab(tab.id)}
                    sx={{
                      borderRadius: 2,
-                     bgcolor: activeTab === tab.id ? '#e2e8f0' : 'transparent',
-                     color: activeTab === tab.id ? '#0f172a' : '#475569',
-                     '&:hover': { bgcolor: activeTab === tab.id ? '#e2e8f0' : '#f1f5f9' },
+                     bgcolor: activeTab === tab.id ? '#dcfce7' : 'transparent',
+                     color: activeTab === tab.id ? '#166534' : '#475569',
+                     '&:hover': { bgcolor: activeTab === tab.id ? '#dcfce7' : '#f0fdf4' },
                      py: 1
                    }}
                  >
@@ -334,7 +334,8 @@ export default function SettingsModal() {
                         height: 56,
                         borderRadius: 6,
                         textTransform: 'none',
-                        bgcolor: '#111827',
+                        bgcolor: '#16a34a',
+                        '&:hover': { bgcolor: '#15803d' },
                         color: 'white',
                         fontWeight: 700,
                         whiteSpace: 'nowrap',

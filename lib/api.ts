@@ -64,6 +64,41 @@ export interface GeminiChatMessage {
   content: string;
 }
 
+export interface NotificationDecisionWeatherInput {
+  kondisi: string;
+  suhu: number;
+  kelembapan: number;
+  curahHujan: number;
+  kecepatanAngin: number;
+  lokasi?: string;
+}
+
+export interface NotificationDecisionInput {
+  platform: 'whatsapp' | 'telegram';
+  to: string;
+  recipientName?: string;
+  notificationsEnabled?: boolean;
+  weather: NotificationDecisionWeatherInput;
+  metadata?: {
+    source?: string;
+    customMessage?: string;
+    locale?: 'id' | 'en';
+  };
+}
+
+export interface NotificationDecisionResponse {
+  sent: boolean;
+  decision: {
+    decisionId: string;
+    shouldSend: boolean;
+    riskScore: number;
+    riskLevel: 'rendah' | 'sedang' | 'tinggi' | 'ekstrem';
+    finalMessage: string;
+    recommendations: string[];
+    reason: string;
+  };
+}
+
 // ─── Helpers to map Supabase rows → frontend shape ────────────────
 function mapTx(row: any): ApiTransaction {
   return {
@@ -441,4 +476,12 @@ export const aiApi = {
     }>;
   }) =>
     aiFetch<{ analysis: string; model: string }>('/ai/financial-report', payload),
+};
+
+export const notificationApi = {
+  decide: (payload: NotificationDecisionInput) =>
+    aiFetch<NotificationDecisionResponse['decision']>('/notification/decide', payload),
+
+  decideAndSend: (payload: NotificationDecisionInput) =>
+    aiFetch<NotificationDecisionResponse>('/notification/decide-send', payload),
 };

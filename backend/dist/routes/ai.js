@@ -8,7 +8,7 @@ const gemini_1 = require("../services/gemini");
 const router = express_1.default.Router();
 router.post('/gemini', async (req, res) => {
     try {
-        const { prompt, history } = req.body;
+        const { prompt, history, userName } = req.body;
         if (!prompt) {
             return res.status(400).json({ success: false, message: 'Prompt tidak boleh kosong.' });
         }
@@ -16,7 +16,7 @@ router.post('/gemini', async (req, res) => {
         if (history && Array.isArray(history)) {
             context = history.map((msg) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
         }
-        const reply = await (0, gemini_1.generateGeminiReply)({ prompt, context });
+        const reply = await (0, gemini_1.generateGeminiReply)({ prompt, context, userName });
         return res.json({
             success: true,
             message: 'OK',

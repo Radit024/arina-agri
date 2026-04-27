@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import aiRoutes from './routes/ai';
+import notificationRoutes from './routes/notification';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get('/api/health', (_req, res) => {
 
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', aiRoutes);
+app.use('/api/notification', notificationRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {

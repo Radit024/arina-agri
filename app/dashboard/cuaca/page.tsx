@@ -18,6 +18,8 @@ import TextField from '@mui/material/TextField';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import CloudIcon from '@mui/icons-material/Cloud';
@@ -28,9 +30,10 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
+import { notificationApi } from '@/lib/api';
 import { formatDateShort } from '@/lib/formatters';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -46,13 +49,16 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function CuacaPage() {
   const t = useTranslations('Weather');
+  const locale = useLocale();
   const { user } = useAuth();
   const todayDate = new Date().toISOString().split('T')[0];
   const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
   const [savedPhone, setSavedPhone] = useLocalStorage<string>(weatherPhoneKey, '');
   const [hp, setHp] = useState(savedPhone);
   const [notifAktif, setNotifAktif] = useState(true);
-  const isWhatsappConfigured = savedPhone.trim().length > 0;
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error' | 'skipped'>('idle');
+  const [testFeedback, setTestFeedback] = useState('');
   const isCurrentPhoneSaved = hp.trim().length > 0 && hp.trim() === savedPhone.trim();
 
   useEffect(() => {
@@ -87,6 +93,56 @@ export default function CuacaPage() {
         ? 'linear-gradient(135deg, #334155 0%, #475569 55%, #94a3b8 100%)'
         : 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)';
 
+  const recipientName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Petani';
+
+  const handleTestNotification = async () => {
+    const targetPhone = (savedPhone || hp).trim();
+
+    if (!targetPhone || !notifAktif) {
+      setTestStatus('error');
+      setTestFeedback('Simpan nomor WhatsApp dan aktifkan notifikasi terlebih dahulu.');
+      return;
+    }
+
+    setIsSendingTest(true);
+    setTestStatus('idle');
+    setTestFeedback('');
+
+    try {
+      const result = await notificationApi.decideAndSend({
+        platform: 'whatsapp',
+        to: targetPhone,
+        recipientName,
+        notificationsEnabled: notifAktif,
+        weather: {
+          kondisi: displayedCurrentWeather.kondisi,
+          suhu: displayedCurrentWeather.suhu,
+          kelembapan: displayedCurrentWeather.kelembapan,
+          curahHujan: displayedCurrentWeather.curahHujan,
+          kecepatanAngin: displayedCurrentWeather.kecepatanAngin,
+          lokasi: displayedCurrentWeather.lokasi,
+        },
+        metadata: {
+          source: 'weather-dashboard-test-button',
+          locale: locale === 'en' ? 'en' : 'id',
+        },
+      });
+
+      if (result.sent) {
+        setTestStatus('success');
+        setTestFeedback(`Notifikasi terkirim. Risiko ${result.decision.riskLevel} (${result.decision.riskScore}/100).`);
+      } else {
+        setTestStatus('skipped');
+        setTestFeedback(`Notifikasi tidak dikirim: ${result.decision.reason}`);
+      }
+    } catch (error: any) {
+      setTestStatus('error');
+      setTestFeedback(error?.message || 'Gagal mengirim notifikasi uji coba.');
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
@@ -100,7 +156,7 @@ export default function CuacaPage() {
 
       <Grid container spacing={3}>
         {/* Current Weather */}
-        <Grid size={{ xs: 12, lg: isWhatsappConfigured ? 12 : 8 }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <Card sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
             {isRainy && (
               <Box className="weather-rain-layer" aria-hidden>
@@ -270,7 +326,6 @@ export default function CuacaPage() {
         </Grid>
 
         {/* WhatsApp Integration */}
-        {!isWhatsappConfigured && (
           <Grid size={{ xs: 12, lg: 4 }}>
             <Card>
               <CardHeader
@@ -323,6 +378,34 @@ export default function CuacaPage() {
                   {isCurrentPhoneSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
                 </Button>
 
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={handleTestNotification}
+                  disabled={!notifAktif || !(savedPhone || hp).trim() || isSendingTest}
+                  sx={{ mt: 1.5 }}
+                >
+                  {isSendingTest ? <CircularProgress size={20} /> : 'Kirim Pesan Uji Coba (AI Decision)'}
+                </Button>
+
+                {testStatus === 'success' && (
+                  <Alert severity="success" sx={{ mt: 1.5 }}>
+                    {testFeedback || 'Notifikasi berhasil dikirim ke n8n.'}
+                  </Alert>
+                )}
+
+                {testStatus === 'skipped' && (
+                  <Alert severity="info" sx={{ mt: 1.5 }}>
+                    {testFeedback}
+                  </Alert>
+                )}
+
+                {testStatus === 'error' && (
+                  <Alert severity="error" sx={{ mt: 1.5 }}>
+                    {testFeedback || 'Terjadi kesalahan saat mengirim notifikasi.'}
+                  </Alert>
+                )}
+
                 {notifAktif && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
@@ -339,7 +422,6 @@ export default function CuacaPage() {
               </CardContent>
             </Card>
           </Grid>
-        )}
       </Grid>
     </Box>
   );

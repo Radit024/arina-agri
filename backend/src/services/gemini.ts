@@ -70,6 +70,28 @@ export const SYSTEM_PROMPTS = {
     '- Bahasa harus ramah, tidak menghakimi, dan memotivasi petani.',
     '- Jangan buat laporan fiktif — hanya analisis data yang diberikan.',
   ].join('\n'),
+
+  /**
+   * System prompt untuk AI Decision System notifikasi cuaca.
+   * AI hanya memperhalus pesan berdasarkan output rule engine yang deterministik.
+   */
+  notificationDecision: [
+    'Anda adalah Arina Decision AI untuk notifikasi cuaca petani di Indonesia.',
+    'Anda bekerja bersama rule engine. Rule engine sudah menentukan level risiko, alasan, dan aksi utama.',
+    '',
+    'Tugas Anda:',
+    '- Ubah draft pesan menjadi lebih jelas, ringkas, dan mudah dipahami petani.',
+    '- Pertahankan keputusan rule engine (jangan ubah level risiko, jangan menambah klaim cuaca baru).',
+    '- Gunakan Bahasa Indonesia sederhana, praktis, dan tidak menakut-nakuti.',
+    '- Maksimal 120 kata.',
+    '- Sertakan 2-3 aksi yang bisa dilakukan hari ini.',
+    '- Gunakan format teks polos, tanpa markdown tabel.',
+    '',
+    'Larangan:',
+    '- Jangan memberikan diagnosis medis manusia/hewan.',
+    '- Jangan menyarankan tindakan berbahaya.',
+    '- Jangan membuat data cuaca fiktif di luar input.',
+  ].join('\n'),
 };
 
 // ─── Generate Gemini Reply (Ensiklopedia) ─────────────────────────
@@ -168,6 +190,64 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
 
   if (!text) {
     throw new Error('Gemini tidak mengembalikan respons teks.');
+  }
+
+  return text.trim();
+}
+
+// ─── Generate AI-Refined Notification Message ────────────────────
+
+export async function generateNotificationDecisionMessage({
+  farmerName,
+  location,
+  riskLevel,
+  riskScore,
+  triggeredRules,
+  recommendedActions,
+  weatherSummary,
+  draftMessage,
+}: {
+  farmerName: string;
+  location?: string;
+  riskLevel: 'rendah' | 'sedang' | 'tinggi' | 'ekstrem';
+  riskScore: number;
+  triggeredRules: string[];
+  recommendedActions: string[];
+  weatherSummary: string;
+  draftMessage: string;
+}) {
+  const client = getClient();
+  if (!client) {
+    // Fallback ke draft saat API key belum tersedia.
+    return draftMessage;
+  }
+
+  const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = client.getGenerativeModel({ model: modelName });
+
+  const mergedPrompt = [
+    SYSTEM_PROMPTS.notificationDecision,
+    '',
+    'DATA KEPUTUSAN RULE ENGINE (WAJIB DIIKUTI):',
+    `- Nama petani: ${farmerName}`,
+    `- Lokasi: ${location || 'tidak diketahui'}`,
+    `- Risk level: ${riskLevel}`,
+    `- Risk score: ${riskScore}`,
+    `- Triggered rules: ${triggeredRules.join(', ') || 'tidak ada'}`,
+    `- Recommended actions: ${recommendedActions.join(' | ') || 'tidak ada'}`,
+    `- Ringkasan cuaca: ${weatherSummary}`,
+    '',
+    'DRAFT PESAN SAAT INI:',
+    draftMessage,
+    '',
+    'Keluarkan versi final pesan notifikasi saja.',
+  ].join('\n');
+
+  const result = await model.generateContent(mergedPrompt);
+  const text = result?.response?.text?.();
+
+  if (!text) {
+    return draftMessage;
   }
 
   return text.trim();

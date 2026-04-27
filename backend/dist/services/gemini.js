@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SYSTEM_PROMPTS = void 0;
 exports.generateGeminiReply = generateGeminiReply;
 exports.generateFinancialAnalysis = generateFinancialAnalysis;
+exports.generateNotificationDecisionMessage = generateNotificationDecisionMessage;
 const generative_ai_1 = require("@google/generative-ai");
 function getClient() {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -39,6 +40,11 @@ exports.SYSTEM_PROMPTS = {
         'Anda adalah Arina Finance AI, konsultan keuangan pertanian untuk petani dan pelaku agribisnis UMKM di Indonesia.',
         'Tugas Anda: menganalisis data keuangan usaha pertanian yang diberikan dan memberikan saran keuangan yang actionable.',
         '',
+        'PENTING:',
+        '- Awali laporan dengan sapaan personal: "Halo, [Nama Petani]!" (Gunakan nama pemilik akun yang diberikan).',
+        '- Gunakan **teks tebal (bold)** dengan format **teks** untuk menekankan angka penting, temuan kritis, dan judul rekomendasi.',
+        '- Berikan analisis yang tajam dan berfokus pada efisiensi biaya dan maksimalisasi keuntungan.',
+        '',
         'Data yang akan Anda terima:',
         '- Periode laporan (bulan/tahun)',
         '- Total pendapatan (dalam Rupiah)',
@@ -53,35 +59,59 @@ exports.SYSTEM_PROMPTS = {
         '',
         '💡 3 REKOMENDASI UTAMA',
         '(Berikan tepat 3 rekomendasi spesifik berdasarkan data yang ada, bukan saran generik)',
-        '• Rekomendasi 1: [judul] — [penjelasan spesifik]',
-        '• Rekomendasi 2: [judul] — [penjelasan spesifik]',
-        '• Rekomendasi 3: [judul] — [penjelasan spesifik]',
+        '• Rekomendasi 1: **[Judul]** — [penjelasan spesifik]',
+        '• Rekomendasi 2: **[Judul]** — [penjelasan spesifik]',
+        '• Rekomendasi 3: **[Judul]** — [penjelasan spesifik]',
         '',
         '⚠️ HAL YANG PERLU DIWASPADAI',
         '(Identifikasi 1-2 risiko atau pola pengeluaran yang perlu dievaluasi)',
         '',
         'Panduan tambahan:',
         '- Gunakan angka nyata dari data yang diberikan dalam saran Anda.',
+        '- Gunakan **bold** pada setiap nominal uang yang Anda sebutkan.',
         '- Perbandingan dengan standar industri pertanian cabai Indonesia jika relevan.',
         '- Bahasa harus ramah, tidak menghakimi, dan memotivasi petani.',
         '- Jangan buat laporan fiktif — hanya analisis data yang diberikan.',
     ].join('\n'),
+    /**
+     * System prompt untuk AI Decision System notifikasi cuaca.
+     * AI hanya memperhalus pesan berdasarkan output rule engine yang deterministik.
+     */
+    notificationDecision: [
+        'Anda adalah Arina Decision AI untuk notifikasi cuaca petani di Indonesia.',
+        'Anda bekerja bersama rule engine. Rule engine sudah menentukan level risiko, alasan, dan aksi utama.',
+        '',
+        'Tugas Anda:',
+        '- Ubah draft pesan menjadi lebih jelas, ringkas, dan mudah dipahami petani.',
+        '- Pertahankan keputusan rule engine (jangan ubah level risiko, jangan menambah klaim cuaca baru).',
+        '- Gunakan Bahasa Indonesia sederhana, praktis, dan tidak menakut-nakuti.',
+        '- Maksimal 120 kata.',
+        '- Sertakan 2-3 aksi yang bisa dilakukan hari ini.',
+        '- Gunakan format teks polos, tanpa markdown tabel.',
+        '',
+        'Larangan:',
+        '- Jangan memberikan diagnosis medis manusia/hewan.',
+        '- Jangan menyarankan tindakan berbahaya.',
+        '- Jangan membuat data cuaca fiktif di luar input.',
+    ].join('\n'),
 };
 // ─── Generate Gemini Reply (Ensiklopedia) ─────────────────────────
-async function generateGeminiReply({ prompt, context }) {
+async function generateGeminiReply({ prompt, context, userName }) {
     const client = getClient();
     if (!client) {
         throw new Error('GEMINI_API_KEY belum diisi di env backend.');
     }
     const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const model = client.getGenerativeModel({ model: modelName });
+    const farmerName = userName ? userName : 'Petani';
     const mergedPrompt = [
         exports.SYSTEM_PROMPTS.ensiklopedia,
+        `\nPENTING: Nama pengguna (petani) yang sedang bertanya adalah: ${farmerName}. Sapa pengguna dengan namanya sesekali agar lebih personal.`,
         '',
         'Konteks percakapan sebelumnya:',
         context || '(belum ada percakapan sebelumnya)',
         '',
-        'Pertanyaan petani:',
+        `Pertanyaan ${farmerName}:`,
         prompt,
     ].join('\n');
     const result = await model.generateContent(mergedPrompt);
@@ -99,7 +129,7 @@ async function generateFinancialAnalysis({ reportData }) {
     }
     const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const model = client.getGenerativeModel({ model: modelName });
-    const { periode, totalPendapatan, totalPengeluaran, labaBersih, transactions } = reportData;
+    const { periode, totalPendapatan, totalPengeluaran, labaBersih, transactions, userName } = reportData;
     // Format kategori pengeluaran dari transaksi
     const pengeluaranPerKategori = {};
     const pendapatanPerKategori = {};
@@ -114,7 +144,9 @@ async function generateFinancialAnalysis({ reportData }) {
         });
     }
     const formatRp = (n) => `Rp ${n.toLocaleString('id-ID')}`;
+    const farmerName = userName ? userName : 'Petani';
     const dataContext = [
+        `NAMA PETANI / PEMILIK AKUN: ${farmerName}`,
         `PERIODE LAPORAN: ${periode}`,
         `TOTAL PENDAPATAN: ${formatRp(totalPendapatan)}`,
         `TOTAL PENGELUARAN: ${formatRp(totalPengeluaran)}`,
@@ -130,6 +162,7 @@ async function generateFinancialAnalysis({ reportData }) {
     ].join('\n');
     const mergedPrompt = [
         exports.SYSTEM_PROMPTS.keuangan,
+        `\nPENTING: Analisis laporan ini adalah untuk akun milik "${farmerName}". Berikan saran keuangan yang ditujukan langsung kepadanya dengan menyapanya secara profesional namun ramah.`,
         '',
         'DATA KEUANGAN YANG PERLU DIANALISIS:',
         dataContext,
@@ -140,6 +173,39 @@ async function generateFinancialAnalysis({ reportData }) {
     const text = result?.response?.text?.();
     if (!text) {
         throw new Error('Gemini tidak mengembalikan respons teks.');
+    }
+    return text.trim();
+}
+// ─── Generate AI-Refined Notification Message ────────────────────
+async function generateNotificationDecisionMessage({ farmerName, location, riskLevel, riskScore, triggeredRules, recommendedActions, weatherSummary, draftMessage, }) {
+    const client = getClient();
+    if (!client) {
+        // Fallback ke draft saat API key belum tersedia.
+        return draftMessage;
+    }
+    const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    const model = client.getGenerativeModel({ model: modelName });
+    const mergedPrompt = [
+        exports.SYSTEM_PROMPTS.notificationDecision,
+        '',
+        'DATA KEPUTUSAN RULE ENGINE (WAJIB DIIKUTI):',
+        `- Nama petani: ${farmerName}`,
+        `- Lokasi: ${location || 'tidak diketahui'}`,
+        `- Risk level: ${riskLevel}`,
+        `- Risk score: ${riskScore}`,
+        `- Triggered rules: ${triggeredRules.join(', ') || 'tidak ada'}`,
+        `- Recommended actions: ${recommendedActions.join(' | ') || 'tidak ada'}`,
+        `- Ringkasan cuaca: ${weatherSummary}`,
+        '',
+        'DRAFT PESAN SAAT INI:',
+        draftMessage,
+        '',
+        'Keluarkan versi final pesan notifikasi saja.',
+    ].join('\n');
+    const result = await model.generateContent(mergedPrompt);
+    const text = result?.response?.text?.();
+    if (!text) {
+        return draftMessage;
     }
     return text.trim();
 }

@@ -99,6 +99,16 @@ export interface NotificationDecisionResponse {
   };
 }
 
+export interface NotificationScheduleConfig {
+  enabled: boolean;
+  time: string; // HH:mm
+  timezone?: string;
+  platform: 'whatsapp' | 'telegram';
+  to: string;
+  recipientName?: string;
+  customMessage?: string;
+}
+
 // ─── Helpers to map Supabase rows → frontend shape ────────────────
 function mapTx(row: any): ApiTransaction {
   return {
@@ -484,4 +494,17 @@ export const notificationApi = {
 
   decideAndSend: (payload: NotificationDecisionInput) =>
     aiFetch<NotificationDecisionResponse>('/notification/decide-send', payload),
+};
+
+async function getNotificationSchedule(): Promise<NotificationScheduleConfig> {
+  const res = await fetch(`${AI_BASE}/notification/schedule`);
+  const json = await res.json();
+  if (!res.ok || !json.success) throw new Error(json.message || `HTTP error ${res.status}`);
+  return json.data as NotificationScheduleConfig;
+}
+
+export const notificationScheduleApi = {
+  get: () => getNotificationSchedule(),
+  set: (payload: NotificationScheduleConfig) =>
+    aiFetch<NotificationScheduleConfig>('/notification/schedule', payload),
 };

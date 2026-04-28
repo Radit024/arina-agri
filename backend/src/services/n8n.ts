@@ -1,5 +1,19 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import fs from 'fs';
+import path from 'path';
+
+const envCandidates = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(process.cwd(), '../.env'),
+  path.resolve(process.cwd(), '../.env.local'),
+];
+
+for (const envPath of envCandidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 export interface N8nNotificationPayload {
   platform: 'whatsapp' | 'telegram';
@@ -14,7 +28,10 @@ export const sendN8nNotification = async (payload: N8nNotificationPayload) => {
 
   if (!webhookUrl) {
     console.error('N8N_WEBHOOK_URL is not defined in environment variables');
-    throw new Error('N8N_WEBHOOK_URL is missing in environment variables');
+    return {
+      success: false,
+      error: 'N8N_WEBHOOK_URL belum diisi. Pastikan env tersedia di backend (.env) atau root (.env.local), lalu restart server.',
+    };
   }
 
   try {

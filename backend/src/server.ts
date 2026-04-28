@@ -1,10 +1,24 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import aiRoutes from './routes/ai';
 import notificationRoutes from './routes/notification';
+import { startScheduler } from './services/notificationScheduler';
 
-dotenv.config();
+const envCandidates = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(process.cwd(), '../.env'),
+  path.resolve(process.cwd(), '../.env.local'),
+];
+
+for (const envPath of envCandidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +43,8 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', aiRoutes);
 app.use('/api/notification', notificationRoutes);
+
+startScheduler();
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {

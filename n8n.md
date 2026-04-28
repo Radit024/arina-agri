@@ -1,4 +1,7 @@
-# Panduan Integrasi Notifikasi Arina Agri dengan n8n + AI Decision System
+# (Deprecated) Panduan Integrasi Notifikasi Arina Agri dengan n8n + AI Decision System
+
+Dokumen ini sudah tidak digunakan. Sistem notifikasi sekarang berjalan langsung dari backend (tanpa n8n).
+Lihat konteks terbaru di [notifikasi.md](notifikasi.md).
 
 ## 1. Tujuan
 Dokumen ini menyelaraskan integrasi notifikasi dengan arsitektur project saat ini, sekaligus menerapkan AI Decision System hybrid:

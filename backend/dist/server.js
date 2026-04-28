@@ -6,9 +6,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const ai_1 = __importDefault(require("./routes/ai"));
 const notification_1 = __importDefault(require("./routes/notification"));
-dotenv_1.default.config();
+const notificationScheduler_1 = require("./services/notificationScheduler");
+const envCandidates = [
+    path_1.default.resolve(process.cwd(), '.env'),
+    path_1.default.resolve(process.cwd(), '.env.local'),
+    path_1.default.resolve(process.cwd(), '../.env'),
+    path_1.default.resolve(process.cwd(), '../.env.local'),
+];
+for (const envPath of envCandidates) {
+    if (fs_1.default.existsSync(envPath)) {
+        dotenv_1.default.config({ path: envPath });
+    }
+}
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 // ─── Middleware ───────────────────────────────────────────────────
@@ -29,6 +42,7 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', ai_1.default);
 app.use('/api/notification', notification_1.default);
+(0, notificationScheduler_1.startScheduler)();
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });

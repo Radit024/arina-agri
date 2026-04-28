@@ -1,5 +1,12 @@
 import { Router } from 'express';
-import { sendN8nNotification } from '../services/n8n';
+import { sendDirectNotification } from '../services/notificationChannels';
+import {
+  getSchedule,
+  isValidScheduleTime,
+  reschedule,
+  saveSchedule,
+  type NotificationScheduleConfig,
+} from '../services/notificationScheduler';
 import { buildNotificationDecision, type NotificationDecisionInput } from '../services/notificationDecision';
 
 const router = Router();
@@ -28,6 +35,38 @@ function validateDecisionPayload(body: any): { valid: boolean; message?: string 
     }
   }
 
+  const numericWeatherFields = ['suhu', 'kelembapan', 'curahHujan', 'kecepatanAngin'];
+  for (const field of numericWeatherFields) {
+    const value = Number(body.weather[field]);
+    if (!Number.isFinite(value)) {
+      return { valid: false, message: `Field weather.${field} harus berupa angka valid.` };
+    }
+  }
+
+  if (typeof body.weather.kondisi !== 'string' || !body.weather.kondisi.trim()) {
+    return { valid: false, message: 'Field weather.kondisi harus berupa teks yang valid.' };
+  }
+
+  return { valid: true };
+}
+
+function validateSchedulePayload(body: any): { valid: boolean; message?: string } {
+  if (!body || typeof body !== 'object') {
+    return { valid: false, message: 'Payload tidak valid.' };
+  }
+
+  if (!body.time || typeof body.time !== 'string' || !isValidScheduleTime(body.time)) {
+    return { valid: false, message: 'Field time harus berupa format HH:mm.' };
+  }
+
+  if (body.platform !== 'whatsapp' && body.platform !== 'telegram') {
+    return { valid: false, message: 'platform harus "whatsapp" atau "telegram".' };
+  }
+
+  if (!body.to || typeof body.to !== 'string') {
+    return { valid: false, message: 'Field "to" wajib diisi.' };
+  }
+
   return { valid: true };
 }
 
@@ -51,8 +90,8 @@ router.post('/send', async (req, res) => {
         });
     }
 
-    // Panggil service n8n
-    const result = await sendN8nNotification({ platform, to, message, metadata });
+    // Panggil service channel langsung (tanpa n8n)
+    const result = await sendDirectNotification({ platform, to, message, metadata });
 
     if (!result.success) {
       return res.status(500).json({ success: false, message: result.error });
@@ -60,12 +99,56 @@ router.post('/send', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Notification sent successfully to n8n workflow',
+      message: 'Notification sent successfully via backend channel',
       data: result.data
     });
   } catch (error) {
     console.error('[Notification Route Error]', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Endpoint: GET /api/notification/schedule
+// Mengambil konfigurasi jadwal notifikasi harian.
+router.get('/schedule', (_req, res) => {
+  const schedule = getSchedule();
+  return res.status(200).json({
+    success: true,
+    message: 'Schedule loaded',
+    data: schedule,
+  });
+});
+
+// Endpoint: POST /api/notification/schedule
+// Menyimpan jadwal notifikasi harian dan menjadwalkan ulang job.
+router.post('/schedule', async (req, res) => {
+  try {
+    const validation = validateSchedulePayload(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({ success: false, message: validation.message });
+    }
+
+    const payload = req.body as NotificationScheduleConfig;
+    const updated = saveSchedule({
+      enabled: Boolean(payload.enabled),
+      time: payload.time,
+      timezone: payload.timezone || 'Asia/Jakarta',
+      platform: payload.platform,
+      to: payload.to,
+      recipientName: payload.recipientName || 'Petani',
+      customMessage: payload.customMessage,
+    });
+
+    reschedule(updated);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Schedule updated',
+      data: updated,
+    });
+  } catch (error) {
+    console.error('[Notification Schedule Error]', error);
+    return res.status(500).json({ success: false, message: 'Gagal menyimpan jadwal notifikasi.' });
   }
 });
 
@@ -115,11 +198,11 @@ router.post('/decide-send', async (req, res) => {
       });
     }
 
-    const sendResult = await sendN8nNotification(decision.payload);
+    const sendResult = await sendDirectNotification(decision.payload);
     if (!sendResult.success) {
       return res.status(500).json({
         success: false,
-        message: sendResult.error || 'Gagal meneruskan notifikasi ke n8n.',
+        message: sendResult.error || 'Gagal meneruskan notifikasi ke channel tujuan.',
         data: {
           sent: false,
           decision,
@@ -129,11 +212,11 @@ router.post('/decide-send', async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Keputusan berhasil dibuat dan notifikasi diteruskan ke n8n.',
+      message: 'Keputusan berhasil dibuat dan notifikasi diteruskan ke channel tujuan.',
       data: {
         sent: true,
         decision,
-        n8n: sendResult.data,
+        channel: sendResult.data,
       },
     });
   } catch (error) {

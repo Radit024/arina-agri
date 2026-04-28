@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -21,6 +21,8 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import CloudIcon from '@mui/icons-material/Cloud';
 import UmbrellaIcon from '@mui/icons-material/Umbrella';
@@ -29,13 +31,15 @@ import ThermostatIcon from '@mui/icons-material/Thermostat';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import TelegramIcon from '@mui/icons-material/Telegram';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
-import { notificationApi } from '@/lib/api';
+import { notificationApi, notificationScheduleApi } from '@/lib/api';
 import { formatDateShort } from '@/lib/formatters';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useLocale, useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
+const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const fontSize = size === 'small' ? 20 : size === 'large' ? 48 : 32;
@@ -52,18 +56,64 @@ export default function CuacaPage() {
   const locale = useLocale();
   const { user } = useAuth();
   const todayDate = new Date().toISOString().split('T')[0];
-  const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
-  const [savedPhone, setSavedPhone] = useLocalStorage<string>(weatherPhoneKey, '');
-  const [hp, setHp] = useState(savedPhone);
+  const weatherWhatsappKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
+  const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
+  const [storedWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
+  const [storedTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
+  const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('whatsapp');
+  const contactStorageKey = notificationPlatform === 'whatsapp' ? weatherWhatsappKey : weatherTelegramKey;
+  const [savedContact, setSavedContact] = useLocalStorage<string>(contactStorageKey, '');
+  const [contactValue, setContactValue] = useState(savedContact);
   const [notifAktif, setNotifAktif] = useState(true);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error' | 'skipped'>('idle');
   const [testFeedback, setTestFeedback] = useState('');
-  const isCurrentPhoneSaved = hp.trim().length > 0 && hp.trim() === savedPhone.trim();
+  const isCurrentContactSaved = contactValue.trim().length > 0 && contactValue.trim() === savedContact.trim();
+
+  const [scheduleEnabled, setScheduleEnabled] = useState(true);
+  const [scheduleTime, setScheduleTime] = useState('07:00');
+  const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Jakarta');
+  const [schedulePlatform, setSchedulePlatform] = useState<'whatsapp' | 'telegram'>('whatsapp');
+  const [scheduleTo, setScheduleTo] = useState('');
+  const [scheduleMessage, setScheduleMessage] = useState('Pengingat harian: cek kondisi cuaca dan rencana kerja hari ini.');
+  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [scheduleError, setScheduleError] = useState('');
+  const [scheduleReady, setScheduleReady] = useState(false);
+  const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
 
   useEffect(() => {
-    setHp(savedPhone);
-  }, [savedPhone]);
+    setContactValue(savedContact);
+  }, [savedContact]);
+
+  useEffect(() => {
+    notificationScheduleApi
+      .get()
+      .then((schedule) => {
+        setScheduleEnabled(Boolean(schedule.enabled));
+        setScheduleTime(schedule.time || '07:00');
+        setScheduleTimezone(schedule.timezone || 'Asia/Jakarta');
+        setSchedulePlatform(schedule.platform || 'whatsapp');
+        const fallbackContact = schedule.platform === 'telegram' ? storedTelegram : storedWhatsapp;
+        setScheduleTo(schedule.to || fallbackContact || '');
+        if (schedule.customMessage) {
+          setScheduleMessage(schedule.customMessage);
+        }
+        setScheduleReady(true);
+      })
+      .catch(() => {
+        const fallback = storedWhatsapp || storedTelegram;
+        if (fallback) setScheduleTo(fallback);
+        setScheduleReady(true);
+      });
+  }, [storedWhatsapp, storedTelegram]);
+
+  useEffect(() => {
+    if (!scheduleReady) return;
+    const fallback = scheduleContactFallback?.trim();
+    if (fallback) {
+      setScheduleTo(fallback);
+    }
+  }, [schedulePlatform, scheduleContactFallback, scheduleReady]);
 
   const fForecast = weatherForecast;
   const fAlerts = weatherAlerts;
@@ -94,13 +144,25 @@ export default function CuacaPage() {
         : 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)';
 
   const recipientName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Petani';
+  const isWhatsappPlatform = notificationPlatform === 'whatsapp';
+  const contactLabel = isWhatsappPlatform ? 'Nomor WhatsApp' : 'Telegram Chat ID';
+  const contactPlaceholder = isWhatsappPlatform ? '6281234567890' : '123456789 atau @username';
+  const contactHelper = isWhatsappPlatform
+    ? 'Gunakan format nomor internasional tanpa tanda +, misalnya 6281234567890.'
+    : 'Gunakan chat ID atau username Telegram sesuai bot Anda.';
+
+  const handlePlatformChange = (_event: MouseEvent<HTMLElement>, value: 'whatsapp' | 'telegram' | null) => {
+    if (value) {
+      setNotificationPlatform(value);
+    }
+  };
 
   const handleTestNotification = async () => {
-    const targetPhone = (savedPhone || hp).trim();
+    const targetContact = (savedContact || contactValue).trim();
 
-    if (!targetPhone || !notifAktif) {
+    if (!targetContact || !notifAktif) {
       setTestStatus('error');
-      setTestFeedback('Simpan nomor WhatsApp dan aktifkan notifikasi terlebih dahulu.');
+      setTestFeedback(isWhatsappPlatform ? 'Simpan nomor WhatsApp dan aktifkan notifikasi terlebih dahulu.' : 'Simpan Telegram Chat ID dan aktifkan notifikasi terlebih dahulu.');
       return;
     }
 
@@ -110,8 +172,8 @@ export default function CuacaPage() {
 
     try {
       const result = await notificationApi.decideAndSend({
-        platform: 'whatsapp',
-        to: targetPhone,
+        platform: notificationPlatform,
+        to: isWhatsappPlatform ? targetContact.replace(/\D/g, '') : targetContact,
         recipientName,
         notificationsEnabled: notifAktif,
         weather: {
@@ -140,6 +202,33 @@ export default function CuacaPage() {
       setTestFeedback(error?.message || 'Gagal mengirim notifikasi uji coba.');
     } finally {
       setIsSendingTest(false);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    const targetContact = scheduleContactFallback?.trim() || scheduleTo.trim();
+    if (!targetContact) {
+      setScheduleStatus('error');
+      setScheduleError('Kontak tujuan wajib disimpan terlebih dahulu di notifikasi cuaca.');
+      return;
+    }
+
+    try {
+      setScheduleStatus('idle');
+      setScheduleError('');
+      await notificationScheduleApi.set({
+        enabled: scheduleEnabled,
+        time: scheduleTime,
+        timezone: scheduleTimezone,
+        platform: schedulePlatform,
+        to: targetContact,
+        recipientName,
+        customMessage: scheduleMessage.trim(),
+      });
+      setScheduleStatus('success');
+    } catch (error: any) {
+      setScheduleStatus('error');
+      setScheduleError(error?.message || 'Gagal menyimpan jadwal notifikasi.');
     }
   };
 
@@ -325,19 +414,28 @@ export default function CuacaPage() {
           </Card>
         </Grid>
 
-        {/* WhatsApp Integration */}
+        {/* Notification Integration */}
           <Grid size={{ xs: 12, lg: 4 }}>
             <Card>
               <CardHeader
-                avatar={<WhatsAppIcon sx={{ color: '#25d366' }} />}
-                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.title')}</Typography>}
+                avatar={isWhatsappPlatform ? <WhatsAppIcon sx={{ color: '#25d366' }} /> : <TelegramIcon sx={{ color: '#229ED9' }} />}
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Notifikasi Cuaca</Typography>}
               />
               <CardContent sx={{ pt: 0 }}>
-                <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 2, mb: 2.5, border: '1px solid #bbf7d0' }}>
+                <Box sx={{ backgroundColor: isWhatsappPlatform ? '#f0fdf4' : '#eff6ff', borderRadius: 2, p: 2, mb: 2.5, border: isWhatsappPlatform ? '1px solid #bbf7d0' : '1px solid #bfdbfe' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {t.rich('whatsapp.note', { strong: (chunks) => <strong>{chunks}</strong> })}
+                    Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai workflow n8n Anda.
                   </Typography>
                 </Box>
+
+                <ToggleButtonGroup fullWidth exclusive value={notificationPlatform} onChange={handlePlatformChange} sx={{ mb: 2.5 }}>
+                  <ToggleButton value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                    <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
+                  </ToggleButton>
+                  <ToggleButton value="telegram" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                    <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram
+                  </ToggleButton>
+                </ToggleButtonGroup>
 
                 <FormControlLabel
                   control={
@@ -349,7 +447,7 @@ export default function CuacaPage() {
                   }
                   label={
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {t('whatsapp.enable')}
+                      Aktifkan notifikasi
                     </Typography>
                   }
                   sx={{ mb: 2.5, display: 'flex' }}
@@ -357,35 +455,35 @@ export default function CuacaPage() {
 
                 <TextField
                   fullWidth
-                  label={t('whatsapp.phoneLabel')}
-                  placeholder={t('whatsapp.phonePlaceholder')}
-                  value={hp}
-                  onChange={(e) => setHp(e.target.value.replace(/\D/g, ''))}
-                  helperText={t('whatsapp.phoneHelper')}
-                  slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                  label={contactLabel}
+                  placeholder={contactPlaceholder}
+                  value={contactValue}
+                  onChange={(e) => setContactValue(isWhatsappPlatform ? e.target.value.replace(/\D/g, '') : e.target.value)}
+                  helperText={contactHelper}
+                  slotProps={{ htmlInput: isWhatsappPlatform ? { inputMode: 'numeric', pattern: '[0-9]*' } : undefined }}
                   disabled={!notifAktif}
                   sx={{ mb: 2 }}
                 />
 
                 <Button
                   fullWidth
-                  variant={isCurrentPhoneSaved ? 'outlined' : 'contained'}
-                  color={isCurrentPhoneSaved ? 'success' : 'primary'}
-                  disabled={!notifAktif || !hp.trim()}
-                  onClick={() => setSavedPhone(hp.trim())}
-                  startIcon={<WhatsAppIcon />}
+                  variant={isCurrentContactSaved ? 'outlined' : 'contained'}
+                  color={isCurrentContactSaved ? 'success' : 'primary'}
+                  disabled={!notifAktif || !contactValue.trim()}
+                  onClick={() => setSavedContact(contactValue.trim())}
+                  startIcon={isWhatsappPlatform ? <WhatsAppIcon /> : <TelegramIcon />}
                 >
-                  {isCurrentPhoneSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
+                  {isCurrentContactSaved ? 'Tersimpan' : 'Simpan kontak notifikasi'}
                 </Button>
 
                 <Button
                   fullWidth
                   variant="outlined"
                   onClick={handleTestNotification}
-                  disabled={!notifAktif || !(savedPhone || hp).trim() || isSendingTest}
+                  disabled={!notifAktif || !(savedContact || contactValue).trim() || isSendingTest}
                   sx={{ mt: 1.5 }}
                 >
-                  {isSendingTest ? <CircularProgress size={20} /> : 'Kirim Pesan Uji Coba (AI Decision)'}
+                  {isSendingTest ? <CircularProgress size={20} /> : `Kirim Pesan Uji Coba (${notificationPlatform === 'whatsapp' ? 'WhatsApp' : 'Telegram'})`}
                 </Button>
 
                 {testStatus === 'success' && (
@@ -409,15 +507,79 @@ export default function CuacaPage() {
                 {notifAktif && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                      {t('whatsapp.activeAlertTypes')}
+                      Tipe peringatan aktif
                     </Typography>
-                    {[t('whatsapp.alerts.heavyRain'), t('whatsapp.alerts.strongWind'), t('whatsapp.alerts.extremeTemp'), t('whatsapp.alerts.lowHumidity')].map((item) => (
+                    {['Hujan lebat', 'Angin kencang', 'Suhu ekstrem', 'Kelembapan rendah'].map((item) => (
                       <Box key={item} className="flex items-center gap-2 mt-2">
                         <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
                         <Typography variant="caption" color="text.secondary">{item}</Typography>
                       </Box>
                     ))}
                   </Box>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card sx={{ mt: 3 }}>
+              <CardHeader
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Jadwal Notifikasi Harian</Typography>}
+                subheader="Atur jam pengiriman notifikasi otomatis setiap hari."
+              />
+              <CardContent sx={{ pt: 0 }}>
+                <ToggleButtonGroup
+                  exclusive
+                  value={schedulePlatform}
+                  onChange={(_event, value) => value && setSchedulePlatform(value)}
+                  sx={{ mb: 2 }}
+                >
+                  <ToggleButton value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                    <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
+                  </ToggleButton>
+                  <ToggleButton value="telegram" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                    <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      type="time"
+                      label="Jam Kirim"
+                      value={scheduleTime}
+                      onChange={(e) => {
+                        setScheduleTime(e.target.value);
+                        setScheduleStatus('idle');
+                      }}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
+                  </Grid>
+                </Grid>
+
+                <Box className="flex items-center justify-between" sx={{ mt: 3, gap: 2, flexWrap: 'wrap' }}>
+                  <Box className="flex items-center gap-2">
+                    <Switch
+                      checked={scheduleEnabled}
+                      onChange={(e) => setScheduleEnabled(e.target.checked)}
+                      color="primary"
+                    />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Aktifkan jadwal harian</Typography>
+                  </Box>
+                  <Button variant="contained" sx={{ borderRadius: 2 }} onClick={handleSaveSchedule}>
+                    Simpan Jadwal
+                  </Button>
+                </Box>
+
+                {scheduleStatus === 'success' && (
+                  <Alert severity="success" sx={{ mt: 2 }}>
+                    Jadwal berhasil disimpan. Notifikasi akan dikirim setiap hari sesuai jam yang dipilih.
+                  </Alert>
+                )}
+
+                {scheduleStatus === 'error' && (
+                  <Alert severity="error" sx={{ mt: 2 }}>
+                    {scheduleError}
+                  </Alert>
                 )}
               </CardContent>
             </Card>

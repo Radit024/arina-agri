@@ -2,6 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildNotificationDecision = buildNotificationDecision;
 const gemini_1 = require("./gemini");
+function normalizeWeatherSnapshot(weather) {
+    return {
+        kondisi: typeof weather.kondisi === 'string' ? weather.kondisi : '',
+        suhu: Number.isFinite(Number(weather.suhu)) ? Number(weather.suhu) : 0,
+        kelembapan: Number.isFinite(Number(weather.kelembapan)) ? Number(weather.kelembapan) : 0,
+        curahHujan: Number.isFinite(Number(weather.curahHujan)) ? Number(weather.curahHujan) : 0,
+        kecepatanAngin: Number.isFinite(Number(weather.kecepatanAngin)) ? Number(weather.kecepatanAngin) : 0,
+        lokasi: typeof weather.lokasi === 'string' ? weather.lokasi : undefined,
+    };
+}
 const RAIN_HEAVY_MM = Number(process.env.ALERT_HEAVY_RAIN_MM || 20);
 const WIND_STRONG_KMH = Number(process.env.ALERT_STRONG_WIND_KMH || 12);
 const TEMP_EXTREME_C = Number(process.env.ALERT_EXTREME_TEMP_C || 32);
@@ -104,21 +114,25 @@ function buildDraftMessage({ recipientName, weather, riskLevel, riskScore, recom
 async function buildNotificationDecision(input) {
     const decisionId = makeDecisionId();
     const recipientName = input.recipientName || 'Petani';
-    const triggeredRules = evaluateRules(input.weather);
+    const weather = normalizeWeatherSnapshot(input.weather);
+    const triggeredRules = evaluateRules(weather);
     const score = Math.min(100, triggeredRules.reduce((sum, rule) => sum + rule.weight, 0));
     const riskScore = Math.max(score, 0);
     const riskLevel = riskLevelFromScore(riskScore);
     const recommendations = buildRecommendations(triggeredRules);
+    const isTestRequest = input.metadata?.source === 'weather-dashboard-test-button';
     const notificationsEnabled = input.notificationsEnabled !== false;
-    const shouldSend = notificationsEnabled && (riskScore >= 30 || Boolean(input.metadata?.customMessage));
+    const shouldSend = notificationsEnabled && (isTestRequest || riskScore >= 30 || Boolean(input.metadata?.customMessage));
     const reason = !notificationsEnabled
         ? 'Notifikasi dinonaktifkan oleh pengguna.'
         : shouldSend
-            ? `Risk score ${riskScore} memenuhi ambang kirim notifikasi.`
+            ? isTestRequest
+                ? 'Mode uji coba aktif, notifikasi dipaksa terkirim.'
+                : `Risk score ${riskScore} memenuhi ambang kirim notifikasi.`
             : `Risk score ${riskScore} di bawah ambang notifikasi (30).`;
     const draftMessage = buildDraftMessage({
         recipientName,
-        weather: input.weather,
+        weather,
         riskLevel,
         riskScore,
         recommendations,
@@ -130,12 +144,12 @@ async function buildNotificationDecision(input) {
         try {
             finalMessage = await (0, gemini_1.generateNotificationDecisionMessage)({
                 farmerName: recipientName,
-                location: input.weather.lokasi,
+                location: weather.lokasi,
                 riskLevel,
                 riskScore,
                 triggeredRules: triggeredRules.map((rule) => `${rule.code}: ${rule.reason}`),
                 recommendedActions: recommendations,
-                weatherSummary: `kondisi=${input.weather.kondisi}, suhu=${input.weather.suhu}C, kelembapan=${input.weather.kelembapan}%, hujan=${input.weather.curahHujan}mm, angin=${input.weather.kecepatanAngin}km/j`,
+                weatherSummary: `kondisi=${weather.kondisi}, suhu=${weather.suhu}C, kelembapan=${weather.kelembapan}%, hujan=${weather.curahHujan}mm, angin=${weather.kecepatanAngin}km/j`,
                 draftMessage,
             });
         }

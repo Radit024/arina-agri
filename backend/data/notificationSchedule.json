@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "time": "07:00",
+  "timezone": "Asia/Jakarta",
+  "platform": "telegram",
+  "to": "5462717207",
+  "recipientName": "Daffa Radityo A",
+  "customMessage": "Pengingat harian: cek kondisi cuaca dan rencana kerja hari ini."
+}

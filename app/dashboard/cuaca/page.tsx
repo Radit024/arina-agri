@@ -505,16 +505,36 @@ export default function CuacaPage() {
                 )}
 
                 {notifAktif && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                      Tipe peringatan aktif
-                    </Typography>
-                    {['Hujan lebat', 'Angin kencang', 'Suhu ekstrem', 'Kelembapan rendah'].map((item) => (
-                      <Box key={item} className="flex items-center gap-2 mt-2">
-                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
-                        <Typography variant="caption" color="text.secondary">{item}</Typography>
+                  <Box sx={{ mt: 3, display: { xs: 'block', md: 'flex' }, gap: 2 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                        Tipe peringatan aktif
+                      </Typography>
+                      {['Hujan lebat', 'Angin kencang', 'Suhu ekstrem', 'Kelembapan rendah'].map((item) => (
+                        <Box key={item} className="flex items-center gap-2 mt-2">
+                          <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
+                          <Typography variant="caption" color="text.secondary">{item}</Typography>
+                        </Box>
+                      ))}
+                    </Box>
+
+                    {notificationPlatform === 'telegram' && (
+                      <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2, backgroundColor: '#f8fafc' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                          Tutorial Telegram
+                        </Typography>
+                        {[
+                          'Cari bot @Arina_Test_28_Bot di Telegram lalu kirim /start.',
+                          'Lalu Klik Kirim Pesan Uji Coba Untuk Verifikasi.',
+                          'Lalu Setting Jadwal Notifikasi Harian dengan platform Telegram dan simpan.',
+                        ].map((step) => (
+                          <Box key={step} className="flex items-start gap-2 mt-2">
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#229ED9', mt: '6px' }} />
+                            <Typography variant="caption" color="text.secondary">{step}</Typography>
+                          </Box>
+                        ))}
                       </Box>
-                    ))}
+                    )}
                   </Box>
                 )}
               </CardContent>

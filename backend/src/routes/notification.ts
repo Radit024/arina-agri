@@ -137,6 +137,7 @@ router.post('/schedule', async (req, res) => {
       to: payload.to,
       recipientName: payload.recipientName || 'Petani',
       customMessage: payload.customMessage,
+      userId: payload.userId,
     });
 
     reschedule(updated);

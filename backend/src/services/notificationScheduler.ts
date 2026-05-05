@@ -14,6 +14,7 @@ export interface NotificationScheduleConfig {
   to: string;
   recipientName?: string;
   customMessage?: string;
+  userId?: string;
 }
 
 const DEFAULT_SCHEDULE: NotificationScheduleConfig = {
@@ -69,6 +70,11 @@ export function saveSchedule(config: NotificationScheduleConfig): NotificationSc
 async function runScheduledNotification(config: NotificationScheduleConfig) {
   if (!config.enabled || !config.to.trim()) return;
 
+  const dateStr = getDateString(config.timezone || DEFAULT_SCHEDULE.timezone);
+  const dailyEvents = config.userId
+    ? await fetchDailyEvents(config.userId, dateStr)
+    : [];
+
   const decision = await buildNotificationDecision({
     platform: config.platform,
     to: config.to,
@@ -85,6 +91,8 @@ async function runScheduledNotification(config: NotificationScheduleConfig) {
     metadata: {
       source: 'daily-notification-scheduler',
       customMessage: config.customMessage,
+      dailyEvents,
+      forceSend: true,
       locale: 'id',
     },
   });
@@ -92,6 +100,69 @@ async function runScheduledNotification(config: NotificationScheduleConfig) {
   if (!decision.shouldSend) return;
 
   await sendDirectNotification(decision.payload);
+}
+
+function getDateString(timezone: string) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(new Date());
+}
+
+interface CalendarEventRow {
+  title: string;
+  category?: string;
+  waktu?: string | null;
+  description?: string | null;
+}
+
+async function fetchDailyEvents(userId: string, dateStr: string) {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('[Scheduler] Supabase env belum diisi, agenda harian tidak dimuat.');
+    return [] as Array<{ title: string; time?: string; category?: string; note?: string }>;
+  }
+
+  const params = new URLSearchParams({
+    select: 'title,category,waktu,description',
+    date: `eq.${dateStr}`,
+    user_id: `eq.${userId}`,
+    order: 'waktu.asc',
+  });
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/calendar_events?${params.toString()}`, {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.warn(`[Scheduler] Gagal mengambil agenda harian: ${response.status} ${errorText}`);
+      return [] as Array<{ title: string; time?: string; category?: string; note?: string }>;
+    }
+
+    const rows = (await response.json()) as CalendarEventRow[];
+    return rows.map((row) => ({
+      title: row.title,
+      time: row.waktu || undefined,
+      category: row.category || undefined,
+      note: row.description || undefined,
+    }));
+  } catch (error) {
+    console.warn('[Scheduler] Error fetch agenda harian:', error);
+    return [] as Array<{ title: string; time?: string; category?: string; note?: string }>;
+  }
 }
 
 function stopCurrentTask() {

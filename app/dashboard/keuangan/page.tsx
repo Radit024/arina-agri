@@ -954,7 +954,8 @@ export default function KeuanganPage() {
                 sx={{
                   flex: 2,
                   borderRadius: 8,
-                  bgcolor: selectedJenis === 'pendapatan' ? 'success.main' : '#1e293b',
+                  bgcolor: 'success.main',
+                  '&:hover': { bgcolor: 'success.dark' },
                 }}
               >
                 {editingId ? t('transactionDialog.update') : t('transactionDialog.save')}

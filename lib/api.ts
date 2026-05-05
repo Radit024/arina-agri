@@ -73,6 +73,13 @@ export interface NotificationDecisionWeatherInput {
   lokasi?: string;
 }
 
+export interface NotificationDecisionDailyEvent {
+  title: string;
+  time?: string;
+  category?: string;
+  note?: string;
+}
+
 export interface NotificationDecisionInput {
   platform: 'whatsapp' | 'telegram';
   to: string;
@@ -83,6 +90,8 @@ export interface NotificationDecisionInput {
     source?: string;
     customMessage?: string;
     locale?: 'id' | 'en';
+    dailyEvents?: NotificationDecisionDailyEvent[];
+    forceSend?: boolean;
   };
 }
 
@@ -107,6 +116,7 @@ export interface NotificationScheduleConfig {
   to: string;
   recipientName?: string;
   customMessage?: string;
+  userId?: string;
 }
 
 // ─── Helpers to map Supabase rows → frontend shape ────────────────

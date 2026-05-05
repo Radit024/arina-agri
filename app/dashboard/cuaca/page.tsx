@@ -33,7 +33,7 @@ import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
-import { notificationApi, notificationScheduleApi } from '@/lib/api';
+import { eventApi, notificationApi, notificationScheduleApi } from '@/lib/api';
 import { formatDateShort } from '@/lib/formatters';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useLocale, useTranslations } from 'next-intl';
@@ -50,12 +50,14 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
 }
 
 import { useAuth } from '@/context/AuthContext';
+import { useCalendar } from '@/hooks/useCalendar';
 
 export default function CuacaPage() {
   const t = useTranslations('Weather');
   const locale = useLocale();
   const { user } = useAuth();
-  const todayDate = new Date().toISOString().split('T')[0];
+  const { events } = useCalendar();
+  const todayDate = new Intl.DateTimeFormat('en-CA').format(new Date());
   const weatherWhatsappKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
   const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
   const [storedWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
@@ -171,6 +173,25 @@ export default function CuacaPage() {
     setTestFeedback('');
 
     try {
+      let calendarEvents = events;
+      try {
+        const latestEvents = await eventApi.getAll();
+        if (latestEvents.length) {
+          calendarEvents = latestEvents;
+        }
+      } catch {
+        calendarEvents = events;
+      }
+
+      const todayEvents = calendarEvents
+        .filter((event) => event.tanggal === todayDate)
+        .map((event) => ({
+          title: event.judul,
+          time: event.waktu || undefined,
+          category: event.jenis,
+          note: event.catatan || undefined,
+        }));
+
       const result = await notificationApi.decideAndSend({
         platform: notificationPlatform,
         to: isWhatsappPlatform ? targetContact.replace(/\D/g, '') : targetContact,
@@ -186,6 +207,9 @@ export default function CuacaPage() {
         },
         metadata: {
           source: 'weather-dashboard-test-button',
+          customMessage: scheduleMessage.trim() || undefined,
+          dailyEvents: todayEvents,
+          forceSend: true,
           locale: locale === 'en' ? 'en' : 'id',
         },
       });
@@ -224,6 +248,7 @@ export default function CuacaPage() {
         to: targetContact,
         recipientName,
         customMessage: scheduleMessage.trim(),
+        userId: user?.id,
       });
       setScheduleStatus('success');
     } catch (error: any) {

@@ -11,11 +11,20 @@ export interface WeatherSnapshotInput {
   lokasi?: string;
 }
 
+export interface DailyAgendaItem {
+  title: string;
+  time?: string;
+  category?: string;
+  note?: string;
+}
+
 export interface DecisionMetadataInput {
   source?: string;
   customMessage?: string;
   locale?: 'id' | 'en';
   forecastWindowHours?: number;
+  dailyEvents?: DailyAgendaItem[];
+  forceSend?: boolean;
 }
 
 export interface NotificationDecisionInput {
@@ -167,6 +176,7 @@ function buildDraftMessage({
   recommendations,
   triggeredRules,
   customMessage,
+  dailyEvents,
 }: {
   recipientName: string;
   weather: WeatherSnapshotInput;
@@ -175,19 +185,47 @@ function buildDraftMessage({
   recommendations: string[];
   triggeredRules: TriggeredRule[];
   customMessage?: string;
+  dailyEvents?: DailyAgendaItem[];
 }) {
-  if (customMessage && customMessage.trim()) {
-    return customMessage.trim();
+  const intro = customMessage?.trim();
+
+  const header = 'Arina Agri - Ringkasan Cuaca Harian';
+  const greeting = `Halo ${recipientName}, berikut ringkasan cuaca hari ini.`;
+  const locationLine = `Lokasi: ${weather.lokasi || 'Kebun Anda'}`;
+  const weatherLine = `Cuaca: ${weather.kondisi}, Suhu ${weather.suhu}C, Hujan ${weather.curahHujan}mm, Angin ${weather.kecepatanAngin} km/j.`;
+  const triggerLine = triggeredRules.length > 0
+    ? `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: ${triggeredRules.map((r) => r.code).join(', ')}.`
+    : `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: monitoring rutin.`;
+  const actionLines = recommendations.map((item, i) => `${i + 1}) ${item}`).join('\n');
+  const actionBlock = `Aksi disarankan:\n${actionLines}`;
+
+  const agendaSection = dailyEvents ? buildAgendaSection(dailyEvents) : '';
+  return [intro, header, greeting, locationLine, weatherLine, triggerLine, actionBlock, agendaSection]
+    .filter(Boolean)
+    .join('\n');
+}
+
+function formatAgendaCategory(value?: string) {
+  if (!value) return '';
+  const cleaned = value.replace(/_/g, ' ').trim();
+  if (!cleaned) return '';
+  return cleaned.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildAgendaSection(events: DailyAgendaItem[]) {
+  const header = 'Agenda hari ini:';
+  if (!events.length) {
+    return `${header}\n- Belum ada kegiatan terjadwal.`;
   }
 
-  const header = `Arina Agri - Alert Cuaca ${riskLevel.toUpperCase()} (${riskScore}/100)`;
-  const weatherLine = `Lokasi: ${weather.lokasi || 'Kebun Anda'} | Kondisi: ${weather.kondisi}, Suhu ${weather.suhu}C, Hujan ${weather.curahHujan}mm, Angin ${weather.kecepatanAngin} km/j.`;
-  const triggerLine = triggeredRules.length > 0
-    ? `Pemicu: ${triggeredRules.map((r) => r.code).join(', ')}.`
-    : 'Pemicu: monitoring rutin.';
-  const actionLines = recommendations.map((item, i) => `${i + 1}. ${item}`).join(' ');
+  const lines = events.map((event) => {
+    const timeLabel = event.time ? `${event.time} - ` : '';
+    const categoryLabel = formatAgendaCategory(event.category);
+    const categorySuffix = categoryLabel ? ` (${categoryLabel})` : '';
+    return `- ${timeLabel}${event.title}${categorySuffix}`;
+  });
 
-  return `${header}\nHalo ${recipientName}, ${weatherLine} ${triggerLine} Aksi disarankan: ${actionLines}`;
+  return `${header}\n${lines.join('\n')}`;
 }
 
 export async function buildNotificationDecision(input: NotificationDecisionInput): Promise<NotificationDecisionResult> {
@@ -202,7 +240,8 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
   const isTestRequest = input.metadata?.source === 'weather-dashboard-test-button';
 
   const notificationsEnabled = input.notificationsEnabled !== false;
-  const shouldSend = notificationsEnabled && (isTestRequest || riskScore >= 30 || Boolean(input.metadata?.customMessage));
+  const forceSend = input.metadata?.forceSend === true;
+  const shouldSend = notificationsEnabled && (isTestRequest || forceSend || riskScore >= 30 || Boolean(input.metadata?.customMessage));
 
   const reason = !notificationsEnabled
     ? 'Notifikasi dinonaktifkan oleh pengguna.'
@@ -220,6 +259,7 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
     recommendations,
     triggeredRules,
     customMessage: input.metadata?.customMessage,
+    dailyEvents: input.metadata?.dailyEvents,
   });
 
   let finalMessage = draftMessage;
@@ -240,6 +280,13 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
     }
   }
 
+  if (input.metadata?.dailyEvents) {
+    const agendaSection = buildAgendaSection(input.metadata.dailyEvents);
+    if (!finalMessage.includes('Agenda hari ini')) {
+      finalMessage = `${finalMessage}\n${agendaSection}`;
+    }
+  }
+
   const to = input.platform === 'whatsapp' ? normalizeWhatsAppNumber(input.to) : input.to;
 
   const metadata: Record<string, unknown> = {
@@ -254,6 +301,7 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
       reason,
     },
     weather: input.weather,
+    dailyEvents: input.metadata?.dailyEvents,
   };
 
   return {

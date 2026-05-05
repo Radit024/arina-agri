@@ -43,13 +43,15 @@ Di luar MVP:
 
 | Fitur | Free | Basic | Pro |
 |---|---:|---:|---:|
-| Transaksi keuangan per bulan | 100 | 2000 | unlimited |
-| Batch stok aktif | 5 | 100 | unlimited |
 | Prompt AI per bulan | 10 | 300 | 1500 (fair use) |
-| Event kalender per bulan | 20 | 300 | unlimited |
+| Akses kalender | Tidak | Ya | Ya |
 | Export laporan | CSV | CSV + PDF | CSV + PDF + insight |
 | Jumlah anggota tim | 1 | 1 | 5 |
-| Support | komunitas | email standar | prioritas |
+
+Catatan prompt AI:
+- Free: limit dihitung per jumlah prompt, reset harian.
+- Basic: 4x lebih banyak dari Free.
+- Pro: 10x lebih banyak dari Free.
 
 Catatan:
 - `unlimited` direpresentasikan sebagai `-1`.

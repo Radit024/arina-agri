@@ -30,7 +30,7 @@ export default function WeatherBanner({ message }: WeatherBannerProps) {
       }}
     >
       <AlertTitle sx={{ fontWeight: 600, color: theme.palette.warning.dark }}>{t('title')}</AlertTitle>
-      <Typography variant="body2" color={theme.palette.warning.dark}>
+      <Typography variant="body2" sx={{ color: theme.palette.warning.dark }}>
         {message || defaultMessage}
       </Typography>
     </Alert>

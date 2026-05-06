@@ -7,8 +7,11 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
+import { useTranslations } from 'next-intl';
 
 export default function QuickActions() {
+  const t = useTranslations('Dashboard.home.quickActions');
+
   return (
     <Card sx={{ borderRadius: 3 }}>
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -28,14 +31,14 @@ export default function QuickActions() {
         </Box>
         <Box sx={{ flex: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            Manajemen Stok Panen
+            {t('title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Pantau stok dan batch panen terbaru.
+            {t('description')}
           </Typography>
         </Box>
         <Button component={Link} href="/dashboard/stok" variant="contained">
-          Buka Stok
+          {t('action')}
         </Button>
       </CardContent>
     </Card>

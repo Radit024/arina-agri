@@ -21,6 +21,11 @@
   "Dashboard": {
     "home": {
       "welcome": "Selamat datang, Pak {name} 👋",
+      "quickActions": {
+        "title": "Manajemen Stok Panen",
+        "description": "Pantau stok dan batch panen terbaru.",
+        "action": "Buka Stok"
+      },
       "kpi": {
         "totalExpense": {
           "title": "Total Pengeluaran Bulan Ini",

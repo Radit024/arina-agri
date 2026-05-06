@@ -21,6 +21,11 @@
   "Dashboard": {
     "home": {
       "welcome": "Welcome, Mr. {name} 👋",
+      "quickActions": {
+        "title": "Harvest Stock Management",
+        "description": "Track stock and the latest harvest batches.",
+        "action": "Open Stock"
+      },
       "kpi": {
         "totalExpense": {
           "title": "Total Monthly Expenses",

@@ -5,7 +5,6 @@ import MobileBottomNav from '@/components/shared/MobileBottomNav';
 vi.mock('next/navigation', () => ({
   usePathname: () => '/dashboard',
   useRouter: () => ({ push: vi.fn(), prefetch: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(''),
 }));
 
 vi.mock('next-intl', () => ({

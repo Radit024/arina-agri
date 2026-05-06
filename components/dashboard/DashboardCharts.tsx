@@ -160,7 +160,14 @@ export function KategoriChart({ transactions }: ChartProps) {
     label: item.kategori,
   }));
 
-  const pieColors = [theme.palette.error.main, theme.palette.warning.main, theme.palette.success.main, theme.palette.info.main, '#8b5cf6', '#64748b'];
+  const pieColors = [
+    theme.palette.error.main,
+    theme.palette.warning.main,
+    theme.palette.success.main,
+    theme.palette.info.main,
+    theme.palette.secondary.main,
+    theme.palette.text.secondary,
+  ];
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>

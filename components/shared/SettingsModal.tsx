@@ -197,7 +197,7 @@ export default function SettingsModal() {
                             color: 'text.secondary',
                           },
                           '& .Mui-selected': {
-                            bgcolor: '#e8f5e9',
+                            bgcolor: 'success.light',
                             color: 'primary.main',
                             fontWeight: 600,
                           },
@@ -251,7 +251,7 @@ export default function SettingsModal() {
                       borderRadius: 3,
                       border: '1px solid',
                       borderColor: 'divider',
-                      bgcolor: '#f8fafc',
+                      bgcolor: 'action.hover',
                       flexDirection: { xs: 'column', sm: 'row' },
                     }}
                   >
@@ -260,8 +260,8 @@ export default function SettingsModal() {
                       sx={{
                         width: 80,
                         height: 80,
-                        backgroundColor: '#e2e8f0',
-                        color: '#475569',
+                        backgroundColor: 'action.selected',
+                        color: 'text.primary',
                         fontSize: '1.5rem',
                         fontWeight: 700,
                       }}
@@ -339,9 +339,9 @@ export default function SettingsModal() {
                         height: 56,
                         borderRadius: 6,
                         textTransform: 'none',
-                        bgcolor: '#16a34a',
-                        '&:hover': { bgcolor: '#15803d' },
-                        color: 'white',
+                        bgcolor: 'success.main',
+                        '&:hover': { bgcolor: 'success.dark' },
+                        color: 'common.white',
                         fontWeight: 700,
                         whiteSpace: 'nowrap',
                         flexShrink: 0,

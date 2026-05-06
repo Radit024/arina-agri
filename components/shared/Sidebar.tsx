@@ -215,14 +215,14 @@ export default function Sidebar() {
               <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   onClick={() => router.push(pathname + '?settings=true&tab=general')}
-                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
+                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#64748b' }}>
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: 'text.secondary' }}>
                     <SettingsOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText
                     primary={t('pengaturan')}
-                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#475569' } } }}
+                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: 'text.primary' } } }}
                   />
                 </ListItemButton>
               </ListItem>
@@ -233,14 +233,14 @@ export default function Sidebar() {
                     await supabase.auth.signOut();
                     router.push('/');
                   }}
-                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: '#fef2f2' } }}
+                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: 'error.light' } }}
                 >
-                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: '#dc2626' }}>
+                  <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: 'error.main' }}>
                     <LogoutOutlinedIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText
                     primary={t('logout')}
-                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: '#dc2626' } } }}
+                    slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600, color: 'error.main' } } }}
                   />
                 </ListItemButton>
               </ListItem>
@@ -261,10 +261,10 @@ export default function Sidebar() {
             p: isOpen ? 1.5 : 1,
             mb: 1,
             borderRadius: 4,
-            bgcolor: '#f4fbf4', // Light green bg for profile like reference
+            bgcolor: 'success.light',
             justifyContent: isOpen ? 'space-between' : 'center',
             transition: 'all 0.2s',
-            '&:hover': { bgcolor: '#ecf5ee' },
+            '&:hover': { bgcolor: 'success.main' },
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -273,7 +273,7 @@ export default function Sidebar() {
               sx={{
                 width: 36,
                 height: 36,
-                bgcolor: '#9ca3af', // Grayish avatar like the image
+                bgcolor: 'text.secondary',
                 fontSize: '0.875rem',
                 fontWeight: 600,
               }}
@@ -282,17 +282,17 @@ export default function Sidebar() {
             </Avatar>
             {isOpen && (
               <Box>
-                <Typography variant="body2" sx={{ color: '#064e3b', lineHeight: 1.2, fontWeight: 700 }}>
+                <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.2, fontWeight: 700 }}>
                   {userName}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 500 }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                   {t('farmer')}
                 </Typography>
               </Box>
             )}
           </Box>
           {isOpen && (
-            <Box sx={{ color: '#64748b', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
               {isProfileDropdownOpen ? <ExpandMoreIcon fontSize="small" /> : <ExpandLessIcon fontSize="small" />}
             </Box>
           )}

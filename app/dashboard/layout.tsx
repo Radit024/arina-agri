@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Sidebar from '@/components/shared/Sidebar';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
 import SettingsModal from '@/components/shared/SettingsModal';
+import MobileTopAppBar from '@/components/shared/MobileTopAppBar';
 import { Suspense } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           overflowX: 'hidden',
         }}
       >
+        <MobileTopAppBar />
         {children}
       </Box>
 

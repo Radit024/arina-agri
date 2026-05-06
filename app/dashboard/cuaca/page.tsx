@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type MouseEvent } from 'react';
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -42,17 +43,19 @@ const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
+  const theme = useTheme();
   const fontSize = size === 'small' ? 20 : size === 'large' ? 48 : 32;
-  if (kondisi === 'cerah') return <WbSunnyIcon sx={{ fontSize, color: '#f59e0b' }} />;
-  if (kondisi === 'berawan') return <CloudIcon sx={{ fontSize, color: '#94a3b8' }} />;
-  if (kondisi === 'hujan') return <UmbrellaIcon sx={{ fontSize, color: '#3b82f6' }} />;
-  return <GrainIcon sx={{ fontSize, color: '#60a5fa' }} />;
+  if (kondisi === 'cerah') return <WbSunnyIcon sx={{ fontSize, color: theme.palette.warning.main }} />;
+  if (kondisi === 'berawan') return <CloudIcon sx={{ fontSize, color: theme.palette.grey[400] }} />;
+  if (kondisi === 'hujan') return <UmbrellaIcon sx={{ fontSize, color: theme.palette.info.main }} />;
+  return <GrainIcon sx={{ fontSize, color: theme.palette.info.light }} />;
 }
 
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
 
 export default function CuacaPage() {
+  const theme = useTheme();
   const t = useTranslations('Weather');
   const locale = useLocale();
   const { user } = useAuth();
@@ -140,10 +143,10 @@ export default function CuacaPage() {
 
   const currentWeatherCardBackground =
     currentCondition === 'cerah'
-      ? 'linear-gradient(135deg, #7c2d12 0%, #c2410c 45%, #f59e0b 100%)'
+      ? 'linear-gradient(135deg, var(--weather-sunny-start) 0%, var(--weather-sunny-mid) 45%, var(--weather-sunny-end) 100%)'
       : currentCondition === 'berawan' || currentCondition === 'mendung'
-        ? 'linear-gradient(135deg, #334155 0%, #475569 55%, #94a3b8 100%)'
-        : 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #2563eb 100%)';
+        ? 'linear-gradient(135deg, var(--weather-cloudy-start) 0%, var(--weather-cloudy-mid) 55%, var(--weather-cloudy-end) 100%)'
+        : 'linear-gradient(135deg, var(--weather-rainy-start) 0%, var(--weather-rainy-mid) 60%, var(--weather-rainy-end) 100%)';
 
   const recipientName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Petani';
   const isWhatsappPlatform = notificationPlatform === 'whatsapp';
@@ -423,8 +426,8 @@ export default function CuacaPage() {
                             label={alert.status === 'terkirim' ? t('history.status.sent') : t('history.status.failed')}
                             size="small"
                             sx={{
-                              backgroundColor: alert.status === 'terkirim' ? '#dcfce7' : '#fee2e2',
-                              color: alert.status === 'terkirim' ? '#16a34a' : '#dc2626',
+                              backgroundColor: alert.status === 'terkirim' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.error.main, 0.12),
+                              color: alert.status === 'terkirim' ? theme.palette.success.main : theme.palette.error.main,
                               fontWeight: 600,
                               fontSize: '0.7rem',
                             }}
@@ -447,7 +450,7 @@ export default function CuacaPage() {
                 title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Notifikasi Cuaca</Typography>}
               />
               <CardContent sx={{ pt: 0 }}>
-                <Box sx={{ backgroundColor: isWhatsappPlatform ? '#f0fdf4' : '#eff6ff', borderRadius: 2, p: 2, mb: 2.5, border: isWhatsappPlatform ? '1px solid #bbf7d0' : '1px solid #bfdbfe' }}>
+                <Box sx={{ backgroundColor: isWhatsappPlatform ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.info.main, 0.12), borderRadius: 2, p: 2, mb: 2.5, border: isWhatsappPlatform ? `1px solid ${alpha(theme.palette.success.main, 0.3)}` : `1px solid ${alpha(theme.palette.info.main, 0.3)}` }}>
                   <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
                     Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai workflow n8n Anda.
                   </Typography>

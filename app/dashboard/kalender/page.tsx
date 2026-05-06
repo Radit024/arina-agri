@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -45,14 +46,6 @@ const eventSchema = z.object({
 
 type EventFormData = z.infer<typeof eventSchema>;
 
-const jenisColors = {
-  pemupukan: { bg: '#dcfce7', text: '#16a34a', dot: '#16a34a' },
-  penyemprotan: { bg: '#fee2e2', text: '#dc2626', dot: '#dc2626' },
-  irigasi: { bg: '#dbeafe', text: '#1d4ed8', dot: '#3b82f6' },
-  pemetikan: { bg: '#fef3c7', text: '#92400e', dot: '#f59e0b' },
-  lainnya: { bg: '#f1f5f9', text: '#475569', dot: '#94a3b8' },
-};
-
 const jenisLabels = {
   pemupukan: 'Pemupukan',
   penyemprotan: 'Penyemprotan',
@@ -69,10 +62,19 @@ import { useCalendar } from '@/hooks/useCalendar';
 import type { ApiCalendarEvent } from '@/lib/api';
 
 export default function KalenderPage() {
+  const theme = useTheme();
   const t = useTranslations('Calendar');
   const { user } = useAuth();
   
   const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
+  
+  const jenisColors = {
+    pemupukan: { bg: alpha(theme.palette.success.main, 0.12), text: theme.palette.success.main, dot: theme.palette.success.main },
+    penyemprotan: { bg: alpha(theme.palette.error.main, 0.12), text: theme.palette.error.main, dot: theme.palette.error.main },
+    irigasi: { bg: alpha(theme.palette.info.main, 0.12), text: theme.palette.info.main, dot: theme.palette.info.main },
+    pemetikan: { bg: alpha(theme.palette.warning.main, 0.12), text: theme.palette.warning.dark, dot: theme.palette.warning.main },
+    lainnya: { bg: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary, dot: theme.palette.grey[500] },
+  };
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -167,13 +169,13 @@ export default function KalenderPage() {
               title={
                 <Box className="flex items-center justify-between">
                   <Box className="flex items-center gap-2">
-                    <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month - 1))}>
+                    <IconButton size="small" aria-label="Previous month" onClick={() => setCurrentDate(new Date(year, month - 1))}>
                       <ChevronLeftIcon />
                     </IconButton>
                     <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', minWidth: 180, textAlign: 'center', fontWeight: 700 }}>
                       {monthNames[month]} {year}
                     </Typography>
-                    <IconButton size="small" onClick={() => setCurrentDate(new Date(year, month + 1))}>
+                    <IconButton size="small" aria-label="Next month" onClick={() => setCurrentDate(new Date(year, month + 1))}>
                       <ChevronRightIcon />
                     </IconButton>
                   </Box>
@@ -311,7 +313,7 @@ export default function KalenderPage() {
                               size="small"
                               sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: colors.text, fontWeight: 600, fontSize: '0.65rem' }}
                             />
-                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ ml: 0.5, color: colors.text, p: 0.5 }}>
+                            <IconButton size="small" aria-label="Edit event" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ ml: 0.5, color: colors.text, p: 0.5 }}>
                               <EditIcon sx={{ fontSize: '1.25rem' }} />
                             </IconButton>
                           </Box>

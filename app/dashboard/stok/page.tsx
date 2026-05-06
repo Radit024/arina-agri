@@ -1,4 +1,5 @@
 'use client';
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -71,12 +72,12 @@ type StockOutFormInput = z.input<typeof stockOutSchema>;
 type StockOutFormOutput = z.output<typeof stockOutSchema>;
 
 // ─── Status badge ─────────────────────────────────────────────────
-const StatusChip = ({ status }: { status: ApiHarvestBatch['status'] }) => {
+const StatusChip = ({ status, theme }: { status: ApiHarvestBatch['status']; theme: any }) => {
   const map = {
-    aman: { label: 'Aman', color: '#dcfce7', text: '#16a34a' },
-    menipis: { label: 'Menipis', color: '#fef9c3', text: '#ca8a04' },
-    hampir_kadaluarsa: { label: 'Hampir Kadaluarsa', color: '#fee2e2', text: '#dc2626' },
-    habis: { label: 'Habis', color: '#f1f5f9', text: '#94a3b8' },
+    aman: { label: 'Aman', color: alpha(theme.palette.success.main, 0.12), text: theme.palette.success.main },
+    menipis: { label: 'Menipis', color: alpha(theme.palette.warning.main, 0.12), text: theme.palette.warning.dark },
+    hampir_kadaluarsa: { label: 'Hampir Kadaluarsa', color: alpha(theme.palette.error.main, 0.12), text: theme.palette.error.main },
+    habis: { label: 'Habis', color: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary },
   };
   const s = map[status];
   return (
@@ -89,8 +90,8 @@ const StatusChip = ({ status }: { status: ApiHarvestBatch['status'] }) => {
 };
 
 // ─── Grade badge ──────────────────────────────────────────────────
-const GradeChip = ({ grade }: { grade: 'A' | 'B' | 'C' }) => {
-  const map = { A: '#16a34a', B: '#2563eb', C: '#f59e0b' };
+const GradeChip = ({ grade, theme }: { grade: 'A' | 'B' | 'C'; theme: any }) => {
+  const map = { A: theme.palette.success.main, B: theme.palette.info.main, C: theme.palette.warning.main };
   return (
     <Chip
       label={`Grade ${grade}`}
@@ -101,6 +102,7 @@ const GradeChip = ({ grade }: { grade: 'A' | 'B' | 'C' }) => {
 };
 
 export default function StokPage() {
+  const theme = useTheme();
   const { batches, mutations, summary, loading, backendOnline, addBatch, deleteBatch, stockOut } = useStok();
   const [tab, setTab] = useState(0);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
@@ -207,10 +209,10 @@ export default function StokPage() {
       {/* KPI Cards */}
       <Grid container spacing={2.5} sx={{ mb: 3 }}>
         {[
-          { label: 'Total Stok Siap Jual', value: `${summary.totalStokSiapJual.toLocaleString('id-ID')} kg`, icon: <InventoryIcon />, color: '#16a34a', bg: '#f0fdf4' },
-          { label: 'Terjual Minggu Ini', value: `${summary.stokTerjualMingguIni.toLocaleString('id-ID')} kg`, icon: <LocalShippingIcon />, color: '#2563eb', bg: '#eff6ff' },
-          { label: 'Estimasi Nilai Stok', value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, color: '#f59e0b', bg: '#fffbeb' },
-          { label: 'Batch Hampir Kadaluarsa', value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, color: '#dc2626', bg: '#fff1f2' },
+          { label: 'Total Stok Siap Jual', value: `${summary.totalStokSiapJual.toLocaleString('id-ID')} kg`, icon: <InventoryIcon />, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.12) },
+          { label: 'Terjual Minggu Ini', value: `${summary.stokTerjualMingguIni.toLocaleString('id-ID')} kg`, icon: <LocalShippingIcon />, color: theme.palette.info.main, bg: alpha(theme.palette.info.main, 0.12) },
+          { label: 'Estimasi Nilai Stok', value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, color: theme.palette.warning.main, bg: alpha(theme.palette.warning.main, 0.12) },
+          { label: 'Batch Hampir Kadaluarsa', value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.12) },
         ].map((kpi) => (
           <Grid size={{ xs: 6, md: 3 }} key={kpi.label}>
             <Card sx={{ borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
@@ -264,7 +266,7 @@ export default function StokPage() {
                       <TableRow key={b._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
                         <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
                         <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
-                        <TableCell><GradeChip grade={b.grade} /></TableCell>
+                        <TableCell><GradeChip grade={b.grade} theme={theme} /></TableCell>
                         <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? '#dc2626' : '#16a34a' }}>
                           {b.stokTersisa} kg
@@ -272,15 +274,15 @@ export default function StokPage() {
                         <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
                         <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
                         <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
-                        <TableCell><StatusChip status={b.status} /></TableCell>
+                        <TableCell><StatusChip status={b.status} theme={theme} /></TableCell>
                         <TableCell>
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <IconButton size="small" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
-                              sx={{ color: '#2563eb', bgcolor: '#eff6ff', borderRadius: 1.5, '&:hover': { bgcolor: '#2563eb', color: 'white' } }}>
+                            <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
+                              sx={{ color: theme.palette.info.main, bgcolor: alpha(theme.palette.info.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: 'white' } }}>
                               <LocalShippingIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" onClick={() => deleteBatch(b._id)}
-                              sx={{ color: '#dc2626', bgcolor: '#fee2e2', borderRadius: 1.5, '&:hover': { bgcolor: '#dc2626', color: 'white' } }}>
+                            <IconButton size="small" aria-label="Delete batch" onClick={() => deleteBatch(b._id)}
+                              sx={{ color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: 'white' } }}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Box>

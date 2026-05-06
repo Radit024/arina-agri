@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -42,6 +43,7 @@ function getBotReply(message: string): string {
 import { useAuth } from '@/context/AuthContext';
 
 export default function EnsiklopediaPage() {
+  const theme = useTheme();
   const t = useTranslations('Encyclopedia');
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -180,29 +182,29 @@ export default function EnsiklopediaPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1.5,
-                bgcolor: '#f8fafc'
+                bgcolor: 'background.default'
               }}
             >
               <Box
                 sx={{
-                  bgcolor: '#16a34a',
+                  bgcolor: theme.palette.success.main,
                   width: { xs: 36, sm: 42 },
                   height: { xs: 36, sm: 42 },
                   borderRadius: 2,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)'
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.2)}`
                 }}
               >
                 <AutoAwesomeIcon sx={{ color: '#fff', fontSize: { xs: 18, sm: 20 } }} />
               </Box>
               <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: '#0f172a', lineHeight: 1.2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
                   Arina AI
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#22c55e' }} />
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: theme.palette.success.main }} />
                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                     {t('online')}
                   </Typography>
@@ -212,9 +214,9 @@ export default function EnsiklopediaPage() {
               <Box sx={{ ml: 'auto' }}>
                 <IconButton 
                   onClick={handleClearChat} 
-                  size="small" 
-                  title="Hapus Riwayat Chat"
-                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}
+                  size="small"
+                  aria-label="Clear chat history"
+                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) } }}
                 >
                   <DeleteOutlinedIcon fontSize="small" />
                 </IconButton>
@@ -230,7 +232,7 @@ export default function EnsiklopediaPage() {
                 display: 'flex', 
                 flexDirection: 'column', 
                 gap: 2,
-                bgcolor: '#fff' 
+                bgcolor: 'background.paper' 
               }}
             >
               {chatError && (
@@ -255,7 +257,7 @@ export default function EnsiklopediaPage() {
                         sx={{ 
                           display: { xs: 'none', sm: 'flex' },
                           width: 28, height: 28, borderRadius: '50%', 
-                          bgcolor: '#f0fdf4', color: '#16a34a', 
+                          bgcolor: alpha(theme.palette.success.main, 0.12), color: theme.palette.success.main, 
                           alignItems: 'center', justifyContent: 'center', mb: 0.5 
                         }}
                       >
@@ -268,10 +270,10 @@ export default function EnsiklopediaPage() {
                         maxWidth: { xs: '90%', sm: '75%' },
                         p: { xs: 1.5, sm: 2 },
                         borderRadius: isUser ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                        backgroundColor: isUser ? '#16a34a' : '#f8fafc',
-                        color: isUser ? '#fff' : '#1e293b',
-                        boxShadow: isUser ? '0 4px 12px rgba(22, 163, 74, 0.15)' : '0 2px 8px rgba(0,0,0,0.03)',
-                        border: isUser ? 'none' : '1px solid #e2e8f0'
+                        backgroundColor: isUser ? theme.palette.success.main : 'background.default',
+                        color: isUser ? '#fff' : 'text.primary',
+                        boxShadow: isUser ? `0 4px 12px ${alpha(theme.palette.success.main, 0.15)}` : '0 2px 8px rgba(0,0,0,0.03)',
+                        border: isUser ? 'none' : `1px solid ${theme.palette.divider}`
                       }}
                     >
                       <Box
@@ -301,13 +303,13 @@ export default function EnsiklopediaPage() {
                     sx={{ 
                       display: { xs: 'none', sm: 'flex' },
                       width: 28, height: 28, borderRadius: '50%', 
-                      bgcolor: '#f0fdf4', color: '#16a34a', 
+                      bgcolor: alpha(theme.palette.success.main, 0.12), color: theme.palette.success.main, 
                       alignItems: 'center', justifyContent: 'center', mb: 0.5 
                     }}
                   >
                     <AutoAwesomeIcon sx={{ fontSize: 16 }} />
                   </Box>
-                  <Box sx={{ px: 2.5, py: 1.5, borderRadius: '20px 20px 20px 4px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <Box sx={{ px: 2.5, py: 1.5, borderRadius: '20px 20px 20px 4px', backgroundColor: 'background.default', border: `1px solid ${theme.palette.divider}` }}>
                     <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                       <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -322,13 +324,13 @@ export default function EnsiklopediaPage() {
             <Divider />
 
             {/* Input Area */}
-            <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc' }}>
+            <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.default' }}>
               <Box 
                 sx={{ 
                   display: 'flex', 
                   gap: 1.5, 
                   alignItems: 'flex-end',
-                  bgcolor: '#fff',
+                  bgcolor: 'background.paper',
                   p: { xs: 0.5, sm: 1 },
                   borderRadius: { xs: 3, sm: 4 },
                   border: '1px solid',
@@ -356,12 +358,12 @@ export default function EnsiklopediaPage() {
                   onClick={handleSend}
                   disabled={!inputValue.trim()}
                   sx={{
-                    bgcolor: inputValue.trim() ? '#16a34a' : '#f1f5f9',
-                    color: inputValue.trim() ? '#fff' : '#94a3b8',
+                    bgcolor: inputValue.trim() ? theme.palette.success.main : theme.palette.action.hover,
+                    color: inputValue.trim() ? '#fff' : theme.palette.text.secondary,
                     width: { xs: 36, sm: 44 },
                     height: { xs: 36, sm: 44 },
                     borderRadius: '12px',
-                    '&:hover': { bgcolor: inputValue.trim() ? '#15803d' : '#f1f5f9' },
+                    '&:hover': { bgcolor: inputValue.trim() ? theme.palette.success.dark : theme.palette.action.hover },
                     flexShrink: 0,
                     transition: 'all 0.2s',
                     mb: { xs: 0.25, sm: 0.5 },
@@ -396,9 +398,9 @@ export default function EnsiklopediaPage() {
                 clickable
                 onClick={() => setInputValue(prompt)}
                 sx={{ 
-                  backgroundColor: '#f0fdf4', 
-                  color: 'primary.dark', 
-                  border: '1px solid #bbf7d0', 
+                  backgroundColor: alpha(theme.palette.success.main, 0.12), 
+                  color: theme.palette.success.dark, 
+                  border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
                   fontWeight: 500,
                   whiteSpace: 'nowrap'
                 }}
@@ -410,8 +412,8 @@ export default function EnsiklopediaPage() {
         {/* Disease Quick Reference */}
         <Grid size={{ xs: 12, lg: 5 }} sx={{ mt: { xs: 2, lg: 0 } }}>
           <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ width: 4, height: 24, bgcolor: '#16a34a', borderRadius: 4 }} />
-            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: '#0f172a', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+            <Box sx={{ width: 4, height: 24, bgcolor: theme.palette.success.main, borderRadius: 4 }} />
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: 'text.primary', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
               Referensi Cepat Penyakit
             </Typography>
           </Box>
@@ -425,7 +427,7 @@ export default function EnsiklopediaPage() {
                   borderColor: 'divider',
                   borderRadius: 3,
                   borderLeft: '4px solid',
-                  borderLeftColor: disease.tingkatSeveritas === 'tinggi' ? '#ef4444' : '#f59e0b',
+                  borderLeftColor: disease.tingkatSeveritas === 'tinggi' ? theme.palette.error.main : theme.palette.warning.main,
                   transition: 'all 0.2s ease',
                   '&:hover': { 
                     transform: 'translateY(-2px)',
@@ -435,13 +437,13 @@ export default function EnsiklopediaPage() {
               >
                 <CardContent sx={{ p: { xs: 2, sm: '20px !important' } }}>
                   <Box className="flex items-start justify-between mb-2" sx={{ gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0f172a', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.nama}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.nama}</Typography>
                     <Chip
                       label={`Risiko ${disease.kehilangan}`}
                       size="small"
                       sx={{
-                        backgroundColor: disease.tingkatSeveritas === 'tinggi' ? '#fee2e2' : '#fef3c7',
-                        color: disease.tingkatSeveritas === 'tinggi' ? '#b91c1c' : '#b45309',
+                        backgroundColor: disease.tingkatSeveritas === 'tinggi' ? alpha(theme.palette.error.main, 0.12) : alpha(theme.palette.warning.main, 0.12),
+                        color: disease.tingkatSeveritas === 'tinggi' ? theme.palette.error.dark : theme.palette.warning.dark,
                         fontWeight: 700,
                         fontSize: '0.65rem',
                         height: 22
@@ -450,14 +452,14 @@ export default function EnsiklopediaPage() {
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: '#475569' }}>{t('cause')}:</strong> {disease.penyebab}
+                      <strong style={{ color: theme.palette.text.secondary }}>{t('cause')}:</strong> {disease.penyebab}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: '#475569' }}>{t('symptoms')}:</strong> {disease.gejala}
+                      <strong style={{ color: theme.palette.text.secondary }}>{t('symptoms')}:</strong> {disease.gejala}
                     </Typography>
                   </Box>
-                  <Box sx={{ backgroundColor: '#f0fdf4', borderRadius: 2, p: 1.5, border: '1px dashed #bbf7d0' }}>
-                    <Typography variant="body2" sx={{ color: '#16a34a', fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                  <Box sx={{ backgroundColor: alpha(theme.palette.success.main, 0.12), borderRadius: 2, p: 1.5, border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}` }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.success.main, fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                       ✓ {disease.penanganan}
                     </Typography>
                   </Box>

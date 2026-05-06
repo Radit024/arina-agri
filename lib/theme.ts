@@ -12,6 +12,30 @@ const baseTheme = createTheme({
       main: '#f59e0b',
       contrastText: '#ffffff',
     },
+    success: {
+      main: '#16a34a',
+      light: '#dcfce7',
+      dark: '#15803d',
+    },
+    warning: {
+      main: '#f59e0b',
+      light: '#fef3c7',
+      dark: '#b45309',
+    },
+    error: {
+      main: '#dc2626',
+      light: '#fee2e2',
+      dark: '#991b1b',
+    },
+    info: {
+      main: '#2563eb',
+      light: '#dbeafe',
+      dark: '#1e40af',
+    },
+    action: {
+      hover: 'rgba(15, 23, 42, 0.04)',
+      selected: 'rgba(22, 163, 74, 0.08)',
+    },
     background: {
       default: '#f8fafc',
       paper: '#ffffff',

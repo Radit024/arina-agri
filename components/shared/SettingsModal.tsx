@@ -382,7 +382,7 @@ export default function SettingsModal() {
                   <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('system.tab')}</Typography>
                   
                   <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                     <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                        <InfoOutlinedIcon sx={{ fontSize: 32, color: 'text.secondary' }} />
                      </Box>
                      <Box>

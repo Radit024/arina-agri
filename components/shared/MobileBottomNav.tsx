@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import Paper from '@mui/material/Paper';
@@ -11,14 +11,12 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CloudIcon from '@mui/icons-material/Cloud';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import SettingsIcon from '@mui/icons-material/Settings';
 import { useTranslations } from 'next-intl';
 
 interface MobileNavItem {
   key: string;
   icon: ReactNode;
   path: string;
-  type?: 'route' | 'settings';
 }
 
 const mobileNavItems: MobileNavItem[] = [
@@ -27,15 +25,12 @@ const mobileNavItems: MobileNavItem[] = [
   { key: 'cuaca', icon: <CloudIcon />, path: '/dashboard/cuaca' },
   { key: 'ensiklopedia', icon: <AutoStoriesIcon />, path: '/dashboard/ensiklopedia' },
   { key: 'kalender', icon: <CalendarMonthIcon />, path: '/dashboard/kalender' },
-  { key: 'pengaturan', icon: <SettingsIcon />, path: '/dashboard/pengaturan', type: 'settings' },
 ];
 
 export default function MobileBottomNav() {
   const t = useTranslations('MobileNav');
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isSettingsOpen = searchParams.get('settings') === 'true';
 
   useEffect(() => {
     mobileNavItems.forEach((item) => {
@@ -44,9 +39,6 @@ export default function MobileBottomNav() {
   }, [router]);
 
   const currentValue = mobileNavItems.findIndex((item) => {
-    if (item.type === 'settings') {
-      return isSettingsOpen || pathname === '/dashboard/pengaturan';
-    }
     if (item.path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(item.path);
   });
@@ -68,17 +60,10 @@ export default function MobileBottomNav() {
       elevation={0}
     >
       <BottomNavigation
+        aria-label="Primary"
         value={currentValue === -1 ? 0 : currentValue}
         onChange={(_, newValue) => {
           const item = mobileNavItems[newValue];
-          if (item.type === 'settings') {
-            const next = `${pathname}?settings=true&tab=general`;
-            const current = `${pathname}?${searchParams.toString()}`;
-            if (current !== next) {
-              router.push(next);
-            }
-            return;
-          }
           if (pathname !== item.path) {
             router.push(item.path);
           }
@@ -94,7 +79,7 @@ export default function MobileBottomNav() {
               '&.Mui-selected': {
                 color: 'primary.main',
               },
-              fontSize: '0.65rem',
+              fontSize: '0.7rem',
             }}
           />
         ))}

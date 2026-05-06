@@ -95,8 +95,9 @@ export default function Sidebar() {
           willChange: 'width',
           contain: 'layout paint',
           boxSizing: 'border-box',
-          borderRight: '1px solid #f1f5f9',
-          backgroundColor: '#ffffff',
+          borderRight: '1px solid',
+          borderColor: 'divider',
+          backgroundColor: 'background.paper',
           overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -128,11 +129,11 @@ export default function Sidebar() {
               display: 'block',
             }}
           />
-          <Typography variant="h6" sx={{ color: '#064e3b', letterSpacing: '-0.5px', fontWeight: 800 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary', letterSpacing: '-0.5px', fontWeight: 800 }}>
             Arina Agri
           </Typography>
         </Box>
-        <IconButton size="small" onClick={handleToggleSidebar} sx={{ color: '#064e3b' }}>
+        <IconButton aria-label="Toggle sidebar" size="small" onClick={handleToggleSidebar} sx={{ color: 'text.secondary' }}>
           <ViewSidebarIcon />
         </IconButton>
       </Box>
@@ -155,8 +156,8 @@ export default function Sidebar() {
                     py: 1.2,
                     minHeight: 48,
                     justifyContent: isOpen ? 'initial' : 'center',
-                    bgcolor: active ? '#f0fdf4' : 'transparent',
-                    '&:hover': { bgcolor: active ? '#f0fdf4' : '#f8fafc' },
+                    bgcolor: active ? 'success.light' : 'transparent',
+                    '&:hover': { bgcolor: active ? 'success.light' : 'action.hover' },
                   }}
                 >
                   <ListItemIcon
@@ -164,7 +165,7 @@ export default function Sidebar() {
                       minWidth: 0,
                       mr: isOpen ? 2 : 'auto',
                       justifyContent: 'center',
-                      color: active ? 'primary.dark' : '#475569',
+                      color: active ? 'primary.dark' : 'text.secondary',
                     }}
                   >
                     {item.icon}
@@ -182,7 +183,7 @@ export default function Sidebar() {
                         sx: {
                           fontSize: '0.875rem',
                           fontWeight: active ? 600 : 500,
-                          color: active ? '#16a34a' : '#475569',
+                          color: active ? 'primary.main' : 'text.secondary',
                         },
                       },
                     }}

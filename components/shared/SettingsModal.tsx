@@ -124,7 +124,7 @@ export default function SettingsModal() {
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100%', flex: 1 }}>
         
         {/* Left Navigation (Inner Sidebar) */}
-        <Box sx={{ width: { xs: '100%', md: 240 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ width: { xs: '100%', md: 240 }, bgcolor: 'background.default', borderRight: '1px solid', borderColor: 'divider', p: 2, display: 'flex', flexDirection: 'column' }}>
            <Typography variant="body2" sx={{ px: 2, mb: 2, mt: 1, display: 'block', color: 'text.primary', fontSize: '1rem', fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
              {t('title')}
            </Typography>
@@ -136,9 +136,9 @@ export default function SettingsModal() {
                    onClick={() => setActiveTab(tab.id)}
                    sx={{
                      borderRadius: 2,
-                     bgcolor: activeTab === tab.id ? '#dcfce7' : 'transparent',
-                     color: activeTab === tab.id ? '#166534' : '#475569',
-                     '&:hover': { bgcolor: activeTab === tab.id ? '#dcfce7' : '#f0fdf4' },
+                     bgcolor: activeTab === tab.id ? 'success.light' : 'transparent',
+                     color: activeTab === tab.id ? 'success.dark' : 'text.secondary',
+                     '&:hover': { bgcolor: activeTab === tab.id ? 'success.light' : 'action.hover' },
                      py: 1
                    }}
                  >
@@ -161,7 +161,12 @@ export default function SettingsModal() {
            
            {/* Top Header with Close Button */}
            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, pb: 0 }}>
-             <IconButton onClick={handleClose} size="small" sx={{ bgcolor: 'rgba(0,0,0,0.04)', '&:hover': { bgcolor: 'rgba(0,0,0,0.08)' } }}>
+             <IconButton
+               aria-label="Close settings"
+               onClick={handleClose}
+               size="small"
+               sx={{ bgcolor: 'action.hover', '&:hover': { bgcolor: 'action.selected' } }}
+             >
                <CloseIcon fontSize="small" />
              </IconButton>
            </Box>

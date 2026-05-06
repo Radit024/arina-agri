@@ -11,6 +11,7 @@ import AgricultureIcon from '@mui/icons-material/Agriculture';
 import WbCloudyIcon from '@mui/icons-material/WbCloudy';
 import KPICard from '@/components/dashboard/KPICard';
 import WeatherBanner from '@/components/dashboard/WeatherBanner';
+import QuickActions from '@/components/dashboard/QuickActions';
 import RecentTransactionsTable from '@/components/dashboard/RecentTransactionsTable';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import { farmerProfile } from '@/lib/mockData';
@@ -116,6 +117,11 @@ export default function DashboardPage() {
       {/* Weather Alert */}
       <Box sx={{ mb: 3 }}>
         <WeatherBanner />
+      </Box>
+
+      {/* Quick Actions */}
+      <Box sx={{ mb: 3 }}>
+        <QuickActions />
       </Box>
 
       {/* KPI Cards */}

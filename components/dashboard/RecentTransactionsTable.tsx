@@ -46,8 +46,8 @@ export default function RecentTransactionsTable({ transactions }: { transactions
                 <TableRow
                   key={tx._id}
                   sx={{
-                    '&:hover': { backgroundColor: '#f8fafc' },
-                    '& td': { borderColor: '#f1f5f9', fontSize: '0.875rem' },
+                    '&:hover': { backgroundColor: 'action.hover' },
+                    '& td': { borderColor: 'divider', fontSize: '0.875rem' },
                   }}
                 >
                   <TableCell sx={{ color: 'text.secondary' }}>{formatDateShort(tx.tanggal)}</TableCell>
@@ -60,8 +60,8 @@ export default function RecentTransactionsTable({ transactions }: { transactions
                       label={tx.jenis === 'pendapatan' ? t('type.income') : t('type.expense')}
                       size="small"
                       sx={{
-                        backgroundColor: tx.jenis === 'pendapatan' ? '#dcfce7' : '#fee2e2',
-                        color: tx.jenis === 'pendapatan' ? '#16a34a' : '#dc2626',
+                        backgroundColor: tx.jenis === 'pendapatan' ? 'success.light' : 'error.light',
+                        color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
                         fontWeight: 600,
                         fontSize: '0.7rem',
                       }}

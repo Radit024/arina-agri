@@ -4,6 +4,7 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { useTheme, alpha } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 
 interface WeatherBannerProps {
@@ -11,6 +12,7 @@ interface WeatherBannerProps {
 }
 
 export default function WeatherBanner({ message }: WeatherBannerProps) {
+  const theme = useTheme();
   const t = useTranslations('Dashboard.weatherBanner');
   const defaultMessage =
     t('defaultMessage');
@@ -22,13 +24,13 @@ export default function WeatherBanner({ message }: WeatherBannerProps) {
       sx={{
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'warning.light',
-        backgroundColor: '#fffbeb',
-        '& .MuiAlert-icon': { color: '#f59e0b' },
+        borderColor: theme.palette.warning.light,
+        backgroundColor: alpha(theme.palette.warning.main, 0.08),
+        '& .MuiAlert-icon': { color: theme.palette.warning.main },
       }}
     >
-      <AlertTitle sx={{ fontWeight: 600, color: '#92400e' }}>{t('title')}</AlertTitle>
-      <Typography variant="body2" color="#78350f">
+      <AlertTitle sx={{ fontWeight: 600, color: theme.palette.warning.dark }}>{t('title')}</AlertTitle>
+      <Typography variant="body2" color={theme.palette.warning.dark}>
         {message || defaultMessage}
       </Typography>
     </Alert>

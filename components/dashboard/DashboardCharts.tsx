@@ -7,6 +7,7 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
+import { useTheme } from '@mui/material/styles';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
@@ -28,6 +29,7 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 });
 
 export function TrendChart({ transactions }: ChartProps) {
+  const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
   
   const data = useMemo(() => {
@@ -69,7 +71,7 @@ export function TrendChart({ transactions }: ChartProps) {
       />
       <CardContent sx={{ pt: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', gap: 2.5, mb: 3, mt: 1 }}>
-          {[{ color: '#16a34a', label: t('common.income') }, { color: '#f59e0b', label: t('common.expense') }].map((item) => (
+          {[{ color: theme.palette.success.main, label: t('common.income') }, { color: theme.palette.warning.main, label: t('common.expense') }].map((item) => (
             <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: item.color }} />
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, letterSpacing: '0.02em' }}>
@@ -83,9 +85,9 @@ export function TrendChart({ transactions }: ChartProps) {
           {data.length === 0 ? (
             <Box sx={{ 
               height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2, border: '1px dashed rgba(0,0,0,0.1)' 
+              bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
             }}>
-              <Typography variant="body2" color="text.disabled">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada data transaksi' : t('common.noData')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada data transaksi' : t('common.noData')}</Typography>
             </Box>
           ) : (
             <LineChart
@@ -94,7 +96,7 @@ export function TrendChart({ transactions }: ChartProps) {
                 {
                   data: data.map((d) => d.pendapatan),
                   label: t('common.income'),
-                  color: '#16a34a',
+                  color: theme.palette.success.main,
                   showMark: true,
                   curve: 'monotoneX',
                   valueFormatter: (v) => formatRupiah(v ?? 0),
@@ -102,7 +104,7 @@ export function TrendChart({ transactions }: ChartProps) {
                 {
                   data: data.map((d) => d.pengeluaran),
                   label: t('common.expense'),
-                  color: '#f59e0b',
+                  color: theme.palette.warning.main,
                   showMark: true,
                   curve: 'monotoneX',
                   valueFormatter: (v) => formatRupiah(v ?? 0),
@@ -128,6 +130,7 @@ export function TrendChart({ transactions }: ChartProps) {
 }
 
 export function KategoriChart({ transactions }: ChartProps) {
+  const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
   
   const data = useMemo(() => {
@@ -157,7 +160,7 @@ export function KategoriChart({ transactions }: ChartProps) {
     label: item.kategori,
   }));
 
-  const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
+  const pieColors = [theme.palette.error.main, theme.palette.warning.main, theme.palette.success.main, theme.palette.info.main, '#8b5cf6', '#64748b'];
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
@@ -173,9 +176,9 @@ export function KategoriChart({ transactions }: ChartProps) {
         {data.length === 0 ? (
           <Box sx={{ 
             height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2, border: '1px dashed rgba(0,0,0,0.1)' 
+            bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
           }}>
-            <Typography variant="body2" color="text.disabled">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada pengeluaran' : t('common.noData')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada pengeluaran' : t('common.noData')}</Typography>
           </Box>
         ) : (
           <Box

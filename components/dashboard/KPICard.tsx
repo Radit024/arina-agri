@@ -4,18 +4,23 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import { useTheme, alpha } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+
+type ColorVariant = 'success' | 'warning' | 'error' | 'info';
 
 interface KPICardProps {
   title: string;
   value: string;
   subtitle?: string;
   icon: ReactNode;
-  color?: string;
+  color?: ColorVariant;
   trend?: { value: string; positive: boolean };
 }
 
-export default function KPICard({ title, value, subtitle, icon, color = '#16a34a', trend }: KPICardProps) {
+export default function KPICard({ title, value, subtitle, icon, color = 'success', trend }: KPICardProps) {
+  const theme = useTheme();
+  const colorValue = theme.palette[color].main;
   return (
     <Card sx={{ height: '100%', position: 'relative', overflow: 'hidden' }}>
       <Box
@@ -26,7 +31,7 @@ export default function KPICard({ title, value, subtitle, icon, color = '#16a34a
           width: 100,
           height: 100,
           borderRadius: '50%',
-          backgroundColor: color,
+          backgroundColor: colorValue,
           opacity: 0.06,
         }}
       />
@@ -61,15 +66,14 @@ export default function KPICard({ title, value, subtitle, icon, color = '#16a34a
               width: 44,
               height: 44,
               borderRadius: 2.5,
-              backgroundColor: color,
-              opacity: 0.12,
+              backgroundColor: alpha(colorValue, 0.12),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
             }}
           >
-            <Box sx={{ position: 'absolute', color: color }}>{icon}</Box>
+            <Box sx={{ position: 'absolute', color: colorValue }}>{icon}</Box>
           </Box>
         </Box>
       </CardContent>

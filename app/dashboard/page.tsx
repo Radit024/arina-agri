@@ -132,7 +132,7 @@ export default function DashboardPage() {
             value={formatRupiah(totalPengeluaran)}
             subtitle={`${new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date())}`}
             icon={<AccountBalanceWalletIcon />}
-            color="#ef4444"
+            color="error"
             trend={{ 
               value: `${expTrend > 0 ? '+' : ''}${expTrend}% dari bulan lalu`, 
               positive: expTrend <= 0 // Lower expense is positive
@@ -145,7 +145,7 @@ export default function DashboardPage() {
             value={formatRupiah(labaBersih)}
             subtitle="Pendapatan - Pengeluaran"
             icon={<TrendingUpIcon />}
-            color="#16a34a"
+            color="success"
             trend={{ 
               value: `${profitTrend > 0 ? '+' : ''}${profitTrend}% dari bulan lalu`, 
               positive: profitTrend >= 0 
@@ -158,7 +158,7 @@ export default function DashboardPage() {
             value={t('kpi.harvest.value', { days: harvestInfo.days })}
             subtitle={harvestInfo.subtitle}
             icon={<AgricultureIcon />}
-            color="#16a34a"
+            color="success"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -167,7 +167,7 @@ export default function DashboardPage() {
             value={t('kpi.weather.value')}
             subtitle={t('kpi.weather.subtitle')}
             icon={<WbCloudyIcon />}
-            color="#3b82f6"
+            color="warning"
           />
         </Grid>
       </Grid>

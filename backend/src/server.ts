@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import aiRoutes from './routes/ai';
 import notificationRoutes from './routes/notification';
+import webhookRoutes from './routes/webhook';
 import { startScheduler } from './services/notificationScheduler';
 
 const envCandidates = [
@@ -52,6 +53,7 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', aiRoutes);
 app.use('/api/notification', notificationRoutes);
+app.use('/api/webhook', webhookRoutes);
 
 startScheduler();
 

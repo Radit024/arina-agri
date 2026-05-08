@@ -6,6 +6,7 @@
     "ensiklopedia": "Ensiklopedia AI",
     "kalender": "Smart Kalender",
     "stok": "Manajemen Stok Panen",
+    "kabarPasar": "Kabar Pasar",
     "pengaturan": "Pengaturan",
     "logout": "Keluar",
     "farmer": "Petani"
@@ -16,6 +17,7 @@
     "cuaca": "Cuaca",
     "ensiklopedia": "Ensiklopedia",
     "kalender": "Kalender",
+    "kabarPasar": "Kabar Pasar",
     "pengaturan": "Pengaturan"
   },
   "Dashboard": {
@@ -334,5 +336,17 @@
     },
     "secureAccount": "Amankan Akun Anda",
     "setupMFA": "Atur Autentikasi 2 Langkah"
+  },
+  "News": {
+    "title": "Kabar Pasar",
+    "subtitle": "Berita & informasi harga komoditas pertanian terkini",
+    "readMore": "Baca Selengkapnya di Sumber",
+    "readShort": "Baca di sumber",
+    "viewAll": "Lihat Semua",
+    "emptyState": "Belum ada berita tersedia",
+    "emptyHint": "Berita akan muncul setelah sistem mengambil data dari RSS feed",
+    "articlesAvailable": "{count} artikel tersedia",
+    "autoUpdate": "Diperbarui otomatis setiap 6 jam dari sumber terpercaya",
+    "errorBanner": "Gagal memuat berita terbaru — menampilkan contoh data"
   }
 }

@@ -14,6 +14,7 @@ import WeatherBanner from '@/components/dashboard/WeatherBanner';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentTransactionsTable from '@/components/dashboard/RecentTransactionsTable';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
+import NewsWidget from '@/components/dashboard/NewsWidget';
 import { farmerProfile } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
@@ -184,6 +185,11 @@ export default function DashboardPage() {
 
       {/* Recent Transactions */}
       <RecentTransactionsTable transactions={transactions} />
+
+      {/* Kabar Pasar Widget */}
+      <Box sx={{ mt: 3 }}>
+        <NewsWidget />
+      </Box>
     </Box>
   );
 }

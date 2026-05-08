@@ -27,6 +27,7 @@ import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -41,6 +42,7 @@ const navItems = [
   { key: 'keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
   { key: 'stok', icon: <InventoryOutlinedIcon />, path: '/dashboard/stok' },
   { key: 'cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
+  { key: 'kabarPasar', icon: <NewspaperIcon />, path: '/dashboard/kabar-pasar' },
   { key: 'ensiklopedia', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
   { key: 'kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
 ];

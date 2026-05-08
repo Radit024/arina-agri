@@ -6,7 +6,9 @@ import path from 'path';
 import aiRoutes from './routes/ai';
 import notificationRoutes from './routes/notification';
 import webhookRoutes from './routes/webhook';
+import newsRoutes from './routes/news';
 import { startScheduler } from './services/notificationScheduler';
+import { startNewsScheduler } from './services/newsScheduler';
 
 const envCandidates = [
   path.resolve(process.cwd(), '.env'),
@@ -54,8 +56,10 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/ai', aiRoutes);
 app.use('/api/notification', notificationRoutes);
 app.use('/api/webhook', webhookRoutes);
+app.use('/api/news', newsRoutes);
 
 startScheduler();
+startNewsScheduler();
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {

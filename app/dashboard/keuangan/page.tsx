@@ -59,13 +59,13 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 const transactionSchema = z.object({
-  jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'Pilih jenis transaksi' }),
-  kategori: z.string().min(1, 'Pilih kategori'),
-  nominal: z.string().min(1, 'Masukkan nominal').refine(
+  jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
+  kategori: z.string().min(1, 'category'),
+  nominal: z.string().min(1, 'amount').refine(
     (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
-    'Nominal harus lebih dari 0'
+    'amountPositive'
   ),
-  tanggal: z.string().min(1, 'Pilih tanggal'),
+  tanggal: z.string().min(1, 'date'),
   keterangan: z.string().optional(),
 });
 
@@ -77,7 +77,7 @@ type BepHppInputs = {
   hargaJualPerUnit: number;
 };
 
-const BULAN_LABELS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
 
 const MAX_AI_REPORTS_PER_MONTH = 3;
 
@@ -88,6 +88,13 @@ interface QuotaState {
 
 export default function KeuanganPage() {
   const t = useTranslations('Finance');
+  const tCommon = useTranslations('Common');
+  const BULAN_LABELS = [
+    tCommon('months.january'), tCommon('months.february'), tCommon('months.march'),
+    tCommon('months.april'), tCommon('months.may'), tCommon('months.june'),
+    tCommon('months.july'), tCommon('months.august'), tCommon('months.september'),
+    tCommon('months.october'), tCommon('months.november'), tCommon('months.december')
+  ];
   const { user } = useAuth();
   
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
@@ -113,7 +120,15 @@ export default function KeuanganPage() {
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
 
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<TransactionFormData>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchema.extend({
+      jenis: z.enum(['pengeluaran', 'pendapatan'], { message: t('validation.type') }),
+      kategori: z.string().min(1, t('validation.category')),
+      nominal: z.string().min(1, t('validation.amount')).refine(
+        (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
+        t('validation.amountPositive')
+      ),
+      tanggal: z.string().min(1, t('validation.date')),
+    })),
     defaultValues: {
       jenis: 'pengeluaran',
       kategori: '',
@@ -203,7 +218,7 @@ export default function KeuanganPage() {
     // Add Title
     worksheet.mergeCells('A1:E1');
     const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'Laporan Transaksi Keuangan - Arina Agri';
+    titleCell.value = t('excel.reportTitle');
     titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
     titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16A34A' } };
     titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -211,7 +226,13 @@ export default function KeuanganPage() {
     worksheet.addRow([]); // Empty row
 
     // Add Headers
-    const headerRow = worksheet.addRow(['Tanggal', 'Kategori', 'Keterangan', 'Jenis', 'Nominal']);
+    const headerRow = worksheet.addRow([
+      t('ledger.columns.date'), 
+      t('ledger.columns.category'), 
+      t('ledger.columns.note'), 
+      t('ledger.columns.type'), 
+      t('ledger.columns.value')
+    ]);
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
@@ -230,7 +251,7 @@ export default function KeuanganPage() {
         tx.tanggal,
         tx.kategori,
         tx.keterangan || '-',
-        tx.jenis === 'pendapatan' ? 'Pendapatan' : 'Pengeluaran',
+        tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense'),
         tx.nominal
       ]);
       row.eachCell((cell, colNumber) => {
@@ -257,7 +278,7 @@ export default function KeuanganPage() {
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `Laporan_Keuangan_Arina_${new Date().toISOString().split('T')[0]}.xlsx`);
+    saveAs(blob, `${t('excel.filename')}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   // ─── AI Quota helpers ──────────────────────────────────────────
@@ -276,7 +297,7 @@ export default function KeuanganPage() {
     try {
       await generatePdfReport({
         periode: filterBulan === 'semua' ? 'semua' : filterBulan,
-        periodeLabel: filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan),
+        periodeLabel: filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan),
         totalPendapatan,
         totalPengeluaran,
         labaBersih,
@@ -284,7 +305,7 @@ export default function KeuanganPage() {
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
       });
     } catch {
-      setReportError('Gagal membuat PDF. Coba lagi.');
+      setReportError(t('reportDialog.error.failed'));
     } finally {
       setReportLoading(false);
     }
@@ -296,7 +317,7 @@ export default function KeuanganPage() {
     setReportLoading(true);
     setReportError(null);
     try {
-      const periodeLabel = filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan);
+      const periodeLabel = filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan);
       const result = await aiApi.generateFinancialReport({
         periode: periodeLabel,
         totalPendapatan,
@@ -323,7 +344,7 @@ export default function KeuanganPage() {
         aiAnalysis: result.analysis,
       });
     } catch {
-      setReportError('Gagal mendapatkan saran AI. Coba generate tanpa AI atau cek koneksi backend.');
+      setReportError(t('reportDialog.error.aiFailed'));
     } finally {
       setReportLoading(false);
     }
@@ -408,8 +429,8 @@ export default function KeuanganPage() {
   );
 
   const finalPieData = useMemo(
-    () => (expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: 'Belum Ada Data', color: '#e2e8f0' }]),
-    [expenseStats]
+    () => (expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: t('distribution.empty'), color: '#e2e8f0' }]),
+    [expenseStats, t]
   );
   const finalPieColors = useMemo(
     () => (expenseStats.length > 0 ? expenseStats.map((e) => e.color) : ['#e2e8f0']),
@@ -1071,49 +1092,49 @@ export default function KeuanganPage() {
 
           <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.2 }}>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Biaya Variabel Total</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostTotal')}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatRupiah(biayaVariabelTotal)}</Typography>
             </Box>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Biaya Variabel per Kg</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostPerUnit')}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {jumlahProduksi > 0 ? formatRupiah(biayaVariabelPerUnit) : 'Isi produksi'}
+                {jumlahProduksi > 0 ? formatRupiah(biayaVariabelPerUnit) : t('hppDialog.results.inputProduction')}
               </Typography>
             </Box>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfdf3', border: '1px solid #bbf7d0' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>HPP per Kg</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.hppPerUnit')}</Typography>
               <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 800 }}>
-                {jumlahProduksi > 0 ? formatRupiah(hppPerUnit) : 'Isi produksi'}
+                {jumlahProduksi > 0 ? formatRupiah(hppPerUnit) : t('hppDialog.results.inputProduction')}
               </Typography>
             </Box>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfeff', border: '1px solid #bae6fd' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>BEP Unit</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepUnit')}</Typography>
               <Typography variant="body2" sx={{ color: 'info.main', fontWeight: 800 }}>
-                {bepUnit !== null ? `${formatAngka(bepUnit)} kg` : 'Belum dapat dihitung'}
+                {bepUnit !== null ? `${formatAngka(bepUnit)} kg` : t('hppDialog.results.notCalculatable')}
               </Typography>
             </Box>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa', gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>BEP Rupiah</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepValue')}</Typography>
               <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 800 }}>
-                {bepRupiah !== null ? formatRupiah(bepRupiah) : 'Belum dapat dihitung'}
+                {bepRupiah !== null ? formatRupiah(bepRupiah) : t('hppDialog.results.notCalculatable')}
               </Typography>
             </Box>
           </Box>
 
           {marginKontribusiPerUnit <= 0 && jumlahProduksi > 0 && (
             <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: 'error.main' }}>
-              BEP unit belum valid. Pastikan harga jual per kg lebih besar dari biaya variabel per kg.
+              {t('hppDialog.results.invalidBepUnit')}
             </Typography>
           )}
           {(marginKontribusiRasio === null || marginKontribusiRasio <= 0) && (
             <Typography variant="caption" sx={{ mt: 0.8, display: 'block', color: 'error.main' }}>
-              BEP rupiah membutuhkan data penjualan yang cukup dan rasio margin kontribusi positif.
+              {t('hppDialog.results.invalidBepValue')}
             </Typography>
           )}
 
           <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>
             <Button variant="contained" onClick={() => setBepHppDialogOpen(false)} sx={{ borderRadius: 8 }}>
-              Tutup Kalkulator
+              {t('hppDialog.close')}
             </Button>
           </Box>
         </DialogContent>
@@ -1135,10 +1156,10 @@ export default function KeuanganPage() {
               </Box>
               <Box>
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2, fontWeight: 800 }}>
-                  Buat Laporan Keuangan PDF
+                  {t('reportDialog.title')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Periode: {filterBulan === 'semua' ? 'Semua Periode' : getPeriodeLabel(filterBulan)}
+                  {t('reportDialog.period')}: {filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan)}
                 </Typography>
               </Box>
             </Box>
@@ -1155,7 +1176,7 @@ export default function KeuanganPage() {
             <Box sx={{ mb: 2 }}>
               <LinearProgress color="success" />
               <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'center' }}>
-                Sedang menyiapkan laporan...
+                {t('reportDialog.loading')}
               </Typography>
             </Box>
           )}
@@ -1169,26 +1190,26 @@ export default function KeuanganPage() {
           {/* Ringkasan data */}
           <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Data yang akan dicetak
+              {t('reportDialog.summary.title')}
             </Typography>
             <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
               <Box>
-                <Typography variant="caption" color="text.secondary">Total Pendapatan</Typography>
+                <Typography variant="caption" color="text.secondary">{t('summary.totalIncome')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'success.main' }}>{formatRupiah(totalPendapatan)}</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary">Total Pengeluaran</Typography>
+                <Typography variant="caption" color="text.secondary">{t('summary.totalExpense')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>{formatRupiah(totalPengeluaran)}</Typography>
               </Box>
               <Box sx={{ gridColumn: '1 / -1' }}>
-                <Typography variant="caption" color="text.secondary">{labaBersih >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}</Typography>
+                <Typography variant="caption" color="text.secondary">{labaBersih >= 0 ? t('summary.netProfit') : t('summary.deficit')}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 800, color: labaBersih >= 0 ? 'success.main' : 'error.main' }}>
                   {formatRupiah(Math.abs(labaBersih))}
                 </Typography>
               </Box>
               <Box sx={{ gridColumn: '1 / -1' }}>
-                <Typography variant="caption" color="text.secondary">Jumlah Transaksi</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>{monthFilteredTransactions.length} transaksi</Typography>
+                <Typography variant="caption" color="text.secondary">{t('reportDialog.summary.transactionCount')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{monthFilteredTransactions.length} {t('reportDialog.summary.transactions')}</Typography>
               </Box>
             </Box>
           </Box>
@@ -1207,10 +1228,10 @@ export default function KeuanganPage() {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
               <DownloadIcon sx={{ color: 'primary.main' }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Laporan Manual (Tanpa AI)</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t('reportDialog.manual.title')}</Typography>
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
-              Cetak laporan PDF berisi ringkasan keuangan dan rincian transaksi lengkap. Tanpa analisis AI.
+              {t('reportDialog.manual.desc')}
             </Typography>
             <Button
               variant="outlined"
@@ -1221,7 +1242,7 @@ export default function KeuanganPage() {
               disabled={reportLoading || monthFilteredTransactions.length === 0}
               sx={{ borderRadius: 8 }}
             >
-              Download PDF (Manual)
+              {t('reportDialog.manual.button')}
             </Button>
           </Box>
 
@@ -1239,11 +1260,11 @@ export default function KeuanganPage() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <AutoFixHighIcon sx={{ color: aiQuotaRemaining > 0 ? 'primary.dark' : 'text.disabled' }} />
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: aiQuotaRemaining > 0 ? 'text.primary' : 'text.disabled' }}>
-                  Laporan + Saran AI
+                  {t('reportDialog.ai.title')}
                 </Typography>
               </Box>
               <Chip
-                label={`${aiQuotaRemaining}/${MAX_AI_REPORTS_PER_MONTH} sisa bulan ini`}
+                label={`${aiQuotaRemaining}/${MAX_AI_REPORTS_PER_MONTH} ${t('reportDialog.ai.quotaRemaining')}`}
                 size="small"
                 sx={{
                   bgcolor: aiQuotaRemaining > 0 ? '#dcfce7' : '#fee2e2',
@@ -1255,8 +1276,8 @@ export default function KeuanganPage() {
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
               {aiQuotaRemaining > 0
-                ? 'Gemini AI akan menganalisis data keuangan Anda dan memberikan rekomendasi dalam PDF. Kuota: 3x/bulan.'
-                : 'Kuota generate laporan AI bulan ini sudah habis. Tersedia lagi bulan depan.'}
+                ? t('reportDialog.ai.descActive')
+                : t('reportDialog.ai.descEmpty')}
             </Typography>
             <Button
               variant="contained"
@@ -1266,7 +1287,7 @@ export default function KeuanganPage() {
               disabled={reportLoading || aiQuotaRemaining <= 0 || monthFilteredTransactions.length === 0}
               sx={{ borderRadius: 8, bgcolor: '#111827', '&:hover': { bgcolor: '#1e293b' } }}
             >
-              Download PDF + Saran AI
+              {t('reportDialog.ai.button')}
             </Button>
           </Box>
         </DialogContent>

@@ -11,13 +11,20 @@ import NewspaperIcon from '@mui/icons-material/Newspaper';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { useNews } from '@/hooks/useNews';
+import { useTranslations } from 'next-intl';
 
-export default function NewsWidget() {
+interface NewsWidgetProps {
+  layout?: 'horizontal' | 'vertical';
+}
+
+export default function NewsWidget({ layout = 'vertical' }: NewsWidgetProps) {
   const router = useRouter();
-  const { articles, isLoading } = useNews({ limit: 3, page: 1 });
+  const t = useTranslations('KabarPasar');
+  const limitCount = layout === 'vertical' ? 4 : 3;
+  const { articles, isLoading } = useNews({ limit: limitCount, page: 1 });
 
   return (
-    <Box sx={{ mt: 1 }}>
+    <Box sx={{ mt: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <Box
         sx={{
@@ -38,7 +45,7 @@ export default function NewsWidget() {
               fontSize: '1rem',
             }}
           >
-            Kabar Pasar
+            {t('title')}
           </Typography>
           <Typography variant="caption" sx={{ color: 'text.disabled', ml: 0.5 }}>
             📰
@@ -57,15 +64,15 @@ export default function NewsWidget() {
             '&:hover': { bgcolor: 'success.light' },
           }}
         >
-          Lihat Semua
+          {t('viewAll')}
         </Button>
       </Box>
 
       {/* Cards Grid */}
       {isLoading ? (
         <Grid container spacing={2}>
-          {[0, 1, 2].map((i) => (
-            <Grid key={i} size={{ xs: 12, md: 4 }}>
+          {Array.from({ length: limitCount }).map((_, i) => (
+            <Grid key={i} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
               <NewsCardSkeleton variant="widget" />
             </Grid>
           ))}
@@ -78,22 +85,26 @@ export default function NewsWidget() {
             borderColor: 'divider',
             borderRadius: 3,
             bgcolor: 'background.default',
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
             <NewspaperIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
             <Typography variant="body2" color="text.secondary">
-              Belum ada berita tersedia
+              {t('empty.title')}
             </Typography>
             <Typography variant="caption" color="text.disabled">
-              Berita akan muncul setelah sistem mengambil data dari RSS feed
+              {t('empty.subtitle')}
             </Typography>
           </CardContent>
         </Card>
       ) : (
         <Grid container spacing={2}>
           {articles.map((article) => (
-            <Grid key={article.id} size={{ xs: 12, md: 4 }}>
+            <Grid key={article.id} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
               <NewsCard article={article} variant="widget" />
             </Grid>
           ))}

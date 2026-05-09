@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
@@ -18,6 +18,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // ─── AUTH BYPASS FOR DEVELOPMENT ──────────────────────────────────
+    if (process.env.NODE_ENV === 'development') {
+      const mockUser: any = {
+        id: 'dev-user-id',
+        email: 'developer@arinaagri.com',
+        user_metadata: { full_name: 'Arina Developer' },
+      };
+      const mockSession: any = {
+        access_token: 'mock-token',
+        user: mockUser,
+      };
+      
+      setUser(mockUser);
+      setSession(mockSession);
+      setLoading(false);
+      return; // Skip Supabase auth listeners
+    }
+    // ──────────────────────────────────────────────────────────────────
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -42,8 +61,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const value = useMemo(() => ({ user, session, loading }), [user, session, loading]);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

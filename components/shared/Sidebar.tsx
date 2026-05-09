@@ -51,9 +51,14 @@ export default function Sidebar() {
   const t = useTranslations('Sidebar');
   const [isOpen, setIsOpen] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const userName = (mounted && user) ? (user?.user_metadata?.full_name || user?.email?.split('@')[0]) : farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
   const userAvatar = user?.user_metadata?.avatar_url;
 

@@ -86,17 +86,17 @@ export default function DashboardPage() {
       const harvestDate = new Date(nextHarvest.tanggal);
       const diffTime = harvestDate.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const formattedDate = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long' }).format(harvestDate);
+      const formattedDate = new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long' }).format(harvestDate);
       
       return {
         days: diffDays,
-        subtitle: `Pemetikan perdana: ${formattedDate}`,
+        subtitle: t('kpi.harvest.subtitle', { date: formattedDate }),
       };
     }
 
     return {
       days: farmerProfile.hariMenujuPanen,
-      subtitle: t('kpi.harvest.subtitle'),
+      subtitle: t('kpi.harvest.subtitle', { date: '—' }),
     };
   }, [events, t]);
 
@@ -111,7 +111,7 @@ export default function DashboardPage() {
           {t('welcome', { name: firstName })}
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 500 }}>
-          {farmerProfile.lokasi} · {farmerProfile.komoditas} · {farmerProfile.luasLahan}
+          {t('profile', { location: farmerProfile.lokasi, commodity: farmerProfile.komoditas, area: farmerProfile.luasLahan })}
         </Typography>
       </Box>
 
@@ -131,11 +131,11 @@ export default function DashboardPage() {
           <KPICard
             title={t('kpi.totalExpense.title')}
             value={formatRupiah(totalPengeluaran)}
-            subtitle={`${new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date())}`}
+            subtitle={`${new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { month: 'long', year: 'numeric' }).format(new Date())}`}
             icon={<AccountBalanceWalletIcon />}
             color="error"
             trend={{ 
-              value: `${expTrend > 0 ? '+' : ''}${expTrend}% dari bulan lalu`, 
+              value: t('kpi.trend', { value: `${expTrend > 0 ? '+' : ''}${expTrend}` }), 
               positive: expTrend <= 0 // Lower expense is positive
             }}
           />
@@ -144,11 +144,11 @@ export default function DashboardPage() {
           <KPICard
             title={t('kpi.netProfit.title')}
             value={formatRupiah(labaBersih)}
-            subtitle="Pendapatan - Pengeluaran"
+            subtitle={t('kpi.netProfit.subtitle')}
             icon={<TrendingUpIcon />}
             color="success"
             trend={{ 
-              value: `${profitTrend > 0 ? '+' : ''}${profitTrend}% dari bulan lalu`, 
+              value: t('kpi.trend', { value: `${profitTrend > 0 ? '+' : ''}${profitTrend}` }), 
               positive: profitTrend >= 0 
             }}
           />
@@ -165,31 +165,41 @@ export default function DashboardPage() {
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
             title={t('kpi.weather.title')}
-            value={t('kpi.weather.value')}
-            subtitle={t('kpi.weather.subtitle')}
+            value={t('kpi.weather.value', { temp: 28, cond: t('locale') === 'en' ? 'Sunny' : 'Cerah' })}
+            subtitle={t('kpi.weather.subtitle', { hum: 75 })}
             icon={<WbCloudyIcon />}
             color="warning"
           />
         </Grid>
       </Grid>
 
-      {/* Charts */}
+      {/* Main Content & Sidebar Layout */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <TrendChart transactions={transactions} />
+        {/* Left Column (Charts & Transactions) */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {/* Charts Row */}
+            <Grid container spacing={3}>
+              <Grid size={{ xs: 12, xl: 7 }}>
+                <TrendChart transactions={transactions} />
+              </Grid>
+              <Grid size={{ xs: 12, xl: 5 }}>
+                <KategoriChart transactions={transactions} />
+              </Grid>
+            </Grid>
+
+            {/* Recent Transactions */}
+            <RecentTransactionsTable transactions={transactions} />
+          </Box>
         </Grid>
-        <Grid size={{ xs: 12, lg: 5 }}>
-          <KategoriChart transactions={transactions} />
+
+        {/* Right Column (News Sidebar) */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Box sx={{ height: '100%', position: 'sticky', top: 24 }}>
+            <NewsWidget layout="vertical" />
+          </Box>
         </Grid>
       </Grid>
-
-      {/* Recent Transactions */}
-      <RecentTransactionsTable transactions={transactions} />
-
-      {/* Kabar Pasar Widget */}
-      <Box sx={{ mt: 4 }}>
-        <NewsWidget />
-      </Box>
     </Box>
   );
 }

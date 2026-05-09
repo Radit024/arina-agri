@@ -10,7 +10,7 @@ import Skeleton from '@mui/material/Skeleton';
 import { useTheme } from '@mui/material/styles';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import type { ApiTransaction } from '@/lib/api';
 import { useMemo } from 'react';
 
@@ -87,7 +87,7 @@ export function TrendChart({ transactions }: ChartProps) {
               height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
               bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
             }}>
-              <Typography variant="body2" color="text.secondary">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada data transaksi' : t('common.noData')}</Typography>
+              <Typography variant="body2" color="text.secondary">{t('common.noData')}</Typography>
             </Box>
           ) : (
             <LineChart
@@ -132,6 +132,7 @@ export function TrendChart({ transactions }: ChartProps) {
 export function KategoriChart({ transactions }: ChartProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
+  const locale = useLocale();
   
   const data = useMemo(() => {
     if (!transactions) return [];
@@ -177,7 +178,10 @@ export function KategoriChart({ transactions }: ChartProps) {
             {t('category.title')}
           </Typography>
         }
-        subheader={t('category.subheader')}
+        subheader={t('category.subheader', { 
+          month: new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' }).format(new Date()), 
+          year: new Date().getFullYear() 
+        })}
       />
       <CardContent sx={{ pt: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 300 }}>
         {data.length === 0 ? (
@@ -185,7 +189,7 @@ export function KategoriChart({ transactions }: ChartProps) {
             height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
             bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
           }}>
-            <Typography variant="body2" color="text.secondary">{t('common.noData') === 'Dashboard.charts.common.noData' ? 'Belum ada pengeluaran' : t('common.noData')}</Typography>
+            <Typography variant="body2" color="text.secondary">{t('common.noData')}</Typography>
           </Box>
         ) : (
           <Box

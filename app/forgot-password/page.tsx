@@ -14,23 +14,26 @@ import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircle';
-import Link from 'next/link';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
+import { useTranslations } from 'next-intl';
 
 const schema = z.object({
-  email: z.string().email('Format email tidak valid'),
+  email: z.string().email('email'),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('Auth.forgot');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema.extend({
+      email: z.string().email(t('validation.email' as any) || 'Invalid email'),
+    })),
     defaultValues: { email: '' },
   });
 
@@ -44,7 +47,7 @@ export default function ForgotPasswordPage() {
       if (authError) throw authError;
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan. Silakan coba lagi.');
+      setError(err.message || t('error'));
     } finally {
       setLoading(false);
     }
@@ -91,14 +94,14 @@ export default function ForgotPasswordPage() {
             <Box sx={{ textAlign: 'center' }}>
               <CheckCircleOutlineIcon sx={{ fontSize: 72, color: 'success.main', mb: 2 }} />
               <Typography variant="h5" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, mb: 1 }}>
-                Email Terkirim!
+                {t('success.title')}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                Cek inbox email Anda dan klik link yang dikirimkan untuk mereset password.
+                {t('success.desc')}
               </Typography>
               <Link href="/login" style={{ textDecoration: 'none' }}>
                 <Button variant="contained" fullWidth sx={{ py: 1.5, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}>
-                  Kembali ke Halaman Login
+                  {t('success.button')}
                 </Button>
               </Link>
             </Box>
@@ -106,10 +109,10 @@ export default function ForgotPasswordPage() {
             <>
               <Box sx={{ mb: 4, textAlign: 'center' }}>
                 <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', mb: 1, color: 'text.primary', fontWeight: 700 }}>
-                  Lupa Kata Sandi? 🔑
+                  {t('title')}
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
-                  Masukkan email Anda dan kami akan mengirimkan link untuk mereset password.
+                  {t('subtitle')}
                 </Typography>
               </Box>
 
@@ -126,7 +129,7 @@ export default function ForgotPasswordPage() {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Alamat Email"
+                      label={t('email')}
                       variant="outlined"
                       fullWidth
                       error={!!errors.email}
@@ -152,13 +155,13 @@ export default function ForgotPasswordPage() {
                   disabled={loading}
                   sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
                 >
-                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Kirim Link Reset Password'}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
                 </Button>
 
                 <Box sx={{ mt: 2, textAlign: 'center' }}>
                   <Link href="/login" style={{ textDecoration: 'none' }}>
                     <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                      ← Kembali ke Login
+                      {t('back')}
                     </Typography>
                   </Link>
                 </Box>

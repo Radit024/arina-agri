@@ -24,14 +24,15 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 const registerSchema = z.object({
-  fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
-  email: z.string().email('Format email tidak valid'),
-  password: z.string().min(6, 'Password minimal 6 karakter'),
-  confirmPassword: z.string().min(6, 'Konfirmasi password minimal 6 karakter')
+  fullName: z.string().min(3, 'name'),
+  email: z.string().email('email'),
+  password: z.string().min(6, 'password'),
+  confirmPassword: z.string().min(6, 'confirm')
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Konfirmasi password tidak cocok",
+  message: "mismatch",
   path: ["confirmPassword"],
 });
 
@@ -39,6 +40,7 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useTranslations('Auth.register');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -53,7 +55,15 @@ export default function RegisterPage() {
   }, [authLoading, user, router]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
+    resolver: zodResolver(registerSchema.extend({
+      fullName: z.string().min(3, t('validation.name')),
+      email: z.string().email(t('validation.email')),
+      password: z.string().min(6, t('validation.password')),
+      confirmPassword: z.string().min(6, t('validation.confirm'))
+    }).refine((data) => data.password === data.confirmPassword, {
+      message: t('validation.mismatch'),
+      path: ["confirmPassword"],
+    })),
     defaultValues: {
       fullName: '',
       email: '',
@@ -78,9 +88,9 @@ export default function RegisterPage() {
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('already registered')) {
-        setError('Email ini sudah terdaftar. Silakan login atau gunakan email lain.');
+        setError(t('error.exists'));
       } else {
-        setError(msg || 'Gagal mendaftar. Silakan coba lagi.');
+        setError(t('error.failed'));
       }
     } finally {
       setLoading(false);
@@ -97,7 +107,7 @@ export default function RegisterPage() {
       });
       if (authError) throw authError;
     } catch (err: any) {
-      setError(err.message || 'Gagal masuk dengan Google. Silakan coba lagi.');
+      setError(err.message || t('error.failed'));
       setGoogleLoading(false);
     }
   };
@@ -131,7 +141,7 @@ export default function RegisterPage() {
           Arina Agri
         </Typography>
         <Typography variant="h6" sx={{ mt: 2, opacity: 0.9, textAlign: 'center', maxWidth: 400, zIndex: 1 }}>
-          Bergabunglah dan tingkatkan produktivitas pertanian Anda.
+          {t('branding')}
         </Typography>
       </Grid>
 
@@ -152,10 +162,10 @@ export default function RegisterPage() {
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', mb: 1, color: 'text.primary', fontWeight: 700 }}>
-              Buat Akun Baru 
+              {t('title')}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Isi data di bawah ini untuk memulai.
+              {t('subtitle')}
             </Typography>
           </Box>
 
@@ -172,7 +182,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Nama Lengkap"
+                  label={t('fullName')}
                   variant="outlined"
                   fullWidth
                   error={!!errors.fullName}
@@ -196,7 +206,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Alamat Email"
+                  label={t('email')}
                   variant="outlined"
                   fullWidth
                   error={!!errors.email}
@@ -220,7 +230,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Kata Sandi"
+                  label={t('password')}
                   type={showPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
@@ -252,7 +262,7 @@ export default function RegisterPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Konfirmasi Kata Sandi"
+                  label={t('confirmPassword')}
                   type={showConfirmPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
@@ -286,7 +296,7 @@ export default function RegisterPage() {
               disabled={loading || googleLoading}
               sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Daftar Sekarang'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
             </Button>
 
             <Button
@@ -299,15 +309,15 @@ export default function RegisterPage() {
               startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleIcon />}
               sx={{ py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
             >
-              {googleLoading ? 'Memproses...' : 'Daftar dengan Google'}
+              {googleLoading ? t('processing' as any) || 'Memproses...' : t('google')}
             </Button>
 
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
-                Sudah punya akun?{' '}
+                {t('hasAccount')}{' '}
                 <Link href="/login" style={{ textDecoration: 'none' }}>
                   <Typography component="span" variant="body2" color="primary.main" sx={{ fontWeight: 700 }}>
-                    Masuk di sini
+                    {t('loginNow')}
                   </Typography>
                 </Link>
               </Typography>

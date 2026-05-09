@@ -8,8 +8,9 @@ import Box from '@mui/material/Box';
 import Link from 'next/link';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import { useTranslations } from 'next-intl';
+import { memo } from 'react';
 
-export default function QuickActions() {
+export default memo(function QuickActions() {
   const t = useTranslations('Dashboard.home.quickActions');
 
   return (
@@ -44,4 +45,4 @@ export default function QuickActions() {
       </CardContent>
     </Card>
   );
-}
+});

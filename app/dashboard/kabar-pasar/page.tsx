@@ -14,10 +14,12 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { useNews } from '@/hooks/useNews';
+import { useTranslations } from 'next-intl';
 
 const ITEMS_PER_PAGE = 9;
 
 export default function KabarPasarPage() {
+  const t = useTranslations('KabarPasar');
   const [page, setPage] = useState(1);
   const { articles, total, isLoading, error, refetch } = useNews({
     limit: ITEMS_PER_PAGE,
@@ -61,15 +63,15 @@ export default function KabarPasarPage() {
                   lineHeight: 1.2,
                 }}
               >
-                Kabar Pasar
+                {t('title')}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                Berita &amp; informasi harga komoditas pertanian terkini
+                {t('subtitle')}
               </Typography>
             </Box>
           </Box>
 
-          <Tooltip title="Muat ulang berita">
+          <Tooltip title={t('refetch')}>
             <IconButton
               onClick={refetch}
               size="small"
@@ -81,10 +83,10 @@ export default function KabarPasarPage() {
         </Box>
 
         {/* Stats bar */}
-        {!isLoading && total > 0 && (
+        {!isLoading && total > 0 ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
             <Chip
-              label={`${total} artikel tersedia`}
+              label={t('stats', { total })}
               size="small"
               sx={{
                 bgcolor: 'success.light',
@@ -94,25 +96,25 @@ export default function KabarPasarPage() {
               }}
             />
             <Typography variant="caption" color="text.disabled">
-              Diperbarui otomatis setiap 6 jam dari sumber terpercaya
+              {t('updateInterval')}
             </Typography>
           </Box>
-        )}
+        ) : null}
       </Box>
 
       {/* ─── Error State ──────────────────────────────────────────── */}
-      {error && (
+      {error ? (
         <Card
           elevation={0}
-          sx={{ border: '1px solid', borderColor: 'warning.light', borderRadius: 3, mb: 3, bgcolor: 'warning.light' }}
+          sx={{ border: '1px solid', borderColor: 'error.light', borderRadius: 3, mb: 3, bgcolor: 'error.lighter' }}
         >
           <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-            <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 600 }}>
-              ⚠️ Gagal memuat berita terbaru — menampilkan contoh data
+            <Typography variant="body2" color="error.dark" sx={{ fontWeight: 600 }}>
+              {t('error', { error })}
             </Typography>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {/* ─── Content Grid ─────────────────────────────────────────── */}
       {isLoading ? (
@@ -136,10 +138,10 @@ export default function KabarPasarPage() {
           <CardContent sx={{ textAlign: 'center', py: 8 }}>
             <NewspaperIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600 }} gutterBottom>
-              Belum ada berita tersedia
+              {t('empty.title')}
             </Typography>
             <Typography variant="body2" color="text.disabled" sx={{ maxWidth: 360, mx: 'auto' }}>
-              Sistem akan otomatis mengambil berita pertanian terbaru dari RSS feed setiap 6 jam sekali
+              {t('empty.subtitle')}
             </Typography>
           </CardContent>
         </Card>
@@ -154,7 +156,7 @@ export default function KabarPasarPage() {
           </Grid>
 
           {/* ─── Pagination ───────────────────────────────────────── */}
-          {totalPages > 1 && (
+          {totalPages > 1 ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination
                 count={totalPages}
@@ -176,7 +178,7 @@ export default function KabarPasarPage() {
                 }}
               />
             </Box>
-          )}
+          ) : null}
         </>
       )}
     </Box>

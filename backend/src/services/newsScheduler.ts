@@ -15,16 +15,16 @@ interface NewsArticleInsert {
 // ─── Config ───────────────────────────────────────────────────────
 const RSS_SOURCES = [
   {
-    name: 'Antara News',
-    url: 'https://www.antaranews.com/rss/ekonomi.xml',
+    name: 'Berita Pertanian',
+    url: 'https://news.google.com/rss/search?q=pertanian+OR+agribisnis+OR+petani+when:7d&hl=id&gl=ID&ceid=ID:id',
   },
   {
-    name: 'Bisnis.com',
-    url: 'https://ekonomi.bisnis.com/rss',
+    name: 'Info Komoditas',
+    url: 'https://news.google.com/rss/search?q=komoditas+pangan+OR+"harga+cabai"+OR+"harga+pupuk"+when:7d&hl=id&gl=ID&ceid=ID:id',
   },
   {
-    name: 'BeritaJatim',
-    url: 'https://beritajatim.com/feed/',
+    name: 'Kabar Panen & Cuaca',
+    url: 'https://news.google.com/rss/search?q="gagal+panen"+OR+"musim+tanam"+OR+"hama+tanaman"+when:14d&hl=id&gl=ID&ceid=ID:id',
   },
 ];
 

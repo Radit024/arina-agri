@@ -15,6 +15,7 @@ const titleMap: Array<{ prefix: string; key: string }> = [
   { prefix: '/dashboard/ensiklopedia', key: 'ensiklopedia' },
   { prefix: '/dashboard/kalender', key: 'kalender' },
   { prefix: '/dashboard/stok', key: 'stok' },
+  { prefix: '/dashboard/kabar-pasar', key: 'kabarPasar' },
   { prefix: '/dashboard', key: 'dashboard' },
 ];
 

@@ -1,4 +1,20 @@
 {
+  "Common": {
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    }
+  },
   "Sidebar": {
     "dashboard": "Dashboard",
     "keuangan": "Financial Logs",
@@ -6,6 +22,7 @@
     "ensiklopedia": "AI Encyclopedia",
     "kalender": "Smart Calendar",
     "stok": "Harvest Stock",
+    "kabarPasar": "Market News",
     "pengaturan": "Settings",
     "logout": "Log Out",
     "farmer": "Farmer"
@@ -16,11 +33,15 @@
     "cuaca": "Weather",
     "ensiklopedia": "Encyclopedia",
     "kalender": "Calendar",
+    "stok": "Stock",
+    "kabarPasar": "Market News",
     "pengaturan": "Settings"
   },
   "Dashboard": {
     "home": {
+      "locale": "en",
       "welcome": "Welcome, Mr. {name} 👋",
+      "profile": "{location} · {commodity} · {area}",
       "quickActions": {
         "title": "Harvest Stock Management",
         "description": "Track stock and the latest harvest batches.",
@@ -37,15 +58,16 @@
           "subtitle": "Income - Expenses",
           "trend": "18% from last month"
         },
+        "trend": "{value}% from last month",
         "harvest": {
           "title": "Days to Harvest",
           "value": "{days} Days",
-          "subtitle": "First harvest: April 25"
+          "subtitle": "First harvest: {date}"
         },
         "weather": {
           "title": "Today's Weather Status",
-          "value": "24°C · Drizzle",
-          "subtitle": "Humidity 78%"
+          "value": "{temp}°C · {cond}",
+          "subtitle": "Humidity {hum}%"
         }
       }
     },
@@ -55,7 +77,7 @@
     },
     "recentTransactions": {
       "title": "Recent Transactions",
-      "subheader": "Last 5 transactions",
+      "subheader": "{count} last transactions",
       "columns": {
         "date": "Date",
         "category": "Category",
@@ -66,7 +88,8 @@
       "type": {
         "income": "Income",
         "expense": "Expense"
-      }
+      },
+      "empty": "No transaction data yet"
     },
     "charts": {
       "common": {
@@ -80,13 +103,13 @@
       },
       "category": {
         "title": "Expense Categories",
-        "subheader": "April 2026"
+        "subheader": "Month {month} {year}"
       }
     }
   },
   "Weather": {
     "title": "Weather",
-    "subtitle": "Monitor weather in your area",
+    "subtitle": "Monitor Weather in Your Area",
     "days": {
       "sun": "Sun",
       "mon": "Mon",
@@ -122,27 +145,49 @@
       }
     },
     "whatsapp": {
-      "title": "WhatsApp Integration",
-      "note": "Notifications are automatically sent via WhatsApp using an <strong>n8n workflow</strong> when extreme weather is detected.",
-      "enable": "Enable automatic notifications",
-      "phoneLabel": "Phone Number",
-      "phonePlaceholder": "Example: 08123456789",
-      "phoneHelper": "This number will receive weather alerts",
-      "saved": "✓ Number Saved",
-      "saveAndEnable": "Save & Enable",
+      "title": "Weather Notifications",
+      "note": "Choose your notification platform first, then save the corresponding contact. WhatsApp uses a phone number, while Telegram uses a Chat ID or username as per your n8n workflow.",
+      "enable": "Enable notifications",
+      "phoneLabel": "WhatsApp Number",
+      "telegramLabel": "Telegram Chat ID",
+      "phonePlaceholder": "6281234567890",
+      "telegramPlaceholder": "123456789 or @username",
+      "phoneHelper": "Use international format without the + sign, e.g., 6281234567890.",
+      "telegramHelper": "Use Telegram chat ID or username according to your bot.",
+      "saved": "Saved",
+      "saveAndEnable": "Save notification contact",
       "activeAlertTypes": "Active alert types",
       "alerts": {
-        "heavyRain": "Heavy Rain (> 20mm)",
-        "strongWind": "Strong Wind (> 12 km/h)",
-        "extremeTemp": "Extreme Temperature (> 32°C)",
-        "lowHumidity": "Low Humidity (< 50%)"
-      }
+        "heavyRain": "Heavy Rain",
+        "strongWind": "Strong Wind",
+        "extremeTemp": "Extreme Temperature",
+        "lowHumidity": "Low Humidity"
+      },
+      "testButton": "Send Test Message ({platform})",
+      "testSuccess": "Notification sent. Risk {level} ({score}/100).",
+      "testSkipped": "Notification not sent: {reason}",
+      "testError": "Failed to send test notification.",
+      "testNoContact": "Save {platform} and enable notifications first.",
+      "scheduleTitle": "Daily Notification Schedule",
+      "scheduleSub": "Set the time for automatic notification delivery every day.",
+      "scheduleTime": "Delivery Time",
+      "scheduleActive": "Enable daily schedule",
+      "scheduleSave": "Save Schedule",
+      "scheduleSuccess": "Schedule saved successfully. Notifications will be sent daily at the selected time.",
+      "scheduleError": "Failed to save notification schedule. {error}",
+      "scheduleNoContact": "Target contact must be saved first in weather notifications.",
+      "tutorialTitle": "Telegram Tutorial",
+      "tutorialSteps": [
+        "Search for @Arina_Test_28_Bot on Telegram and send /start.",
+        "Then click Send Test Message for verification.",
+        "Then set the Daily Notification Schedule with Telegram platform and save."
+      ]
     }
   },
   "Finance": {
     "title": "Financial Management",
     "subtitle": "Track cash flow, analyze costs, and review farm spending profiles.",
-    "exportCsv": "Export CSV",
+    "exportCsv": "Export Excel",
     "common": {
       "income": "Income",
       "expense": "Expense",
@@ -190,7 +235,9 @@
       "deficit": "BUDGET DEFICIT"
     },
     "distribution": {
-      "title": "Expense Distribution"
+      "title": "Expense Distribution",
+      "noData": "No Data Yet",
+      "empty": "No Expense Data"
     },
     "transactionDialog": {
       "addTitle": "Record New Transaction",
@@ -218,11 +265,71 @@
     "hppDialog": {
       "title": "HPP & BEP Calculation",
       "subtitle": "Uses transaction data + production input",
+      "close": "Close",
       "fields": {
         "fixedCost": "Fixed Cost Per Period",
         "totalProduction": "Total Production Per Period",
         "unitPrice": "Selling Price per Kg"
+      },
+      "results": {
+        "variableCostTotal": "Total Variable Cost",
+        "variableCostPerUnit": "Variable Cost/Unit",
+        "inputProduction": "Production Input",
+        "hppPerUnit": "HPP/Unit (COGS)",
+        "bepUnit": "BEP (Unit/Kg)",
+        "notCalculatable": "Cannot be calculated",
+        "bepValue": "BEP (Rp)",
+        "invalidBepValue": "Invalid BEP value"
       }
+    },
+    "months": [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "excel": {
+      "reportTitle": "Financial Transaction Report - Arina Agri",
+      "headers": ["Date", "Category", "Description", "Type", "Amount"],
+      "income": "Income",
+      "expense": "Expense",
+      "filename": "Financial_Report"
+    },
+    "validation": {
+      "type": "Select transaction type",
+      "category": "Select category",
+      "amount": "Enter amount",
+      "amountPositive": "Amount must be greater than 0",
+      "date": "Select date"
+    },
+    "reportDialog": {
+      "title": "Export Financial Report",
+      "period": "Report Period",
+      "loading": "Generating report... Please wait",
+      "summary": {
+        "title": "Data Summary",
+        "transactionCount": "Total Transactions",
+        "transactions": "transactions"
+      },
+      "manual": {
+        "title": "Export Excel / Spreadsheet",
+        "desc": "Download transaction ledger in .xlsx format for manual reporting or printing.",
+        "button": "Download Excel"
+      },
+      "ai": {
+        "title": "Smart PDF Report (AI)",
+        "quotaRemaining": "left",
+        "descActive": "Generate professional PDF report complete with business health analysis and AI recommendations.",
+        "descEmpty": "Limit reached. You can still export manual reports.",
+        "button": "Generate AI Report"
+      },
+      "error": {
+        "failed": "Failed to generate report. Please try again.",
+        "aiFailed": "Failed to get AI analysis. Try generating without AI or check connection."
+      }
+    },
+    "ai": {
+      "quotaMsg": "Remaining AI report quota this month: {count}",
+      "errorPdf": "Failed to create PDF. Try again.",
+      "errorAi": "Failed to get AI suggestions. Try generating without AI or check backend connection."
     }
   },
   "Calendar": {
@@ -245,14 +352,37 @@
         "timeOptional": "Time (optional)",
         "noteOptional": "Notes (optional)",
         "notePlaceholder": "Add extra notes..."
+      },
+      "options": {
+        "fertilizing": "🌿 Fertilizing",
+        "spraying": "💧 Pesticide Spraying",
+        "irrigation": "🚿 Irrigation",
+        "harvest": "🌶️ Harvesting",
+        "other": "📝 Other"
       }
     },
     "delete": "Delete",
     "cancel": "Cancel",
-    "saveSchedule": "Save Schedule"
+    "saveSchedule": "Save Schedule",
+    "months": [
+      "January", "February", "March", "April", "May", "June", 
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "jenisLabels": {
+      "pemupukan": "Fertilizing",
+      "penyemprotan": "Pest Spraying",
+      "irigasi": "Irrigation",
+      "pemetikan": "Harvesting",
+      "lainnya": "Other"
+    },
+    "daysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "validation": {
+      "titleRequired": "Enter activity title",
+      "dateRequired": "Select date"
+    }
   },
   "Encyclopedia": {
-    "title": "AI Chili Encyclopedia",
+    "title": "Disease Encyclopedia",
     "subtitle": "Q&A about chili diseases, pests, and cultivation",
     "notice": "This AI is specially trained for <strong>chili pepper</strong>. Accuracy may vary for other crops.",
     "online": "● Online",
@@ -267,6 +397,246 @@
       "p2": "Chili fertilization schedule",
       "p3": "Whitefly symptoms",
       "p4": "How to harvest properly"
+    },
+    "ai": {
+      "error": "Gemini is not active yet or network issue. Showing fallback answer.",
+      "fallback": {
+        "default": "Sorry, connection to Arina AI is currently unavailable. Please check your internet connection and ensure the backend is running, then try again. Your question will be answered directly by Gemini AI trained for chili farming.",
+        "anthracnose": "**Anthracnose (Patek)** is caused by the fungus *Colletotrichum capsici*.\n\nSymptoms: brownish-black spots on the fruit, usually starting from the tip.\n\nEmergency treatment:\n• Spray Mancozeb fungicide dose 2 g/liter water\n• Remove and burn infected fruit\n• Avoid wounding fruit during harvest\n• Maintain plant spacing for good air circulation\n\n⚠️ This is an offline answer. Connect to the internet for more accurate AI advice.",
+        "fertilizer": "Cayenne pepper fertilization recommendation (generative phase):\n\n• NPK 16-16-16 → 5 g/plant, every 2 weeks\n• Calcium Boron → leaf spray 2 ml/liter\n• KCl → 3 g/plant to strengthen fruit\n\nBest time: morning before 9 AM.\n\n⚠️ This is an offline answer. Connect to the internet for more accurate AI advice."
+      }
+    },
+    "quickReference": {
+      "title": "Disease Quick Reference",
+      "risk": "Risk {value}",
+      "diseases": [
+        {
+          "id": "1",
+          "name": "Anthracnose (Patek)",
+          "cause": "Fungus Colletotrichum capsici",
+          "loss": "20–40%",
+          "symptoms": "Brown spots on fruit, rotting from tip or middle",
+          "treatment": "Mancozeb fungicide, remove infected fruit",
+          "severity": "tinggi"
+        },
+        {
+          "id": "2",
+          "name": "Gemini Virus (Yellow)",
+          "cause": "Begomovirus via whitefly",
+          "loss": "30–50%",
+          "symptoms": "Yellowing leaves, curling, stunted growth",
+          "treatment": "Control whitefly, remove heavily infected plants",
+          "severity": "tinggi"
+        },
+        {
+          "id": "3",
+          "name": "Armyworm",
+          "cause": "Spodoptera litura/frugiperda",
+          "loss": "15–25%",
+          "symptoms": "Holes in leaves, striped brown worms active at night",
+          "treatment": "Emamectin insecticide, UV light traps",
+          "severity": "sedang"
+        },
+        {
+          "id": "4",
+          "name": "Whitefly",
+          "cause": "Bemisia tabaci",
+          "loss": "10–20%",
+          "symptoms": "Sooty mold on leaves, vector for yellow virus",
+          "treatment": "Imidacloprid insecticide, silver plastic mulch",
+          "severity": "sedang"
+        }
+      ]
+    },
+    "initialMessages": [
+      {
+        "role": "ai",
+        "content": "Hello, Mr. {name}! 👋 I'm Arina, an AI assistant specializing in chili cultivation. Feel free to ask anything — from pest control, diseases, fertilization, to harvesting techniques. I'm ready to help!"
+      },
+      {
+        "role": "user",
+        "content": "My chilies are rotting at the tips, what disease is that?"
+      },
+      {
+        "role": "ai",
+        "content": "Rotting at the tip (blackish-brown and drying fruit tips) is likely **Blossom End Rot (BER)** or calcium (Ca) deficiency. This is not an infectious disease, but a physiological disorder.\n\n**Cause:** Calcium absorption is disrupted due to irregular watering, too high nitrogen levels, or too low soil pH.\n\n**Solution:**\n1. Spray leaves with calcium boron (Ca-B) at 2 ml/liter\n2. Set a consistent watering schedule\n3. Add dolomite lime if pH < 6.0\n\nDoes the rot start from inside or from the surface of the fruit, sir?"
+      }
+    ]
+  },
+  "KabarPasar": {
+    "title": "Market News",
+    "subtitle": "Latest news & commodity price information",
+    "refetch": "Refetch news",
+    "stats": "{total} articles available",
+    "updateInterval": "Automatically updated every 6 hours from trusted sources",
+    "error": "⚠️ Failed to load latest news: {error}. Please refresh the page.",
+    "readMore": "Read Full Article at Source",
+    "readShort": "Read at source",
+    "viewAll": "View All",
+    "relativeDate": {
+      "justNow": "Just now",
+      "hoursAgo": "{count} hours ago",
+      "yesterday": "Yesterday",
+      "daysAgo": "{count} days ago"
+    },
+    "empty": {
+      "title": "No news available yet",
+      "subtitle": "The system will automatically fetch the latest agriculture news from RSS feeds every 6 hours"
+    }
+  },
+  "Stock": {
+    "title": "Harvest Stock Management",
+    "subtitle": "{commodity} — {location}",
+    "commodity": "Cayenne Pepper",
+    "location": "Wonorejo Village, Malang",
+    "offlineMode": "Offline Mode",
+    "buttons": {
+      "stockOut": "Record Out",
+      "addBatch": "Input Harvest"
+    },
+    "kpi": {
+      "ready": "Total Ready Stock",
+      "sold": "Sold This Week",
+      "value": "Est. Stock Value",
+      "alert": "Nearly Expired Batch"
+    },
+    "alerts": {
+      "expired": "<strong>{count} batches</strong> nearly expired: {list}. Prioritize sales immediately!"
+    },
+    "tabs": {
+      "batches": "Stock Batch List",
+      "mutations": "Mutation History"
+    },
+    "table": {
+      "batchId": "Batch ID",
+      "harvestDate": "Harvest Date",
+      "grade": "Grade",
+      "initialWeight": "Initial Weight",
+      "remainingWeight": "Remaining Stock",
+      "price": "Selling Price/kg",
+      "location": "Location",
+      "expiry": "Expiry",
+      "status": "Status",
+      "action": "Action",
+      "loading": "Loading data...",
+      "empty": "No harvest batch data yet.",
+      "addFirst": "Input First Harvest"
+    },
+    "mutationTable": {
+      "date": "Date",
+      "batch": "Batch",
+      "type": "Type",
+      "weight": "Weight (kg)",
+      "target": "Destination",
+      "note": "Note",
+      "in": "↓ In",
+      "out": "↑ Out",
+      "filterGrade": "Filter Grade",
+      "allGrades": "All Grades"
+    },
+    "status": {
+      "safe": "Safe",
+      "low": "Running Low",
+      "expiring": "Nearly Expired",
+      "empty": "Empty"
+    },
+    "dialogs": {
+      "addTitle": "Input New Harvest Batch",
+      "outTitle": "Record Stock Out",
+      "fields": {
+        "date": "Harvest Date",
+        "grade": "Chili Grade",
+        "weight": "Inbound Weight (kg)",
+        "location": "Storage Location",
+        "cost": "Cost Price/kg (Rp)",
+        "price": "Selling Price/kg (Rp)",
+        "expiry": "Estimated Expiry",
+        "note": "Note (optional)",
+        "batch": "Select Batch",
+        "outWeight": "Outbound Weight (kg)",
+        "target": "Shipment Destination",
+        "transDate": "Transaction Date"
+      },
+      "options": {
+        "gradeA": "Grade A (Premium)",
+        "gradeB": "Grade B (Standard)",
+        "gradeC": "Grade C (Local)",
+        "store1": "Main Warehouse",
+        "store2": "Backup Warehouse",
+        "market": "Local Market",
+        "distributor": "Distributor",
+        "restaurant": "Restaurant",
+        "other": "Other"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "save": "Save Batch",
+        "submit": "Release Stock"
+      },
+      "validation": {
+        "required": "Required",
+        "minWeight": "Min 0.1 kg",
+        "selectBatch": "Select batch"
+      }
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Welcome Back! 👋",
+      "subtitle": "Please sign in to your account to continue.",
+      "email": "Email Address",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log In",
+      "google": "Sign in with Google",
+      "noAccount": "Don't have an account?",
+      "registerNow": "Register Now",
+      "processing": "Processing...",
+      "error": {
+        "invalid": "Invalid email or password. Please try again.",
+        "failed": "Login failed. Check your email and password."
+      },
+      "validation": {
+        "email": "Invalid email format",
+        "password": "Password at least 6 characters"
+      }
+    },
+    "register": {
+      "title": "Create New Account",
+      "subtitle": "Fill in the details below to get started.",
+      "fullName": "Full Name",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "submit": "Register Now",
+      "google": "Register with Google",
+      "hasAccount": "Already have an account?",
+      "loginNow": "Log in here",
+      "branding": "Join us and increase your farming productivity.",
+      "error": {
+        "exists": "This email is already registered. Please login or use another email.",
+        "failed": "Registration failed. Please try again."
+      },
+      "validation": {
+        "name": "Full name at least 3 characters",
+        "email": "Invalid email format",
+        "password": "Password at least 6 characters",
+        "confirm": "Confirm password at least 6 characters",
+        "mismatch": "Confirm password does not match"
+      }
+    },
+    "forgot": {
+      "title": "Forgot Password? 🔑",
+      "subtitle": "Enter your email and we'll send you a link to reset your password.",
+      "email": "Email Address",
+      "submit": "Send Reset Link",
+      "back": "← Back to Login",
+      "success": {
+        "title": "Email Sent!",
+        "desc": "Check your email inbox and click the link sent to reset your password.",
+        "button": "Back to Login Page"
+      },
+      "error": "An error occurred. Please try again."
     }
   },
   "NotFound": {
@@ -280,14 +650,21 @@
     "menuLabel": "Settings Menu",
     "general": {
       "tab": "General",
-      "appearance": "Appearance",
-      "contrast": "Screen Contrast",
+      "appearance": "Appearance (Theme)",
+      "contrast": "Contrast",
       "accent": "Accent Color",
       "language": "Language",
-      "modeLight": "Light Mode",
-      "modeDark": "Dark Mode",
+      "modeLight": "Light",
+      "modeDark": "Dark",
       "modeSystem": "System",
-      "languageId": "Bahasa Indonesia"
+      "accentName": "Arina Green",
+      "languageName": "English",
+      "languageId": "Indonesian",
+      "securityBox": {
+        "title": "🔒 Secure Your Account",
+        "desc": "Add multi-factor authentication (MFA) like passkeys or SMS codes to protect your account when backend features are enabled.",
+        "button": "Set up MFA (Coming Soon)"
+      }
     },
     "profile": {
       "tab": "Edit Profile",
@@ -296,10 +673,12 @@
       "changePhoto": "Change Photo",
       "photoHint": "JPG, PNG, or GIF format. Max 2MB.",
       "fullName": "Full Name",
+      "location": "Location / Village",
       "mainCommodity": "Main Commodity",
-      "phone": "Phone Number",
+      "landArea": "Land Area",
+      "phone": "WhatsApp Number for Weather Notifications",
       "phonePlaceholder": "Example: 08123456789",
-      "phoneHelper": "This number is used for weather notifications",
+      "phoneHelper": "This number is used for weather notifications on the Weather page",
       "phoneSaved": "WhatsApp number updated successfully.",
       "phoneSaveHint": "Save to apply the new weather notification number.",
       "saveChanges": "Save Changes"
@@ -310,29 +689,43 @@
       "items": {
         "weather": {
           "label": "Extreme Weather Notification",
-          "desc": "Severe weather warning via WhatsApp"
+          "desc": "Receive weather alerts via WhatsApp if there's heavy clouds / storm."
         },
         "schedule": {
           "label": "Activity Schedule Reminder",
-          "desc": "H-1 reminder before farming schedule"
+          "desc": "H-1 reminder before farming activities (fertilization, harvest, etc)."
+        },
+        "finance": {
+          "label": "Weekly Financial Report",
+          "desc": "Automatic weekly profit/loss summary every Monday."
         },
         "tips": {
           "label": "Arina AI Cultivation Tips",
-          "desc": "Weekly suggestions for your field condition"
+          "desc": "Weekly suggestions based on field conditions and your crop phase."
         }
       }
     },
     "system": {
       "tab": "System Info",
-      "title": "About Application",
+      "title": "System Information",
       "appName": "Arina Web Platform",
-      "version": "Version 1.0.0 (Beta)",
+      "version": "Version 1.0.0 (Beta) · Local Storage Environment",
       "backendLabel": "Backend Platform",
-      "backendValue": "Browser LocalStorage",
+      "backendValue": "Offline (Browser LocalStorage)",
       "layoutLabel": "Layout Design",
-      "layoutValue": "Modal Dialog Concept"
-    },
-    "secureAccount": "Secure Your Account",
-    "setupMFA": "Setup 2-Step Auto"
+      "layoutValue": "Modern Responsive Dashboard",
+      "items": {
+        "backend": "Backend Platform",
+        "frontend": "Frontend Framework",
+        "design": "Design System",
+        "ai": "AI Model"
+      },
+      "values": {
+        "backend": "Offline (Browser LocalStorage)",
+        "frontend": "Next.js 16 + React 19",
+        "design": "Material UI v6",
+        "ai": "Agricultural Dataset ID"
+      }
+    }
   }
 }

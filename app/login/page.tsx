@@ -25,14 +25,15 @@ import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '@/context/AuthContext';
 
 const loginSchema = z.object({
-  email: z.string().email('Format email tidak valid'),
-  password: z.string().min(6, 'Password minimal 6 karakter'),
+  email: z.string().email('email'),
+  password: z.string().min(6, 'password'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations('Auth.login');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -46,7 +47,10 @@ export default function LoginPage() {
   }, [authLoading, user, router]);
 
   const { control, handleSubmit, formState: { errors } } = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema.extend({
+      email: z.string().email(t('validation.email')),
+      password: z.string().min(6, t('validation.password')),
+    })),
     defaultValues: {
       email: '',
       password: '',
@@ -66,9 +70,9 @@ export default function LoginPage() {
     } catch (err: any) {
       const msg = err?.message || '';
       if (msg.includes('Invalid login credentials')) {
-        setError('Email atau password salah. Silakan coba lagi.');
+        setError(t('error.invalid'));
       } else {
-        setError(msg || 'Gagal masuk. Periksa email dan password Anda.');
+        setError(t('error.failed'));
       }
     } finally {
       setLoading(false);
@@ -85,7 +89,7 @@ export default function LoginPage() {
       });
       if (authError) throw authError;
     } catch (err: any) {
-      setError(err.message || 'Gagal masuk dengan Google. Silakan coba lagi.');
+      setError(err.message || t('error.failed'));
       setGoogleLoading(false);
     }
   };
@@ -143,7 +147,7 @@ export default function LoginPage() {
           Arina Agri
         </Typography>
         <Typography variant="h6" sx={{ mt: 2, opacity: 0.9, textAlign: 'center', maxWidth: 400, zIndex: 1 }}>
-          Asisten Cerdas Petani & Pelaku Agribisnis UMKM Indonesia
+          {t('branding' as any) || 'Asisten Cerdas Petani & Pelaku Agribisnis UMKM Indonesia'}
         </Typography>
       </Grid>
 
@@ -164,10 +168,10 @@ export default function LoginPage() {
         <Box sx={{ width: '100%', maxWidth: 400 }}>
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', mb: 1, color: 'text.primary', fontWeight: 700 }}>
-              Selamat Datang Kembali! 👋
+              {t('title')}
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              Silakan masuk ke akun Anda untuk melanjutkan.
+              {t('subtitle')}
             </Typography>
           </Box>
 
@@ -184,7 +188,7 @@ export default function LoginPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Alamat Email"
+                  label={t('email')}
                   variant="outlined"
                   fullWidth
                   error={!!errors.email}
@@ -208,7 +212,7 @@ export default function LoginPage() {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Kata Sandi"
+                  label={t('password')}
                   type={showPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
@@ -241,7 +245,7 @@ export default function LoginPage() {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1 }}>
               <Link href="/forgot-password" style={{ textDecoration: 'none' }}>
                 <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                  Lupa kata sandi?
+                  {t('forgotPassword')}
                 </Typography>
               </Link>
             </Box>
@@ -261,7 +265,7 @@ export default function LoginPage() {
                 fontSize: '1rem'
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Masuk'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
             </Button>
 
             <Button
@@ -280,15 +284,15 @@ export default function LoginPage() {
                 fontSize: '1rem'
               }}
             >
-              {googleLoading ? 'Memproses...' : 'Masuk dengan Google'}
+              {googleLoading ? t('processing') : t('google')}
             </Button>
 
             <Box sx={{ mt: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="text.secondary">
-                Belum punya akun?{' '}
+                {t('noAccount')}{' '}
                 <Link href="/register" style={{ textDecoration: 'none' }}>
                   <Typography component="span" variant="body2" color="primary.main" sx={{ fontWeight: 700 }}>
-                    Daftar Sekarang
+                    {t('registerNow')}
                   </Typography>
                 </Link>
               </Typography>

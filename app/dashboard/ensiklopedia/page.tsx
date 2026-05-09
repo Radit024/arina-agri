@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -24,21 +24,6 @@ import type { ChatMessage } from '@/lib/mockData';
 import { aiApi } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
-const AI_RESPONSES: Record<string, string> = {
-  default:
-    'Maaf, koneksi ke Arina AI sedang tidak tersedia. Silakan cek koneksi internet dan pastikan backend berjalan, kemudian coba lagi. Pertanyaan Anda akan langsung dijawab oleh Gemini AI yang sudah dilatih untuk pertanian cabai.',
-  antraknosa:
-    '**Antraknosa (Patek)** disebabkan oleh jamur *Colletotrichum capsici*.\n\nGejala: bercak coklat kehitaman pada buah, biasanya mulai dari ujung buah.\n\nPenanganan darurat:\n• Semprot fungisida Mankozeb dosis 2 g/liter air\n• Buang dan bakar buah yang terinfeksi\n• Hindari melukai buah saat pemetikan\n• Jaga jarak tanam agar sirkulasi udara baik\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.',
-  pupuk:
-    'Rekomendasi pemupukan cabai rawit (fase generatif):\n\n• NPK 16-16-16 → 5 g/tanaman, tiap 2 minggu\n• Kalsium Boron → semprot daun 2 ml/liter\n• KCl → 3 g/tanaman untuk memperkuat buah\n\nWaktu terbaik: pagi hari sebelum jam 9.\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.',
-};
-
-function getBotReply(message: string): string {
-  const msg = message.toLowerCase();
-  if (msg.includes('antraknosa') || msg.includes('patek') || msg.includes('busuk')) return AI_RESPONSES.antraknosa;
-  if (msg.includes('pupuk') || msg.includes('npk') || msg.includes('pemupukan')) return AI_RESPONSES.pupuk;
-  return AI_RESPONSES.default;
-}
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -47,6 +32,49 @@ export default function EnsiklopediaPage() {
   const t = useTranslations('Encyclopedia');
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const firstName = (mounted && user?.user_metadata?.full_name) 
+    ? user.user_metadata.full_name.split(' ')[0] 
+    : (mounted && user?.email) 
+      ? user.email.split('@')[0] 
+      : 'Petani';
+
+  const initialMessages = useMemo(() => {
+    try {
+      const raw = t.raw('initialMessages');
+      if (!Array.isArray(raw)) return [];
+      
+      // Use a stable date during SSR to prevent hydration mismatch
+      const baseTime = mounted ? Date.now() : 1715238000000; // Fixed fallback for SSR
+      
+      return raw.map((m: any, i: number) => ({
+        id: `initial-${i}`,
+        role: m.role,
+        content: m.role === 'ai' ? m.content.replace('{name}', firstName) : m.content,
+        timestamp: new Date(baseTime - (5 - i) * 60 * 1000).toISOString(),
+      }));
+    } catch (e) {
+      return [];
+    }
+  }, [t, firstName, mounted]);
+
+  const AI_RESPONSES: Record<string, string> = {
+    default: t('ai.fallback.default'),
+    antraknosa: t('ai.fallback.anthracnose'),
+    pupuk: t('ai.fallback.fertilizer'),
+  };
+
+  const getBotReply = (message: string): string => {
+    const msg = message.toLowerCase();
+    if (msg.includes('antraknosa') || msg.includes('patek') || msg.includes('busuk')) return AI_RESPONSES.antraknosa;
+    if (msg.includes('pupuk') || msg.includes('npk') || msg.includes('pemupukan')) return AI_RESPONSES.pupuk;
+    return AI_RESPONSES.default;
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -56,15 +84,22 @@ export default function EnsiklopediaPage() {
       
       if (savedChat) {
         try {
-          setMessages(JSON.parse(savedChat));
+          const parsed = JSON.parse(savedChat);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+          } else {
+            setMessages(initialMessages);
+          }
         } catch (e) {
-          setMessages(initialChatMessages);
+          setMessages(initialMessages);
         }
       } else {
-        setMessages(initialChatMessages);
+        setMessages(initialMessages);
       }
     }
-  }, [user, authLoading]);
+    // Only run initialization once when auth is ready
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user?.id]);
 
   // Save messages to localStorage whenever they update
   useEffect(() => {
@@ -79,7 +114,7 @@ export default function EnsiklopediaPage() {
     const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
     const storageKey = `arina_chat_${arinaUserId}`;
     localStorage.removeItem(storageKey);
-    setMessages(initialChatMessages);
+    setMessages(initialMessages);
   };
 
   const [inputValue, setInputValue] = useState('');
@@ -129,7 +164,7 @@ export default function EnsiklopediaPage() {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMsg]);
-      setChatError('Gemini belum aktif atau terjadi kendala jaringan. Menampilkan jawaban fallback.');
+      setChatError(t('ai.error'));
     } finally {
       setIsTyping(false);
     }
@@ -411,14 +446,14 @@ export default function EnsiklopediaPage() {
 
         {/* Disease Quick Reference */}
         <Grid size={{ xs: 12, lg: 5 }} sx={{ mt: { xs: 2, lg: 0 } }}>
-          <Box sx={{ mb: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ mb: 2.5, display: 'flex' , alignItems: 'center', gap: 1.5 }}>
             <Box sx={{ width: 4, height: 24, bgcolor: theme.palette.success.main, borderRadius: 4 }} />
             <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: 'text.primary', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-              Referensi Cepat Penyakit
+              {t('quickReference.title')}
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {diseaseCards.map((disease) => (
+            {t.raw('quickReference.diseases').map((disease: any) => (
               <Card
                 key={disease.id}
                 elevation={0}
@@ -427,7 +462,7 @@ export default function EnsiklopediaPage() {
                   borderColor: 'divider',
                   borderRadius: 3,
                   borderLeft: '4px solid',
-                  borderLeftColor: disease.tingkatSeveritas === 'tinggi' ? theme.palette.error.main : theme.palette.warning.main,
+                  borderLeftColor: disease.severity === 'tinggi' ? theme.palette.error.main : theme.palette.warning.main,
                   transition: 'all 0.2s ease',
                   '&:hover': { 
                     transform: 'translateY(-2px)',
@@ -437,13 +472,13 @@ export default function EnsiklopediaPage() {
               >
                 <CardContent sx={{ p: { xs: 2, sm: '20px !important' } }}>
                   <Box className="flex items-start justify-between mb-2" sx={{ gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.nama}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.name}</Typography>
                     <Chip
-                      label={`Risiko ${disease.kehilangan}`}
+                      label={t('quickReference.risk', { value: disease.loss })}
                       size="small"
                       sx={{
-                        backgroundColor: disease.tingkatSeveritas === 'tinggi' ? alpha(theme.palette.error.main, 0.12) : alpha(theme.palette.warning.main, 0.12),
-                        color: disease.tingkatSeveritas === 'tinggi' ? theme.palette.error.dark : theme.palette.warning.dark,
+                        backgroundColor: disease.severity === 'tinggi' ? alpha(theme.palette.error.main, 0.12) : alpha(theme.palette.warning.main, 0.12),
+                        color: disease.severity === 'tinggi' ? theme.palette.error.dark : theme.palette.warning.dark,
                         fontWeight: 700,
                         fontSize: '0.65rem',
                         height: 22
@@ -452,15 +487,15 @@ export default function EnsiklopediaPage() {
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: theme.palette.text.secondary }}>{t('cause')}:</strong> {disease.penyebab}
+                      <strong style={{ color: theme.palette.text.secondary }}>{t('cause')}:</strong> {disease.cause}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: theme.palette.text.secondary }}>{t('symptoms')}:</strong> {disease.gejala}
+                      <strong style={{ color: theme.palette.text.secondary }}>{t('symptoms')}:</strong> {disease.symptoms}
                     </Typography>
                   </Box>
                   <Box sx={{ backgroundColor: alpha(theme.palette.success.main, 0.12), borderRadius: 2, p: 1.5, border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}` }}>
                     <Typography variant="body2" sx={{ color: theme.palette.success.main, fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      ✓ {disease.penanganan}
+                      ✓ {disease.treatment}
                     </Typography>
                   </Box>
                 </CardContent>

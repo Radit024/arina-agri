@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -11,20 +11,20 @@ import Skeleton from '@mui/material/Skeleton';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import type { NewsArticle } from '@/lib/types/news';
+import { useTranslations } from 'next-intl';
 
 // ─── Helpers ──────────────────────────────────────────────────────
-function formatRelativeDate(dateStr: string): string {
+function formatRelativeDate(dateStr: string, t: any): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffHours < 1) return 'Baru saja';
-  if (diffHours < 24) return `${diffHours} jam lalu`;
-  if (diffDays === 1) return 'Kemarin';
-  if (diffDays < 7) return `${diffDays} hari lalu`;
+  if (diffHours < 1) return t('relativeDate.justNow');
+  if (diffHours < 24) return t('relativeDate.hoursAgo', { count: diffHours });
+  if (diffDays === 1) return t('relativeDate.yesterday');
+  if (diffDays < 7) return t('relativeDate.daysAgo', { count: diffDays });
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'short',
@@ -54,7 +54,13 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
 
 // ─── Widget Card (horizontal, compact) ───────────────────────────
 function WidgetCard({ article }: { article: NewsArticle }) {
+  const t = useTranslations('KabarPasar');
   const [imgError, setImgError] = useState(false);
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    setFormattedDate(formatRelativeDate(article.pub_date, t));
+  }, [article.pub_date, t]);
 
   return (
     <Card
@@ -115,7 +121,7 @@ function WidgetCard({ article }: { article: NewsArticle }) {
           {article.title}
         </Typography>
 
-        {article.snippet && (
+        {article.snippet ? (
           <Typography
             variant="caption"
             sx={{
@@ -130,11 +136,11 @@ function WidgetCard({ article }: { article: NewsArticle }) {
           >
             {article.snippet}
           </Typography>
-        )}
+        ) : null}
 
         {/* Footer: source + date */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          {article.source && (
+          {article.source ? (
             <Chip
               label={article.source}
               size="small"
@@ -147,14 +153,14 @@ function WidgetCard({ article }: { article: NewsArticle }) {
                 '& .MuiChip-label': { px: 1 },
               }}
             />
-          )}
+          ) : null}
           <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
-            {formatRelativeDate(article.pub_date)}
+            {formattedDate}
           </Typography>
         </Box>
 
         {/* CTA */}
-        {article.link !== '#' && (
+        {article.link !== '#' ? (
           <Button
             component="a"
             href={article.link}
@@ -173,9 +179,9 @@ function WidgetCard({ article }: { article: NewsArticle }) {
               '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
             }}
           >
-            Baca di sumber
+            {t('readShort')}
           </Button>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -183,7 +189,13 @@ function WidgetCard({ article }: { article: NewsArticle }) {
 
 // ─── Full Card (vertical, rich) ───────────────────────────────────
 function FullCard({ article }: { article: NewsArticle }) {
+  const t = useTranslations('KabarPasar');
   const [imgError, setImgError] = useState(false);
+  const [formattedDate, setFormattedDate] = useState<string>('');
+
+  useEffect(() => {
+    setFormattedDate(formatRelativeDate(article.pub_date, t));
+  }, [article.pub_date, t]);
 
   return (
     <Card
@@ -238,7 +250,7 @@ function FullCard({ article }: { article: NewsArticle }) {
           {article.title}
         </Typography>
 
-        {article.snippet && (
+        {article.snippet ? (
           <Typography
             variant="body2"
             sx={{
@@ -254,14 +266,14 @@ function FullCard({ article }: { article: NewsArticle }) {
           >
             {article.snippet}
           </Typography>
-        )}
+        ) : null}
 
         {/* Spacer */}
         <Box sx={{ flex: 1 }} />
 
         {/* Source + date */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
-          {article.source && (
+          {article.source ? (
             <Chip
               label={article.source}
               size="small"
@@ -274,11 +286,11 @@ function FullCard({ article }: { article: NewsArticle }) {
                 '& .MuiChip-label': { px: 1.5 },
               }}
             />
-          )}
+          ) : null}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.disabled' }}>
             <CalendarTodayIcon sx={{ fontSize: 12 }} />
             <Typography variant="caption" sx={{ fontSize: '0.72rem' }}>
-              {formatRelativeDate(article.pub_date)}
+              {formattedDate}
             </Typography>
           </Box>
         </Box>
@@ -306,7 +318,7 @@ function FullCard({ article }: { article: NewsArticle }) {
             },
           }}
         >
-          Baca Selengkapnya di Sumber
+          {t('readMore')}
         </Button>
       </CardContent>
     </Card>
@@ -349,13 +361,17 @@ export function NewsCardSkeleton({ variant }: { variant: 'widget' | 'full' }) {
   );
 }
 
+import { memo } from 'react';
+
 // ─── Main Export ──────────────────────────────────────────────────
 interface NewsCardProps {
   article: NewsArticle;
   variant?: 'widget' | 'full';
 }
 
-export default function NewsCard({ article, variant = 'full' }: NewsCardProps) {
+function NewsCardComponent({ article, variant = 'full' }: NewsCardProps) {
   if (variant === 'widget') return <WidgetCard article={article} />;
   return <FullCard article={article} />;
 }
+
+export default memo(NewsCardComponent);

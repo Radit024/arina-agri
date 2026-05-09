@@ -150,11 +150,11 @@ export default function CuacaPage() {
 
   const recipientName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Petani';
   const isWhatsappPlatform = notificationPlatform === 'whatsapp';
-  const contactLabel = isWhatsappPlatform ? 'Nomor WhatsApp' : 'Telegram Chat ID';
-  const contactPlaceholder = isWhatsappPlatform ? '6281234567890' : '123456789 atau @username';
+  const contactLabel = isWhatsappPlatform ? t('whatsapp.phoneLabel') : t('whatsapp.telegramLabel');
+  const contactPlaceholder = isWhatsappPlatform ? t('whatsapp.phonePlaceholder') : t('whatsapp.telegramPlaceholder');
   const contactHelper = isWhatsappPlatform
-    ? 'Gunakan format nomor internasional tanpa tanda +, misalnya 6281234567890.'
-    : 'Gunakan chat ID atau username Telegram sesuai bot Anda.';
+    ? t('whatsapp.phoneHelper')
+    : t('whatsapp.telegramHelper');
 
   const handlePlatformChange = (_event: MouseEvent<HTMLElement>, value: 'whatsapp' | 'telegram' | null) => {
     if (value) {
@@ -167,7 +167,7 @@ export default function CuacaPage() {
 
     if (!targetContact || !notifAktif) {
       setTestStatus('error');
-      setTestFeedback(isWhatsappPlatform ? 'Simpan nomor WhatsApp dan aktifkan notifikasi terlebih dahulu.' : 'Simpan Telegram Chat ID dan aktifkan notifikasi terlebih dahulu.');
+      setTestFeedback(t('whatsapp.testNoContact', { platform: isWhatsappPlatform ? 'WhatsApp' : 'Telegram' }));
       return;
     }
 
@@ -219,14 +219,14 @@ export default function CuacaPage() {
 
       if (result.sent) {
         setTestStatus('success');
-        setTestFeedback(`Notifikasi terkirim. Risiko ${result.decision.riskLevel} (${result.decision.riskScore}/100).`);
+        setTestFeedback(t('whatsapp.testSuccess', { level: result.decision.riskLevel, score: result.decision.riskScore }));
       } else {
         setTestStatus('skipped');
-        setTestFeedback(`Notifikasi tidak dikirim: ${result.decision.reason}`);
+        setTestFeedback(t('whatsapp.testSkipped', { reason: result.decision.reason }));
       }
     } catch (error: any) {
       setTestStatus('error');
-      setTestFeedback(error?.message || 'Gagal mengirim notifikasi uji coba.');
+      setTestFeedback(error?.message || t('whatsapp.testError'));
     } finally {
       setIsSendingTest(false);
     }
@@ -236,7 +236,7 @@ export default function CuacaPage() {
     const targetContact = scheduleContactFallback?.trim() || scheduleTo.trim();
     if (!targetContact) {
       setScheduleStatus('error');
-      setScheduleError('Kontak tujuan wajib disimpan terlebih dahulu di notifikasi cuaca.');
+      setScheduleError(t('whatsapp.scheduleNoContact'));
       return;
     }
 
@@ -256,7 +256,7 @@ export default function CuacaPage() {
       setScheduleStatus('success');
     } catch (error: any) {
       setScheduleStatus('error');
-      setScheduleError(error?.message || 'Gagal menyimpan jadwal notifikasi.');
+      setScheduleError(t('whatsapp.scheduleError', { error: error?.message || '' }));
     }
   };
 
@@ -447,12 +447,12 @@ export default function CuacaPage() {
             <Card>
               <CardHeader
                 avatar={isWhatsappPlatform ? <WhatsAppIcon sx={{ color: '#25d366' }} /> : <TelegramIcon sx={{ color: '#229ED9' }} />}
-                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Notifikasi Cuaca</Typography>}
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.title')}</Typography>}
               />
               <CardContent sx={{ pt: 0 }}>
                 <Box sx={{ backgroundColor: isWhatsappPlatform ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.info.main, 0.12), borderRadius: 2, p: 2, mb: 2.5, border: isWhatsappPlatform ? `1px solid ${alpha(theme.palette.success.main, 0.3)}` : `1px solid ${alpha(theme.palette.info.main, 0.3)}` }}>
                   <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai workflow n8n Anda.
+                    {t('whatsapp.note')}
                   </Typography>
                 </Box>
 
@@ -475,7 +475,7 @@ export default function CuacaPage() {
                   }
                   label={
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Aktifkan notifikasi
+                      {t('whatsapp.enable')}
                     </Typography>
                   }
                   sx={{ mb: 2.5, display: 'flex' }}
@@ -501,7 +501,7 @@ export default function CuacaPage() {
                   onClick={() => setSavedContact(contactValue.trim())}
                   startIcon={isWhatsappPlatform ? <WhatsAppIcon /> : <TelegramIcon />}
                 >
-                  {isCurrentContactSaved ? 'Tersimpan' : 'Simpan kontak notifikasi'}
+                  {isCurrentContactSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
                 </Button>
 
                 <Button
@@ -511,12 +511,12 @@ export default function CuacaPage() {
                   disabled={!notifAktif || !(savedContact || contactValue).trim() || isSendingTest}
                   sx={{ mt: 1.5 }}
                 >
-                  {isSendingTest ? <CircularProgress size={20} /> : `Kirim Pesan Uji Coba (${notificationPlatform === 'whatsapp' ? 'WhatsApp' : 'Telegram'})`}
+                  {isSendingTest ? <CircularProgress size={20} /> : t('whatsapp.testButton', { platform: notificationPlatform === 'whatsapp' ? 'WhatsApp' : 'Telegram' })}
                 </Button>
 
                 {testStatus === 'success' && (
                   <Alert severity="success" sx={{ mt: 1.5 }}>
-                    {testFeedback || 'Notifikasi berhasil dikirim ke n8n.'}
+                    {testFeedback || t('whatsapp.testSuccess')}
                   </Alert>
                 )}
 
@@ -528,7 +528,7 @@ export default function CuacaPage() {
 
                 {testStatus === 'error' && (
                   <Alert severity="error" sx={{ mt: 1.5 }}>
-                    {testFeedback || 'Terjadi kesalahan saat mengirim notifikasi.'}
+                    {testFeedback || t('whatsapp.testError')}
                   </Alert>
                 )}
 
@@ -536,26 +536,21 @@ export default function CuacaPage() {
                   <Box sx={{ mt: 3, display: { xs: 'block', md: 'flex' }, gap: 2 }}>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                        Tipe peringatan aktif
+                        {t('whatsapp.activeAlertTypes')}
                       </Typography>
-                      {['Hujan lebat', 'Angin kencang', 'Suhu ekstrem', 'Kelembapan rendah'].map((item) => (
+                      {[t('whatsapp.alerts.heavyRain'), t('whatsapp.alerts.strongWind'), t('whatsapp.alerts.extremeTemp'), t('whatsapp.alerts.lowHumidity')].map((item) => (
                         <Box key={item} className="flex items-center gap-2 mt-2">
                           <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
                           <Typography variant="caption" color="text.secondary">{item}</Typography>
                         </Box>
                       ))}
                     </Box>
-
                     {notificationPlatform === 'telegram' && (
                       <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2, backgroundColor: '#f8fafc' }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-                          Tutorial Telegram
+                          {t('whatsapp.tutorialTitle')}
                         </Typography>
-                        {[
-                          'Cari bot @Arina_Test_28_Bot di Telegram lalu kirim /start.',
-                          'Lalu Klik Kirim Pesan Uji Coba Untuk Verifikasi.',
-                          'Lalu Setting Jadwal Notifikasi Harian dengan platform Telegram dan simpan.',
-                        ].map((step) => (
+                        {(t.raw('whatsapp.tutorialSteps') as string[]).map((step: string) => (
                           <Box key={step} className="flex items-start gap-2 mt-2">
                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#229ED9', mt: '6px' }} />
                             <Typography variant="caption" color="text.secondary">{step}</Typography>
@@ -570,8 +565,8 @@ export default function CuacaPage() {
 
             <Card sx={{ mt: 3 }}>
               <CardHeader
-                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>Jadwal Notifikasi Harian</Typography>}
-                subheader="Atur jam pengiriman notifikasi otomatis setiap hari."
+                title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.scheduleTitle')}</Typography>}
+                subheader={t('whatsapp.scheduleSub')}
               />
               <CardContent sx={{ pt: 0 }}>
                 <ToggleButtonGroup
@@ -593,7 +588,7 @@ export default function CuacaPage() {
                     <TextField
                       fullWidth
                       type="time"
-                      label="Jam Kirim"
+                      label={t('whatsapp.scheduleTime')}
                       value={scheduleTime}
                       onChange={(e) => {
                         setScheduleTime(e.target.value);
@@ -611,16 +606,16 @@ export default function CuacaPage() {
                       onChange={(e) => setScheduleEnabled(e.target.checked)}
                       color="primary"
                     />
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Aktifkan jadwal harian</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{t('whatsapp.scheduleActive')}</Typography>
                   </Box>
                   <Button variant="contained" sx={{ borderRadius: 2 }} onClick={handleSaveSchedule}>
-                    Simpan Jadwal
+                    {t('whatsapp.scheduleSave')}
                   </Button>
                 </Box>
 
                 {scheduleStatus === 'success' && (
                   <Alert severity="success" sx={{ mt: 2 }}>
-                    Jadwal berhasil disimpan. Notifikasi akan dikirim setiap hari sesuai jam yang dipilih.
+                    {t('whatsapp.scheduleSuccess')}
                   </Alert>
                 )}
 

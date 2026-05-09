@@ -104,38 +104,38 @@ export default function PengaturanPage() {
            {/* GENERAL SETTINGS */}
            {activeTab === 'general' && (
               <Box>
-                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>General</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('general.tab')}</Typography>
                 
                 {/* Simulated MFA / Security Box like reference */}
                 <Box sx={{ bgcolor: '#111827', color: 'white', p: 3, borderRadius: 3, mb: 5 }}>
-                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>🔒 Amankan Akun Anda</Typography>
+                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>{t('general.securityBox.title')}</Typography>
                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
-                     Tambahkan autentikasi multi-faktor (MFA) seperti passkey atau kode SMS untuk melindungi akun Anda saat fitur backend diaktifkan.
+                     {t('general.securityBox.desc')}
                    </Typography>
                    <Button variant="contained" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2 }}>
-                     Set up MFA (Segera)
+                     {t('general.securityBox.button')}
                    </Button>
                 </Box>
 
                 <Box sx={{ mb: 4 }}>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Appearance (Tema)</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>System</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.appearance')}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>{t('general.modeSystem')}</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Contrast</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>System</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.contrast')}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>{t('general.modeSystem')}</Typography>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Accent Color</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.accent')}</Typography>
                     <Box className="flex items-center gap-1.5 cursor-pointer">
                       <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#16a34a' }} />
-                      <Typography variant="body2" color="#16a34a" sx={{ fontWeight: 600 }}>Arina Green</Typography>
+                      <Typography variant="body2" color="#16a34a" sx={{ fontWeight: 600 }}>{t('general.accentName')}</Typography>
                     </Box>
                   </Box>
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>Language</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>Bahasa Indonesia</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.language')}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>{t('general.languageName')}</Typography>
                   </Box>
                 </Box>
               </Box>
@@ -144,7 +144,7 @@ export default function PengaturanPage() {
            {/* EDIT PROFIL */}
            {activeTab === 'profil' && (
               <Box>
-                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Edit Profil</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('profile.tab')}</Typography>
                 
                 <Box className="flex items-center gap-4 mb-6">
                   <Avatar
@@ -161,35 +161,35 @@ export default function PengaturanPage() {
                     {!userAvatar && userInitials}
                   </Avatar>
                   <Box>
-                    <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2 }}>Ganti Foto</Button>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Format JPG, PNG, atau GIF. Ukuran maks 2MB.</Typography>
+                    <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2 }}>{t('profile.changePhoto')}</Button>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t('profile.photoHint')}</Typography>
                   </Box>
                 </Box>
                 
                 <Grid container spacing={4}>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Nama Lengkap" defaultValue={userName} variant="standard" />
+                    <TextField fullWidth label={t('profile.fullName')} defaultValue={userName} variant="standard" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Lokasi / Desa" defaultValue={farmerProfile.lokasi} variant="standard" />
+                    <TextField fullWidth label={t('profile.location')} defaultValue={farmerProfile.lokasi} variant="standard" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Komoditas Utama" defaultValue={farmerProfile.komoditas} variant="standard" />
+                    <TextField fullWidth label={t('profile.mainCommodity')} defaultValue={farmerProfile.komoditas} variant="standard" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField fullWidth label="Luas Lahan" defaultValue={farmerProfile.luasLahan} variant="standard" />
+                    <TextField fullWidth label={t('profile.landArea')} defaultValue={farmerProfile.luasLahan} variant="standard" />
                   </Grid>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <TextField
                       fullWidth
-                      label="Nomor WhatsApp Notifikasi Cuaca"
-                      placeholder="Contoh: 08123456789"
+                      label={t('profile.phone')}
+                      placeholder={t('profile.phonePlaceholder')}
                       value={profileWhatsappPhone}
                       onChange={(e) => {
                         setProfileWhatsappPhone(e.target.value.replace(/\D/g, ''));
                         setPhoneSaveSuccess(false);
                       }}
-                      helperText="Nomor ini dipakai untuk notifikasi cuaca di halaman Cuaca"
+                      helperText={t('profile.phoneHelper')}
                       slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
                       variant="standard"
                     />
@@ -198,10 +198,10 @@ export default function PengaturanPage() {
                 
                 <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
                   <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
-                    {phoneSaveSuccess ? 'Nomor WhatsApp berhasil diperbarui.' : 'Simpan untuk menerapkan nomor notifikasi cuaca yang baru.'}
+                    {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                   </Typography>
                   <Button variant="contained" sx={{ px: 4, borderRadius: 2, bgcolor: '#16a34a', '&:hover': { bgcolor: 'primary.dark' } }} onClick={handleSaveProfile}>
-                    Simpan Perubahan
+                    {t('profile.saveChanges')}
                   </Button>
                 </Box>
               </Box>
@@ -210,13 +210,13 @@ export default function PengaturanPage() {
            {/* NOTIFIKASI */}
            {activeTab === 'notifikasi' && (
               <Box>
-                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Pengaturan Notifikasi</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('notification.title')}</Typography>
                 
                 {[
-                  { label: 'Notifikasi Cuaca Ekstrem', desc: 'Terima peringatan cuaca via WhatsApp jika ada mendung lebat / badai.' },
-                  { label: 'Pengingat Jadwal Kegiatan', desc: 'Notifikasi H-1 sebelum jadwal pertanian (pemupukan, panen, dsb).' },
-                  { label: 'Laporan Keuangan Mingguan', desc: 'Ringkasan otomatis laba rugi mingguan setiap hari Senin.' },
-                  { label: 'Tips Budidaya dari AI Arina', desc: 'Saran mingguan berdasarkan kondisi lahan dan fase tanaman Anda.' },
+                  { label: t('notification.items.weather.label'), desc: t('notification.items.weather.desc') },
+                  { label: t('notification.items.schedule.label'), desc: t('notification.items.schedule.desc') },
+                  { label: t('notification.items.finance.label'), desc: t('notification.items.finance.desc') },
+                  { label: t('notification.items.tips.label'), desc: t('notification.items.tips.desc') },
                 ].map((item) => (
                   <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Box className="flex items-start justify-between gap-4">
@@ -234,23 +234,23 @@ export default function PengaturanPage() {
            {/* INFO APLIKASI */}
            {activeTab === 'info' && (
               <Box>
-                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Informasi Sistem</Typography>
+                <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('system.title')}</Typography>
                 
                 <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
                    <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                      <InfoOutlinedIcon sx={{ fontSize: 32, color: '#16a34a' }} />
                    </Box>
                    <Box>
-                     <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700 }}>Arina Web Platform</Typography>
-                     <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>Versi 1.0.0 (Beta) · Local Storage Environment</Typography>
+                     <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700 }}>{t('system.appName')}</Typography>
+                     <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>{t('system.version')}</Typography>
                    </Box>
                 </Box>
 
                 {[
-                  { label: 'Platform Backend', value: 'Offline (Browser LocalStorage)' },
-                  { label: 'Arsitektur Frontend', value: 'Next.js 16 + React 19' },
-                  { label: 'Design System', value: 'Material UI v6' },
-                  { label: 'Model AI (Simulasi)', value: 'Agricultural Dataset ID' },
+                  { label: t('system.items.backend'), value: t('system.values.backend') },
+                  { label: t('system.items.frontend'), value: t('system.values.frontend') },
+                  { label: t('system.items.design'), value: t('system.values.design') },
+                  { label: t('system.items.ai'), value: t('system.values.ai') },
                 ].map((item) => (
                   <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
                     <Typography variant="body2" color="text.secondary">{item.label}</Typography>

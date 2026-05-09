@@ -14,8 +14,9 @@ import Typography from '@mui/material/Typography';
 import type { ApiTransaction } from '@/lib/api';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
+import { memo } from 'react';
 
-export default function RecentTransactionsTable({ transactions }: { transactions: ApiTransaction[] }) {
+export default memo(function RecentTransactionsTable({ transactions }: { transactions: ApiTransaction[] }) {
   const t = useTranslations('Dashboard.recentTransactions');
   const recent = transactions.slice(0, 5);
 
@@ -27,7 +28,7 @@ export default function RecentTransactionsTable({ transactions }: { transactions
             {t('title')}
           </Typography>
         }
-        subheader={t('subheader')}
+        subheader={t('subheader', { count: recent.length })}
       />
       <CardContent sx={{ pt: 0 }}>
         <TableContainer>
@@ -42,46 +43,54 @@ export default function RecentTransactionsTable({ transactions }: { transactions
               </TableRow>
             </TableHead>
             <TableBody>
-              {recent.map((tx) => (
-                <TableRow
-                  key={tx._id}
-                  sx={{
-                    '&:hover': { backgroundColor: 'action.hover' },
-                    '& td': { borderColor: 'divider', fontSize: '0.875rem' },
-                  }}
-                >
-                  <TableCell sx={{ color: 'text.secondary' }}>{formatDateShort(tx.tanggal)}</TableCell>
-                  <TableCell>{tx.kategori}</TableCell>
-                  <TableCell sx={{ color: 'text.secondary', maxWidth: 200 }} >
-                    <Typography variant="caption" noWrap sx={{ display: 'block' }}>{tx.keterangan}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={tx.jenis === 'pendapatan' ? t('type.income') : t('type.expense')}
-                      size="small"
-                      sx={{
-                        backgroundColor: tx.jenis === 'pendapatan' ? 'success.light' : 'error.light',
-                        color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                        fontWeight: 600,
-                        fontSize: '0.7rem',
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 700,
-                      color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                    }}
-                  >
-                    {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
+              {recent.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                    <Typography variant="body2">{t('empty')}</Typography>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                recent.map((tx) => (
+                  <TableRow
+                    key={tx._id}
+                    sx={{
+                      '&:hover': { backgroundColor: 'action.hover' },
+                      '& td': { borderColor: 'divider', fontSize: '0.875rem' },
+                    }}
+                  >
+                    <TableCell sx={{ color: 'text.secondary' }}>{formatDateShort(tx.tanggal)}</TableCell>
+                    <TableCell>{tx.kategori}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary', maxWidth: 200 }} >
+                      <Typography variant="caption" noWrap sx={{ display: 'block' }}>{tx.keterangan}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={tx.jenis === 'pendapatan' ? t('type.income') : t('type.expense')}
+                        size="small"
+                        sx={{
+                          backgroundColor: tx.jenis === 'pendapatan' ? 'success.light' : 'error.light',
+                          color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        fontWeight: 700,
+                        color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                      }}
+                    >
+                      {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>
       </CardContent>
     </Card>
   );
-}
+});

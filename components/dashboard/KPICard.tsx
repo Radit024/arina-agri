@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useTheme, alpha } from '@mui/material/styles';
 import type { ReactNode } from 'react';
+import { memo } from 'react';
 
 type ColorVariant = 'success' | 'warning' | 'error' | 'info';
 
@@ -18,7 +19,7 @@ interface KPICardProps {
   trend?: { value: string; positive: boolean };
 }
 
-export default function KPICard({ title, value, subtitle, icon, color = 'success', trend }: KPICardProps) {
+export default memo(function KPICard({ title, value, subtitle, icon, color = 'success', trend }: KPICardProps) {
   const theme = useTheme();
   const colorValue = theme.palette[color].main;
   return (
@@ -46,12 +47,12 @@ export default function KPICard({ title, value, subtitle, icon, color = 'success
             >
               {value}
             </Typography>
-            {subtitle && (
+            {subtitle ? (
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontWeight: 500 }}>
                 {subtitle}
               </Typography>
-            )}
-            {trend && (
+            ) : null}
+            {trend ? (
               <Typography
                 variant="caption"
                 sx={{ 
@@ -69,7 +70,7 @@ export default function KPICard({ title, value, subtitle, icon, color = 'success
               >
                 {trend.positive ? '↑' : '↓'} {trend.value}
               </Typography>
-            )}
+            ) : null}
           </Box>
           <Box
             sx={{
@@ -90,4 +91,4 @@ export default function KPICard({ title, value, subtitle, icon, color = 'success
       </CardContent>
     </Card>
   );
-}
+});

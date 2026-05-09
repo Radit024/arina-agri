@@ -1,4 +1,20 @@
 {
+  "Common": {
+    "months": {
+      "january": "Januari",
+      "february": "Februari",
+      "march": "Maret",
+      "april": "April",
+      "may": "Mei",
+      "june": "Juni",
+      "july": "Juli",
+      "august": "Agustus",
+      "september": "September",
+      "october": "Oktober",
+      "november": "November",
+      "december": "Desember"
+    }
+  },
   "Sidebar": {
     "dashboard": "Dashboard",
     "keuangan": "Pencatatan Keuangan",
@@ -17,12 +33,15 @@
     "cuaca": "Cuaca",
     "ensiklopedia": "Ensiklopedia",
     "kalender": "Kalender",
+    "stok": "Stok",
     "kabarPasar": "Kabar Pasar",
     "pengaturan": "Pengaturan"
   },
   "Dashboard": {
     "home": {
+      "locale": "id",
       "welcome": "Selamat datang, Pak {name} 👋",
+      "profile": "{location} · {commodity} · {area}",
       "quickActions": {
         "title": "Manajemen Stok Panen",
         "description": "Pantau stok dan batch panen terbaru.",
@@ -39,15 +58,16 @@
           "subtitle": "Pendapatan - Pengeluaran",
           "trend": "18% dari bulan lalu"
         },
+        "trend": "{value}% dari bulan lalu",
         "harvest": {
           "title": "Hari Menuju Panen",
           "value": "{days} Hari",
-          "subtitle": "Pemetikan perdana: 25 April"
+          "subtitle": "Pemetikan perdana: {date}"
         },
         "weather": {
           "title": "Status Cuaca Hari Ini",
-          "value": "24°C · Gerimis",
-          "subtitle": "Kelembapan 78%"
+          "value": "{temp}°C · {cond}",
+          "subtitle": "Kelembapan {hum}%"
         }
       }
     },
@@ -57,7 +77,7 @@
     },
     "recentTransactions": {
       "title": "Transaksi Terkini",
-      "subheader": "5 transaksi terakhir",
+      "subheader": "{count} transaksi terakhir",
       "columns": {
         "date": "Tanggal",
         "category": "Kategori",
@@ -68,7 +88,8 @@
       "type": {
         "income": "Pendapatan",
         "expense": "Pengeluaran"
-      }
+      },
+      "empty": "Belum ada data transaksi"
     },
     "charts": {
       "common": {
@@ -82,7 +103,7 @@
       },
       "category": {
         "title": "Kategori Pengeluaran",
-        "subheader": "Bulan April 2026"
+        "subheader": "Bulan {month} {year}"
       }
     }
   },
@@ -124,21 +145,43 @@
       }
     },
     "whatsapp": {
-      "title": "Integrasi WhatsApp",
-      "note": "Notifikasi dikirim otomatis via WhatsApp menggunakan <strong>n8n workflow</strong> saat kondisi cuaca ekstrem terdeteksi.",
-      "enable": "Aktifkan notifikasi otomatis",
-      "phoneLabel": "Nomor Telpon",
-      "phonePlaceholder": "Contoh: 08123456789",
-      "phoneHelper": "Nomor yang akan menerima notifikasi cuaca",
-      "saved": "✓ Nomor Tersimpan",
-      "saveAndEnable": "Simpan & Aktifkan",
+      "title": "Notifikasi Cuaca",
+      "note": "Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai workflow n8n Anda.",
+      "enable": "Aktifkan notifikasi",
+      "phoneLabel": "Nomor WhatsApp",
+      "telegramLabel": "Telegram Chat ID",
+      "phonePlaceholder": "6281234567890",
+      "telegramPlaceholder": "123456789 atau @username",
+      "phoneHelper": "Gunakan format nomor internasional tanpa tanda +, misalnya 6281234567890.",
+      "telegramHelper": "Gunakan chat ID atau username Telegram sesuai bot Anda.",
+      "saved": "Tersimpan",
+      "saveAndEnable": "Simpan kontak notifikasi",
       "activeAlertTypes": "Jenis peringatan aktif",
       "alerts": {
-        "heavyRain": "Hujan Lebat (> 20mm)",
-        "strongWind": "Angin Kencang (> 12 km/j)",
-        "extremeTemp": "Suhu Ekstrem (> 32°C)",
-        "lowHumidity": "Kelembapan Rendah (< 50%)"
-      }
+        "heavyRain": "Hujan Lebat",
+        "strongWind": "Angin Kencang",
+        "extremeTemp": "Suhu Ekstrem",
+        "lowHumidity": "Kelembapan Rendah"
+      },
+      "testButton": "Kirim Pesan Uji Coba ({platform})",
+      "testSuccess": "Notifikasi terkirim. Risiko {level} ({score}/100).",
+      "testSkipped": "Notifikasi tidak dikirim: {reason}",
+      "testError": "Gagal mengirim notifikasi uji coba.",
+      "testNoContact": "Simpan {platform} dan aktifkan notifikasi terlebih dahulu.",
+      "scheduleTitle": "Jadwal Notifikasi Harian",
+      "scheduleSub": "Atur jam pengiriman notifikasi otomatis setiap hari.",
+      "scheduleTime": "Jam Kirim",
+      "scheduleActive": "Aktifkan jadwal harian",
+      "scheduleSave": "Simpan Jadwal",
+      "scheduleSuccess": "Jadwal berhasil disimpan. Notifikasi akan dikirim setiap hari sesuai jam yang dipilih.",
+      "scheduleError": "Gagal menyimpan jadwal notifikasi. {error}",
+      "scheduleNoContact": "Kontak tujuan wajib disimpan terlebih dahulu di notifikasi cuaca.",
+      "tutorialTitle": "Tutorial Telegram",
+      "tutorialSteps": [
+        "Cari bot @Arina_Test_28_Bot di Telegram lalu kirim /start.",
+        "Lalu Klik Kirim Pesan Uji Coba Untuk Verifikasi.",
+        "Lalu Setting Jadwal Notifikasi Harian dengan platform Telegram dan simpan."
+      ]
     }
   },
   "Finance": {
@@ -181,7 +224,7 @@
         "value": "Nilai (Rp)",
         "action": "Opsi"
       },
-      "empty": "Belum ada Catatan transaksi .",
+      "empty": "Belum ada Catatan transaksi.",
       "addFirst": "Tambah pertama"
     },
     "summary": {
@@ -192,7 +235,9 @@
       "deficit": "DEFISIT ANGGARAN"
     },
     "distribution": {
-      "title": "Distribusi Pengeluaran"
+      "title": "Distribusi Pengeluaran",
+      "noData": "Belum Ada Data",
+      "empty": "Belum ada data pengeluaran"
     },
     "transactionDialog": {
       "addTitle": "Catat Transaksi Baru",
@@ -220,11 +265,71 @@
     "hppDialog": {
       "title": "Perhitungan HPP & BEP",
       "subtitle": "Menggunakan data transaksi + input produksi",
+      "close": "Tutup",
       "fields": {
         "fixedCost": "Biaya Tetap Periode",
         "totalProduction": "Total Produksi Periode",
         "unitPrice": "Harga Jual per Kg"
+      },
+      "results": {
+        "variableCostTotal": "Total Biaya Variabel",
+        "variableCostPerUnit": "Biaya Variabel/Unit",
+        "inputProduction": "Input Produksi",
+        "hppPerUnit": "HPP/Unit",
+        "bepUnit": "BEP (Unit/Kg)",
+        "notCalculatable": "Belum dapat dihitung",
+        "bepValue": "BEP (Rp)",
+        "invalidBepValue": "Nilai BEP tidak valid"
       }
+    },
+    "months": [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ],
+    "excel": {
+      "reportTitle": "Laporan Transaksi Keuangan - Arina Agri",
+      "headers": ["Tanggal", "Kategori", "Keterangan", "Tipe", "Jumlah"],
+      "income": "Pemasukan",
+      "expense": "Pengeluaran",
+      "filename": "Laporan_Keuangan"
+    },
+    "validation": {
+      "type": "Pilih jenis transaksi",
+      "category": "Pilih kategori",
+      "amount": "Masukkan nominal",
+      "amountPositive": "Nominal harus lebih besar dari 0",
+      "date": "Pilih tanggal"
+    },
+    "reportDialog": {
+      "title": "Ekspor Laporan Keuangan",
+      "period": "Periode Laporan",
+      "loading": "Membuat laporan... Mohon tunggu",
+      "summary": {
+        "title": "Ringkasan Data",
+        "transactionCount": "Total Transaksi",
+        "transactions": "transaksi"
+      },
+      "manual": {
+        "title": "Ekspor Excel / Spreadsheet",
+        "desc": "Unduh buku besar transaksi dalam format .xlsx untuk pelaporan manual atau dicetak.",
+        "button": "Unduh Excel"
+      },
+      "ai": {
+        "title": "Laporan Cerdas PDF (AI)",
+        "quotaRemaining": "tersisa",
+        "descActive": "Buat laporan PDF profesional yang dilengkapi dengan analisis kesehatan bisnis dan rekomendasi AI.",
+        "descEmpty": "Batas AI habis. Anda tetap bisa unduh laporan manual.",
+        "button": "Buat Laporan AI"
+      },
+      "error": {
+        "failed": "Gagal membuat laporan. Silakan coba lagi.",
+        "aiFailed": "Gagal mendapatkan analisis AI. Coba buat tanpa AI atau cek koneksi."
+      }
+    },
+    "ai": {
+      "quotaMsg": "Sisa kuota laporan AI bulan ini: {count}",
+      "errorPdf": "Gagal membuat PDF. Coba lagi.",
+      "errorAi": "Gagal mendapatkan saran AI. Coba buat tanpa AI atau periksa koneksi backend."
     }
   },
   "Calendar": {
@@ -247,11 +352,34 @@
         "timeOptional": "Waktu (opsional)",
         "noteOptional": "Catatan (opsional)",
         "notePlaceholder": "Tambahkan catatan tambahan..."
+      },
+      "options": {
+        "fertilizing": "🌿 Pemupukan",
+        "spraying": "💧 Penyemprotan Pestisida",
+        "irrigation": "🚿 Irigasi",
+        "harvest": "🌶️ Pemetikan/Panen",
+        "other": "📝 Lainnya"
       }
     },
     "delete": "Hapus",
     "cancel": "Batal",
-    "saveSchedule": "Simpan Jadwal"
+    "saveSchedule": "Simpan Jadwal",
+    "months": [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ],
+    "jenisLabels": {
+      "pemupukan": "Pemupukan",
+      "penyemprotan": "Penyemprotan",
+      "irigasi": "Irigasi",
+      "pemetikan": "Pemetikan/Panen",
+      "lainnya": "Lainnya"
+    },
+    "daysShort": ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+    "validation": {
+      "titleRequired": "Masukkan judul kegiatan",
+      "dateRequired": "Pilih tanggal"
+    }
   },
   "Encyclopedia": {
     "title": "Ensiklopedia Penyakit",
@@ -269,6 +397,246 @@
       "p2": "Jadwal pemupukan cabai",
       "p3": "Gejala kutu kebul",
       "p4": "Cara panen yang benar"
+    },
+    "ai": {
+      "error": "Gemini belum aktif atau terjadi kendala jaringan. Menampilkan jawaban fallback.",
+      "fallback": {
+        "default": "Maaf, koneksi ke Arina AI sedang tidak tersedia. Silakan cek koneksi internet dan pastikan backend berjalan, kemudian coba lagi. Pertanyaan Anda akan langsung dijawab oleh Gemini AI yang sudah dilatih untuk pertanian cabai.",
+        "anthracnose": "**Antraknosa (Patek)** disebabkan oleh jamur *Colletotrichum capsici*.\n\nGejala: bercak coklat kehitaman pada buah, biasanya mulai dari ujung buah.\n\nPenanganan darurat:\n• Semprot fungisida Mankozeb dosis 2 g/liter air\n• Buang dan bakar buah yang terinfeksi\n• Hindari melukai buah saat pemetikan\n• Jaga jarak tanam agar sirkulasi udara baik\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.",
+        "fertilizer": "Rekomendasi pemupukan cabai rawit (fase generatif):\n\n• NPK 16-16-16 → 5 g/tanaman, tiap 2 minggu\n• Kalsium Boron → semprot daun 2 ml/liter\n• KCl → 3 g/tanaman untuk memperkuat buah\n\nWaktu terbaik: pagi hari sebelum jam 9.\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat."
+      }
+    },
+    "quickReference": {
+      "title": "Referensi Cepat Penyakit",
+      "risk": "Risiko {value}",
+      "diseases": [
+        {
+          "id": "1",
+          "name": "Antraknosa (Patek)",
+          "cause": "Jamur Colletotrichum capsici",
+          "loss": "20–40%",
+          "symptoms": "Bercak coklat pada buah, membusuk dari ujung atau tengah",
+          "treatment": "Fungisida Mankozeb, buang buah terinfeksi",
+          "severity": "tinggi"
+        },
+        {
+          "id": "2",
+          "name": "Virus Gemini (Kuning)",
+          "cause": "Begomovirus via kutu kebul",
+          "loss": "30–50%",
+          "symptoms": "Daun menguning, mengkerut, pertumbuhan kerdil",
+          "treatment": "Kendalikan kutu kebul, cabut tanaman terinfeksi berat",
+          "severity": "tinggi"
+        },
+        {
+          "id": "3",
+          "name": "Ulat Grayak",
+          "cause": "Spodoptera litura/frugiperda",
+          "loss": "15–25%",
+          "symptoms": "Daun berlubang, ulat coklat bergaris aktif malam hari",
+          "treatment": "Insektisida Emamektin, perangkap lampu UV",
+          "severity": "sedang"
+        },
+        {
+          "id": "4",
+          "name": "Kutu Kebul",
+          "cause": "Bemisia tabaci",
+          "loss": "10–20%",
+          "symptoms": "Tanda jelaga pada daun, vektor virus kuning",
+          "treatment": "Insektisida Imidakloprid, mulsa plastik perak",
+          "severity": "sedang"
+        }
+      ]
+    },
+    "initialMessages": [
+      {
+        "role": "ai",
+        "content": "Halo, Pak {name}! 👋 Saya Arina, asisten AI khusus budidaya cabai. Silakan tanyakan apa saja — mulai dari pengendalian hama, penyakit, pemupukan, hingga teknik panen. Saya siap membantu!"
+      },
+      {
+        "role": "user",
+        "content": "Cabai saya banyak yang busuk di bagian ujung buah, itu penyakit apa?"
+      },
+      {
+        "role": "ai",
+        "content": "Gejala busuk di ujung buah (ujung buah berwarna coklat kehitaman dan mengering) kemungkinan besar adalah **Blossom End Rot (BER)** atau kekurangan kalsium (Ca). Ini bukan penyakit infeksi, melainkan gangguan fisiologis.\n\n**Penyebab:** Penyerapan kalsium terganggu akibat penyiraman tidak teratur, kadar nitrogen terlalu tinggi, atau pH tanah terlalu rendah.\n\n**Solusi:**\n1. Semprot daun dengan kalsium boron (Ca-B) dosis 2 ml/liter\n2. Atur jadwal penyiraman agar konsisten\n3. Tambahkan kapur dolomit jika pH < 6.0\n\nApakah busuknya mulai dari dalam atau dari permukaan buah, Pak?"
+      }
+    ]
+  },
+  "KabarPasar": {
+    "title": "Kabar Pasar",
+    "subtitle": "Berita & informasi harga komoditas pertanian terkini",
+    "refetch": "Ambil ulang berita",
+    "stats": "{total} artikel tersedia",
+    "updateInterval": "Diperbarui otomatis setiap 6 jam dari sumber terpercaya",
+    "error": "⚠️ Gagal memuat berita terbaru: {error}. Silakan segarkan halaman.",
+    "readMore": "Baca Selengkapnya di Sumber",
+    "readShort": "Baca di sumber",
+    "viewAll": "Lihat Semua",
+    "relativeDate": {
+      "justNow": "Baru saja",
+      "hoursAgo": "{count} jam lalu",
+      "yesterday": "Kemarin",
+      "daysAgo": "{count} hari lalu"
+    },
+    "empty": {
+      "title": "Belum ada berita tersedia",
+      "subtitle": "Sistem akan otomatis mengambil berita pertanian terbaru dari RSS feed setiap 6 jam"
+    }
+  },
+  "Stock": {
+    "title": "Manajemen Stok Panen",
+    "subtitle": "{commodity} — {location}",
+    "commodity": "Cabai Rawit",
+    "location": "Desa Wonorejo, Malang",
+    "offlineMode": "Mode Offline",
+    "buttons": {
+      "stockOut": "Catat Keluar",
+      "addBatch": "Input Panen"
+    },
+    "kpi": {
+      "ready": "Total Stok Siap Jual",
+      "sold": "Terjual Minggu Ini",
+      "value": "Estimasi Nilai Stok",
+      "alert": "Batch Hampir Kadaluarsa"
+    },
+    "alerts": {
+      "expired": "<strong>{count} batch</strong> hampir kadaluarsa: {list}. Segera prioritaskan penjualan!"
+    },
+    "tabs": {
+      "batches": "Daftar Batch Stok",
+      "mutations": "Riwayat Mutasi"
+    },
+    "table": {
+      "batchId": "ID Batch",
+      "harvestDate": "Tgl Panen",
+      "grade": "Grade",
+      "initialWeight": "Berat Awal",
+      "remainingWeight": "Stok Tersisa",
+      "price": "Harga Jual/kg",
+      "location": "Lokasi",
+      "expiry": "Kadaluarsa",
+      "status": "Status",
+      "action": "Aksi",
+      "loading": "Memuat data...",
+      "empty": "Belum ada data batch panen.",
+      "addFirst": "Input Panen Pertama"
+    },
+    "mutationTable": {
+      "date": "Tanggal",
+      "batch": "Batch",
+      "type": "Tipe",
+      "weight": "Berat (kg)",
+      "target": "Tujuan",
+      "note": "Catatan",
+      "in": "↓ Masuk",
+      "out": "↑ Keluar",
+      "filterGrade": "Filter Grade",
+      "allGrades": "Semua Grade"
+    },
+    "status": {
+      "safe": "Aman",
+      "low": "Menipis",
+      "expiring": "Hampir Kadaluarsa",
+      "empty": "Habis"
+    },
+    "dialogs": {
+      "addTitle": "Input Batch Panen Baru",
+      "outTitle": "Catat Keluar Stok",
+      "fields": {
+        "date": "Tanggal Panen",
+        "grade": "Grade Cabai",
+        "weight": "Berat Masuk (kg)",
+        "location": "Lokasi Penyimpanan",
+        "cost": "Harga Modal/kg (Rp)",
+        "price": "Harga Jual/kg (Rp)",
+        "expiry": "Estimasi Kadaluarsa",
+        "note": "Catatan (opsional)",
+        "batch": "Pilih Batch",
+        "outWeight": "Berat Keluar (kg)",
+        "target": "Tujuan Pengiriman",
+        "transDate": "Tanggal Transaksi"
+      },
+      "options": {
+        "gradeA": "Grade A (Premium)",
+        "gradeB": "Grade B (Standar)",
+        "gradeC": "Grade C (Lokal)",
+        "store1": "Gudang Utama",
+        "store2": "Gudang Cadangan",
+        "market": "Pasar Lokal",
+        "distributor": "Distributor",
+        "restaurant": "Restoran",
+        "other": "Lainnya"
+      },
+      "buttons": {
+        "cancel": "Batal",
+        "save": "Simpan Batch",
+        "submit": "Keluarkan Stok"
+      },
+      "validation": {
+        "required": "Wajib diisi",
+        "minWeight": "Minimal 0.1 kg",
+        "selectBatch": "Pilih batch"
+      }
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Selamat Datang Kembali! 👋",
+      "subtitle": "Silakan masuk ke akun Anda untuk melanjutkan.",
+      "email": "Alamat Email",
+      "password": "Kata Sandi",
+      "forgotPassword": "Lupa kata sandi?",
+      "submit": "Masuk",
+      "google": "Masuk dengan Google",
+      "noAccount": "Belum punya akun?",
+      "registerNow": "Daftar Sekarang",
+      "processing": "Memproses...",
+      "error": {
+        "invalid": "Email atau password salah. Silakan coba lagi.",
+        "failed": "Gagal masuk. Periksa email dan password Anda."
+      },
+      "validation": {
+        "email": "Format email tidak valid",
+        "password": "Password minimal 6 karakter"
+      }
+    },
+    "register": {
+      "title": "Buat Akun Baru",
+      "subtitle": "Isi data di bawah ini untuk memulai.",
+      "fullName": "Nama Lengkap",
+      "email": "Alamat Email",
+      "password": "Kata Sandi",
+      "confirmPassword": "Konfirmasi Kata Sandi",
+      "submit": "Daftar Sekarang",
+      "google": "Daftar dengan Google",
+      "hasAccount": "Sudah punya akun?",
+      "loginNow": "Masuk di sini",
+      "branding": "Bergabunglah dan tingkatkan produktivitas pertanian Anda.",
+      "error": {
+        "exists": "Email ini sudah terdaftar. Silakan login atau gunakan email lain.",
+        "failed": "Gagal mendaftar. Silakan coba lagi."
+      },
+      "validation": {
+        "name": "Nama lengkap minimal 3 karakter",
+        "email": "Format email tidak valid",
+        "password": "Password minimal 6 karakter",
+        "confirm": "Konfirmasi password minimal 6 karakter",
+        "mismatch": "Konfirmasi password tidak cocok"
+      }
+    },
+    "forgot": {
+      "title": "Lupa Kata Sandi? 🔑",
+      "subtitle": "Masukkan email Anda dan kami akan mengirimkan link untuk mereset password.",
+      "email": "Alamat Email",
+      "submit": "Kirim Link Reset Password",
+      "back": "← Kembali ke Login",
+      "success": {
+        "title": "Email Terkirim!",
+        "desc": "Cek inbox email Anda dan klik link yang dikirimkan untuk mereset password.",
+        "button": "Kembali ke Halaman Login"
+      },
+      "error": "Terjadi kesalahan. Silakan coba lagi."
     }
   },
   "NotFound": {
@@ -282,14 +650,21 @@
     "menuLabel": "Menu Pengaturan",
     "general": {
       "tab": "Umum",
-      "appearance": "Tampilan",
-      "contrast": "Kontras Layar",
+      "appearance": "Tampilan (Tema)",
+      "contrast": "Kontras",
       "accent": "Warna Aksen",
       "language": "Bahasa",
-      "modeLight": "Mode Terang",
-      "modeDark": "Mode Gelap",
+      "modeLight": "Terang",
+      "modeDark": "Gelap",
       "modeSystem": "Sistem",
-      "languageId": "Bahasa Indonesia"
+      "accentName": "Hijau Arina",
+      "languageName": "Bahasa Indonesia",
+      "languageId": "Bahasa Indonesia",
+      "securityBox": {
+        "title": "🔒 Amankan Akun Anda",
+        "desc": "Tambahkan autentikasi multi-faktor (MFA) seperti passkey atau kode SMS untuk melindungi akun Anda saat fitur backend diaktifkan.",
+        "button": "Set up MFA (Segera)"
+      }
     },
     "profile": {
       "tab": "Edit Profil",
@@ -298,10 +673,12 @@
       "changePhoto": "Ganti Foto",
       "photoHint": "Format JPG, PNG, atau GIF. Maksimal 2MB.",
       "fullName": "Nama Lengkap",
+      "location": "Lokasi / Desa",
       "mainCommodity": "Komoditas Utama",
-      "phone": "Nomor Telepon",
+      "landArea": "Luas Lahan",
+      "phone": "Nomor WhatsApp Notifikasi Cuaca",
       "phonePlaceholder": "Contoh: 08123456789",
-      "phoneHelper": "Nomor ini dipakai untuk notifikasi cuaca",
+      "phoneHelper": "Nomor ini dipakai untuk notifikasi cuaca di halaman Cuaca",
       "phoneSaved": "Nomor WhatsApp berhasil diperbarui.",
       "phoneSaveHint": "Simpan untuk menerapkan nomor notifikasi cuaca yang baru.",
       "saveChanges": "Simpan Perubahan"
@@ -312,41 +689,43 @@
       "items": {
         "weather": {
           "label": "Notifikasi Cuaca Ekstrem",
-          "desc": "Peringatan cuaca bahaya via WhatsApp"
+          "desc": "Terima peringatan cuaca via WhatsApp jika ada mendung lebat / badai."
         },
         "schedule": {
           "label": "Pengingat Jadwal Kegiatan",
-          "desc": "Notifikasi H-1 sebelum jadwal pertanian"
+          "desc": "Notifikasi H-1 sebelum jadwal pertanian (pemupukan, panen, dsb)."
+        },
+        "finance": {
+          "label": "Laporan Keuangan Mingguan",
+          "desc": "Ringkasan otomatis laba rugi mingguan setiap hari Senin."
         },
         "tips": {
-          "label": "Tips Budidaya dari Arina AI",
-          "desc": "Saran mingguan kondisi lahan Anda"
+          "label": "Tips Budidaya dari AI Arina",
+          "desc": "Saran mingguan berdasarkan kondisi lahan dan fase tanaman Anda."
         }
       }
     },
     "system": {
       "tab": "Informasi Sistem",
-      "title": "Tentang Aplikasi",
+      "title": "Informasi Sistem",
       "appName": "Arina Web Platform",
-      "version": "Versi 1.0.0 (Beta)",
+      "version": "Versi 1.0.0 (Beta) · Local Storage Environment",
       "backendLabel": "Platform Backend",
-      "backendValue": "Browser LocalStorage",
+      "backendValue": "Offline (Penyimpanan Lokal Browser)",
       "layoutLabel": "Desain Layout",
-      "layoutValue": "Konsep Dialog Modal"
-    },
-    "secureAccount": "Amankan Akun Anda",
-    "setupMFA": "Atur Autentikasi 2 Langkah"
-  },
-  "News": {
-    "title": "Kabar Pasar",
-    "subtitle": "Berita & informasi harga komoditas pertanian terkini",
-    "readMore": "Baca Selengkapnya di Sumber",
-    "readShort": "Baca di sumber",
-    "viewAll": "Lihat Semua",
-    "emptyState": "Belum ada berita tersedia",
-    "emptyHint": "Berita akan muncul setelah sistem mengambil data dari RSS feed",
-    "articlesAvailable": "{count} artikel tersedia",
-    "autoUpdate": "Diperbarui otomatis setiap 6 jam dari sumber terpercaya",
-    "errorBanner": "Gagal memuat berita terbaru — menampilkan contoh data"
+      "layoutValue": "Dashboard Responsif Modern",
+      "items": {
+        "backend": "Platform Backend",
+        "frontend": "Framework Frontend",
+        "design": "Sistem Desain",
+        "ai": "Model AI"
+      },
+      "values": {
+        "backend": "Offline (LocalStorage Browser)",
+        "frontend": "Next.js 16 + React 19",
+        "design": "Material UI v6",
+        "ai": "ID Dataset Pertanian"
+      }
+    }
   }
 }

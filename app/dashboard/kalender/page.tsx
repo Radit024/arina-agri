@@ -36,26 +36,16 @@ import { formatDateLong } from '@/lib/formatters';
 import type { CalendarEvent } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 
-const eventSchema = z.object({
-  judul: z.string().min(1, 'Masukkan judul kegiatan'),
+const getEventSchema = (t: any) => z.object({
+  judul: z.string().min(1, t('validation.titleRequired')),
   jenis: z.enum(['pemupukan', 'penyemprotan', 'irigasi', 'pemetikan', 'lainnya']),
-  tanggal: z.string().min(1, 'Pilih tanggal'),
+  tanggal: z.string().min(1, t('validation.dateRequired')),
   waktu: z.string().optional(),
   catatan: z.string().optional(),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
 
-const jenisLabels = {
-  pemupukan: 'Pemupukan',
-  penyemprotan: 'Penyemprotan',
-  irigasi: 'Irigasi',
-  pemetikan: 'Pemetikan/Panen',
-  lainnya: 'Lainnya',
-};
-
-const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
@@ -98,8 +88,12 @@ export default function KalenderPage() {
   const getEventsForDate = (day: number) =>
     events.filter((e) => e.tanggal === getDateStr(day));
 
+  const monthNames = t.raw('months');
+  const dayNames = t.raw('daysShort');
+  const jenisLabels = t.raw('jenisLabels');
+
   const { control, handleSubmit, reset, formState: { errors } } = useForm<EventFormData>({
-    resolver: zodResolver(eventSchema),
+    resolver: zodResolver(getEventSchema(t)),
     defaultValues: { judul: '', jenis: 'pemupukan', tanggal: todayStr, waktu: '', catatan: '' },
   });
 
@@ -358,11 +352,11 @@ export default function KalenderPage() {
               <FormControl fullWidth error={!!errors.jenis}>
                 <InputLabel>{t('dialog.fields.type')}</InputLabel>
                 <Select {...field} label={t('dialog.fields.type')}>
-                  <MenuItem value="pemupukan">🌿 Pemupukan</MenuItem>
-                  <MenuItem value="penyemprotan">💧 Penyemprotan Pestisida</MenuItem>
-                  <MenuItem value="irigasi">🚿 Irigasi</MenuItem>
-                  <MenuItem value="pemetikan">🌶️ Pemetikan/Panen</MenuItem>
-                  <MenuItem value="lainnya">📝 Lainnya</MenuItem>
+                  <MenuItem value="pemupukan">🌿 {t('dialog.options.fertilizing')}</MenuItem>
+                  <MenuItem value="penyemprotan">💧 {t('dialog.options.spraying')}</MenuItem>
+                  <MenuItem value="irigasi">🚿 {t('dialog.options.irrigation')}</MenuItem>
+                  <MenuItem value="pemetikan">🌶️ {t('dialog.options.harvest')}</MenuItem>
+                  <MenuItem value="lainnya">📝 {t('dialog.options.other')}</MenuItem>
                 </Select>
                 {errors.jenis && <FormHelperText>{errors.jenis.message}</FormHelperText>}
               </FormControl>

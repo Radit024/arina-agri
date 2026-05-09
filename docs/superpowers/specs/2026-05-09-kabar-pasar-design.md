@@ -14,7 +14,7 @@ Fitur **Kabar Pasar** menambahkan agregator berita pertanian ke platform Arina A
 
 ## 2. Arsitektur Sistem
 
-```
+```text
 RSS Feeds (Antara / Bisnis.com / BeritaJatim)
         ↓  node-cron (4x sehari: 06:00, 12:00, 18:00, 00:00)
   backend/src/services/newsScheduler.ts
@@ -37,7 +37,7 @@ Tabel: `news_articles`
 
 | Kolom       | Tipe         | Constraint             | Keterangan                         |
 |-------------|--------------|------------------------|------------------------------------|
-| id          | uuid         | PK, DEFAULT gen_random_uuid() | ID unik artikel              |
+| id          | uuid         | PK, DEFAULT gen_random_uuid() | ID unik artikel                    |
 | title       | text         | NOT NULL               | Judul artikel                      |
 | snippet     | text         | NULLABLE               | Ringkasan ≤ 200 karakter           |
 | link        | text         | UNIQUE, NOT NULL       | URL asli artikel (cegah duplikasi) |
@@ -49,6 +49,7 @@ Tabel: `news_articles`
 **Index:** `idx_news_articles_pub_date ON news_articles(pub_date DESC)`
 
 **SQL:**
+
 ```sql
 CREATE TABLE public.news_articles (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -71,6 +72,7 @@ CREATE INDEX idx_news_articles_pub_date ON public.news_articles(pub_date DESC);
 ### 4.1 New Files
 
 **`backend/src/services/newsScheduler.ts`**
+
 - Inisialisasi Supabase client dengan `service_role_key`
 - RSS feed targets:
   - Antara News (Ekonomi): `https://www.antaranews.com/rss/ekonomi.xml`
@@ -83,20 +85,27 @@ CREATE INDEX idx_news_articles_pub_date ON public.news_articles(pub_date DESC);
 - Cleanup job: cron bulanan (`0 2 1 * *`) hapus artikel > 30 hari
 
 **`backend/src/routes/news.ts`**
+
 - `GET /api/news?limit=10&page=1` — proxy opsional, fetch dari Supabase dan return ke frontend
 - Response: `{ data: NewsArticle[], total: number, page: number }`
 
+
 ### 4.2 Dependencies Baru
+
 ```bash
 npm install rss-parser
 npm install --save-dev @types/rss-parser
 ```
 
+
 ### 4.3 Integrasi ke `server.ts`
+
 - Import `startNewsScheduler` dari `newsScheduler.ts`, panggil di startup
 - Mount route: `app.use('/api/news', newsRoutes)`
 
+
 ### 4.4 Cron Schedule
+
 - Fetch berita: `0 6,12,18,0 * * *` (4x sehari)
 - Cleanup: `0 2 1 * *` (tanggal 1 setiap bulan, jam 02:00)
 
@@ -107,7 +116,8 @@ npm install --save-dev @types/rss-parser
 ### 5.1 Types
 
 **`lib/types/news.ts`**
-```typescript
+
+110: ```typescript
 export interface NewsArticle {
   id: string;
   title: string;
@@ -123,6 +133,7 @@ export interface NewsArticle {
 ### 5.2 Custom Hook
 
 **`hooks/useNews.ts`**
+
 - Parameter: `{ limit?: number; page?: number }`
 - Fetch Supabase: `select('*').order('pub_date', { ascending: false }).range(from, to)`
 - Return: `{ articles, total, isLoading, error, refetch }`
@@ -131,6 +142,7 @@ export interface NewsArticle {
 ### 5.3 Komponen Baru
 
 **`components/news/NewsCard.tsx`**
+
 - Props: `article: NewsArticle`, `variant: 'widget' | 'full'`
 - `variant='widget'`: thumbnail kiri (80×80px), judul 2 baris, snippet 2 baris, chip sumber + tanggal, tombol CTA kecil
 - `variant='full'`: thumbnail full-width atas (16:9), judul 3 baris, snippet 3 baris, chip sumber + tanggal bawah, tombol CTA full-width
@@ -138,6 +150,7 @@ export interface NewsArticle {
 - Fallback image: placeholder hijau dengan icon `NewspaperIcon` jika `image_url` null/broken
 
 **`components/dashboard/NewsWidget.tsx`**
+
 - Fetch 3 artikel terbaru via `useNews({ limit: 3 })`
 - Header: `"Kabar Pasar 📰"` + button `"Lihat Semua →"` navigate ke `/dashboard/kabar-pasar`
 - Layout: MUI Grid, 3 kolom (md) → 1 (xs)
@@ -147,6 +160,7 @@ export interface NewsArticle {
 ### 5.4 Halaman Penuh
 
 **`app/dashboard/kabar-pasar/page.tsx`**
+
 - Fetch dengan `useNews({ limit: 10, page })`
 - Header: judul "Kabar Pasar" + subtitle "Berita & informasi harga komoditas pertanian terkini"
 - Grid: 3 kolom (lg) → 2 (md) → 1 (xs)
@@ -157,13 +171,16 @@ export interface NewsArticle {
 ### 5.5 Perubahan Existing Files
 
 **`components/shared/Sidebar.tsx`**
+
 - Tambah item: `{ key: 'kabarPasar', icon: <NewspaperIcon />, path: '/dashboard/kabar-pasar' }`
 - Import: `NewspaperIcon from '@mui/icons-material/Newspaper'`
 
 **`app/dashboard/page.tsx`**
+
 - Import & tambahkan `<NewsWidget />` setelah `<RecentTransactionsTable />`
 
 **`messages/id.json`**
+
 - Tambah key `Sidebar.kabarPasar: "Kabar Pasar"`
 - Tambah key `MobileNav.kabarPasar: "Kabar Pasar"`
 - Tambah section `News: { title, subtitle, readMore, emptyState, loadingText }`
@@ -205,9 +222,11 @@ const MOCK_NEWS: NewsArticle[] = [
 
 ## 8. File Index (semua file yang dibuat/diubah)
 
+
 ### Dibuat Baru
+
 | File | Keterangan |
-|------|------------|
+| --- | --- |
 | `backend/src/services/newsScheduler.ts` | Cron job RSS fetcher |
 | `backend/src/routes/news.ts` | REST endpoint proxy |
 | `lib/types/news.ts` | TypeScript interface |
@@ -216,9 +235,11 @@ const MOCK_NEWS: NewsArticle[] = [
 | `components/dashboard/NewsWidget.tsx` | Widget 3 card di dashboard |
 | `app/dashboard/kabar-pasar/page.tsx` | Halaman penuh berita |
 
+
 ### Diubah
+
 | File | Perubahan |
-|------|-----------|
+| --- | --- |
 | `backend/src/server.ts` | Mount news route + startNewsScheduler |
 | `components/shared/Sidebar.tsx` | Tambah nav item Kabar Pasar |
 | `app/dashboard/page.tsx` | Tambah NewsWidget di bawah |

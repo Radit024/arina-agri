@@ -9,7 +9,7 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import WbCloudyIcon from '@mui/icons-material/WbCloudy';
-import KPICard from '@/components/dashboard/KPICard';
+import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import WeatherBanner from '@/components/dashboard/WeatherBanner';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
@@ -141,62 +141,26 @@ export default function DashboardPage() {
         </Box>
       </Box>
 
+      {/* KPI Cards */}
+      <DashboardKPI 
+        totalPengeluaran={formatRupiah(totalPengeluaran)}
+        expTrend={expTrend}
+        labaBersih={formatRupiah(labaBersih)}
+        labaBersihRaw={labaBersih}
+        profitTrend={profitTrend}
+        harvestDays={harvestInfo.days}
+        harvestSubtitle={harvestInfo.subtitle}
+        weatherTemp={28}
+        weatherCond={t('locale') === 'en' ? 'Sunny' : 'Cerah'}
+        weatherHum={75}
+        locale={t('locale')}
+        t={t}
+      />
+
       {/* Quick Actions */}
       <Box sx={{ mb: 4 }}>
         <QuickActions />
       </Box>
-
-      {/* KPI Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KPICard
-            title={t('kpi.totalExpense.title')}
-            value={formatRupiah(totalPengeluaran)}
-            subtitle={`${new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { month: 'long', year: 'numeric' }).format(new Date())}`}
-            icon={<AccountBalanceWalletIcon />}
-            color="error"
-            trend={{ 
-              value: t('kpi.trend', { value: `${expTrend > 0 ? '+' : ''}${expTrend}` }), 
-              positive: expTrend <= 0 // Lower expense is positive
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KPICard
-            title={t('kpi.netProfit.title')}
-            value={formatRupiah(labaBersih)}
-            subtitle={t('kpi.netProfit.subtitle')}
-            icon={<TrendingUpIcon />}
-            color="success"
-            trend={{ 
-              value: t('kpi.trend', { value: `${profitTrend > 0 ? '+' : ''}${profitTrend}` }), 
-              positive: profitTrend >= 0 
-            }}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KPICard
-            title={t('kpi.harvest.title')}
-            value={t('kpi.harvest.value', { days: harvestInfo.days })}
-            subtitle={harvestInfo.subtitle}
-            icon={<AgricultureIcon />}
-            color="success"
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-          <KPICard
-            title={t('kpi.weather.title')}
-            value={t('kpi.weather.value', { temp: 28, cond: t('locale') === 'en' ? 'Sunny' : 'Cerah' })}
-            subtitle={t('kpi.weather.subtitle', { hum: 75 })}
-            icon={<WbCloudyIcon />}
-            color="warning"
-          >
-            <Box sx={{ mt: 2 }}>
-              <WeatherBanner />
-            </Box>
-          </KPICard>
-        </Grid>
-      </Grid>
 
       {/* Main Content & Sidebar Layout */}
       <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>

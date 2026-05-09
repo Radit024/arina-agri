@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import Parser from 'rss-parser';
 import { supabaseAdmin } from './supabase';
+import { isAgriRelevant, extractSnippet, extractImageUrl } from './newsHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────
 interface NewsArticleInsert {
@@ -28,63 +29,7 @@ const RSS_SOURCES = [
   },
 ];
 
-const AGRI_KEYWORDS = [
-  'cabai',
-  'pupuk',
-  'hama',
-  'cuaca',
-  'panen',
-  'pertanian',
-  'harga',
-  'komoditas',
-  'agri',
-  'petani',
-  'sawah',
-  'irigasi',
-  'holtikultura',
-  'tanaman',
-  'kebun',
-  'lahan',
-  'beras',
-  'jagung',
-  'kedelai',
-  'tomat',
-];
-
 const ITEMS_PER_SOURCE = 5;
-
-// ─── Helpers ──────────────────────────────────────────────────────
-function isAgriRelevant(title: string, content?: string): boolean {
-  const textToCheck = `${title} ${content || ''}`.toLowerCase();
-  return AGRI_KEYWORDS.some((kw) => textToCheck.includes(kw));
-}
-
-function extractSnippet(content?: string | null, summary?: string | null): string | null {
-  const raw = content || summary || '';
-  // Strip HTML tags
-  const stripped = raw.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-  if (!stripped) return null;
-  return stripped.length > 200 ? stripped.substring(0, 200) + '...' : stripped;
-}
-
-function extractImageUrl(item: Parser.Item & { enclosure?: { url?: string } }): string | null {
-  // Try media:content, enclosure, or content
-  const mediaContent = (item as Record<string, unknown>)['media:content'] as
-    | { $?: { url?: string } }
-    | undefined;
-  if (mediaContent?.['$']?.url) return mediaContent['$'].url;
-
-  if (item.enclosure?.url) return item.enclosure.url;
-
-  // Try to find first img src in content
-  const contentHtml = (item as Record<string, unknown>)['content:encoded'] as string | undefined;
-  if (contentHtml) {
-    const match = contentHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (match?.[1]) return match[1];
-  }
-
-  return null;
-}
 
 // ─── Core Fetch Logic ─────────────────────────────────────────────
 async function fetchAndUpsertFeed(source: { name: string; url: string }): Promise<number> {

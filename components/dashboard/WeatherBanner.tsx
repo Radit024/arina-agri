@@ -1,7 +1,6 @@
 'use client';
 
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
+import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useTheme, alpha } from '@mui/material/styles';

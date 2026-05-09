@@ -154,6 +154,7 @@ export default function EnsiklopediaPage() {
     setHistoryDrawerOpen(false);
   };
 
+  const hasUserMessages = messages.some(m => m.role === 'user');
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -215,7 +216,7 @@ export default function EnsiklopediaPage() {
   };
 
   return (
-    <Box sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: 'background.default', overflow: 'hidden' }}>
+    <Box sx={{ height: { xs: 'calc(100dvh - 148px)', md: '100dvh' }, display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: 'background.default', overflow: 'hidden' }}>
 
       {/* Minimal Header */}
       <Box
@@ -253,12 +254,6 @@ export default function EnsiklopediaPage() {
             <Typography variant="subtitle1" sx={{ fontWeight: 600, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
               Arina AI
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: theme.palette.success.main }} />
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: '0.7rem' }}>
-                {t('online')}
-              </Typography>
-            </Box>
           </Box>
         </Box>
 
@@ -290,15 +285,25 @@ export default function EnsiklopediaPage() {
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Riwayat Chat">
-            <IconButton
-              onClick={() => setHistoryDrawerOpen(true)}
-              size="small"
-              sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' } }}
-            >
-              <HistoryIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant="outlined"
+            startIcon={<HistoryIcon sx={{ mr: { xs: -0.5, sm: 0 } }} />}
+            onClick={() => setHistoryDrawerOpen(true)}
+            size="small"
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: { xs: 1.5, sm: 2 },
+              fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+              borderColor: alpha(theme.palette.primary.main, 0.3),
+              color: 'primary.main',
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05), borderColor: 'primary.main' },
+            }}
+          >
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Riwayat Chat</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Riwayat</Box>
+          </Button>
           <Tooltip title="Hapus & Simpan Sesi">
             <IconButton
               onClick={handleClearChat}
@@ -333,31 +338,42 @@ export default function EnsiklopediaPage() {
             gap: 4
           }}
         >
-          {messages.length <= initialMessages.length && (
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', mt: { xs: 4, md: 8 }, mb: { xs: 4, md: 8 }, px: 2 }}>
-              <Box sx={{ 
-                width: 72, height: 72, borderRadius: 4, 
-                background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`, 
+          {/* Welcome Screen — shown only when no user messages yet */}
+          {!hasUserMessages && (
+            <Box sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              minHeight: '60vh',
+              px: 2,
+              animation: 'fadeIn 0.5s ease-out',
+              '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(16px)' }, to: { opacity: 1, transform: 'translateY(0)' } }
+            }}>
+              {/* Icon */}
+              <Box sx={{
+                width: 80, height: 80, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3,
-                boxShadow: `0 10px 30px ${alpha(theme.palette.success.main, 0.3)}`
+                boxShadow: `0 12px 36px ${alpha(theme.palette.success.main, 0.35)}`
               }}>
-                <AutoAwesomeIcon sx={{ fontSize: 36, color: '#fff' }} />
+                <AutoAwesomeIcon sx={{ fontSize: 40, color: '#fff' }} />
               </Box>
-              <Typography variant="h4" sx={{ 
-                fontWeight: 800, 
-                fontFamily: 'var(--font-sora)', 
-                mb: 1, 
-                textAlign: 'center',
+
+              {/* Title */}
+              <Typography variant="h4" sx={{
+                fontWeight: 800, fontFamily: 'var(--font-sora)', mb: 1.5, textAlign: 'center',
                 background: `linear-gradient(90deg, ${theme.palette.success.dark}, ${theme.palette.success.main})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
               }}>
-                Tanya apa saja seputar cabai
+                {t('welcome.title')}
               </Typography>
-              <Typography variant="body1" sx={{ color: 'text.secondary', mb: 5, textAlign: 'center', maxWidth: '400px', fontWeight: 500 }}>
-                Temukan panduan budidaya, penanganan hama, dan jadwal pemupukan yang cerdas.
+              <Typography variant="body1" sx={{ color: 'text.secondary', mb: 5, textAlign: 'center', maxWidth: '400px', fontWeight: 500, lineHeight: 1.6 }}>
+                {t('welcome.subtitle')}
               </Typography>
 
+              {/* Suggestion Cards */}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%', maxWidth: '640px' }}>
                 {[
                   { text: t('prompts.p1'), icon: <WaterDropOutlinedIcon sx={{ color: 'info.main' }} />, bg: alpha(theme.palette.info.main, 0.05), border: alpha(theme.palette.info.main, 0.2) },
@@ -368,33 +384,27 @@ export default function EnsiklopediaPage() {
                   <Card
                     key={`prompt-${idx}`}
                     elevation={0}
-                    onClick={() => setInputValue(prompt.text)}
+                    onClick={() => { setInputValue(prompt.text); }}
                     sx={{
-                      p: 2.5, 
-                      border: '1px solid', 
-                      borderColor: prompt.border, 
-                      borderRadius: 4, 
+                      p: 2.5, border: '1px solid', borderColor: prompt.border, borderRadius: 4,
                       bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.1) : prompt.bg,
-                      cursor: 'pointer', 
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-                      display: 'flex', 
-                      alignItems: 'flex-start',
-                      gap: 2,
-                      '&:hover': { 
-                        transform: 'translateY(-4px)', 
+                      cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'flex', alignItems: 'center', gap: 2,
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
                         boxShadow: `0 8px 24px ${alpha(theme.palette.text.primary, 0.08)}`,
-                        bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.2) : alpha(prompt.bg, 1.5)
                       }
                     }}
                   >
-                    <Box sx={{ 
-                      width: 40, height: 40, borderRadius: '50%', bgcolor: '#fff', 
+                    <Box sx={{
+                      width: 40, height: 40, borderRadius: '50%',
+                      bgcolor: theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
                     }}>
                       {prompt.icon}
                     </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mt: 0.5, lineHeight: 1.4 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.4 }}>
                       {prompt.text}
                     </Typography>
                   </Card>
@@ -409,7 +419,7 @@ export default function EnsiklopediaPage() {
             </Alert>
           )}
 
-          {messages.map((msg) => {
+          {hasUserMessages && messages.map((msg) => {
             const isUser = msg.role === 'user';
             return (
               <Box

@@ -422,6 +422,10 @@
     "online": "● Online",
     "typing": "Arina sedang mengetik...",
     "inputPlaceholder": "Tanya Arina tentang cabai...",
+    "welcome": {
+      "title": "Tanya apa saja seputar cabai",
+      "subtitle": "Temukan panduan budidaya, penanganan hama, dan jadwal pemupukan yang cerdas."
+    },
     "quickReferenceTitle": "Referensi Cepat Penyakit Cabai",
     "lossLabel": "Kerugian {value}",
     "cause": "Penyebab",

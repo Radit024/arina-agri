@@ -422,6 +422,10 @@
     "online": "● Online",
     "typing": "Arina is typing...",
     "inputPlaceholder": "Ask Arina about chili...",
+    "welcome": {
+      "title": "Ask anything about chili",
+      "subtitle": "Find cultivation guides, pest management, and smart fertilization schedules."
+    },
     "quickReferenceTitle": "Quick Chili Disease Reference",
     "lossLabel": "Loss {value}",
     "cause": "Cause",

@@ -26,8 +26,8 @@ export function useNews({ limit = 10, page = 1 }: UseNewsOptions = {}): UseNewsR
       setError(null);
 
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const url = `${baseUrl}/news?limit=${limit}&page=${page}`;
+        // Use relative path for internal Next.js API route
+        const url = `/api/news?limit=${limit}&page=${page}`;
         
         const res = await fetch(url);
         const json = await res.json();

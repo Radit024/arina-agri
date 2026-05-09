@@ -525,7 +525,7 @@ export const notificationApi = {
 };
 
 async function getNotificationSchedule(): Promise<NotificationScheduleConfig> {
-  const res = await fetch(`${AI_BASE}/notification/schedule`);
+  const res = await fetch('/api/notifications/schedule');
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.message || `HTTP error ${res.status}`);
   return json.data as NotificationScheduleConfig;
@@ -533,6 +533,11 @@ async function getNotificationSchedule(): Promise<NotificationScheduleConfig> {
 
 export const notificationScheduleApi = {
   get: () => getNotificationSchedule(),
-  set: (payload: NotificationScheduleConfig) =>
-    aiFetch<NotificationScheduleConfig>('/notification/schedule', payload),
+  set: (payload: NotificationScheduleConfig) => {
+    return fetch('/api/notifications/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(res => res.json());
+  }
 };

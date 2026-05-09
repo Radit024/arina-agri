@@ -19,7 +19,7 @@
     "dashboard": "Dashboard",
     "keuangan": "Pencatatan Keuangan",
     "cuaca": "Cuaca",
-    "ensiklopedia": "Ensiklopedia AI",
+    "ensiklopedia": "AI Chat",
     "kalender": "Smart Kalender",
     "stok": "Manajemen Stok Panen",
     "kabarPasar": "Berita",
@@ -283,12 +283,28 @@
       }
     },
     "months": [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember"
     ],
     "excel": {
       "reportTitle": "Laporan Transaksi Keuangan - Arina Agri",
-      "headers": ["Tanggal", "Kategori", "Keterangan", "Tipe", "Jumlah"],
+      "headers": [
+        "Tanggal",
+        "Kategori",
+        "Keterangan",
+        "Tipe",
+        "Jumlah"
+      ],
       "income": "Pemasukan",
       "expense": "Pengeluaran",
       "filename": "Laporan_Keuangan"
@@ -365,8 +381,18 @@
     "cancel": "Batal",
     "saveSchedule": "Simpan Jadwal",
     "months": [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember"
     ],
     "jenisLabels": {
       "pemupukan": "Pemupukan",
@@ -375,7 +401,15 @@
       "pemetikan": "Pemetikan/Panen",
       "lainnya": "Lainnya"
     },
-    "daysShort": ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
+    "daysShort": [
+      "Min",
+      "Sen",
+      "Sel",
+      "Rab",
+      "Kam",
+      "Jum",
+      "Sab"
+    ],
     "validation": {
       "titleRequired": "Masukkan judul kegiatan",
       "dateRequired": "Pilih tanggal"
@@ -599,7 +633,8 @@
       "validation": {
         "email": "Format email tidak valid",
         "password": "Password minimal 6 karakter"
-      }
+      },
+      "branding": "Kelola kebun Anda lebih cerdas dengan Arina Agri."
     },
     "register": {
       "title": "Buat Akun Baru",
@@ -654,9 +689,8 @@
       "contrast": "Kontras",
       "accent": "Warna Aksen",
       "language": "Bahasa",
-      "modeLight": "Terang",
-      "modeDark": "Gelap",
-      "modeSystem": "Sistem",
+      "modeLight": "Light",
+      "modeDark": "Dark",
       "accentName": "Hijau Arina",
       "languageName": "Bahasa Indonesia",
       "languageId": "Bahasa Indonesia",

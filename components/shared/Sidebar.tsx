@@ -30,7 +30,6 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 

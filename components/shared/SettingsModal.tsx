@@ -32,6 +32,7 @@ import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -43,7 +44,6 @@ const SETTINGS_TABS = [
 ];
 
 const TAB_CONTENT_MIN_HEIGHT = 460;
-type AppearanceMode = 'light' | 'dark' | 'system';
 type LanguageMode = 'id' | 'en';
 
 export default function SettingsModal() {
@@ -57,12 +57,12 @@ export default function SettingsModal() {
   const initialTab = searchParams.get('tab') || 'general';
   
   const { user } = useAuth();
+  const { mode, setThemeMode } = useThemeMode();
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
   const userAvatar = user?.user_metadata?.avatar_url;
 
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [appearanceMode, setAppearanceMode] = useState<AppearanceMode>('system');
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
   const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
@@ -83,9 +83,9 @@ export default function SettingsModal() {
     router.push(pathname, { scroll: false });
   };
 
-  const handleAppearanceChange = (_: MouseEvent<HTMLElement>, nextMode: AppearanceMode | null) => {
+  const handleAppearanceChange = (_: MouseEvent<HTMLElement>, nextMode: 'light' | 'dark' | null) => {
     if (nextMode) {
-      setAppearanceMode(nextMode);
+      setThemeMode(nextMode);
     }
   };
 
@@ -183,7 +183,7 @@ export default function SettingsModal() {
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.appearance')}</Typography>
                       <ToggleButtonGroup
-                        value={appearanceMode}
+                        value={mode}
                         exclusive
                         onChange={handleAppearanceChange}
                         size="small"
@@ -205,7 +205,6 @@ export default function SettingsModal() {
                       >
                         <ToggleButton value="light">{t('general.modeLight')}</ToggleButton>
                         <ToggleButton value="dark">{t('general.modeDark')}</ToggleButton>
-                        <ToggleButton value="system">{t('general.modeSystem')}</ToggleButton>
                       </ToggleButtonGroup>
                     </Box>
                     <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>

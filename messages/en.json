@@ -19,7 +19,7 @@
     "dashboard": "Dashboard",
     "keuangan": "Financial Logs",
     "cuaca": "Weather",
-    "ensiklopedia": "AI Encyclopedia",
+    "ensiklopedia": "AI Chat",
     "kalender": "Smart Calendar",
     "stok": "Harvest Stock",
     "kabarPasar": "Market News",
@@ -31,7 +31,7 @@
     "dashboard": "Dashboard",
     "keuangan": "Finance",
     "cuaca": "Weather",
-    "ensiklopedia": "Encyclopedia",
+    "ensiklopedia": "AI Chat",
     "kalender": "Calendar",
     "stok": "Stock",
     "kabarPasar": "Market News",
@@ -283,12 +283,28 @@
       }
     },
     "months": [
-      "January", "February", "March", "April", "May", "June", 
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
     ],
     "excel": {
       "reportTitle": "Financial Transaction Report - Arina Agri",
-      "headers": ["Date", "Category", "Description", "Type", "Amount"],
+      "headers": [
+        "Date",
+        "Category",
+        "Description",
+        "Type",
+        "Amount"
+      ],
       "income": "Income",
       "expense": "Expense",
       "filename": "Financial_Report"
@@ -365,8 +381,18 @@
     "cancel": "Cancel",
     "saveSchedule": "Save Schedule",
     "months": [
-      "January", "February", "March", "April", "May", "June", 
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
     ],
     "jenisLabels": {
       "pemupukan": "Fertilizing",
@@ -375,7 +401,15 @@
       "pemetikan": "Harvesting",
       "lainnya": "Other"
     },
-    "daysShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "daysShort": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "validation": {
       "titleRequired": "Enter activity title",
       "dateRequired": "Select date"
@@ -481,7 +515,7 @@
     },
     "empty": {
       "title": "No news available yet",
-      "subtitle": "The system will automatically fetch the latest agriculture news from RSS feeds every 6 hours"
+      "subtitle": "The system will automatically fetch the latest agriculture news"
     }
   },
   "Stock": {
@@ -599,7 +633,8 @@
       "validation": {
         "email": "Invalid email format",
         "password": "Password at least 6 characters"
-      }
+      },
+      "branding": "Manage your garden smarter with Arina Agri."
     },
     "register": {
       "title": "Create New Account",
@@ -656,7 +691,6 @@
       "language": "Language",
       "modeLight": "Light",
       "modeDark": "Dark",
-      "modeSystem": "System",
       "accentName": "Arina Green",
       "languageName": "English",
       "languageId": "Indonesian",

@@ -174,7 +174,7 @@ export default memo(function DashboardKPI({
           </Grid>
 
           {/* Row 2: Status Cuaca (Full Width) */}
-          <Grid size={12} sx={{ p: 3, bgcolor: '#f8fafc' }}>
+          <Grid size={12} sx={{ p: 3, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
               <Box sx={{ minWidth: 200 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>

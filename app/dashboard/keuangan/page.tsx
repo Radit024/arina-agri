@@ -30,7 +30,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -622,8 +622,8 @@ export default function KeuanganPage() {
                               label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
                               size="small"
                               sx={{
-                                backgroundColor: tx.jenis === 'pendapatan' ? '#dcfce7' : '#fee2e2',
-                                color: tx.jenis === 'pendapatan' ? '#16a34a' : '#dc2626',
+                                backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
+                                color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
                                 fontWeight: 800,
                                 fontSize: '0.7rem',
                                 borderRadius: 1.5,
@@ -662,7 +662,7 @@ export default function KeuanganPage() {
                                 sx={{
                                   borderRadius: 2,
                                   color: 'error.main',
-                                  bgcolor: '#fee2e2',
+                                  bgcolor: alpha(theme.palette.error.main, 0.1),
                                   '&:hover': { bgcolor: 'error.main', color: 'white' },
                                 }}
                               >
@@ -711,13 +711,13 @@ export default function KeuanganPage() {
                   alignItems: 'center',
                   gap: 2,
                   p: 2,
-                  bgcolor: '#f0fdf4',
+                  bgcolor: alpha(theme.palette.success.main, 0.1),
                   borderRadius: 3,
                   mb: 2,
-                  border: '1px solid #bbf7d0',
+                  border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                 }}
               >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <TrendingUpIcon sx={{ color: 'white', fontSize: 20 }} />
                 </Box>
                 <Box>
@@ -735,13 +735,13 @@ export default function KeuanganPage() {
                   alignItems: 'center',
                   gap: 2,
                   p: 2,
-                  bgcolor: '#fff1f2',
+                  bgcolor: alpha(theme.palette.error.main, 0.1),
                   borderRadius: 3,
                   mb: 2,
-                  border: '1px solid #fecdd3',
+                  border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
                 }}
               >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'error.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <TrendingDownIcon sx={{ color: 'white', fontSize: 20 }} />
                 </Box>
                 <Box>
@@ -758,10 +758,10 @@ export default function KeuanganPage() {
               <Box
                 sx={{
                   p: 2.5,
-                  bgcolor: labaBersih >= 0 ? 'rgba(22, 163, 74, 0.07)' : 'rgba(220, 38, 38, 0.07)',
+                  bgcolor: labaBersih >= 0 ? alpha(theme.palette.success.main, 0.07) : alpha(theme.palette.error.main, 0.07),
                   borderRadius: 3,
                   border: '1px solid',
-                  borderColor: labaBersih >= 0 ? '#bbf7d0' : '#fecaca',
+                  borderColor: labaBersih >= 0 ? alpha(theme.palette.success.main, 0.2) : alpha(theme.palette.error.main, 0.2),
                 }}
               >
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
@@ -1087,7 +1087,7 @@ export default function KeuanganPage() {
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 2, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+          <Box sx={{ mt: 2, p: 1.5, bgcolor: alpha(theme.palette.text.primary, 0.03), borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
               HPP = Total Biaya Produksi / Jumlah Produksi
             </Typography>
@@ -1100,11 +1100,11 @@ export default function KeuanganPage() {
           </Box>
 
           <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.2 }}>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostTotal')}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatRupiah(biayaVariabelTotal)}</Typography>
             </Box>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#f8fafc' }}>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostPerUnit')}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>
                 {jumlahProduksi > 0 ? formatRupiah(biayaVariabelPerUnit) : t('hppDialog.results.inputProduction')}
@@ -1197,7 +1197,7 @@ export default function KeuanganPage() {
           )}
 
           {/* Ringkasan data */}
-          <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
+          <Box sx={{ p: 2, bgcolor: alpha(theme.palette.text.primary, 0.03), borderRadius: 3, border: '1px solid', borderColor: 'divider', mb: 3 }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {t('reportDialog.summary.title')}
             </Typography>
@@ -1262,7 +1262,7 @@ export default function KeuanganPage() {
               border: '2px solid',
               borderColor: aiQuotaRemaining > 0 ? 'primary.light' : 'divider',
               borderRadius: 3,
-              bgcolor: aiQuotaRemaining > 0 ? '#f0fdf4' : '#f8fafc',
+              bgcolor: aiQuotaRemaining > 0 ? alpha(theme.palette.success.main, 0.05) : alpha(theme.palette.text.primary, 0.03),
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
@@ -1276,8 +1276,8 @@ export default function KeuanganPage() {
                 label={`${aiQuotaRemaining}/${MAX_AI_REPORTS_PER_MONTH} ${t('reportDialog.ai.quotaRemaining')}`}
                 size="small"
                 sx={{
-                  bgcolor: aiQuotaRemaining > 0 ? '#dcfce7' : '#fee2e2',
-                  color: aiQuotaRemaining > 0 ? '#16a34a' : '#dc2626',
+                  bgcolor: aiQuotaRemaining > 0 ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
+                  color: aiQuotaRemaining > 0 ? 'success.main' : 'error.main',
                   fontWeight: 700,
                   fontSize: '0.68rem',
                 }}
@@ -1294,7 +1294,7 @@ export default function KeuanganPage() {
               startIcon={<AutoFixHighIcon />}
               onClick={handleGeneratePdfAI}
               disabled={reportLoading || aiQuotaRemaining <= 0 || monthFilteredTransactions.length === 0}
-              sx={{ borderRadius: 8, bgcolor: '#111827', '&:hover': { bgcolor: '#1e293b' } }}
+              sx={{ borderRadius: 8, bgcolor: 'text.primary', color: 'background.default', '&:hover': { bgcolor: 'text.secondary' } }}
             >
               {t('reportDialog.ai.button')}
             </Button>

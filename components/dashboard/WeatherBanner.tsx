@@ -32,7 +32,7 @@ export default function WeatherBanner({ message }: WeatherBannerProps) {
     >
       <Box 
         sx={{ 
-          bgcolor: '#FFFFFF', 
+          bgcolor: 'background.paper', 
           borderRadius: '50%', 
           p: 0.5, 
           display: 'flex', 

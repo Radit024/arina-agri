@@ -3,29 +3,42 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import Tooltip from '@mui/material/Tooltip';
+import Drawer from '@mui/material/Drawer';
+import CardContent from '@mui/material/CardContent';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import PersonIcon from '@mui/icons-material/Person';
-import SpaIcon from '@mui/icons-material/Spa';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
-import Avatar from '@mui/material/Avatar';
+import HistoryIcon from '@mui/icons-material/History';
+import CloseIcon from '@mui/icons-material/Close';
+import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
+import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import EmojiNatureOutlinedIcon from '@mui/icons-material/EmojiNatureOutlined';
+import CustomSpaIcon from '@mui/icons-material/SpaOutlined'; // Using a similar icon
 import ReactMarkdown from 'react-markdown';
-import { initialChatMessages, diseaseCards } from '@/lib/mockData';
 import type { ChatMessage } from '@/lib/mockData';
 import { aiApi } from '@/lib/api';
 import { useTranslations } from 'next-intl';
-
-
 import { useAuth } from '@/context/AuthContext';
+
+interface HistorySession {
+  id: string;
+  date: string;
+  preview: string;
+  messages: ChatMessage[];
+}
 
 export default function EnsiklopediaPage() {
   const theme = useTheme();
@@ -33,25 +46,25 @@ export default function EnsiklopediaPage() {
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [diseaseModalOpen, setDiseaseModalOpen] = useState(false);
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [historyList, setHistoryList] = useState<HistorySession[]>([]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const firstName = (mounted && user?.user_metadata?.full_name) 
-    ? user.user_metadata.full_name.split(' ')[0] 
-    : (mounted && user?.email) 
-      ? user.email.split('@')[0] 
+  const firstName = (mounted && user?.user_metadata?.full_name)
+    ? user.user_metadata.full_name.split(' ')[0]
+    : (mounted && user?.email)
+      ? user.email.split('@')[0]
       : 'Petani';
 
   const initialMessages = useMemo(() => {
     try {
       const raw = t.raw('initialMessages');
       if (!Array.isArray(raw)) return [];
-      
-      // Use a stable date during SSR to prevent hydration mismatch
-      const baseTime = mounted ? Date.now() : 1715238000000; // Fixed fallback for SSR
-      
+      const baseTime = mounted ? Date.now() : 1715238000000;
       return raw.map((m: any, i: number) => ({
         id: `initial-${i}`,
         role: m.role,
@@ -76,12 +89,15 @@ export default function EnsiklopediaPage() {
     return AI_RESPONSES.default;
   };
 
+  const getStorageKey = () => {
+    const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
+    return `arina_chat_${arinaUserId}`;
+  };
+
   useEffect(() => {
     if (!authLoading) {
-      const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
-      const storageKey = `arina_chat_${arinaUserId}`;
+      const storageKey = getStorageKey();
       const savedChat = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
-      
       if (savedChat) {
         try {
           const parsed = JSON.parse(savedChat);
@@ -96,25 +112,46 @@ export default function EnsiklopediaPage() {
       } else {
         setMessages(initialMessages);
       }
+
+      // Load history sessions
+      const historyKey = `arina_chat_history_${getStorageKey()}`;
+      const savedHistory = typeof window !== 'undefined' ? localStorage.getItem(historyKey) : null;
+      if (savedHistory) {
+        try { setHistoryList(JSON.parse(savedHistory)); } catch { }
+      }
     }
-    // Only run initialization once when auth is ready
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
-  // Save messages to localStorage whenever they update
   useEffect(() => {
     if (messages.length > 0) {
-      const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
-      const storageKey = `arina_chat_${arinaUserId}`;
-      localStorage.setItem(storageKey, JSON.stringify(messages));
+      localStorage.setItem(getStorageKey(), JSON.stringify(messages));
     }
   }, [messages]);
 
   const handleClearChat = () => {
-    const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
-    const storageKey = `arina_chat_${arinaUserId}`;
-    localStorage.removeItem(storageKey);
+    if (messages.length > 1) {
+      const userMessages = messages.filter(m => m.role === 'user');
+      if (userMessages.length > 0) {
+        const newSession: HistorySession = {
+          id: Date.now().toString(),
+          date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+          preview: userMessages[0].content.slice(0, 60) + (userMessages[0].content.length > 60 ? '...' : ''),
+          messages: [...messages],
+        };
+        const historyKey = `arina_chat_history_${getStorageKey()}`;
+        const updated = [newSession, ...historyList].slice(0, 20);
+        setHistoryList(updated);
+        localStorage.setItem(historyKey, JSON.stringify(updated));
+      }
+    }
+    localStorage.removeItem(getStorageKey());
     setMessages(initialMessages);
+  };
+
+  const handleLoadHistory = (session: HistorySession) => {
+    setMessages(session.messages);
+    setHistoryDrawerOpen(false);
   };
 
   const [inputValue, setInputValue] = useState('');
@@ -178,280 +215,501 @@ export default function EnsiklopediaPage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
-      <Box sx={{ mb: { xs: 2, md: 3 } }}>
-        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-          {t('title')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('subtitle')}
-        </Typography>
-      </Box>
+    <Box sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: 'background.default', overflow: 'hidden' }}>
 
-      <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-        {t.rich('notice', { strong: (chunks) => <strong>{chunks}</strong> })}
-      </Alert>
-
-      <Grid container spacing={{ xs: 2, md: 3 }}>
-        {/* Chat Interface */}
-        <Grid size={{ xs: 12, lg: 7 }}>
-          <Card 
-            elevation={0}
-            sx={{ 
-              height: { xs: 500, sm: 600, md: 640 }, 
-              display: 'flex', 
-              flexDirection: 'column',
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: { xs: 3, sm: 4 },
-              overflow: 'hidden'
+      {/* Minimal Header */}
+      <Box
+        sx={{
+          px: { xs: 2, md: 4 },
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: alpha(theme.palette.background.paper, 0.8),
+          backdropFilter: 'blur(12px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10
+        }}
+      >
+        {/* Left Side: Logo/Title */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100',
+              width: 32,
+              height: 32,
+              borderRadius: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {/* Header Chat */}
-            <Box
-              sx={{
-                px: { xs: 2, sm: 3 },
-                py: { xs: 1.5, sm: 2 },
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                bgcolor: 'background.default'
-              }}
+            <AutoAwesomeIcon sx={{ color: theme.palette.text.primary, fontSize: 18 }} />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
+              Arina AI
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: theme.palette.success.main }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, fontSize: '0.7rem' }}>
+                {t('online')}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Right Side: Actions */}
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            variant="text"
+            startIcon={<BugReportOutlinedIcon />}
+            onClick={() => setDiseaseModalOpen(true)}
+            size="small"
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              color: 'text.secondary',
+              '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' },
+            }}
+          >
+            {t('quickReference.title')}
+          </Button>
+          <Tooltip title={t('quickReference.title')}>
+            <IconButton
+              onClick={() => setDiseaseModalOpen(true)}
+              size="small"
+              sx={{ display: { xs: 'flex', sm: 'none' }, color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' } }}
             >
+              <BugReportOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Riwayat Chat">
+            <IconButton
+              onClick={() => setHistoryDrawerOpen(true)}
+              size="small"
+              sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' } }}
+            >
+              <HistoryIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Hapus & Simpan Sesi">
+            <IconButton
+              onClick={handleClearChat}
+              size="small"
+              sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}
+            >
+              <DeleteOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+
+      {/* Messages Scroll Area */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          position: 'relative'
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: '800px',
+            width: '100%',
+            p: { xs: 2, md: 4 },
+            pb: { xs: 4, md: 6 },
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4
+          }}
+        >
+          {messages.length <= initialMessages.length && (
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', mt: { xs: 4, md: 8 }, mb: { xs: 4, md: 8 }, px: 2 }}>
+              <Box sx={{ 
+                width: 72, height: 72, borderRadius: 4, 
+                background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3,
+                boxShadow: `0 10px 30px ${alpha(theme.palette.success.main, 0.3)}`
+              }}>
+                <AutoAwesomeIcon sx={{ fontSize: 36, color: '#fff' }} />
+              </Box>
+              <Typography variant="h4" sx={{ 
+                fontWeight: 800, 
+                fontFamily: 'var(--font-sora)', 
+                mb: 1, 
+                textAlign: 'center',
+                background: `linear-gradient(90deg, ${theme.palette.success.dark}, ${theme.palette.success.main})`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                Tanya apa saja seputar cabai
+              </Typography>
+              <Typography variant="body1" sx={{ color: 'text.secondary', mb: 5, textAlign: 'center', maxWidth: '400px', fontWeight: 500 }}>
+                Temukan panduan budidaya, penanganan hama, dan jadwal pemupukan yang cerdas.
+              </Typography>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%', maxWidth: '640px' }}>
+                {[
+                  { text: t('prompts.p1'), icon: <WaterDropOutlinedIcon sx={{ color: 'info.main' }} />, bg: alpha(theme.palette.info.main, 0.05), border: alpha(theme.palette.info.main, 0.2) },
+                  { text: t('prompts.p2'), icon: <ShieldOutlinedIcon sx={{ color: 'error.main' }} />, bg: alpha(theme.palette.error.main, 0.05), border: alpha(theme.palette.error.main, 0.2) },
+                  { text: t('prompts.p3'), icon: <CustomSpaIcon sx={{ color: 'success.main' }} />, bg: alpha(theme.palette.success.main, 0.05), border: alpha(theme.palette.success.main, 0.2) },
+                  { text: t('prompts.p4'), icon: <EmojiNatureOutlinedIcon sx={{ color: 'warning.main' }} />, bg: alpha(theme.palette.warning.main, 0.05), border: alpha(theme.palette.warning.main, 0.2) }
+                ].map((prompt, idx) => (
+                  <Card
+                    key={`prompt-${idx}`}
+                    elevation={0}
+                    onClick={() => setInputValue(prompt.text)}
+                    sx={{
+                      p: 2.5, 
+                      border: '1px solid', 
+                      borderColor: prompt.border, 
+                      borderRadius: 4, 
+                      bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.1) : prompt.bg,
+                      cursor: 'pointer', 
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                      display: 'flex', 
+                      alignItems: 'flex-start',
+                      gap: 2,
+                      '&:hover': { 
+                        transform: 'translateY(-4px)', 
+                        boxShadow: `0 8px 24px ${alpha(theme.palette.text.primary, 0.08)}`,
+                        bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.2) : alpha(prompt.bg, 1.5)
+                      }
+                    }}
+                  >
+                    <Box sx={{ 
+                      width: 40, height: 40, borderRadius: '50%', bgcolor: '#fff', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                    }}>
+                      {prompt.icon}
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', mt: 0.5, lineHeight: 1.4 }}>
+                      {prompt.text}
+                    </Typography>
+                  </Card>
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {chatError && (
+            <Alert severity="warning" sx={{ borderRadius: 3, mb: 2 }}>
+              {chatError}
+            </Alert>
+          )}
+
+          {messages.map((msg) => {
+            const isUser = msg.role === 'user';
+            return (
+              <Box
+                key={msg.id}
+                sx={{
+                  display: 'flex',
+                  gap: { xs: 1.5, sm: 2 },
+                  justifyContent: isUser ? 'flex-end' : 'flex-start',
+                  width: '100%',
+                  animation: 'slideUpFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  '@keyframes slideUpFadeIn': {
+                    '0%': { opacity: 0, transform: 'translateY(20px) scale(0.98)' },
+                    '100%': { opacity: 1, transform: 'translateY(0) scale(1)' }
+                  }
+                }}
+              >
+                {/* AI Avatar */}
+                {!isUser && (
+                  <Box
+                    sx={{
+                      width: { xs: 32, sm: 36 },
+                      height: { xs: 32, sm: 36 },
+                      borderRadius: '40%', // Squircle shape
+                      background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      mt: 0.5,
+                      boxShadow: `0 4px 10px ${alpha(theme.palette.success.main, 0.2)}`
+                    }}
+                  >
+                    <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#fff' }} />
+                  </Box>
+                )}
+
+                {/* Message Content */}
+                <Box
+                  sx={{
+                    maxWidth: isUser ? { xs: '85%', sm: '70%' } : 'calc(100% - 56px)', // Leave room for avatar
+                  }}
+                >
+                  {isUser ? (
+                    <Box
+                      sx={{
+                        bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : '#ffffff',
+                        p: { xs: 1.5, sm: 2 },
+                        borderRadius: '24px 24px 4px 24px',
+                        color: 'text.primary',
+                        fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.divider, 0.5)
+                      }}
+                    >
+                      <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>{msg.content}</Typography>
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.success.main, 0.1) : '#F4F9F4',
+                        p: { xs: 2, sm: 2.5 },
+                        borderRadius: '4px 24px 24px 24px',
+                        fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                        lineHeight: 1.8, // More breathing room
+                        color: 'text.primary',
+                        boxShadow: 'none', // Flat look for AI to contrast with User
+                        '& p': { m: 0, mb: 2.5, '&:last-of-type': { mb: 0 } },
+                        '& ul, & ol': { m: 0, pl: 3, mb: 2.5 },
+                        '& li': { mb: 1.5, pl: 0.5 },
+                        '& strong': { fontWeight: 800, color: theme.palette.success.dark },
+                        '& code': {
+                          bgcolor: alpha(theme.palette.text.primary, 0.08),
+                          px: 1, py: 0.25, borderRadius: 1, fontFamily: 'monospace', fontSize: '0.85em'
+                        },
+                        '& blockquote': {
+                          borderLeft: `4px solid ${theme.palette.success.main}`,
+                          bgcolor: alpha(theme.palette.success.main, 0.05),
+                          m: 0, mb: 2.5, p: 2, borderRadius: '0 8px 8px 0',
+                          color: 'text.secondary'
+                        }
+                      }}
+                    >
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, justifyContent: 'flex-start', width: '100%', animation: 'slideUpFadeIn 0.3s ease-out forwards' }}>
               <Box
                 sx={{
-                  bgcolor: theme.palette.success.main,
-                  width: { xs: 36, sm: 42 },
-                  height: { xs: 36, sm: 42 },
-                  borderRadius: 2,
+                  width: { xs: 32, sm: 36 },
+                  height: { xs: 32, sm: 36 },
+                  borderRadius: '40%',
+                  background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.success.main, 0.2)}`
+                  flexShrink: 0,
+                  mt: 0.5,
+                  boxShadow: `0 4px 10px ${alpha(theme.palette.success.main, 0.2)}`
                 }}
               >
-                <AutoAwesomeIcon sx={{ color: '#fff', fontSize: { xs: 18, sm: 20 } }} />
+                <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#fff' }} />
               </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
-                  Arina AI
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: theme.palette.success.main }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                    {t('online')}
-                  </Typography>
+              <Box sx={{ pt: 1.5 }}>
+                <Box sx={{ display: 'flex', gap: '6px', alignItems: 'center', bgcolor: '#F4F9F4', px: 2, py: 1.5, borderRadius: '4px 24px 24px 24px' }}>
+                  {[0, 150, 300].map((delay) => (
+                    <Box key={delay} sx={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      bgcolor: 'success.main',
+                      animation: 'bounce 1s infinite cubic-bezier(0.4, 0, 0.2, 1)',
+                      animationDelay: `${delay}ms`,
+                      opacity: 0.6,
+                      '@keyframes bounce': {
+                        '0%, 100%': { transform: 'translateY(0)', opacity: 0.6 },
+                        '50%': { transform: 'translateY(-6px)', opacity: 1 }
+                      }
+                    }} />
+                  ))}
                 </Box>
               </Box>
-              
-              <Box sx={{ ml: 'auto' }}>
-                <IconButton 
-                  onClick={handleClearChat} 
-                  size="small"
-                  aria-label="Clear chat history"
-                  sx={{ color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) } }}
-                >
-                  <DeleteOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Box>
             </Box>
+          )}
 
-            {/* Messages Area */}
-            <Box 
-              sx={{ 
-                flex: 1, 
-                overflowY: 'auto', 
-                p: { xs: 1.5, sm: 2.5 }, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 2,
-                bgcolor: 'background.paper' 
-              }}
-            >
-              {chatError && (
-                <Alert severity="warning" sx={{ borderRadius: 3 }}>
-                  {chatError}
-                </Alert>
-              )}
-              {messages.map((msg) => {
-                const isUser = msg.role === 'user';
-                return (
-                  <Box
-                    key={msg.id}
+          <div ref={messagesEndRef} />
+        </Box>
+      </Box>
+
+      {/* Fixed Input Area */}
+      <Box
+        sx={{
+          px: 2,
+          pb: 0,
+          pt: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 10,
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box sx={{ maxWidth: '800px', width: '100%', position: 'relative' }}>
+
+          {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
+          {messages.length > initialMessages.length && (
+            <Box sx={{ position: 'relative' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'nowrap',
+                  gap: 1,
+                  overflowX: 'auto',
+                  mb: 1.5,
+                  pb: 0.5,
+                  '::-webkit-scrollbar': { display: 'none' },
+                  scrollbarWidth: 'none',
+                  px: 1,
+                  maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
+                }}
+              >
+                {[t('prompts.p1'), t('prompts.p2'), t('prompts.p3'), t('prompts.p4')].map((prompt) => (
+                  <Chip
+                    key={prompt}
+                    label={prompt}
+                    size="small"
+                    clickable
+                    onClick={() => setInputValue(prompt)}
                     sx={{
-                      display: 'flex',
-                      gap: 1.5,
-                      alignItems: 'flex-end',
-                      justifyContent: isUser ? 'flex-end' : 'flex-start',
+                      backgroundColor: theme.palette.mode === 'dark' ? alpha('#fff', 0.1) : alpha('#fff', 0.8),
+                      backdropFilter: 'blur(8px)',
+                      color: 'text.secondary',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      height: 32,
+                      borderRadius: '16px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        backgroundColor: theme.palette.mode === 'dark' ? alpha('#fff', 0.15) : '#fff',
+                        color: 'success.main',
+                        borderColor: 'success.main',
+                        transform: 'translateY(-2px)',
+                      },
                     }}
-                  >
-                    {!isUser && (
-                      <Box 
-                        sx={{ 
-                          display: { xs: 'none', sm: 'flex' },
-                          width: 28, height: 28, borderRadius: '50%', 
-                          bgcolor: alpha(theme.palette.success.main, 0.12), color: theme.palette.success.main, 
-                          alignItems: 'center', justifyContent: 'center', mb: 0.5 
-                        }}
-                      >
-                        <AutoAwesomeIcon sx={{ fontSize: 16 }} />
-                      </Box>
-                    )}
-                    
-                    <Box
-                      sx={{
-                        maxWidth: { xs: '90%', sm: '75%' },
-                        p: { xs: 1.5, sm: 2 },
-                        borderRadius: isUser ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                        backgroundColor: isUser ? theme.palette.success.main : 'background.default',
-                        color: isUser ? '#fff' : 'text.primary',
-                        boxShadow: isUser ? `0 4px 12px ${alpha(theme.palette.success.main, 0.15)}` : '0 2px 8px rgba(0,0,0,0.03)',
-                        border: isUser ? 'none' : `1px solid ${theme.palette.divider}`
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                          lineHeight: 1.6,
-                          '& p': { m: 0, mb: 1.5, '&:last-of-type': { mb: 0 } },
-                          '& ul, & ol': { m: 0, pl: 2.5, mb: 1.5 },
-                          '& li': { mb: 0.5 },
-                          '& strong': { fontWeight: 700 },
-                        }}
-                      >
-                        {msg.content.includes('*') || msg.content.includes('- ') ? (
-                          <ReactMarkdown>{msg.content}</ReactMarkdown>
-                        ) : (
-                          <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>{msg.content}</Typography>
-                        )}
-                      </Box>
-                    </Box>
-                  </Box>
-                );
-              })}
-              
-              {isTyping && (
-                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-end', justifyContent: 'flex-start' }}>
-                  <Box 
-                    sx={{ 
-                      display: { xs: 'none', sm: 'flex' },
-                      width: 28, height: 28, borderRadius: '50%', 
-                      bgcolor: alpha(theme.palette.success.main, 0.12), color: theme.palette.success.main, 
-                      alignItems: 'center', justifyContent: 'center', mb: 0.5 
-                    }}
-                  >
-                    <AutoAwesomeIcon sx={{ fontSize: 16 }} />
-                  </Box>
-                  <Box sx={{ px: 2.5, py: 1.5, borderRadius: '20px 20px 20px 4px', backgroundColor: 'background.default', border: `1px solid ${theme.palette.divider}` }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-              <div ref={messagesEndRef} />
-            </Box>
-
-            <Divider />
-
-            {/* Input Area */}
-            <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.default' }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  gap: 1.5, 
-                  alignItems: 'flex-end',
-                  bgcolor: 'background.paper',
-                  p: { xs: 0.5, sm: 1 },
-                  borderRadius: { xs: 3, sm: 4 },
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                }}
-              >
-                <TextField
-                  fullWidth
-                  placeholder={t('inputPlaceholder')}
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  multiline
-                  maxRows={4}
-                  variant="standard"
-                  slotProps={{
-                    input: {
-                      disableUnderline: true,
-                      sx: { px: 1, py: { xs: 0.75, sm: 0.5 }, fontSize: { xs: '0.875rem', sm: '0.95rem' } }
-                    }
-                  }}
-                />
-                <IconButton
-                  onClick={handleSend}
-                  disabled={!inputValue.trim()}
-                  sx={{
-                    bgcolor: inputValue.trim() ? theme.palette.success.main : theme.palette.action.hover,
-                    color: inputValue.trim() ? '#fff' : theme.palette.text.secondary,
-                    width: { xs: 36, sm: 44 },
-                    height: { xs: 36, sm: 44 },
-                    borderRadius: '12px',
-                    '&:hover': { bgcolor: inputValue.trim() ? theme.palette.success.dark : theme.palette.action.hover },
-                    flexShrink: 0,
-                    transition: 'all 0.2s',
-                    mb: { xs: 0.25, sm: 0.5 },
-                    mr: { xs: 0.25, sm: 0.5 }
-                  }}
-                >
-                  <SendIcon sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, ml: 0.5 }} />
-                </IconButton>
+                  />
+                ))}
               </Box>
             </Box>
-          </Card>
+          )}
 
-          {/* Quick prompts */}
-          <Box 
-            sx={{ 
-              mt: 2, 
-              display: 'flex', 
-              flexWrap: { xs: 'nowrap', sm: 'wrap' }, 
-              gap: 1,
-              overflowX: { xs: 'auto', sm: 'visible' },
-              pb: { xs: 1, sm: 0 },
-              '::-webkit-scrollbar': { display: 'none' },
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none'
+          {/* Input Box - Glassmorphism */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              gap: 1.5,
+              bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.grey[900], 0.8) : alpha('#ffffff', 0.85),
+              backdropFilter: 'blur(20px)',
+              p: 1.5,
+              pl: 3,
+              borderRadius: '32px',
+              border: '1px solid',
+              borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.grey[800], 0.5) : alpha(theme.palette.success.main, 0.2),
+              boxShadow: theme.palette.mode === 'dark' ? '0 10px 40px rgba(0,0,0,0.5)' : '0 10px 40px rgba(22,163,74,0.15)',
+              transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s',
+              '&:focus-within': {
+                borderColor: theme.palette.success.main,
+                boxShadow: theme.palette.mode === 'dark' ? `0 10px 40px ${alpha(theme.palette.success.main, 0.3)}` : `0 15px 50px ${alpha(theme.palette.success.main, 0.25)}`,
+                transform: 'translateY(-2px)',
+              }
             }}
           >
-            {[t('prompts.p1'), t('prompts.p2'), t('prompts.p3'), t('prompts.p4')].map((prompt) => (
-              <Chip
-                key={prompt}
-                label={prompt}
-                size="small"
-                clickable
-                onClick={() => setInputValue(prompt)}
-                sx={{ 
-                  backgroundColor: alpha(theme.palette.success.main, 0.12), 
-                  color: theme.palette.success.dark, 
-                  border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap'
-                }}
-              />
-            ))}
+            <TextField
+              fullWidth
+              placeholder={t('inputPlaceholder')}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              multiline
+              maxRows={6}
+              variant="standard"
+              slotProps={{
+                input: {
+                  disableUnderline: true,
+                  sx: {
+                    py: 1,
+                    fontSize: '1rem',
+                    lineHeight: 1.5,
+                    fontWeight: 500,
+                  }
+                }
+              }}
+            />
+            <IconButton
+              onClick={handleSend}
+              disabled={!inputValue.trim()}
+              sx={{
+                bgcolor: inputValue.trim() ? 'success.main' : alpha(theme.palette.text.disabled, 0.1),
+                color: inputValue.trim() ? '#fff' : 'text.disabled',
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                '&:hover': {
+                  bgcolor: inputValue.trim() ? 'success.dark' : alpha(theme.palette.text.disabled, 0.2),
+                  transform: inputValue.trim() ? 'scale(1.05)' : 'none',
+                },
+                flexShrink: 0,
+                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                mb: 0.5,
+                mr: 0.5
+              }}
+            >
+              <SendIcon sx={{ fontSize: '1.2rem', ml: inputValue.trim() ? 0.5 : 0 }} />
+            </IconButton>
           </Box>
-        </Grid>
+          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1, mb: 1, color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
+            Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.
+          </Typography>
+        </Box>
+      </Box>
 
-        {/* Disease Quick Reference */}
-        <Grid size={{ xs: 12, lg: 5 }} sx={{ mt: { xs: 2, lg: 0 } }}>
-          <Box sx={{ mb: 2.5, display: 'flex' , alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ width: 4, height: 24, bgcolor: theme.palette.success.main, borderRadius: 4 }} />
-            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: 'text.primary', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
-              {t('quickReference.title')}
-            </Typography>
+      {/* ── Disease Reference Modal ──────────────────────────────── */}
+      <Dialog
+        open={diseaseModalOpen}
+        onClose={() => setDiseaseModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: { sx: { borderRadius: 4, overflow: 'hidden', bgcolor: 'background.default' } }
+        }}
+      >
+        <DialogTitle sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          pb: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          fontFamily: 'var(--font-sora)',
+          fontWeight: 700
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.warning.main, 0.1), color: 'warning.main', borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BugReportOutlinedIcon fontSize="small" />
+            </Box>
+            {t('quickReference.title')}
           </Box>
+          <IconButton onClick={() => setDiseaseModalOpen(false)} size="small" sx={{ color: 'text.secondary' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {t.raw('quickReference.diseases').map((disease: any) => (
               <Card
@@ -461,40 +719,40 @@ export default function EnsiklopediaPage() {
                   border: '1px solid',
                   borderColor: 'divider',
                   borderRadius: 3,
-                  borderLeft: '4px solid',
-                  borderLeftColor: disease.severity === 'tinggi' ? theme.palette.error.main : theme.palette.warning.main,
+                  bgcolor: 'background.paper',
                   transition: 'all 0.2s ease',
-                  '&:hover': { 
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.06)'
+                  '&:hover': {
+                    borderColor: disease.severity === 'tinggi' ? 'error.main' : 'warning.main',
                   },
                 }}
               >
-                <CardContent sx={{ p: { xs: 2, sm: '20px !important' } }}>
-                  <Box className="flex items-start justify-between mb-2" sx={{ gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary', fontSize: { xs: '0.95rem', sm: '1rem' } }}>{disease.name}</Typography>
+                <CardContent sx={{ p: { xs: 2, sm: '24px !important' } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {disease.name}
+                    </Typography>
                     <Chip
                       label={t('quickReference.risk', { value: disease.loss })}
                       size="small"
                       sx={{
-                        backgroundColor: disease.severity === 'tinggi' ? alpha(theme.palette.error.main, 0.12) : alpha(theme.palette.warning.main, 0.12),
-                        color: disease.severity === 'tinggi' ? theme.palette.error.dark : theme.palette.warning.dark,
+                        backgroundColor: disease.severity === 'tinggi' ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
+                        color: disease.severity === 'tinggi' ? (theme.palette.mode === 'dark' ? theme.palette.error.light : theme.palette.error.dark) : (theme.palette.mode === 'dark' ? theme.palette.warning.light : theme.palette.warning.dark),
                         fontWeight: 700,
-                        fontSize: '0.65rem',
-                        height: 22
+                        fontSize: '0.7rem',
+                        height: 24,
                       }}
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: theme.palette.text.secondary }}>{t('cause')}:</strong> {disease.cause}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                      <strong style={{ color: theme.palette.text.primary }}>{t('cause')}:</strong> {disease.cause}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      <strong style={{ color: theme.palette.text.secondary }}>{t('symptoms')}:</strong> {disease.symptoms}
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', lineHeight: 1.6 }}>
+                      <strong style={{ color: theme.palette.text.primary }}>{t('symptoms')}:</strong> {disease.symptoms}
                     </Typography>
                   </Box>
-                  <Box sx={{ backgroundColor: alpha(theme.palette.success.main, 0.12), borderRadius: 2, p: 1.5, border: `1px dashed ${alpha(theme.palette.success.main, 0.3)}` }}>
-                    <Typography variant="body2" sx={{ color: theme.palette.success.main, fontWeight: 600, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                  <Box sx={{ backgroundColor: alpha(theme.palette.success.main, 0.05), borderRadius: 2, p: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
+                    <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? theme.palette.success.light : theme.palette.success.dark, fontWeight: 600, fontSize: '0.9rem' }}>
                       ✓ {disease.treatment}
                     </Typography>
                   </Box>
@@ -502,8 +760,85 @@ export default function EnsiklopediaPage() {
               </Card>
             ))}
           </Box>
-        </Grid>
-      </Grid>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Chat History Drawer ──────────────────────────────────── */}
+      <Drawer
+        anchor="right"
+        open={historyDrawerOpen}
+        onClose={() => setHistoryDrawerOpen(false)}
+        slotProps={{
+          paper: { sx: { width: { xs: '90vw', sm: 380 }, p: 3, bgcolor: 'background.default' } }
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+            Riwayat Chat
+          </Typography>
+          <IconButton onClick={() => setHistoryDrawerOpen(false)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        {historyList.length === 0 ? (
+          <Box sx={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 2, py: 8, color: 'text.disabled'
+          }}>
+            <HistoryIcon sx={{ fontSize: 48, opacity: 0.4 }} />
+            <Typography variant="body2" color="text.secondary" align="center">
+              Belum ada riwayat percakapan.<br />Tekan ikon hapus untuk menyimpan sesi saat ini.
+            </Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {Object.entries(
+              historyList.reduce((acc, session) => {
+                const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                const group = session.date === today ? 'Hari Ini' : 'Sebelumnya';
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(session);
+                return acc;
+              }, {} as Record<string, typeof historyList>)
+            ).map(([groupName, sessions]) => (
+              <Box key={groupName}>
+                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', mb: 1.5, display: 'block' }}>
+                  {groupName}
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {sessions.map((session) => (
+                    <Box
+                      key={session.id}
+                      onClick={() => handleLoadHistory(session)}
+                      sx={{
+                        borderRadius: 2,
+                        p: 1.5,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        position: 'relative',
+                        '&:hover': { 
+                          bgcolor: alpha(theme.palette.success.main, 0.08),
+                          '& .delete-icon': { opacity: 1, transform: 'scale(1)' }
+                        }
+                      }}
+                    >
+                      <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600, mb: 0.5, pr: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {session.preview}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{session.date}</span>
+                        <span style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: theme.palette.text.disabled }} />
+                        <span>{session.messages.length} pesan</span>
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Drawer>
     </Box>
   );
 }

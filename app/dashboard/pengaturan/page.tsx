@@ -14,6 +14,11 @@ import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 
 import PersonOutlineIcon from '@mui/icons-material/PersonOutlineOutlined';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
@@ -24,6 +29,7 @@ import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
+import { useThemeMode } from '@/context/ThemeContext';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -37,6 +43,7 @@ const SETTINGS_TABS = [
 export default function PengaturanPage() {
   const t = useTranslations('Settings');
   const [activeTab, setActiveTab] = useState('general');
+  const { mode, setThemeMode } = useThemeMode();
 
   const { user } = useAuth();
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
@@ -117,22 +124,52 @@ export default function PengaturanPage() {
                    </Button>
                 </Box>
 
-                <Box sx={{ mb: 4 }}>
-                  <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.appearance')}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>{t('general.modeSystem')}</Typography>
-                  </Box>
-                  <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.contrast')}</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer', '&:hover': { color: '#16a34a' } }}>{t('general.modeSystem')}</Typography>
-                  </Box>
-                  <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.accent')}</Typography>
-                    <Box className="flex items-center gap-1.5 cursor-pointer">
-                      <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: '#16a34a' }} />
-                      <Typography variant="body2" color="#16a34a" sx={{ fontWeight: 600 }}>{t('general.accentName')}</Typography>
-                    </Box>
-                  </Box>
+                 <Box sx={{ mb: 4 }}>
+                   <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                     <Box>
+                       <Typography variant="body1" sx={{ fontWeight: 600 }}>{t('general.appearance')}</Typography>
+                       <Typography variant="body2" color="text.secondary">Pilih tema tampilan aplikasi yang nyaman untuk mata Anda.</Typography>
+                     </Box>
+                     <ToggleButtonGroup
+                       value={mode}
+                       exclusive
+                       onChange={(_, newMode) => newMode && setThemeMode(newMode)}
+                       size="small"
+                       sx={{
+                         bgcolor: 'action.hover',
+                         '& .MuiToggleButton-root': {
+                           px: 2,
+                           py: 0.75,
+                           borderRadius: 2,
+                           border: 'none',
+                           textTransform: 'none',
+                           fontWeight: 600,
+                           fontSize: '0.82rem',
+                           color: 'text.secondary',
+                           '&.Mui-selected': {
+                             bgcolor: 'background.paper',
+                             color: 'primary.main',
+                             boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                             '&:hover': { bgcolor: 'background.paper' }
+                           }
+                         }
+                       }}
+                     >
+                       <ToggleButton value="light">
+                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                           <LightModeIcon sx={{ fontSize: 18 }} />
+                           {t('general.modeLight')}
+                         </Box>
+                       </ToggleButton>
+                       <ToggleButton value="dark">
+                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                           <DarkModeIcon sx={{ fontSize: 18 }} />
+                           {t('general.modeDark')}
+                         </Box>
+                       </ToggleButton>
+                     </ToggleButtonGroup>
+                   </Box>
+
                   <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.language')}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>{t('general.languageName')}</Typography>

@@ -64,7 +64,7 @@ export function TrendChart({ transactions }: ChartProps) {
   }, [transactions]);
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none', bgcolor: '#FFFFFF' }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
@@ -91,7 +91,7 @@ export function TrendChart({ transactions }: ChartProps) {
               height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
               bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider', gap: 2
             }}>
-              <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: '#FFFFFF', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: 'background.paper', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <ShowChartIcon fontSize="medium" />
               </Box>
               <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{t('common.noData')}</Typography>
@@ -180,7 +180,7 @@ export function KategoriChart({ transactions }: ChartProps) {
   ];
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none', bgcolor: '#FFFFFF' }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
@@ -198,7 +198,7 @@ export function KategoriChart({ transactions }: ChartProps) {
             height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
             bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider', gap: 2
           }}>
-            <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: '#FFFFFF', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: 'background.paper', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
               <PieChartOutlinedIcon fontSize="medium" />
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{t('common.noData')}</Typography>
@@ -207,15 +207,15 @@ export function KategoriChart({ transactions }: ChartProps) {
             </Button>
           </Box>
         ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', xl: '200px 1fr', lg: '1fr' },
-              alignItems: 'center',
-              columnGap: { xs: 0, xl: 4 },
-              rowGap: 3,
-            }}
-          >
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                width: '100%',
+              }}
+            >
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
               <PieChart
                 series={[
@@ -245,7 +245,7 @@ export function KategoriChart({ transactions }: ChartProps) {
               />
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%', px: 1 }}>
               {data.map((item, index) => (
                 <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>

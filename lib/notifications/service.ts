@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { buildNotificationDecision } from '@/backend/src/services/notificationDecision';
 import { sendDirectNotification } from '@/backend/src/services/notificationChannels';
 
-export async function processNotifications() {
+export async function processNotifications(forceAll: boolean = false) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -47,8 +47,8 @@ export async function processNotifications() {
       const currTotalMin = currHour * 60 + currMin;
       const diff = Math.abs(currTotalMin - schedTotalMin);
 
-      // If matches time OR it's a manual trigger/force run
-      if (diff <= 15) {
+      // If matches time OR it's a manual trigger/force run (like daily cron)
+      if (forceAll || diff <= 15) {
         console.log(`[Notification Service] Sending to user ${schedule.user_id} (${schedule.platform})`);
         
         // 1. Fetch daily events for this user

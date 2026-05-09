@@ -149,7 +149,7 @@ ALERT_LOW_HUMIDITY_PERCENT=50
 2. **Credential channel sudah benar**:
 
 - WhatsApp Cloud: `WHATSAPP_CLOUD_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`.
-- Telegram: `TELEGRAM_BOT_TOKEN`.
+- Telegram: `TELEGRAM_BOT_TOKEN`..
 
 1. **Payload cuaca terisi lengkap** dan angka valid.
 2. **Gemini API key** tersedia jika ingin pesan dipoles AI.

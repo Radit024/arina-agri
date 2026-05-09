@@ -99,17 +99,42 @@ function buildRecommendations(triggeredRules) {
     }
     return recommendations.slice(0, 3);
 }
-function buildDraftMessage({ recipientName, weather, riskLevel, riskScore, recommendations, triggeredRules, customMessage, }) {
-    if (customMessage && customMessage.trim()) {
-        return customMessage.trim();
-    }
-    const header = `Arina Agri - Alert Cuaca ${riskLevel.toUpperCase()} (${riskScore}/100)`;
-    const weatherLine = `Lokasi: ${weather.lokasi || 'Kebun Anda'} | Kondisi: ${weather.kondisi}, Suhu ${weather.suhu}C, Hujan ${weather.curahHujan}mm, Angin ${weather.kecepatanAngin} km/j.`;
+function buildDraftMessage({ recipientName, weather, riskLevel, riskScore, recommendations, triggeredRules, customMessage, dailyEvents, }) {
+    const intro = customMessage?.trim();
+    const header = 'Arina Agri - Ringkasan Cuaca Harian';
+    const greeting = `Halo ${recipientName}, berikut ringkasan cuaca hari ini.`;
+    const locationLine = `Lokasi: ${weather.lokasi || 'Kebun Anda'}`;
+    const weatherLine = `Cuaca: ${weather.kondisi}, Suhu ${weather.suhu}C, Hujan ${weather.curahHujan}mm, Angin ${weather.kecepatanAngin} km/j.`;
     const triggerLine = triggeredRules.length > 0
-        ? `Pemicu: ${triggeredRules.map((r) => r.code).join(', ')}.`
-        : 'Pemicu: monitoring rutin.';
-    const actionLines = recommendations.map((item, i) => `${i + 1}. ${item}`).join(' ');
-    return `${header}\nHalo ${recipientName}, ${weatherLine} ${triggerLine} Aksi disarankan: ${actionLines}`;
+        ? `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: ${triggeredRules.map((r) => r.code).join(', ')}.`
+        : `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: monitoring rutin.`;
+    const actionLines = recommendations.map((item, i) => `${i + 1}) ${item}`).join('\n');
+    const actionBlock = `Aksi disarankan:\n${actionLines}`;
+    const agendaSection = dailyEvents ? buildAgendaSection(dailyEvents) : '';
+    return [intro, header, greeting, locationLine, weatherLine, triggerLine, actionBlock, agendaSection]
+        .filter(Boolean)
+        .join('\n');
+}
+function formatAgendaCategory(value) {
+    if (!value)
+        return '';
+    const cleaned = value.replace(/_/g, ' ').trim();
+    if (!cleaned)
+        return '';
+    return cleaned.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+function buildAgendaSection(events) {
+    const header = 'Agenda hari ini:';
+    if (!events.length) {
+        return `${header}\n- Belum ada kegiatan terjadwal.`;
+    }
+    const lines = events.map((event) => {
+        const timeLabel = event.time ? `${event.time} - ` : '';
+        const categoryLabel = formatAgendaCategory(event.category);
+        const categorySuffix = categoryLabel ? ` (${categoryLabel})` : '';
+        return `- ${timeLabel}${event.title}${categorySuffix}`;
+    });
+    return `${header}\n${lines.join('\n')}`;
 }
 async function buildNotificationDecision(input) {
     const decisionId = makeDecisionId();
@@ -122,7 +147,8 @@ async function buildNotificationDecision(input) {
     const recommendations = buildRecommendations(triggeredRules);
     const isTestRequest = input.metadata?.source === 'weather-dashboard-test-button';
     const notificationsEnabled = input.notificationsEnabled !== false;
-    const shouldSend = notificationsEnabled && (isTestRequest || riskScore >= 30 || Boolean(input.metadata?.customMessage));
+    const forceSend = input.metadata?.forceSend === true;
+    const shouldSend = notificationsEnabled && (isTestRequest || forceSend || riskScore >= 30 || Boolean(input.metadata?.customMessage));
     const reason = !notificationsEnabled
         ? 'Notifikasi dinonaktifkan oleh pengguna.'
         : shouldSend
@@ -138,6 +164,7 @@ async function buildNotificationDecision(input) {
         recommendations,
         triggeredRules,
         customMessage: input.metadata?.customMessage,
+        dailyEvents: input.metadata?.dailyEvents,
     });
     let finalMessage = draftMessage;
     if (shouldSend) {
@@ -157,6 +184,12 @@ async function buildNotificationDecision(input) {
             finalMessage = draftMessage;
         }
     }
+    if (input.metadata?.dailyEvents) {
+        const agendaSection = buildAgendaSection(input.metadata.dailyEvents);
+        if (!finalMessage.includes('Agenda hari ini')) {
+            finalMessage = `${finalMessage}\n${agendaSection}`;
+        }
+    }
     const to = input.platform === 'whatsapp' ? normalizeWhatsAppNumber(input.to) : input.to;
     const metadata = {
         source: input.metadata?.source || 'weather-dashboard',
@@ -170,6 +203,7 @@ async function buildNotificationDecision(input) {
             reason,
         },
         weather: input.weather,
+        dailyEvents: input.metadata?.dailyEvents,
     };
     return {
         decisionId,

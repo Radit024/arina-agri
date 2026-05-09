@@ -26,31 +26,24 @@ export function useNews({ limit = 10, page = 1 }: UseNewsOptions = {}): UseNewsR
       setError(null);
 
       try {
-        const from = (page - 1) * limit;
-        const to = from + limit - 1;
-
-        const { data, error: sbError, count } = await supabase
-          .from('news_articles')
-          .select('*', { count: 'exact' })
-          .order('pub_date', { ascending: false })
-          .range(from, to);
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const url = `${baseUrl}/news?limit=${limit}&page=${page}`;
+        
+        const res = await fetch(url);
+        const json = await res.json();
 
         if (!isMounted) return;
 
-        if (sbError) {
-          console.error('[useNews] Supabase error:', sbError.message);
-          setError(sbError.message);
-          setArticles([]);
-          setTotal(0);
-          return;
+        if (!res.ok || !json.success) {
+          throw new Error(json.message || `HTTP error ${res.status}`);
         }
 
-        const fetched = data as NewsArticle[];
-        setArticles(fetched);
-        setTotal(count || 0);
+        setArticles(json.data || []);
+        setTotal(json.total || 0);
       } catch (err) {
         if (!isMounted) return;
         const message = err instanceof Error ? err.message : 'Gagal memuat berita';
+        console.error('[useNews] Error:', message);
         setError(message);
         setArticles([]);
         setTotal(0);

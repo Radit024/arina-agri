@@ -81,7 +81,7 @@ async function fetchAndUpsertFeed(source: { name: string; url: string }): Promis
 }
 
 // ─── Main Runner ──────────────────────────────────────────────────
-async function runNewsFetch(): Promise<void> {
+export async function runNewsFetch(): Promise<void> {
   console.log('[newsScheduler] Mulai fetch berita RSS...');
   let totalInserted = 0;
 

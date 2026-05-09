@@ -59,6 +59,10 @@ function saveSchedule(config) {
 async function runScheduledNotification(config) {
     if (!config.enabled || !config.to.trim())
         return;
+    const dateStr = getDateString(config.timezone || DEFAULT_SCHEDULE.timezone);
+    const dailyEvents = config.userId
+        ? await fetchDailyEvents(config.userId, dateStr)
+        : [];
     const decision = await (0, notificationDecision_1.buildNotificationDecision)({
         platform: config.platform,
         to: config.to,
@@ -75,12 +79,63 @@ async function runScheduledNotification(config) {
         metadata: {
             source: 'daily-notification-scheduler',
             customMessage: config.customMessage,
+            dailyEvents,
+            forceSend: true,
             locale: 'id',
         },
     });
     if (!decision.shouldSend)
         return;
     await (0, notificationChannels_1.sendDirectNotification)(decision.payload);
+}
+function getDateString(timezone) {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+    return formatter.format(new Date());
+}
+async function fetchDailyEvents(userId, dateStr) {
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_ANON_KEY ||
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+        console.warn('[Scheduler] Supabase env belum diisi, agenda harian tidak dimuat.');
+        return [];
+    }
+    const params = new URLSearchParams({
+        select: 'title,category,waktu,description',
+        date: `eq.${dateStr}`,
+        user_id: `eq.${userId}`,
+        order: 'waktu.asc',
+    });
+    try {
+        const response = await fetch(`${supabaseUrl}/rest/v1/calendar_events?${params.toString()}`, {
+            headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`,
+            },
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.warn(`[Scheduler] Gagal mengambil agenda harian: ${response.status} ${errorText}`);
+            return [];
+        }
+        const rows = (await response.json());
+        return rows.map((row) => ({
+            title: row.title,
+            time: row.waktu || undefined,
+            category: row.category || undefined,
+            note: row.description || undefined,
+        }));
+    }
+    catch (error) {
+        console.warn('[Scheduler] Error fetch agenda harian:', error);
+        return [];
+    }
 }
 function stopCurrentTask() {
     if (currentTask) {

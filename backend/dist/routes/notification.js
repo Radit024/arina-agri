@@ -111,6 +111,7 @@ router.post('/schedule', async (req, res) => {
             to: payload.to,
             recipientName: payload.recipientName || 'Petani',
             customMessage: payload.customMessage,
+            userId: payload.userId,
         });
         (0, notificationScheduler_1.reschedule)(updated);
         return res.status(200).json({

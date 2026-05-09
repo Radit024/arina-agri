@@ -3,30 +3,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+require("./env"); // Harus di atas import lain yang memakai process.env
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
 const ai_1 = __importDefault(require("./routes/ai"));
 const notification_1 = __importDefault(require("./routes/notification"));
+const webhook_1 = __importDefault(require("./routes/webhook"));
+const news_1 = __importDefault(require("./routes/news"));
 const notificationScheduler_1 = require("./services/notificationScheduler");
-const envCandidates = [
-    path_1.default.resolve(process.cwd(), '.env'),
-    path_1.default.resolve(process.cwd(), '.env.local'),
-    path_1.default.resolve(process.cwd(), '../.env'),
-    path_1.default.resolve(process.cwd(), '../.env.local'),
-];
-for (const envPath of envCandidates) {
-    if (fs_1.default.existsSync(envPath)) {
-        dotenv_1.default.config({ path: envPath });
-    }
-}
+const newsScheduler_1 = require("./services/newsScheduler");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
+const corsAllowlist = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:3000')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
 // ─── Middleware ───────────────────────────────────────────────────
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (corsAllowlist.includes(origin))
+            return callback(null, true);
+        return callback(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -42,7 +42,10 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', ai_1.default);
 app.use('/api/notification', notification_1.default);
+app.use('/api/webhook', webhook_1.default);
+app.use('/api/news', news_1.default);
 (0, notificationScheduler_1.startScheduler)();
+(0, newsScheduler_1.startNewsScheduler)();
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });

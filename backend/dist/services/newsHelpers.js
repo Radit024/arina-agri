@@ -7,7 +7,7 @@ exports.extractImageUrl = extractImageUrl;
 exports.AGRI_KEYWORDS = [
     'cabai', 'pupuk', 'hama', 'cuaca', 'panen', 'pertanian', 'harga',
     'komoditas', 'agri', 'petani', 'sawah', 'irigasi', 'holtikultura',
-    'tanaman', 'kebun', 'lahan', 'beras', 'jagung', 'kedelai', 'tomat'
+    'tanaman', 'kebun', 'lahan', 'beras', 'jagung', 'kedelai', 'tomat', 'padi'
 ];
 function isAgriRelevant(title, content) {
     const textToCheck = `${title} ${content || ''}`.toLowerCase();

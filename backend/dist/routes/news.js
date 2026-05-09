@@ -72,9 +72,9 @@ router.get('/', async (req, res) => {
 router.post('/trigger', async (_req, res) => {
     try {
         // Lazy import to avoid circular deps at startup
-        const { startNewsScheduler } = await Promise.resolve().then(() => __importStar(require('../services/newsScheduler')));
-        void startNewsScheduler;
-        return res.json({ success: true, message: 'Fetch berita dipicu secara manual' });
+        const { runNewsFetch } = await Promise.resolve().then(() => __importStar(require('../services/newsScheduler')));
+        await runNewsFetch();
+        return res.json({ success: true, message: 'Fetch berita selesai dilakukan' });
     }
     catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';

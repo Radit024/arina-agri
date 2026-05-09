@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.runNewsFetch = runNewsFetch;
 exports.startNewsScheduler = startNewsScheduler;
 const node_cron_1 = __importDefault(require("node-cron"));
 const rss_parser_1 = __importDefault(require("rss-parser"));

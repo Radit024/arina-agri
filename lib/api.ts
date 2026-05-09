@@ -189,6 +189,20 @@ function computeStatus(stokTersisa: number, beratMasuk: number, estimasiKadaluar
   return 'aman';
 }
 
+async function resolveCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) return user;
+
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    const devUserId = window.localStorage.getItem('arina_user_id');
+    if (devUserId) {
+      return { id: devUserId };
+    }
+  }
+
+  return null;
+}
+
 // ─── Transaction API ──────────────────────────────────────────────
 export const transactionApi = {
   getAll: async (): Promise<ApiTransaction[]> => {
@@ -202,7 +216,7 @@ export const transactionApi = {
   },
 
   create: async (payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiTransaction> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
     const { data, error } = await supabase
       .from('transactions')
@@ -258,7 +272,7 @@ export const eventApi = {
   },
 
   create: async (payload: Omit<ApiCalendarEvent, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiCalendarEvent> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
     const { data, error } = await supabase
       .from('calendar_events')
@@ -348,7 +362,7 @@ export const stokApi = {
   },
 
   create: async (payload: Omit<ApiHarvestBatch, '_id' | 'batchCode' | 'stokTersisa' | 'status' | 'createdAt' | 'updatedAt'>): Promise<ApiHarvestBatch> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
 
     const { count } = await supabase.from('harvest_batches').select('*', { count: 'exact', head: true });
@@ -420,7 +434,7 @@ export const stokApi = {
   },
 
   stockOut: async (batchId: string, payload: { berat: number; tujuan: string; tanggal: string; catatan: string }): Promise<{ batch: ApiHarvestBatch; mutation: ApiStockMutation }> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
 
     const { data: batchRow, error: fetchErr } = await supabase

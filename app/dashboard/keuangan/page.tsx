@@ -30,6 +30,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
+import { useTheme } from '@mui/material/styles';
 
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -404,7 +405,15 @@ export default function KeuanganPage() {
   );
 
   const normalizeCategory = (value: string) => value.trim().toLowerCase();
-  const pieColors = ['#dc2626', '#f59e0b', '#16a34a', '#2563eb', '#8b5cf6', '#64748b'];
+  const theme = useTheme();
+  const pieColors = [
+    theme.palette.error.main,
+    theme.palette.warning.main,
+    theme.palette.success.main,
+    theme.palette.info.main,
+    theme.palette.primary.main,
+    theme.palette.text.secondary,
+  ];
   const expenseStats = useMemo(
     () =>
       expenseCategoryConfig

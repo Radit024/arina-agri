@@ -44,7 +44,7 @@ const getEventSchema = (t: any) => z.object({
   catatan: z.string().optional(),
 });
 
-type EventFormData = z.infer<typeof eventSchema>;
+type EventFormData = z.infer<ReturnType<typeof getEventSchema>>;
 
 
 import { useAuth } from '@/context/AuthContext';
@@ -182,7 +182,7 @@ export default function KalenderPage() {
             <CardContent sx={{ pt: 0 }}>
               {/* Day headers */}
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
-                {dayNames.map((d) => (
+                {dayNames.map((d: string) => (
                   <Box key={d} sx={{ textAlign: 'center', py: 1 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{d}</Typography>
                   </Box>

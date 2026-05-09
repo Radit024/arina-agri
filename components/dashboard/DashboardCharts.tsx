@@ -7,6 +7,10 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
+import Button from '@mui/material/Button';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import PieChartOutlinedIcon from '@mui/icons-material/PieChartOutlined';
+import Link from 'next/link';
 import { useTheme } from '@mui/material/styles';
 import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
@@ -84,10 +88,16 @@ export function TrendChart({ transactions }: ChartProps) {
         <Box sx={{ flex: 1, width: '100%', minHeight: 260, position: 'relative' }}>
           {data.length === 0 ? (
             <Box sx={{ 
-              height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
+              height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+              bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider', gap: 2
             }}>
-              <Typography variant="body2" color="text.secondary">{t('common.noData')}</Typography>
+              <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: '#FFFFFF', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <ShowChartIcon fontSize="medium" />
+              </Box>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{t('common.noData')}</Typography>
+              <Button component={Link} href="/dashboard/keuangan" variant="outlined" size="small" sx={{ mt: 1, borderRadius: 8, textTransform: 'none', fontWeight: 600 }}>
+                Tambah Transaksi
+              </Button>
             </Box>
           ) : (
             <LineChart
@@ -113,9 +123,8 @@ export function TrendChart({ transactions }: ChartProps) {
               height={260}
               margin={{ left: 60, right: 20, top: 20, bottom: 40 }}
               hideLegend
-              disableLineItemHighlight
-              axisHighlight={{ x: 'none', y: 'none' }}
-              slotProps={{ tooltip: { trigger: 'none' } }}
+              disableLineItemHighlight={false}
+              axisHighlight={{ x: 'line', y: 'none' }}
               sx={{
                 '& .MuiLineElement-root': { strokeWidth: 3 },
                 '& .MuiMarkElement-root': { strokeWidth: 2 },
@@ -166,7 +175,7 @@ export function KategoriChart({ transactions }: ChartProps) {
     theme.palette.warning.main,
     theme.palette.success.main,
     theme.palette.info.main,
-    theme.palette.secondary.main,
+    theme.palette.primary.main,
     theme.palette.text.secondary,
   ];
 
@@ -186,10 +195,16 @@ export function KategoriChart({ transactions }: ChartProps) {
       <CardContent sx={{ pt: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 300 }}>
         {data.length === 0 ? (
           <Box sx={{ 
-            height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider'
+            height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+            bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider', gap: 2
           }}>
-            <Typography variant="body2" color="text.secondary">{t('common.noData')}</Typography>
+            <Box sx={{ p: 1.5, borderRadius: '50%', bgcolor: '#FFFFFF', color: 'text.disabled', display: 'flex', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <PieChartOutlinedIcon fontSize="medium" />
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>{t('common.noData')}</Typography>
+            <Button component={Link} href="/dashboard/keuangan" variant="outlined" size="small" sx={{ mt: 1, borderRadius: 8, textTransform: 'none', fontWeight: 600 }}>
+              Tambah Transaksi
+            </Button>
           </Box>
         ) : (
           <Box

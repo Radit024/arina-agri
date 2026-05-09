@@ -7,11 +7,9 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import HomeIcon from '@mui/icons-material/Home';
-import { useTranslations } from 'next-intl';
 
 export default function NotFound() {
   const theme = useTheme();
-  const t = useTranslations('NotFound');
 
   return (
     <Box
@@ -71,11 +69,11 @@ export default function NotFound() {
         </Typography>
 
         <Typography variant="h5" sx={{ mt: 2, mb: 1.5, color: theme.palette.success.dark, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          {t('title')}
+          Halaman Tidak Ditemukan!
         </Typography>
 
         <Typography variant="body1" sx={{ color: theme.palette.text.secondary, mb: 5, maxWidth: 400, mx: 'auto', lineHeight: 1.6 }}>
-          {t('description')}
+          Sepertinya traktor kami salah belok arah. Lahan web yang Anda cari belum ditanami atau alamat yang diakses keliru.
         </Typography>
 
         <Link href="/dashboard" style={{ textDecoration: 'none' }}>
@@ -98,7 +96,7 @@ export default function NotFound() {
               transition: 'all 0.3s ease-in-out'
             }}
           >
-            {t('backToDashboard')}
+            Kembali ke Dashboard
           </Button>
         </Link>
       </Container>

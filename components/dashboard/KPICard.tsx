@@ -17,9 +17,10 @@ interface KPICardProps {
   icon: ReactNode;
   color?: ColorVariant;
   trend?: { value: string; positive: boolean };
+  children?: ReactNode;
 }
 
-export default memo(function KPICard({ title, value, subtitle, icon, color = 'success', trend }: KPICardProps) {
+export default memo(function KPICard({ title, value, subtitle, icon, color = 'success', trend, children }: KPICardProps) {
   const theme = useTheme();
   const colorValue = theme.palette[color].main;
   return (
@@ -35,8 +36,8 @@ export default memo(function KPICard({ title, value, subtitle, icon, color = 'su
           background: `radial-gradient(circle, ${alpha(colorValue, 0.15)} 0%, ${alpha(colorValue, 0)} 70%)`,
         }}
       />
-      <CardContent sx={{ p: 3 }}>
-        <Box className="flex items-start justify-between">
+      <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box className="flex items-start justify-between" sx={{ mb: children ? 3 : 0, flex: 1 }}>
           <Box>
             <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
               {title}
@@ -82,12 +83,18 @@ export default memo(function KPICard({ title, value, subtitle, icon, color = 'su
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
-              boxShadow: `inset 0 0 0 1px ${alpha(colorValue, 0.1)}`
+              boxShadow: `inset 0 0 0 1px ${alpha(colorValue, 0.1)}`,
+              flexShrink: 0,
             }}
           >
             <Box sx={{ position: 'absolute', color: colorValue }}>{icon}</Box>
           </Box>
         </Box>
+        {children && (
+          <Box sx={{ mt: 'auto' }}>
+            {children}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setUser(mockUser);
       setSession(mockSession);
+      localStorage.setItem('arina_user_id', mockUser.id);
       setLoading(false);
       return; // Skip Supabase auth listeners
     }

@@ -12,6 +12,7 @@ import NewspaperIcon from '@mui/icons-material/Newspaper';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { useTranslations } from 'next-intl';
+import type { NewsArticle } from '@/lib/types/news';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 function formatRelativeDate(dateStr: string, t: any): string {

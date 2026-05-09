@@ -11,6 +11,10 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import Link from 'next/link';
 import type { ApiTransaction } from '@/lib/api';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
@@ -45,8 +49,16 @@ export default memo(function RecentTransactionsTable({ transactions }: { transac
             <TableBody>
               {recent.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                    <Typography variant="body2">{t('empty')}</Typography>
+                  <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                      <Box sx={{ p: 2, borderRadius: '50%', bgcolor: 'action.hover', color: 'text.disabled', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ReceiptLongOutlinedIcon fontSize="medium" />
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('empty')}</Typography>
+                      <Button component={Link} href="/dashboard/keuangan" variant="outlined" size="small" sx={{ mt: 1, borderRadius: 8, textTransform: 'none', fontWeight: 600 }}>
+                        Tambah Transaksi
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -60,8 +72,8 @@ export default memo(function RecentTransactionsTable({ transactions }: { transac
                   >
                     <TableCell sx={{ color: 'text.secondary' }}>{formatDateShort(tx.tanggal)}</TableCell>
                     <TableCell>{tx.kategori}</TableCell>
-                    <TableCell sx={{ color: 'text.secondary', maxWidth: 200 }} >
-                      <Typography variant="caption" noWrap sx={{ display: 'block' }}>{tx.keterangan}</Typography>
+                    <TableCell sx={{ color: 'text.secondary', maxWidth: { xs: 120, sm: 200, md: 250 } }} >
+                      <Typography variant="body2" noWrap sx={{ display: 'block', fontWeight: 500 }}>{tx.keterangan}</Typography>
                     </TableCell>
                     <TableCell>
                       <Chip

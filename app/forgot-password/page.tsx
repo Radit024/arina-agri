@@ -17,6 +17,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircle';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 const schema = z.object({
   email: z.string().email('email'),

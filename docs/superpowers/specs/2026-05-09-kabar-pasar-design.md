@@ -152,7 +152,7 @@ export interface NewsArticle {
 **`components/dashboard/NewsWidget.tsx`**
 
 - Fetch 3 artikel terbaru via `useNews({ limit: 3 })`
-- Header: `"Kabar Pasar 📰"` + button `"Lihat Semua →"` navigate ke `/dashboard/kabar-pasar`
+- Header: `"Berita "` + button `"Lihat Semua →"` navigate ke `/dashboard/kabar-pasar`
 - Layout: MUI Grid, 3 kolom (md) → 1 (xs)
 - Loading: 3 MUI Skeleton card
 - Empty state: ilustrasi + teks "Belum ada berita tersedia"

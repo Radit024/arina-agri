@@ -23,6 +23,7 @@ import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 const loginSchema = z.object({
   email: z.string().email('email'),

@@ -73,7 +73,7 @@
     },
     "weatherBanner": {
       "title": "Weather Alert",
-      "defaultMessage": "⛈️ Heavy rain is forecast for the next 2 days in Malang. Delay fertilizing and pesticide spraying. Ensure field drainage is in good condition."
+      "defaultMessage": "⛈️ Heavy rain for 2 days ahead. Delay fertilizing and pesticide spraying."
     },
     "recentTransactions": {
       "title": "Recent Transactions",

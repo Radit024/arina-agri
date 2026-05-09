@@ -12,7 +12,6 @@ import WbCloudyIcon from '@mui/icons-material/WbCloudy';
 import KPICard from '@/components/dashboard/KPICard';
 import WeatherBanner from '@/components/dashboard/WeatherBanner';
 import QuickActions from '@/components/dashboard/QuickActions';
-import RecentTransactionsTable from '@/components/dashboard/RecentTransactionsTable';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
 import { farmerProfile } from '@/lib/mockData';
@@ -100,24 +99,46 @@ export default function DashboardPage() {
     };
   }, [events, t]);
 
-  return (
-    <Box sx={{ p: { xs: 2, md: 4, lg: 5 } }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h4"
-          sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 700, letterSpacing: '-0.02em' }}
-        >
-          {t('welcome', { name: firstName })}
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 500 }}>
-          {t('profile', { location: farmerProfile.lokasi, commodity: farmerProfile.komoditas, area: farmerProfile.luasLahan })}
-        </Typography>
-      </Box>
+  // ─── Dynamic Greeting ───────────────────────────────────────────
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('locale') === 'en' ? 'Good morning' : 'Selamat pagi';
+    if (hour < 15) return t('locale') === 'en' ? 'Good afternoon' : 'Selamat siang';
+    if (hour < 18) return t('locale') === 'en' ? 'Good afternoon' : 'Selamat sore';
+    return t('locale') === 'en' ? 'Good evening' : 'Selamat malam';
+  };
 
-      {/* Weather Alert */}
-      <Box sx={{ mb: 4 }}>
-        <WeatherBanner />
+  return (
+    <Box sx={{ p: { xs: 2, md: 4, lg: 5 }, maxWidth: '1600px', mx: 'auto' }}>
+      {/* Header */}
+      <Box sx={{ 
+        mb: 5, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', md: 'row' }, 
+        justifyContent: 'space-between', 
+        alignItems: { xs: 'flex-start', md: 'flex-end' },
+        gap: 2
+      }}>
+        <Box>
+          <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}>
+            {getGreeting()}
+          </Typography>
+          <Typography
+            variant="h3"
+            sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}
+          >
+            {firstName}.
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#16a34a' }} />
+            {t('profile', { location: farmerProfile.lokasi, commodity: farmerProfile.komoditas, area: farmerProfile.luasLahan })}
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+             {new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
+           </Typography>
+        </Box>
       </Box>
 
       {/* Quick Actions */}
@@ -169,28 +190,26 @@ export default function DashboardPage() {
             subtitle={t('kpi.weather.subtitle', { hum: 75 })}
             icon={<WbCloudyIcon />}
             color="warning"
-          />
+          >
+            <Box sx={{ mt: 2 }}>
+              <WeatherBanner />
+            </Box>
+          </KPICard>
         </Grid>
       </Grid>
 
       {/* Main Content & Sidebar Layout */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Left Column (Charts & Transactions) */}
+      <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>
+        {/* Left Column (Charts) */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* Charts Row */}
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, xl: 7 }}>
-                <TrendChart transactions={transactions} />
-              </Grid>
-              <Grid size={{ xs: 12, xl: 5 }}>
-                <KategoriChart transactions={transactions} />
-              </Grid>
+          <Grid container spacing={3} sx={{ height: '100%' }}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <TrendChart transactions={transactions} />
             </Grid>
-
-            {/* Recent Transactions */}
-            <RecentTransactionsTable transactions={transactions} />
-          </Box>
+            <Grid size={{ xs: 12, md: 5 }}>
+              <KategoriChart transactions={transactions} />
+            </Grid>
+          </Grid>
         </Grid>
 
         {/* Right Column (News Sidebar) */}

@@ -22,7 +22,7 @@
     "ensiklopedia": "Ensiklopedia AI",
     "kalender": "Smart Kalender",
     "stok": "Manajemen Stok Panen",
-    "kabarPasar": "Kabar Pasar",
+    "kabarPasar": "Berita",
     "pengaturan": "Pengaturan",
     "logout": "Keluar",
     "farmer": "Petani"
@@ -34,13 +34,13 @@
     "ensiklopedia": "Ensiklopedia",
     "kalender": "Kalender",
     "stok": "Stok",
-    "kabarPasar": "Kabar Pasar",
+    "kabarPasar": "Berita",
     "pengaturan": "Pengaturan"
   },
   "Dashboard": {
     "home": {
       "locale": "id",
-      "welcome": "Selamat datang, Pak {name} 👋",
+      "welcome": "Selamat datang, {name} ",
       "profile": "{location} · {commodity} · {area}",
       "quickActions": {
         "title": "Manajemen Stok Panen",
@@ -73,7 +73,7 @@
     },
     "weatherBanner": {
       "title": "Peringatan Cuaca",
-      "defaultMessage": "⛈️ Prakiraan hujan lebat 2 hari ke depan di wilayah Malang. Tunda pemupukan dan penyemprotan pestisida. Pastikan drainase lahan dalam kondisi baik."
+      "defaultMessage": "⛈️ Hujan lebat 2 hari ke depan. Tunda pemupukan dan penyemprotan pestisida."
     },
     "recentTransactions": {
       "title": "Transaksi Terkini",
@@ -451,7 +451,7 @@
     "initialMessages": [
       {
         "role": "ai",
-        "content": "Halo, Pak {name}! 👋 Saya Arina, asisten AI khusus budidaya cabai. Silakan tanyakan apa saja — mulai dari pengendalian hama, penyakit, pemupukan, hingga teknik panen. Saya siap membantu!"
+        "content": "Halo, {name}! 👋 Saya Arina, asisten AI khusus budidaya cabai. Silakan tanyakan apa saja — mulai dari pengendalian hama, penyakit, pemupukan, hingga teknik panen. Saya siap membantu!"
       },
       {
         "role": "user",
@@ -459,12 +459,12 @@
       },
       {
         "role": "ai",
-        "content": "Gejala busuk di ujung buah (ujung buah berwarna coklat kehitaman dan mengering) kemungkinan besar adalah **Blossom End Rot (BER)** atau kekurangan kalsium (Ca). Ini bukan penyakit infeksi, melainkan gangguan fisiologis.\n\n**Penyebab:** Penyerapan kalsium terganggu akibat penyiraman tidak teratur, kadar nitrogen terlalu tinggi, atau pH tanah terlalu rendah.\n\n**Solusi:**\n1. Semprot daun dengan kalsium boron (Ca-B) dosis 2 ml/liter\n2. Atur jadwal penyiraman agar konsisten\n3. Tambahkan kapur dolomit jika pH < 6.0\n\nApakah busuknya mulai dari dalam atau dari permukaan buah, Pak?"
+        "content": "Gejala busuk di ujung buah (ujung buah berwarna coklat kehitaman dan mengering) kemungkinan besar adalah **Blossom End Rot (BER)** atau kekurangan kalsium (Ca). Ini bukan penyakit infeksi, melainkan gangguan fisiologis.\n\n**Penyebab:** Penyerapan kalsium terganggu akibat penyiraman tidak teratur, kadar nitrogen terlalu tinggi, atau pH tanah terlalu rendah.\n\n**Solusi:**\n1. Semprot daun dengan kalsium boron (Ca-B) dosis 2 ml/liter\n2. Atur jadwal penyiraman agar konsisten\n3. Tambahkan kapur dolomit jika pH < 6.0\n\nApakah busuknya mulai dari dalam atau dari permukaan buah, {name}?"
       }
     ]
   },
   "KabarPasar": {
-    "title": "Kabar Pasar",
+    "title": "Berita",
     "subtitle": "Berita & informasi harga komoditas pertanian terkini",
     "refetch": "Ambil ulang berita",
     "stats": "{total} artikel tersedia",
@@ -481,7 +481,7 @@
     },
     "empty": {
       "title": "Belum ada berita tersedia",
-      "subtitle": "Sistem akan otomatis mengambil berita pertanian terbaru dari RSS feed setiap 6 jam"
+      "subtitle": "Sistem akan otomatis mengambil berita pertanian terbaru"
     }
   },
   "Stock": {

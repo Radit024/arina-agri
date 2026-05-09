@@ -466,6 +466,10 @@ export const stokApi = {
 // ─── AI API — masih pakai Express backend ─────────────────────────
 const AI_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+if (process.env.NODE_ENV === 'development') {
+  console.log('[API Debug] AI_BASE:', AI_BASE);
+}
+
 async function aiFetch<T>(endpoint: string, body: object): Promise<T> {
   const res = await fetch(`${AI_BASE}${endpoint}`, {
     method: 'POST',

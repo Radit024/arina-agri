@@ -1,6 +1,6 @@
+import './env'; // Harus di atas import lain yang memakai process.env
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import aiRoutes from './routes/ai';
@@ -10,18 +10,7 @@ import newsRoutes from './routes/news';
 import { startScheduler } from './services/notificationScheduler';
 import { startNewsScheduler } from './services/newsScheduler';
 
-const envCandidates = [
-  path.resolve(process.cwd(), '.env'),
-  path.resolve(process.cwd(), '.env.local'),
-  path.resolve(process.cwd(), '../.env'),
-  path.resolve(process.cwd(), '../.env.local'),
-];
 
-for (const envPath of envCandidates) {
-  if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-  }
-}
 
 const app = express();
 const PORT = process.env.PORT || 5000;

@@ -3,7 +3,7 @@ import Parser from 'rss-parser';
 export const AGRI_KEYWORDS = [
   'cabai', 'pupuk', 'hama', 'cuaca', 'panen', 'pertanian', 'harga', 
   'komoditas', 'agri', 'petani', 'sawah', 'irigasi', 'holtikultura', 
-  'tanaman', 'kebun', 'lahan', 'beras', 'jagung', 'kedelai', 'tomat'
+  'tanaman', 'kebun', 'lahan', 'beras', 'jagung', 'kedelai', 'tomat', 'padi'
 ];
 
 export function isAgriRelevant(title: string, content?: string): boolean {

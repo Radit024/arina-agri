@@ -210,10 +210,10 @@ export function KategoriChart({ transactions }: ChartProps) {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '200px 1fr' },
+              gridTemplateColumns: { xs: '1fr', xl: '200px 1fr', lg: '1fr' },
               alignItems: 'center',
-              columnGap: 4,
-              rowGap: 2,
+              columnGap: { xs: 0, xl: 4 },
+              rowGap: 3,
             }}
           >
             <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -247,15 +247,21 @@ export function KategoriChart({ transactions }: ChartProps) {
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {data.map((item, index) => (
-                <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length] }} />
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.825rem' }}>
+                <Box key={item.kategori} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: pieColors[index % pieColors.length], flexShrink: 0 }} />
+                    <Typography 
+                      variant="body2" 
+                      noWrap
+                      sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.8rem' }}
+                    >
                       {item.kategori}
                     </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700, fontSize: '0.875rem' }}>
-                    {formatRupiah(item.jumlah)}
+                  <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>
+                    {item.jumlah >= 1000000 
+                      ? `Rp ${(item.jumlah / 1000000).toFixed(1)}Jt` 
+                      : formatRupiah(item.jumlah)}
                   </Typography>
                 </Box>
               ))}

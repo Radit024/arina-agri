@@ -3,48 +3,49 @@ import { createTheme } from '@mui/material/styles';
 const baseTheme = createTheme({
   palette: {
     primary: {
-      main: '#16a34a',
-      dark: '#15803d',
-      light: '#dcfce7',
+      main: '#2D6A4F', // Forest Green
+      dark: '#1B4332',
+      light: '#D8F3DC',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#f59e0b',
+      main: '#E07A5F', // Terracotta
       contrastText: '#ffffff',
     },
     success: {
-      main: '#16a34a',
-      light: '#dcfce7',
-      dark: '#15803d',
+      main: '#52B788',
+      light: '#D8F3DC',
+      dark: '#2D6A4F',
     },
     warning: {
-      main: '#f59e0b',
-      light: '#fef3c7',
-      dark: '#b45309',
+      main: '#F4E285', // Wheat
+      light: '#FFF7D6',
+      dark: '#B08C2C',
+      contrastText: '#2C2A29', // Better contrast on yellow
     },
     error: {
-      main: '#dc2626',
-      light: '#fee2e2',
-      dark: '#991b1b',
+      main: '#E07A5F', // Earthy Red/Orange
+      light: '#FCDACF',
+      dark: '#C85A3F',
     },
     info: {
-      main: '#2563eb',
-      light: '#dbeafe',
-      dark: '#1e40af',
+      main: '#74A57F', // Sage Blue/Green
+      light: '#E1EFE4',
+      dark: '#4B7A56',
     },
     action: {
-      hover: 'rgba(15, 23, 42, 0.04)',
-      selected: 'rgba(22, 163, 74, 0.08)',
+      hover: 'rgba(44, 42, 41, 0.04)',
+      selected: 'rgba(45, 106, 79, 0.08)',
     },
     background: {
-      default: '#f8fafc',
-      paper: '#ffffff',
+      default: '#FAFAF8', // Warm off-white
+      paper: '#FFFFFF',
     },
     text: {
-      primary: '#0f172a',
-      secondary: '#64748b',
+      primary: '#2C2A29', // Deep Charcoal
+      secondary: '#6B6866', // Soft dark gray/brown
     },
-    divider: '#e2e8f0',
+    divider: '#EBEBE6',
   },
   typography: {
     fontFamily: '"Plus Jakarta Sans", sans-serif',
@@ -56,7 +57,7 @@ const baseTheme = createTheme({
     h6: { fontFamily: '"Sora", sans-serif', fontWeight: 600 },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 16,
   },
 });
 
@@ -96,9 +97,9 @@ const theme = createTheme(baseTheme, {
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07)',
-          border: '1px solid #e2e8f0',
+          borderRadius: 24,
+          boxShadow: '0 8px 24px 0 rgba(44, 42, 41, 0.04), 0 2px 8px 0 rgba(44, 42, 41, 0.02)',
+          border: '1px solid rgba(44, 42, 41, 0.04)',
         },
       },
     },

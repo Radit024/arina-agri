@@ -33,7 +33,7 @@ export default function RecentTransactionsTable({ transactions }: { transactions
         <TableContainer>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ '& th': { fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', borderBottom: '2px solid', borderColor: 'divider' } }}>
+              <TableRow sx={{ '& th': { fontWeight: 600, color: 'text.secondary', fontSize: '0.75rem', borderBottom: '1px solid', borderColor: 'divider', py: 2 } }}>
                 <TableCell>{t('columns.date')}</TableCell>
                 <TableCell>{t('columns.category')}</TableCell>
                 <TableCell>{t('columns.note')}</TableCell>

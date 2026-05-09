@@ -60,7 +60,7 @@ export function TrendChart({ transactions }: ChartProps) {
   }, [transactions]);
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none', bgcolor: '#FFFFFF' }}>
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
@@ -170,7 +170,7 @@ export function KategoriChart({ transactions }: ChartProps) {
   ];
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none', bgcolor: '#FFFFFF' }}>
       <CardHeader
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>

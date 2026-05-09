@@ -101,32 +101,32 @@ export default function DashboardPage() {
   }, [events, t]);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ p: { xs: 2, md: 4, lg: 5 } }}>
       {/* Header */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
-          sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 700 }}
+          sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 700, letterSpacing: '-0.02em' }}
         >
           {t('welcome', { name: firstName })}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1, fontWeight: 500 }}>
           {farmerProfile.lokasi} · {farmerProfile.komoditas} · {farmerProfile.luasLahan}
         </Typography>
       </Box>
 
       {/* Weather Alert */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         <WeatherBanner />
       </Box>
 
       {/* Quick Actions */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         <QuickActions />
       </Box>
 
       {/* KPI Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
           <KPICard
             title={t('kpi.totalExpense.title')}
@@ -174,7 +174,7 @@ export default function DashboardPage() {
       </Grid>
 
       {/* Charts */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, lg: 7 }}>
           <TrendChart transactions={transactions} />
         </Grid>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
       <RecentTransactionsTable transactions={transactions} />
 
       {/* Kabar Pasar Widget */}
-      <Box sx={{ mt: 3 }}>
+      <Box sx={{ mt: 4 }}>
         <NewsWidget />
       </Box>
     </Box>

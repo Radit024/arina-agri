@@ -60,17 +60,17 @@ function WidgetCard({ article }: { article: NewsArticle }) {
     <Card
       elevation={0}
       sx={{
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 3,
+        border: 'none',
+        boxShadow: '0 4px 12px rgba(44, 42, 41, 0.04)',
+        borderRadius: 4,
         display: 'flex',
         flexDirection: 'row',
         overflow: 'hidden',
         height: '100%',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
+        transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          borderColor: 'primary.light',
-          boxShadow: '0 4px 16px rgba(22,163,74,0.10)',
+          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 24px rgba(44, 42, 41, 0.08)',
         },
       }}
     >
@@ -189,17 +189,16 @@ function FullCard({ article }: { article: NewsArticle }) {
     <Card
       elevation={0}
       sx={{
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 3,
+        border: 'none',
+        boxShadow: '0 4px 12px rgba(44, 42, 41, 0.04)',
+        borderRadius: 4,
         overflow: 'hidden',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.2s',
+        transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
-          borderColor: 'primary.light',
-          boxShadow: '0 8px 24px rgba(22,163,74,0.12)',
+          boxShadow: '0 8px 24px rgba(44, 42, 41, 0.08)',
           transform: 'translateY(-2px)',
         },
       }}

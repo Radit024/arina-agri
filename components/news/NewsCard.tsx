@@ -131,7 +131,7 @@ function WidgetCard({ article }: { article: NewsArticle }) {
               size="small"
               sx={{
                 height: 20,
-                fontSize: '0.65rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 bgcolor: 'success.light',
                 color: 'primary.dark',
@@ -139,7 +139,7 @@ function WidgetCard({ article }: { article: NewsArticle }) {
               }}
             />
           ) : null}
-          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.65rem' }}>
+          <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.75rem' }}>
             {formattedDate}
           </Typography>
         </Box>
@@ -152,11 +152,11 @@ function WidgetCard({ article }: { article: NewsArticle }) {
             target="_blank"
             rel="noopener noreferrer"
             size="small"
-            endIcon={<OpenInNewIcon sx={{ fontSize: '0.7rem !important' }} />}
+            endIcon={<OpenInNewIcon sx={{ fontSize: '0.75rem !important' }} />}
             sx={{
               mt: 0.75,
               p: 0,
-              fontSize: '0.7rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
               color: 'primary.main',
               textTransform: 'none',
@@ -264,7 +264,7 @@ function FullCard({ article }: { article: NewsArticle }) {
               size="small"
               sx={{
                 height: 22,
-                fontSize: '0.7rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 bgcolor: 'success.light',
                 color: 'primary.dark',
@@ -274,7 +274,7 @@ function FullCard({ article }: { article: NewsArticle }) {
           ) : null}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.disabled' }}>
             <CalendarTodayIcon sx={{ fontSize: 12 }} />
-            <Typography variant="caption" sx={{ fontSize: '0.72rem' }}>
+            <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
               {formattedDate}
             </Typography>
           </Box>

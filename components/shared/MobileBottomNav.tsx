@@ -9,8 +9,8 @@ import Paper from '@mui/material/Paper';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CloudIcon from '@mui/icons-material/Cloud';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import NewspaperIcon from '@mui/icons-material/Newspaper';
+import InventoryIcon from '@mui/icons-material/Inventory';
 import { useTranslations } from 'next-intl';
 
 interface MobileNavItem {
@@ -20,11 +20,11 @@ interface MobileNavItem {
 }
 
 const mobileNavItems: MobileNavItem[] = [
-  { key: 'dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { key: 'keuangan', icon: <AccountBalanceWalletIcon />, path: '/dashboard/keuangan' },
-  { key: 'cuaca', icon: <CloudIcon />, path: '/dashboard/cuaca' },
-  { key: 'ensiklopedia', icon: <AutoStoriesIcon />, path: '/dashboard/ensiklopedia' },
-  { key: 'kalender', icon: <CalendarMonthIcon />, path: '/dashboard/kalender' },
+  { key: 'dashboard',  icon: <DashboardIcon />,            path: '/dashboard' },
+  { key: 'keuangan',   icon: <AccountBalanceWalletIcon />, path: '/dashboard/keuangan' },
+  { key: 'stok',       icon: <InventoryIcon />,            path: '/dashboard/stok' },
+  { key: 'kabarPasar', icon: <NewspaperIcon />,            path: '/dashboard/kabar-pasar' },
+  { key: 'cuaca',      icon: <CloudIcon />,                path: '/dashboard/cuaca' },
 ];
 
 export default function MobileBottomNav() {
@@ -60,11 +60,11 @@ export default function MobileBottomNav() {
       elevation={0}
     >
       <BottomNavigation
-        aria-label="Primary"
-        value={currentValue === -1 ? 0 : currentValue}
+        aria-label="Navigasi Utama"
+        value={currentValue === -1 ? false : currentValue}
         onChange={(_, newValue) => {
           const item = mobileNavItems[newValue];
-          if (pathname !== item.path) {
+          if (item && pathname !== item.path) {
             router.push(item.path);
           }
         }}
@@ -80,6 +80,7 @@ export default function MobileBottomNav() {
                 color: 'primary.main',
               },
               fontSize: '0.7rem',
+              minWidth: 0,
             }}
           />
         ))}

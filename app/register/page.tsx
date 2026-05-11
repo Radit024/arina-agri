@@ -113,7 +113,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <Grid container sx={{ minHeight: '100vh' }}>
+    <Grid container sx={{ minHeight: '100dvh' }}>
       {/* Left Panel - Branding */}
       <Grid 
         size={{ xs: 12, md: 6 }} 
@@ -185,6 +185,7 @@ export default function RegisterPage() {
                   label={t('fullName')}
                   variant="outlined"
                   fullWidth
+                  autoComplete="name"
                   error={!!errors.fullName}
                   helperText={errors.fullName?.message}
                   slotProps={{
@@ -209,6 +210,8 @@ export default function RegisterPage() {
                   label={t('email')}
                   variant="outlined"
                   fullWidth
+                  autoComplete="email"
+                  inputMode="email"
                   error={!!errors.email}
                   helperText={errors.email?.message}
                   slotProps={{
@@ -234,6 +237,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
+                  autoComplete="new-password"
                   error={!!errors.password}
                   helperText={errors.password?.message}
                   slotProps={{
@@ -266,6 +270,7 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
+                  autoComplete="new-password"
                   error={!!errors.confirmPassword}
                   helperText={errors.confirmPassword?.message}
                   slotProps={{

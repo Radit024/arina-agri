@@ -96,14 +96,14 @@ export default function LoginPage() {
   };
 
   return (
-    <Grid container sx={{ minHeight: '100vh' }}>
+    <Grid container sx={{ minHeight: '100dvh' }}>
       {/* Left Panel - Branding */}
-      <Grid 
-        size={{ xs: 12, md: 6 }} 
+      <Grid
+        size={{ xs: 12, md: 6 }}
         sx={{
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
-          display: 'flex',
+          display: { xs: 'none', md: 'flex' },
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
@@ -192,6 +192,8 @@ export default function LoginPage() {
                   label={t('email')}
                   variant="outlined"
                   fullWidth
+                  autoComplete="email"
+                  inputMode="email"
                   error={!!errors.email}
                   helperText={errors.email?.message}
                   slotProps={{
@@ -217,6 +219,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   variant="outlined"
                   fullWidth
+                  autoComplete="current-password"
                   error={!!errors.password}
                   helperText={errors.password?.message}
                   slotProps={{

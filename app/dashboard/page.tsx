@@ -124,6 +124,7 @@ export default function DashboardPage() {
             {getGreeting()}
           </Typography>
           <Typography
+            component="h1"
             variant="h3"
             sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}
           >

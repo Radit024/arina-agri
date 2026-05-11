@@ -38,17 +38,17 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
   return (
     <Box
       sx={{
-        width: size === 'widget' ? 88 : '100%',
-        height: size === 'widget' ? 88 : 180,
+        width: size === 'widget' ? 72 : '100%',
+        height: size === 'widget' ? 72 : 180,
         flexShrink: 0,
         bgcolor: 'success.light',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: size === 'widget' ? 2 : '12px 12px 0 0',
+        borderRadius: size === 'widget' ? 1.5 : '12px 12px 0 0',
       }}
     >
-      <NewspaperIcon sx={{ fontSize: size === 'widget' ? 32 : 48, color: 'primary.main', opacity: 0.5 }} />
+      <NewspaperIcon sx={{ fontSize: size === 'widget' ? 28 : 48, color: 'primary.main', opacity: 0.5 }} />
     </Box>
   );
 }
@@ -89,55 +89,39 @@ function WidgetCard({ article }: { article: NewsArticle }) {
           alt={article.title}
           onError={() => setImgError(true)}
           sx={{
-            width: 88,
-            height: 88,
+            width: 72,
+            height: 72,
             flexShrink: 0,
             objectFit: 'cover',
             alignSelf: 'center',
-            m: 1.5,
-            borderRadius: 2,
+            m: 1.25,
+            borderRadius: 1.5,
           }}
         />
       ) : (
-        <Box sx={{ m: 1.5, alignSelf: 'center' }}>
+        <Box sx={{ m: 1.25, alignSelf: 'center' }}>
           <NewsImageFallback size="widget" />
         </Box>
       )}
 
       {/* Content */}
-      <CardContent sx={{ flex: 1, py: 1.5, px: 1.5, '&:last-child': { pb: 1.5 }, minWidth: 0 }}>
+      <CardContent sx={{ flex: 1, py: 1.25, px: 1, '&:last-child': { pb: 1.25 }, minWidth: 0 }}>
         <Typography
           variant="body2"
           sx={{
             fontWeight: 600,
             color: 'text.primary',
-            lineHeight: 1.4,
+            lineHeight: 1.3,
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            mb: 0.5,
+            mb: 0.75,
+            fontSize: '0.85rem'
           }}
         >
           {article.title}
         </Typography>
-
-        {article.snippet ? (
-          <Typography
-            variant="caption"
-            sx={{
-              color: 'text.secondary',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              lineHeight: 1.4,
-              mb: 1,
-            }}
-          >
-            {article.snippet}
-          </Typography>
-        ) : null}
 
         {/* Footer: source + date */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -332,13 +316,12 @@ export function NewsCardSkeleton({ variant }: { variant: 'widget' | 'full' }) {
     return (
       <Card
         elevation={0}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', height: 120 }}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, display: 'flex', height: 96 }}
       >
-        <Skeleton variant="rectangular" width={88} sx={{ m: 1.5, borderRadius: 2, flexShrink: 0 }} />
-        <CardContent sx={{ flex: 1, py: 1.5, '&:last-child': { pb: 1.5 } }}>
+        <Skeleton variant="rectangular" width={72} sx={{ m: 1.25, borderRadius: 1.5, flexShrink: 0 }} />
+        <CardContent sx={{ flex: 1, py: 1.25, px: 1, '&:last-child': { pb: 1.25 } }}>
           <Skeleton variant="text" height={16} sx={{ mb: 0.5 }} />
           <Skeleton variant="text" height={16} width="80%" sx={{ mb: 1 }} />
-          <Skeleton variant="text" height={12} width="60%" />
         </CardContent>
       </Card>
     );

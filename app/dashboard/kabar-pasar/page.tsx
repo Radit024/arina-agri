@@ -14,6 +14,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { useNews } from '@/hooks/useNews';
+import { PriceTrendChart } from '@/components/dashboard/PriceCharts';
 import { useTranslations } from 'next-intl';
 
 const ITEMS_PER_PAGE = 9;
@@ -101,6 +102,9 @@ export default function KabarPasarPage() {
           </Box>
         ) : null}
       </Box>
+
+      {/* ─── Price Trend Chart ─────────────────────────────────── */}
+      <PriceTrendChart />
 
       {/* ─── Error State ──────────────────────────────────────────── */}
       {error ? (

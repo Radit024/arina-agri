@@ -43,7 +43,7 @@ const SETTINGS_TABS = [
   { id: 'info', key: 'system.tab', icon: <InfoOutlinedIcon /> },
 ];
 
-const TAB_CONTENT_MIN_HEIGHT = 460;
+const TAB_CONTENT_MIN_HEIGHT = 380;
 type LanguageMode = 'id' | 'en';
 
 export default function SettingsModal() {
@@ -61,13 +61,16 @@ export default function SettingsModal() {
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
   const userAvatar = user?.user_metadata?.avatar_url;
+  const isGoogleUser = user?.app_metadata?.provider === 'google' || 
+                       (user as any)?.identities?.some((id: any) => id.provider === 'google');
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
   const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
-  const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
+  const [telegramId, setTelegramId] = useState('');
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -98,7 +101,7 @@ export default function SettingsModal() {
 
   const handleSaveProfile = () => {
     setWeatherWhatsappPhone(profileWhatsappPhone.trim());
-    setPhoneSaveSuccess(true);
+    setProfileSaveSuccess(true);
   };
 
   return (
@@ -113,9 +116,9 @@ export default function SettingsModal() {
             borderRadius: { xs: 0, md: 4 },
             overflow: 'hidden',
             width: '100%',
-            height: { xs: '100%', md: '650px' },
-            minHeight: { xs: '100%', md: '650px' },
-            maxHeight: { xs: '100%', md: '650px' },
+            height: { xs: '100%', md: '560px' },
+            minHeight: { xs: '100%', md: '560px' },
+            maxHeight: { xs: '100%', md: '560px' },
             m: { xs: 0, md: 2 },
           },
         },
@@ -171,7 +174,7 @@ export default function SettingsModal() {
              </IconButton>
            </Box>
 
-           <DialogContent sx={{ p: { xs: 3, md: 5 }, pt: { md: 2 }, overflowY: 'scroll', display: 'flex', flexDirection: 'column' }}>
+           <DialogContent sx={{ p: { xs: 3, md: 4 }, pt: { md: 1 }, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
              
              {/* GENERAL SETTINGS */}
              {activeTab === 'general' && (
@@ -271,12 +274,13 @@ export default function SettingsModal() {
                       <Button
                         variant="outlined"
                         size="small"
+                        disabled={isGoogleUser}
                         sx={{ mb: 1, borderRadius: 2, color: 'text.primary', borderColor: 'divider', textTransform: 'none', fontWeight: 600 }}
                       >
                         {t('profile.changePhoto')}
                       </Button>
                       <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-                        {t('profile.photoHint')}
+                        {isGoogleUser ? 'Nama & foto dikelola oleh Google' : t('profile.photoHint')}
                       </Typography>
                     </Box>
                   </Box>
@@ -288,6 +292,7 @@ export default function SettingsModal() {
                         label={t('profile.fullName')}
                         defaultValue={userName}
                         variant="standard"
+                        disabled={isGoogleUser}
                       />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
@@ -306,10 +311,24 @@ export default function SettingsModal() {
                         value={profileWhatsappPhone}
                         onChange={(event) => {
                           setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
-                          setPhoneSaveSuccess(false);
+                          setProfileSaveSuccess(false);
                         }}
                         helperText={t('profile.phoneHelper')}
                         slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                        variant="standard"
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="ID Telegram"
+                        placeholder="@username atau ID"
+                        value={telegramId}
+                        onChange={(event) => {
+                          setTelegramId(event.target.value);
+                          setProfileSaveSuccess(false);
+                        }}
+                        helperText="Opsional untuk notifikasi"
                         variant="standard"
                       />
                     </Grid>
@@ -327,16 +346,16 @@ export default function SettingsModal() {
                       gap: 1.5,
                     }}
                   >
-                    <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
-                      {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
+                    <Typography variant="body2" color={profileSaveSuccess ? 'success.main' : 'text.secondary'}>
+                      {profileSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                     </Typography>
                     <Button
                       variant="contained"
                       onClick={handleSaveProfile}
                       sx={{
-                        width: 210,
-                        height: 56,
-                        borderRadius: 6,
+                        width: 160,
+                        height: 44,
+                        borderRadius: 3,
                         textTransform: 'none',
                         bgcolor: 'success.main',
                         '&:hover': { bgcolor: 'success.dark' },
@@ -360,7 +379,6 @@ export default function SettingsModal() {
                   {[
                     { label: t('notification.items.weather.label'), desc: t('notification.items.weather.desc') },
                     { label: t('notification.items.schedule.label'), desc: t('notification.items.schedule.desc') },
-                    { label: t('notification.items.tips.label'), desc: t('notification.items.tips.desc') },
                   ].map((item) => (
                     <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
                       <Box className="flex items-start justify-between gap-4">

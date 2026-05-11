@@ -41,7 +41,7 @@
     "home": {
       "locale": "id",
       "welcome": "Selamat datang, {name} ",
-      "profile": "{location} · {commodity} · {area}",
+      "profile": "{commodity} · {area}",
       "quickActions": {
         "title": "Manajemen Stok Panen",
         "description": "Pantau stok dan batch panen terbaru.",
@@ -506,7 +506,7 @@
     "subtitle": "Berita & informasi harga komoditas pertanian terkini",
     "refetch": "Ambil ulang berita",
     "stats": "{total} artikel tersedia",
-    "updateInterval": "Diperbarui otomatis setiap 6 jam dari sumber terpercaya",
+    "updateInterval": "Diperbarui otomatis dari sumber terpercaya",
     "error": "⚠️ Gagal memuat berita terbaru: {error}. Silakan segarkan halaman.",
     "readMore": "Baca Selengkapnya di Sumber",
     "readShort": "Baca di sumber",
@@ -717,8 +717,8 @@
       "phone": "Nomor WhatsApp Notifikasi Cuaca",
       "phonePlaceholder": "Contoh: 08123456789",
       "phoneHelper": "Nomor ini dipakai untuk notifikasi cuaca di halaman Cuaca",
-      "phoneSaved": "Nomor WhatsApp berhasil diperbarui.",
-      "phoneSaveHint": "Simpan untuk menerapkan nomor notifikasi cuaca yang baru.",
+      "phoneSaved": "Profil berhasil diperbarui.",
+      "phoneSaveHint": "Simpan untuk memperbarui data profil dan kontak notifikasi.",
       "saveChanges": "Simpan Perubahan"
     },
     "notification": {

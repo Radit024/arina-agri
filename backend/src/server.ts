@@ -9,6 +9,7 @@ import webhookRoutes from './routes/webhook';
 import newsRoutes from './routes/news';
 import { startScheduler } from './services/notificationScheduler';
 import { startNewsScheduler } from './services/newsScheduler';
+import { startPriceScraper } from './services/priceScraper';
 
 
 
@@ -49,6 +50,7 @@ app.use('/api/news', newsRoutes);
 
 startScheduler();
 startNewsScheduler();
+startPriceScraper();
 
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {

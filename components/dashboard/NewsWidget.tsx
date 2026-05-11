@@ -20,7 +20,7 @@ interface NewsWidgetProps {
 export default function NewsWidget({ layout = 'vertical' }: NewsWidgetProps) {
   const router = useRouter();
   const t = useTranslations('KabarPasar');
-  const limitCount = layout === 'vertical' ? 4 : 3;
+  const limitCount = layout === 'vertical' ? 6 : 3;
   const { articles, isLoading } = useNews({ limit: limitCount, page: 1 });
 
   return (
@@ -69,47 +69,58 @@ export default function NewsWidget({ layout = 'vertical' }: NewsWidgetProps) {
       </Box>
 
       {/* Cards Grid */}
-      {isLoading ? (
-        <Grid container spacing={2}>
-          {Array.from({ length: limitCount }).map((_, i) => (
-            <Grid key={i} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
-              <NewsCardSkeleton variant="widget" />
-            </Grid>
-          ))}
-        </Grid>
-      ) : articles.length === 0 ? (
-        <Card
-          elevation={0}
-          sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 3,
-            bgcolor: 'background.default',
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <NewspaperIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-            <Typography variant="body2" color="text.secondary">
-              {t('empty.title')}
-            </Typography>
-            <Typography variant="caption" color="text.disabled">
-              {t('empty.subtitle')}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : (
-        <Grid container spacing={2}>
-          {articles.map((article) => (
-            <Grid key={article.id} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
-              <NewsCard article={article} variant="widget" />
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      <Box sx={layout === 'vertical' ? { 
+        maxHeight: 380, 
+        overflowY: 'auto', 
+        pr: 1, 
+        pb: 1,
+        '&::-webkit-scrollbar': { width: '4px' },
+        '&::-webkit-scrollbar-track': { background: 'transparent' },
+        '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
+        '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(0,0,0,0.2)' }
+      } : {}}>
+        {isLoading ? (
+          <Grid container spacing={1.5}>
+            {Array.from({ length: limitCount }).map((_, i) => (
+              <Grid key={i} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
+                <NewsCardSkeleton variant="widget" />
+              </Grid>
+            ))}
+          </Grid>
+        ) : articles.length === 0 ? (
+          <Card
+            elevation={0}
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              bgcolor: 'background.default',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+              <NewspaperIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">
+                {t('empty.title')}
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                {t('empty.subtitle')}
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          <Grid container spacing={1.5}>
+            {articles.map((article) => (
+              <Grid key={article.id} size={{ xs: 12, md: layout === 'horizontal' ? 4 : 12 }}>
+                <NewsCard article={article} variant="widget" />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
     </Box>
   );
 }

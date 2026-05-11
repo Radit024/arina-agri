@@ -11,8 +11,12 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import AgricultureIcon from '@mui/icons-material/Agriculture';
 import WbCloudyIcon from '@mui/icons-material/WbCloudy';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import Divider from '@mui/material/Divider';
 import WeatherBanner from './WeatherBanner';
+import { useCommodityPrices } from '@/hooks/useCommodityPrices';
+import { formatRupiah } from '@/lib/formatters';
+import Skeleton from '@mui/material/Skeleton';
 
 interface DashboardKPIProps {
   totalPengeluaran: string;
@@ -20,8 +24,6 @@ interface DashboardKPIProps {
   labaBersih: string;
   labaBersihRaw: number;
   profitTrend: number;
-  harvestDays: number;
-  harvestSubtitle: string;
   weatherTemp: number;
   weatherCond: string;
   weatherHum: number;
@@ -35,8 +37,6 @@ export default memo(function DashboardKPI({
   labaBersih,
   labaBersihRaw,
   profitTrend,
-  harvestDays,
-  harvestSubtitle,
   weatherTemp,
   weatherCond,
   weatherHum,
@@ -49,6 +49,8 @@ export default memo(function DashboardKPI({
   const expPositive = expTrend <= 0;
   
   const profitColor = profitPositive ? theme.palette.success.main : theme.palette.error.main;
+
+  const { todayPrice, priceDelta, priceDeltaPct, isTrendingUp, loading: priceLoading } = useCommodityPrices(7);
   
   return (
     <Card sx={{ 
@@ -158,17 +160,36 @@ export default memo(function DashboardKPI({
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {t('kpi.harvest.title')}
+                  Harga Cabai Rawit
                 </Typography>
-                <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'success.main' }}>
-                  {t('kpi.harvest.value', { days: harvestDays })}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                  {harvestSubtitle}
-                </Typography>
+                
+                {priceLoading ? (
+                  <Box sx={{ mt: 0.5 }}>
+                    <Skeleton variant="text" width={120} height={32} />
+                    <Skeleton variant="text" width={80} height={20} sx={{ mt: 1 }} />
+                  </Box>
+                ) : (
+                  <>
+                    <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary' }}>
+                      {todayPrice ? formatRupiah(todayPrice) : '—'}
+                      <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, ml: 0.5 }}>
+                        /kg
+                      </Typography>
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                      <Typography variant="caption" color="text.secondary">vs kemarin</Typography>
+                      {priceDelta !== null && (
+                        <Typography variant="caption" sx={{ color: isTrendingUp ? 'success.main' : 'error.main', fontWeight: 600 }}>
+                          {isTrendingUp ? '↑' : '↓'} {priceDelta > 0 ? '+' : ''}{formatRupiah(Math.abs(priceDelta))} ({priceDeltaPct}%)
+                        </Typography>
+                      )}
+                    </Box>
+                  </>
+                )}
               </Box>
-              <Box sx={{ color: 'success.main', opacity: 0.8 }}>
-                <AgricultureIcon />
+              <Box sx={{ color: 'primary.main', opacity: 0.8, bgcolor: 'success.light', p: 1, borderRadius: 2 }}>
+                <StorefrontIcon fontSize="small" />
               </Box>
             </Box>
           </Grid>

@@ -392,32 +392,27 @@ export default function KeuanganPage() {
   const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
-  const expenseCategoryConfig = useMemo(
-    () => [
-      { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'] },
-      { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'] },
-      { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'] },
-      { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'] },
-      { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'] },
-      { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'] },
-    ] as const,
-    [t]
-  );
-
   const normalizeCategory = (value: string) => value.trim().toLowerCase();
   const theme = useTheme();
   const pieColors = [
-    theme.palette.error.main,
-    theme.palette.warning.main,
-    theme.palette.success.main,
-    theme.palette.info.main,
-    theme.palette.primary.main,
-    theme.palette.text.secondary,
+    theme.palette.error.main,     // Pestisida
+    theme.palette.success.main,   // Pupuk
+    theme.palette.info.main,      // Tenaga Kerja
+    theme.palette.primary.main,   // Irigasi
+    theme.palette.warning.main,   // Alat Tani
+    theme.palette.text.secondary, // Lainnya
   ];
   const expenseStats = useMemo(
     () =>
-      expenseCategoryConfig
-        .map((category, i) => {
+      [
+        { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'], color: theme.palette.error.main },
+        { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'], color: theme.palette.success.main },
+        { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'], color: theme.palette.info.main },
+        { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'], color: theme.palette.primary.main },
+        { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'], color: theme.palette.warning.main },
+        { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'], color: theme.palette.text.secondary },
+      ]
+        .map((category) => {
           const aliases = category.aliases.map(normalizeCategory);
           let value = 0;
           monthFilteredTransactions.forEach((tx) => {
@@ -430,11 +425,11 @@ export default function KeuanganPage() {
             id: category.id,
             value,
             label: category.label,
-            color: pieColors[i],
+            color: category.color,
           };
         })
         .filter((item) => item.value > 0),
-    [expenseCategoryConfig, monthFilteredTransactions]
+    [t, monthFilteredTransactions, theme]
   );
 
   const finalPieData = useMemo(

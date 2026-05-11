@@ -163,21 +163,25 @@ export function KategoriChart({ transactions }: ChartProps) {
       .slice(0, 5);
   }, [transactions]);
   
+  const getCategoryColor = (category: string) => {
+    const c = category.toLowerCase();
+    if (c.includes('pestisida') || c.includes('pesticide')) return theme.palette.error.main;
+    if (c.includes('pupuk') || c.includes('fertilizer')) return theme.palette.success.main;
+    if (c.includes('tenaga') || c.includes('labor')) return theme.palette.info.main;
+    if (c.includes('irigasi') || c.includes('irrigation')) return theme.palette.primary.main;
+    if (c.includes('alat') || c.includes('tools')) return theme.palette.warning.main;
+    return theme.palette.text.secondary;
+  };
+
   const totalPengeluaran = pieDataTotal(data);
   const pieData = data.map((item, index) => ({
     id: index,
     value: item.jumlah,
     label: item.kategori,
+    color: getCategoryColor(item.kategori),
   }));
 
-  const pieColors = [
-    theme.palette.error.main,
-    theme.palette.warning.main,
-    theme.palette.success.main,
-    theme.palette.info.main,
-    theme.palette.primary.main,
-    theme.palette.text.secondary,
-  ];
+  const pieColors = pieData.map(d => d.color);
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>

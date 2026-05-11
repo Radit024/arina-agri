@@ -41,7 +41,7 @@
     "home": {
       "locale": "en",
       "welcome": "Welcome, Mr. {name} 👋",
-      "profile": "{location} · {commodity} · {area}",
+      "profile": "{commodity} · {area}",
       "quickActions": {
         "title": "Harvest Stock Management",
         "description": "Track stock and the latest harvest batches.",
@@ -506,7 +506,7 @@
     "subtitle": "Latest news & commodity price information",
     "refetch": "Refetch news",
     "stats": "{total} articles available",
-    "updateInterval": "Automatically updated every 6 hours from trusted sources",
+    "updateInterval": "Automatically updated from trusted sources",
     "error": "⚠️ Failed to load latest news: {error}. Please refresh the page.",
     "readMore": "Read Full Article at Source",
     "readShort": "Read at source",
@@ -717,8 +717,8 @@
       "phone": "WhatsApp Number for Weather Notifications",
       "phonePlaceholder": "Example: 08123456789",
       "phoneHelper": "This number is used for weather notifications on the Weather page",
-      "phoneSaved": "WhatsApp number updated successfully.",
-      "phoneSaveHint": "Save to apply the new weather notification number.",
+      "phoneSaved": "Profile updated successfully.",
+      "phoneSaveHint": "Save to update profile data and notification contacts.",
       "saveChanges": "Save Changes"
     },
     "notification": {

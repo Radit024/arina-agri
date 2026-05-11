@@ -129,10 +129,7 @@ export default function DashboardPage() {
           >
             {firstName}.
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', backgroundColor: '#16a34a' }} />
-            {t('profile', { location: farmerProfile.lokasi, commodity: farmerProfile.komoditas, area: farmerProfile.luasLahan })}
-          </Typography>
+
         </Box>
         <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -148,8 +145,6 @@ export default function DashboardPage() {
         labaBersih={formatRupiah(labaBersih)}
         labaBersihRaw={labaBersih}
         profitTrend={profitTrend}
-        harvestDays={harvestInfo.days}
-        harvestSubtitle={harvestInfo.subtitle}
         weatherTemp={28}
         weatherCond={t('locale') === 'en' ? 'Sunny' : 'Cerah'}
         weatherHum={75}
@@ -157,28 +152,25 @@ export default function DashboardPage() {
         t={t}
       />
 
-      {/* Quick Actions */}
-      <Box sx={{ mb: 4 }}>
-        <QuickActions />
-      </Box>
-
       {/* Main Content & Sidebar Layout */}
       <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>
         {/* Left Column (Charts) */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Grid container spacing={3} sx={{ height: '100%' }}>
+          <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 7 }}>
               <TrendChart transactions={transactions} />
             </Grid>
             <Grid size={{ xs: 12, md: 5 }}>
               <KategoriChart transactions={transactions} />
             </Grid>
+            {/* Table or other content could go here in the future */}
           </Grid>
         </Grid>
 
-        {/* Right Column (News Sidebar) */}
+        {/* Right Column (Sidebar) */}
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Box sx={{ height: '100%', position: 'sticky', top: 24 }}>
+          <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <QuickActions />
             <NewsWidget layout="vertical" />
           </Box>
         </Grid>

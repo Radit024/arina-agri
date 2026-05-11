@@ -124,10 +124,8 @@ export function PriceTrendChart() {
                       valueFormatter: (v) => formatRupiah(v ?? 0),
                     },
                   ]}
-                  slotProps={{
-                    axisGrid: { horizontal: true },
-                    legend: { hidden: true }
-                  }}
+                  grid={{ horizontal: true }}
+                  hideLegend
                   margin={{ left: 90, right: 20, top: 40, bottom: 120 }}
                   height={350}
                   yAxis={[{
@@ -169,10 +167,8 @@ export function PriceTrendChart() {
                       valueFormatter: (v) => formatRupiah(v ?? 0),
                     },
                   ]}
-                  slotProps={{
-                    axisGrid: { horizontal: true },
-                    legend: { hidden: true }
-                  }}
+                  grid={{ horizontal: true }}
+                  hideLegend
                   margin={{ left: 90, right: 20, top: 40, bottom: 120 }}
                   height={350}
                   axisHighlight={{ x: 'line', y: 'none' }}

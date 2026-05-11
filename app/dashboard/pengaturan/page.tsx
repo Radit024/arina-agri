@@ -73,26 +73,29 @@ export default function PengaturanPage() {
       </Box>
 
       {/* Main Settings Card Layout */}
-      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: 'calc(100vh - 180px)', flex: 1, borderRadius: 4, overflow: 'hidden' }}>
+      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, minHeight: { xs: 'auto', md: 'calc(100vh - 180px)' }, flex: 1, borderRadius: 4, overflow: 'hidden' }}>
         
         {/* Left Navigation (Inner Sidebar) */}
-        <Box sx={{ width: { xs: '100%', md: 280 }, bgcolor: '#f8fafc', borderRight: '1px solid', borderColor: 'divider', p: 2 }}>
-           <Typography variant="caption" sx={{ px: 2, mb: 1, display: 'block', color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 700 }}>
+        <Box sx={{ width: { xs: '100%', md: 280 }, bgcolor: '#f8fafc', borderRight: { xs: 'none', md: '1px solid' }, borderBottom: { xs: '1px solid', md: 'none' }, borderColor: 'divider', p: { xs: 2, md: 3 } }}>
+           <Typography variant="caption" sx={{ px: { xs: 0, md: 2 }, mb: 1, display: { xs: 'none', md: 'block' }, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase', fontWeight: 700 }}>
              {t('menuLabel')}
            </Typography>
-           <List disablePadding>
+           <List disablePadding sx={{ display: { xs: 'flex', md: 'block' }, overflowX: 'auto', pb: { xs: 1, md: 0 }, '&::-webkit-scrollbar': { display: 'none' }, msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
              {SETTINGS_TABS.map((tab) => (
-               <ListItem key={tab.id} disablePadding sx={{ mb: 0.5 }}>
+               <ListItem key={tab.id} disablePadding sx={{ mb: { xs: 0, md: 0.5 }, mr: { xs: 1, md: 0 }, width: 'auto' }}>
                  <ListItemButton
                    onClick={() => setActiveTab(tab.id)}
                    sx={{
                      borderRadius: 2,
                      bgcolor: activeTab === tab.id ? '#f0fdf4' : 'transparent',
                      color: activeTab === tab.id ? '#16a34a' : 'text.primary',
-                     '&:hover': { bgcolor: activeTab === tab.id ? '#f0fdf4' : '#f8fafc' }
+                     '&:hover': { bgcolor: activeTab === tab.id ? '#f0fdf4' : '#f8fafc' },
+                     whiteSpace: 'nowrap',
+                     px: { xs: 2, md: 2 },
+                     py: { xs: 1, md: 1 },
                    }}
                  >
-                   <ListItemIcon sx={{ minWidth: 40, color: activeTab === tab.id ? '#16a34a' : '#64748b' }}>
+                   <ListItemIcon sx={{ minWidth: { xs: 32, md: 40 }, color: activeTab === tab.id ? '#16a34a' : '#64748b' }}>
                      {tab.icon}
                    </ListItemIcon>
                    <ListItemText 
@@ -106,7 +109,7 @@ export default function PengaturanPage() {
         </Box>
 
         {/* Right Content Area */}
-        <Box sx={{ flex: 1, p: { xs: 3, md: 6 }, bgcolor: '#ffffff', overflowY: 'auto' }}>
+        <Box sx={{ flex: 1, p: { xs: 2, md: 6 }, bgcolor: '#ffffff', overflowY: 'auto' }}>
            
            {/* GENERAL SETTINGS */}
            {activeTab === 'general' && (
@@ -119,13 +122,13 @@ export default function PengaturanPage() {
                    <Typography variant="body2" sx={{ color: '#9ca3af', mb: 3 }}>
                      {t('general.securityBox.desc')}
                    </Typography>
-                   <Button variant="contained" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2 }}>
+                   <Button variant="contained" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
                      {t('general.securityBox.button')}
                    </Button>
                 </Box>
 
                  <Box sx={{ mb: 4 }}>
-                   <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                   <Box sx={{ py: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: 2 }}>
                      <Box>
                        <Typography variant="body1" sx={{ fontWeight: 600 }}>{t('general.appearance')}</Typography>
                        <Typography variant="body2" color="text.secondary">Pilih tema tampilan aplikasi yang nyaman untuk mata Anda.</Typography>
@@ -137,7 +140,10 @@ export default function PengaturanPage() {
                        size="small"
                        sx={{
                          bgcolor: 'action.hover',
+                         width: { xs: '100%', sm: 'auto' },
+                         display: 'flex',
                          '& .MuiToggleButton-root': {
+                           flex: { xs: 1, sm: 'initial' },
                            px: 2,
                            py: 0.75,
                            borderRadius: 2,
@@ -156,13 +162,13 @@ export default function PengaturanPage() {
                        }}
                      >
                        <ToggleButton value="light">
-                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                            <LightModeIcon sx={{ fontSize: 18 }} />
                            {t('general.modeLight')}
                          </Box>
                        </ToggleButton>
                        <ToggleButton value="dark">
-                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                            <DarkModeIcon sx={{ fontSize: 18 }} />
                            {t('general.modeDark')}
                          </Box>
@@ -187,11 +193,11 @@ export default function PengaturanPage() {
                   <Avatar
                     src={userAvatar || undefined}
                     sx={{
-                      width: 80,
-                      height: 80,
+                      width: { xs: 64, md: 80 },
+                      height: { xs: 64, md: 80 },
                       backgroundColor: '#f0fdf4',
                       color: '#16a34a',
-                      fontSize: '1.5rem',
+                      fontSize: { xs: '1.25rem', md: '1.5rem' },
                       fontWeight: 700,
                     }}
                   >
@@ -233,11 +239,11 @@ export default function PengaturanPage() {
                   </Grid>
                 </Grid>
                 
-                <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'}>
+                <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
+                  <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                     {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                   </Typography>
-                  <Button variant="contained" sx={{ px: 4, borderRadius: 2, bgcolor: '#16a34a', '&:hover': { bgcolor: 'primary.dark' } }} onClick={handleSaveProfile}>
+                  <Button variant="contained" sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: '#16a34a', '&:hover': { bgcolor: 'primary.dark' }, width: { xs: '100%', sm: 'auto' } }} onClick={handleSaveProfile}>
                     {t('profile.saveChanges')}
                   </Button>
                 </Box>
@@ -273,12 +279,12 @@ export default function PengaturanPage() {
               <Box>
                 <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>{t('system.title')}</Typography>
                 
-                <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: 3 }}>
-                   <Box sx={{ width: 60, height: 60, borderRadius: 3, bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <InfoOutlinedIcon sx={{ fontSize: 32, color: '#16a34a' }} />
+                <Box sx={{ p: { xs: 2, md: 3 }, border: '1px solid', borderColor: 'divider', borderRadius: 3, mb: 4, display: 'flex', alignItems: 'center', gap: { xs: 2, md: 3 } }}>
+                   <Box sx={{ width: { xs: 48, md: 60 }, height: { xs: 48, md: 60 }, borderRadius: 3, bgcolor: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <InfoOutlinedIcon sx={{ fontSize: { xs: 24, md: 32 }, color: '#16a34a' }} />
                    </Box>
                    <Box>
-                     <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700 }}>{t('system.appName')}</Typography>
+                     <Typography variant="h6" sx={{ color: 'primary.dark', fontWeight: 700, fontSize: { xs: '1rem', md: '1.25rem' } }}>{t('system.appName')}</Typography>
                      <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>{t('system.version')}</Typography>
                    </Box>
                 </Box>
@@ -291,7 +297,7 @@ export default function PengaturanPage() {
                 ].map((item) => (
                   <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
                     <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.value}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, textAlign: 'right', ml: 2 }}>{item.value}</Typography>
                   </Box>
                 ))}
               </Box>

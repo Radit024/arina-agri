@@ -56,8 +56,8 @@ import LinearProgress from '@mui/material/LinearProgress';
 
 import { useTransactions } from '@/hooks/useTransactions';
 import type { ApiTransaction } from '@/lib/api';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+import Snackbar from '@mui/material/Snackbar';
+import DialogActions from '@mui/material/DialogActions';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
@@ -117,6 +117,12 @@ export default function KeuanganPage() {
   const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
   const [txDialogOpen, setTxDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
 
@@ -184,8 +190,10 @@ export default function KeuanganPage() {
 
     if (editingId) {
       await updateTransaction(editingId, txData);
+      setSnackbar({ open: true, message: 'Transaksi berhasil diperbarui', severity: 'success' });
     } else {
       await addTransaction(txData);
+      setSnackbar({ open: true, message: 'Transaksi berhasil dicatat', severity: 'success' });
     }
 
     setTxDialogOpen(false);
@@ -193,7 +201,14 @@ export default function KeuanganPage() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteTransaction(id);
+    setDeleteConfirmId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    await deleteTransaction(deleteConfirmId);
+    setDeleteConfirmId(null);
+    setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
   };
 
   const handleNominalChange = (value: string, onChange: (v: string) => void) => {
@@ -213,6 +228,11 @@ export default function KeuanganPage() {
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
   const handleExportExcel = async () => {
+    const [ExcelJS, { saveAs }] = await Promise.all([
+      import('exceljs').then(m => m.default),
+      import('file-saver'),
+    ]);
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Buku Keuangan');
 
@@ -502,64 +522,65 @@ export default function KeuanganPage() {
                 </Typography>
               }
               subheader={t('ledger.subheader', { count: displayedTransactions.length })}
-              action={
-                <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {/* Filter Bulan */}
-                  <FormControl size="small" sx={{ minWidth: 170 }}>
-                    <InputLabel>Filter Bulan</InputLabel>
-                    <Select
-                      value={filterBulan}
-                      label={t('filters.month')}
-                      onChange={(e) => setFilterBulan(e.target.value)}
-                    >
-                      <MenuItem value="semua">{t('filters.allMonths')}</MenuItem>
-                      {bulanOptions.map((bulanKey) => (
-                        <MenuItem key={bulanKey} value={bulanKey}>
-                          {getBulanLabel(bulanKey)}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  {/* Filter */}
-                  <FormControl size="small" sx={{ minWidth: 170 }}>
-                    <InputLabel>{t('filters.type')}</InputLabel>
-                    <Select
-                      value={filterJenis}
-                      label={t('filters.type')}
-                      onChange={(e) => setFilterJenis(e.target.value as typeof filterJenis)}
-                    >
-                      <MenuItem value="semua">{t('filters.allTypes')}</MenuItem>
-                      <MenuItem value="pendapatan">{t('common.income')}</MenuItem>
-                      <MenuItem value="pengeluaran">{t('common.expense')}</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  {/* Tombol Modal HPP & BEP */}
-                  <Button
-                    id="btn-hpp-bep"
-                    variant="outlined"
-                    startIcon={<AccountBalanceIcon />}
-                    onClick={() => setBepHppDialogOpen(true)}
-                    sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
-                  >
-                    {t('buttons.hppBep')}
-                  </Button>
-
-                  {/* Tombol Tambah Transaksi */}
-                  <Button
-                    id="btn-catat-transaksi"
-                    variant="contained"
-                    startIcon={<AddCircleIcon />}
-                    onClick={openAddDialog}
-                    sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
-                  >
-                    {t('buttons.addTransaction')}
-                  </Button>
-                </Box>
-              }
-              sx={{ pb: 1, '& .MuiCardHeader-action': { m: 0, alignSelf: 'center' } }}
+              sx={{ pb: 1 }}
             />
+
+            {/* Responsive Toolbar Row */}
+            <Box
+              sx={{
+                px: 2,
+                pb: 2,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: { xs: 1.5, sm: 1 },
+                alignItems: { xs: 'stretch', sm: 'center' },
+                flexWrap: 'wrap',
+              }}
+            >
+              {/* Filters row */}
+              <Box sx={{ display: 'flex', gap: 1, flex: 1, flexWrap: 'wrap' }}>
+                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flex: { xs: 1, sm: 'none' } }}>
+                  <InputLabel>{t('filters.month')}</InputLabel>
+                  <Select value={filterBulan} label={t('filters.month')} onChange={(e) => setFilterBulan(e.target.value)}>
+                    <MenuItem value="semua">{t('filters.allMonths')}</MenuItem>
+                    {bulanOptions.map((bulanKey) => (
+                      <MenuItem key={bulanKey} value={bulanKey}>{getBulanLabel(bulanKey)}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, flex: { xs: 1, sm: 'none' } }}>
+                  <InputLabel>{t('filters.type')}</InputLabel>
+                  <Select value={filterJenis} label={t('filters.type')} onChange={(e) => setFilterJenis(e.target.value as typeof filterJenis)}>
+                    <MenuItem value="semua">{t('filters.allTypes')}</MenuItem>
+                    <MenuItem value="pendapatan">{t('common.income')}</MenuItem>
+                    <MenuItem value="pengeluaran">{t('common.expense')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {/* Actions row */}
+              <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                <Button
+                  id="btn-hpp-bep"
+                  variant="outlined"
+                  startIcon={<AccountBalanceIcon />}
+                  onClick={() => setBepHppDialogOpen(true)}
+                  sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
+                >
+                  {t('buttons.hppBep')}
+                </Button>
+                <Button
+                  id="btn-catat-transaksi"
+                  variant="contained"
+                  startIcon={<AddCircleIcon />}
+                  onClick={openAddDialog}
+                  sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
+                >
+                  {t('buttons.addTransaction')}
+                </Button>
+              </Box>
+            </Box>
 
             <CardContent sx={{ pt: 0, flex: 1, px: 2, pb: 2 }}>
               <TableContainer sx={{ maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
@@ -620,7 +641,7 @@ export default function KeuanganPage() {
                                 backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
                                 color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
                                 fontWeight: 800,
-                                fontSize: '0.7rem',
+                                fontSize: '0.75rem',
                                 borderRadius: 1.5,
                               }}
                             />
@@ -1296,6 +1317,59 @@ export default function KeuanganPage() {
           </Box>
         </DialogContent>
       </Dialog>
+    {/* Confirm Delete Dialog */}
+      <Dialog
+        open={!!deleteConfirmId}
+        onClose={() => setDeleteConfirmId(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+          Hapus Transaksi?
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Tindakan ini tidak dapat dibatalkan. Transaksi akan dihapus secara permanen.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setDeleteConfirmId(null)}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            Ya, Hapus
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ mb: { xs: '84px', md: 0 } }}
+      >
+        <Alert
+          elevation={6}
+          variant="filled"
+          severity={snackbar.severity}
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          sx={{ borderRadius: 2, fontWeight: 600 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
     </Box>
   );
 }

@@ -18,32 +18,10 @@ export interface RegionPrice {
   price: number;
 }
 
-// ─── Realistic mock data for unauthenticated users ─────────────────
-function generateMockPrices(): CommodityPrice[] {
-  const today = new Date();
-  const basePrice = 68200; // Disesuaikan dengan harga Siskaperbapo saat ini
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (29 - i));
-    // Gunakan fungsi matematis deterministik (bukan Math.random) agar angka tidak berubah-ubah saat di-refresh
-    const pseudoRandom = (i * 13) % 100 / 100; // Menghasilkan angka 0.0 - 0.99 yang tetap untuk setiap indeks
-    const variation = Math.sin(i / 3) * 3000 + (pseudoRandom - 0.4) * 2000;
-    return {
-      id: `mock-${i}`,
-      date: d.toISOString().split('T')[0],
-      commodity: 'Cabe Rawit Merah',
-      location: 'Pasar Induk Malang',
-      price: Math.round(Math.max(30000, basePrice + variation)),
-      created_at: d.toISOString(),
-    };
-  });
-}
-
-const MOCK_PRICES = generateMockPrices();
-
 export function useCommodityPrices(limit: number = 30) {
   const { user, loading: authLoading } = useAuth();
   const [prices, setPrices] = useState<CommodityPrice[]>([]);
+  const [dbRegionPrices, setDbRegionPrices] = useState<RegionPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,25 +30,55 @@ export function useCommodityPrices(limit: number = 30) {
     setLoading(true);
     try {
       if (!user) {
-        // Use mock data, sliced to requested limit
-        setPrices(MOCK_PRICES.slice(-limit));
-        setLoading(false);
+        setPrices([]);
+        setDbRegionPrices([]);
         return;
       }
-      const { data, error: sbError } = await supabase
+      
+      // 1. Fetch Trend for Jawa Timur (Provincial Average)
+      const { data: trendData, error: sbError } = await supabase
         .from('commodity_prices')
         .select('*')
         .eq('commodity', 'Cabe Rawit Merah')
+        .in('location', ['Propinsi Jawa Timur', 'Pasar Induk Malang', 'Jawa Timur']) 
         .order('date', { ascending: true })
         .limit(limit);
 
       if (sbError) throw new Error(sbError.message);
-      setPrices((data ?? []) as CommodityPrice[]);
+      
+      setPrices((trendData || []) as CommodityPrice[]);
+
+      // 2. Fetch Map Data for the latest available date
+      const latestDate = trendData?.at(-1)?.date;
+      if (latestDate) {
+        const { data: mapData, error: mapError } = await supabase
+          .from('commodity_prices')
+          .select('*')
+          .eq('commodity', 'Cabe Rawit Merah')
+          .eq('date', latestDate);
+          
+        if (mapError) console.error('Map data fetch error:', mapError.message);
+
+        if (mapData && mapData.length > 0) {
+          // Exclude the provincial average from the map regions
+          const regionsOnly = mapData.filter(d => 
+            !d.location.includes('Propinsi') && 
+            !d.location.includes('Jawa Timur')
+          );
+          setDbRegionPrices(regionsOnly.map(d => ({ name: d.location, price: d.price })));
+        } else {
+          setDbRegionPrices([]);
+        }
+      } else {
+        setDbRegionPrices([]);
+      }
+      
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Gagal memuat data harga');
-      // Fallback to mock on error
-      setPrices(MOCK_PRICES.slice(-limit));
+      console.error('Data load error:', err);
+      setError(err.message || 'Gagal memuat data harga dari database');
+      setPrices([]);
+      setDbRegionPrices([]);
     } finally {
       setLoading(false);
     }
@@ -91,33 +99,10 @@ export function useCommodityPrices(limit: number = 30) {
     : null;
   const isTrendingUp = priceDelta !== null ? priceDelta >= 0 : null;
 
-  // Mock region prices derived from today's price
+  // Region prices (strictly from DB)
   const regionPrices: RegionPrice[] = useMemo(() => {
-    if (!todayPrice) return [];
-    
-    const regions = [
-      'Pamekasan', 'Ngawi', 'Sidoarjo', 'Kediri', 'Banyuwangi',
-      'Nganjuk', 'Madiun', 'Jember', 'Bojonegoro', 'Sumenep',
-      'Tulungagung', 'Jombang', 'Probolinggo', 'Trenggalek', 'Magetan',
-      'Gresik', 'Bondowoso', 'Pasuruan', 'Mojokerto', 'Surabaya',
-      'Blitar', 'Ponorogo', 'Pacitan', 'Situbondo', 'Batu',
-      'Sampang', 'Lamongan', 'Malang', 'Bangkalan', 'Tuban',
-      'Lumajang'
-    ];
-
-    // Generate deterministic prices around today's average
-    const data = regions.map((region, i) => {
-      // Deterministic pseudo-random variation based on index
-      const variation = (Math.sin(i * 1.5) * 8000) + (Math.cos(i * 3) * 4000);
-      return {
-        name: `Kab/Kota ${region}`,
-        price: Math.max(30000, todayPrice + variation)
-      };
-    });
-
-    // Sort descending by price like in the reference image
-    return data.sort((a, b) => b.price - a.price);
-  }, [todayPrice]);
+    return [...dbRegionPrices].sort((a, b) => b.price - a.price);
+  }, [dbRegionPrices]);
 
   return {
     prices,

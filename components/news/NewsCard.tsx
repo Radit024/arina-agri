@@ -11,7 +11,9 @@ import Skeleton from '@mui/material/Skeleton';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useTranslations } from 'next-intl';
+import { alpha } from '@mui/material/styles';
 import type { NewsArticle } from '@/lib/types/news';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -39,16 +41,18 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
     <Box
       sx={{
         width: size === 'widget' ? 72 : '100%',
-        height: size === 'widget' ? 72 : 180,
+        // Use aspectRatio 16/9 for full to match real images and prevent CLS
+        aspectRatio: size === 'widget' ? undefined : '16/9',
+        height: size === 'widget' ? 72 : undefined,
         flexShrink: 0,
-        bgcolor: 'success.light',
+        bgcolor: (theme) => theme.palette.success.light,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: size === 'widget' ? 1.5 : '12px 12px 0 0',
       }}
     >
-      <NewspaperIcon sx={{ fontSize: size === 'widget' ? 28 : 48, color: 'primary.main', opacity: 0.5 }} />
+      <NewspaperIcon sx={{ fontSize: size === 'widget' ? 28 : 40, color: 'primary.main', opacity: 0.4 }} />
     </Box>
   );
 }
@@ -186,17 +190,19 @@ function FullCard({ article }: { article: NewsArticle }) {
     <Card
       elevation={0}
       sx={{
-        border: 'none',
-        boxShadow: '0 4px 12px rgba(44, 42, 41, 0.04)',
+        border: '1px solid',
+        borderColor: (theme) => alpha(theme.palette.divider, 0.6),
+        boxShadow: 'none',
         borderRadius: 4,
         overflow: 'hidden',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'transform 0.2s, box-shadow 0.2s',
+        cursor: 'pointer',
+        transition: 'transform 0.22s ease-out, box-shadow 0.22s ease-out',
         '&:hover': {
-          boxShadow: '0 8px 24px rgba(44, 42, 41, 0.08)',
-          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 28px rgba(44, 42, 41, 0.1)',
+          transform: 'translateY(-3px)',
         },
       }}
     >
@@ -209,7 +215,7 @@ function FullCard({ article }: { article: NewsArticle }) {
           onError={() => setImgError(true)}
           sx={{
             width: '100%',
-            height: 180,
+            aspectRatio: '16/9',
             objectFit: 'cover',
           }}
         />
@@ -219,17 +225,46 @@ function FullCard({ article }: { article: NewsArticle }) {
 
       {/* Content */}
       <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, '&:last-child': { pb: 2 } }}>
+        
+        {/* Source + date */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25, flexWrap: 'wrap' }}>
+          {article.source ? (
+            <Chip
+              label={article.source}
+              size="small"
+              sx={{
+                height: 22,
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                bgcolor: (theme) => alpha(theme.palette.success.main, 0.1),
+                color: 'success.dark',
+                borderRadius: 1.5,
+                '& .MuiChip-label': { px: 1 },
+              }}
+            />
+          ) : null}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.disabled' }}>
+            <CalendarTodayIcon sx={{ fontSize: 12 }} />
+            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+              {formattedDate}
+            </Typography>
+          </Box>
+        </Box>
+
         <Typography
-          variant="body1"
+          variant="subtitle1"
           sx={{
+            fontFamily: 'var(--font-sora)',
             fontWeight: 700,
+            fontSize: '1rem',
+            letterSpacing: '-0.01em',
             color: 'text.primary',
-            lineHeight: 1.4,
+            lineHeight: 1.45,
             display: '-webkit-box',
-            WebkitLineClamp: 3,
+            WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            mb: 1,
+            mb: 0.75,
           }}
         >
           {article.title}
@@ -241,12 +276,13 @@ function FullCard({ article }: { article: NewsArticle }) {
             sx={{
               color: 'text.secondary',
               display: '-webkit-box',
-              WebkitLineClamp: 3,
+              WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              lineHeight: 1.6,
+              lineHeight: 1.55,
+              fontSize: '0.875rem',
               flex: 1,
-              mb: 1.5,
+              mb: 1,
             }}
           >
             {article.snippet}
@@ -256,55 +292,38 @@ function FullCard({ article }: { article: NewsArticle }) {
         {/* Spacer */}
         <Box sx={{ flex: 1 }} />
 
-        {/* Source + date */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
-          {article.source ? (
-            <Chip
-              label={article.source}
-              size="small"
-              sx={{
-                height: 22,
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                bgcolor: 'success.light',
+        {/* CTA Button — min touch target 44px via py */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 0.5 }}>
+          <Button
+            component="a"
+            href={article.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="text"
+            disableRipple
+            endIcon={<ArrowForwardIcon sx={{ transition: 'transform 0.2s ease-out', fontSize: '0.875rem !important' }} />}
+            disabled={article.link === '#'}
+            sx={{
+              color: 'primary.main',
+              fontWeight: 600,
+              fontSize: '0.875rem',
+              textTransform: 'none',
+              px: 0,
+              py: 0.75,
+              minHeight: 44,
+              minWidth: 'auto',
+              '&:hover': {
+                bgcolor: 'transparent',
                 color: 'primary.dark',
-                '& .MuiChip-label': { px: 1.5 },
-              }}
-            />
-          ) : null}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.disabled' }}>
-            <CalendarTodayIcon sx={{ fontSize: 12 }} />
-            <Typography variant="caption" sx={{ fontSize: '0.75rem' }}>
-              {formattedDate}
-            </Typography>
-          </Box>
+                '& .MuiButton-endIcon': {
+                  transform: 'translateX(5px)',
+                },
+              },
+            }}
+          >
+            {t('readMore')}
+          </Button>
         </Box>
-
-        {/* CTA Button */}
-        <Button
-          component="a"
-          href={article.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          variant="outlined"
-          size="small"
-          fullWidth
-          endIcon={<OpenInNewIcon fontSize="small" />}
-          disabled={article.link === '#'}
-          sx={{
-            borderColor: 'primary.main',
-            color: 'primary.main',
-            fontWeight: 600,
-            textTransform: 'none',
-            borderRadius: 2,
-            '&:hover': {
-              bgcolor: 'success.light',
-              borderColor: 'primary.dark',
-            },
-          }}
-        >
-          {t('readMore')}
-        </Button>
       </CardContent>
     </Card>
   );
@@ -330,16 +349,19 @@ export function NewsCardSkeleton({ variant }: { variant: 'widget' | 'full' }) {
   return (
     <Card
       elevation={0}
-      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, overflow: 'hidden' }}
+      sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 4, overflow: 'hidden' }}
     >
-      <Skeleton variant="rectangular" width="100%" height={180} />
-      <CardContent sx={{ p: 2 }}>
-        <Skeleton variant="text" height={20} sx={{ mb: 0.5 }} />
-        <Skeleton variant="text" height={20} width="85%" sx={{ mb: 1.5 }} />
-        <Skeleton variant="text" height={14} sx={{ mb: 0.5 }} />
-        <Skeleton variant="text" height={14} width="90%" sx={{ mb: 0.5 }} />
-        <Skeleton variant="text" height={14} width="70%" sx={{ mb: 2 }} />
-        <Skeleton variant="rectangular" height={32} sx={{ borderRadius: 2 }} />
+      <Skeleton variant="rectangular" width="100%" sx={{ aspectRatio: '16/9' }} />
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+          <Skeleton variant="rectangular" width={60} height={22} sx={{ borderRadius: 1.5 }} />
+          <Skeleton variant="text" width={80} height={16} />
+        </Box>
+        <Skeleton variant="text" height={24} sx={{ mb: 0.5 }} />
+        <Skeleton variant="text" height={24} width="85%" sx={{ mb: 1 }} />
+        <Skeleton variant="text" height={16} sx={{ mb: 0.5 }} />
+        <Skeleton variant="text" height={16} width="90%" sx={{ mb: 1 }} />
+        <Skeleton variant="text" width={80} height={20} sx={{ mt: 1 }} />
       </CardContent>
     </Card>
   );

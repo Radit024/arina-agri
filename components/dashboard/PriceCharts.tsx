@@ -15,46 +15,26 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import Link from 'next/link';
 import Grid from '@mui/material/Grid';
-import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { formatRupiah } from '@/lib/formatters';
 import { useMemo } from 'react';
 
-const LineChart = dynamic(
-  () => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })),
-  {
-    ssr: false,
-    loading: () => <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />,
-  }
-);
 
-const BarChart = dynamic(
-  () => import('@mui/x-charts/BarChart').then((m) => ({ default: m.BarChart })),
+
+const EastJavaMap = dynamic(
+  () => import('@/components/dashboard/EastJavaMap'),
   {
     ssr: false,
-    loading: () => <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />,
+    loading: () => <Skeleton variant="rectangular" height={350} sx={{ borderRadius: 2 }} />,
   }
 );
 
 // ─── Price Trend Chart (used on Kabar Pasar page) ─────────────────
 export function PriceTrendChart() {
   const theme = useTheme();
-  const { prices, regionPrices, loading, error, isTrendingUp } = useCommodityPrices(30);
+  const { regionPrices, loading, error } = useCommodityPrices(30);
 
-  const lineChartData = useMemo(() => {
-    return prices.map((p) => ({
-      label: p.date,
-      price: p.price,
-    }));
-  }, [prices]);
-
-  const barChartData = useMemo(() => {
-    return regionPrices.map(r => ({
-      ...r,
-      name: r.name.length > 12 ? r.name.substring(0, 10) + '...' : r.name
-    }));
-  }, [regionPrices]);
 
   const averagePrice = useMemo(() => {
     if (regionPrices.length === 0) return 0;
@@ -62,132 +42,41 @@ export function PriceTrendChart() {
     return total / regionPrices.length;
   }, [regionPrices]);
 
-  const trendColor = isTrendingUp === true
-    ? theme.palette.success.main
-    : isTrendingUp === false
-      ? theme.palette.error.main
-      : theme.palette.primary.main;
+
 
   return (
-    <Card
-      sx={{
-        mb: 3,
-        borderRadius: 4,
-        border: 'none',
-        boxShadow: 'none',
-        overflow: 'visible',
-      }}
-    >
-      <CardHeader
-        title={
-          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600, fontSize: '1rem' }}>
-            Grafik harga rata-rata : <strong>Cabe Rawit Merah / kg</strong>
-          </Typography>
-        }
-      />
-      <Divider sx={{ mx: 2 }} />
-      <CardContent sx={{ pt: 3 }}>
-        {loading ? (
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Skeleton variant="rectangular" height={280} sx={{ borderRadius: 2 }} />
-            </Grid>
-          </Grid>
-        ) : (
-          <Grid container spacing={4}>
-            {/* Chart 1: Average per regency (Bar Chart) */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 2, textAlign: 'center' }}>
-                Grafik harga rata-rata berdasarkan Kabupaten/Kota
+    <Grid container spacing={3}>
+      {/* Card 1: Average per regency (Map) */}
+      <Grid size={{ xs: 12 }}>
+        <Card
+          sx={{
+            height: '100%',
+            borderRadius: 4,
+            border: 'none',
+            boxShadow: 'none',
+            overflow: 'hidden',
+          }}
+        >
+          <CardHeader
+            title={
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 400, fontSize: '1rem' }}>
+                Peta harga rata-rata untuk Komoditas: <strong>Cabe Rawit Merah / kg</strong>
               </Typography>
-              <Box sx={{ width: '100%', height: 350 }}>
-                <BarChart
-                  dataset={barChartData as any}
-                  xAxis={[{
-                    scaleType: 'band',
-                    dataKey: 'name',
-                    tickLabelStyle: {
-                      angle: 45,
-                      textAnchor: 'start',
-                      fontSize: 10,
-                      fill: theme.palette.text.primary,
-                    }
-                  }]}
-                  series={[
-                    {
-                      dataKey: 'price',
-                      label: 'Harga (Rp/kg)',
-                      color: '#1976d2',
-                      valueFormatter: (v) => formatRupiah(v ?? 0),
-                    },
-                  ]}
-                  grid={{ horizontal: true }}
-                  hideLegend
-                  margin={{ left: 90, right: 20, top: 40, bottom: 120 }}
-                  height={350}
-                  yAxis={[{
-                    valueFormatter: (v: number | null) => new Intl.NumberFormat('id-ID').format(Math.round(v ?? 0)),
-                    tickLabelStyle: { fontSize: 11, fill: theme.palette.text.primary }
-                  }]}
-                  sx={{
-                    '& .MuiBarElement-root': { rx: 0 },
-                  }}
-                />
+            }
+            sx={{ pb: 1, pt: 1.5 }}
+          />
+          <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+            {loading ? (
+              <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />
+            ) : (
+              <Box sx={{ width: '100%' }}>
+                <EastJavaMap data={regionPrices} averagePrice={averagePrice} />
               </Box>
-            </Grid>
-
-            {/* Chart 2: 30 days trend (Line Chart) */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 2, textAlign: 'left', pl: 2, fontSize: '1rem' }}>
-                Harga rata-rata <strong>Cabe Rawit Merah / kg</strong> Jawa Timur<br/>30 hari terakhir
-              </Typography>
-              <Box sx={{ width: '100%', height: 350 }}>
-                <LineChart
-                  xAxis={[{
-                    data: lineChartData.map((d) => d.label),
-                    scaleType: 'band',
-                    label: 'Bulan',
-                    labelStyle: { fontSize: 12, fontStyle: 'italic', fill: theme.palette.text.primary, transform: 'translate(0, 30)' },
-                    tickLabelStyle: {
-                      fontSize: 10,
-                      fill: theme.palette.text.primary,
-                    }
-                  }]}
-                  series={[
-                    {
-                      data: lineChartData.map((d) => d.price),
-                      label: 'Harga (Rp/kg)',
-                      color: '#1976d2',
-                      area: false,
-                      showMark: false,
-                      curve: 'linear',
-                      valueFormatter: (v) => formatRupiah(v ?? 0),
-                    },
-                  ]}
-                  grid={{ horizontal: true }}
-                  hideLegend
-                  margin={{ left: 90, right: 20, top: 40, bottom: 120 }}
-                  height={350}
-                  axisHighlight={{ x: 'line', y: 'none' }}
-                  yAxis={[{
-                    label: 'Harga Cabe Rawit Merah / kg',
-                    labelStyle: { fontSize: 12, fontStyle: 'italic', fill: theme.palette.text.primary, transform: 'translate(-30, 0)' },
-                    valueFormatter: (v: number | null) => new Intl.NumberFormat('id-ID').format(Math.round(v ?? 0)),
-                    tickLabelStyle: { fontSize: 11, fill: theme.palette.text.primary }
-                  }]}
-                  sx={{
-                    '& .MuiLineElement-root': { strokeWidth: 2.5 },
-                  }}
-                />
-              </Box>
-            </Grid>
-          </Grid>
-        )}
-      </CardContent>
-    </Card>
+            )}
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
   );
 }
 

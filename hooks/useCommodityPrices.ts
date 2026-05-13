@@ -36,17 +36,19 @@ export function useCommodityPrices(limit: number = 30) {
       }
       
       // 1. Fetch Trend for Jawa Timur (Provincial Average)
-      const { data: trendData, error: sbError } = await supabase
+      const { data: trendDataRaw, error: sbError } = await supabase
         .from('commodity_prices')
         .select('*')
         .eq('commodity', 'Cabe Rawit Merah')
         .in('location', ['Propinsi Jawa Timur', 'Pasar Induk Malang', 'Jawa Timur']) 
-        .order('date', { ascending: true })
+        .order('date', { ascending: false })
         .limit(limit);
 
       if (sbError) throw new Error(sbError.message);
       
-      setPrices((trendData || []) as CommodityPrice[]);
+      const trendData = (trendDataRaw || []).reverse();
+      
+      setPrices(trendData as CommodityPrice[]);
 
       // 2. Fetch Map Data for the latest available date
       const latestDate = trendData?.at(-1)?.date;

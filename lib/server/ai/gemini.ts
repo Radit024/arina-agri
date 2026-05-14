@@ -1,7 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 function getClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+    process.env.GOOGLE_API_KEY;
   if (!apiKey) return null;
   return new GoogleGenerativeAI(apiKey);
 }
@@ -81,7 +84,7 @@ export const SYSTEM_PROMPTS = {
 export async function generateGeminiReply({ prompt, context, userName }: { prompt: string; context?: string; userName?: string }) {
   const client = getClient();
   if (!client) {
-    throw new Error('GEMINI_API_KEY belum diisi di env.');
+    throw new Error('Gemini API key belum diisi di environment deployment.');
   }
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -113,7 +116,7 @@ export async function generateGeminiReply({ prompt, context, userName }: { promp
 export async function generateFinancialAnalysis({ reportData }: { reportData: any }) {
   const client = getClient();
   if (!client) {
-    throw new Error('GEMINI_API_KEY belum diisi di env.');
+    throw new Error('Gemini API key belum diisi di environment deployment.');
   }
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';

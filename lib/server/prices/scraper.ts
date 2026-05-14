@@ -1,18 +1,29 @@
-import { setTimeout as delay } from 'node:timers/promises';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 
-const ALL_REGIONS = [
-  'Kabupaten Bangkalan', 'Kabupaten Banyuwangi', 'Kabupaten Bojonegoro', 'Kabupaten Bondowoso', 'Kabupaten Gresik',
-  'Kabupaten Jember', 'Kabupaten Jombang', 'Kabupaten Kediri', 'Kabupaten Lamongan', 'Kabupaten Lumajang',
-  'Kabupaten Madiun', 'Kabupaten Magetan', 'Kabupaten Malang', 'Kabupaten Mojokerto', 'Kabupaten Nganjuk',
-  'Kabupaten Ngawi', 'Kabupaten Pacitan', 'Kabupaten Pamekasan', 'Kabupaten Pasuruan', 'Kabupaten Ponorogo',
-  'Kabupaten Probolinggo', 'Kabupaten Sampang', 'Kabupaten Sidoarjo', 'Kabupaten Situbondo', 'Kabupaten Sumenep',
-  'Kabupaten Trenggalek', 'Kabupaten Tuban', 'Kabupaten Tulungagung',
-  'Kota Batu', 'Kota Blitar', 'Kota Kediri', 'Kota Madiun', 'Kota Malang', 'Kota Mojokerto', 'Kota Pasuruan',
-  'Kota Probolinggo', 'Kota Surabaya'
-];
+const SISKAPERBAPO_API_URL = 'https://siskaperbapo.jatimprov.go.id/home2/getDataMap/';
+const CABE_RAWIT_MERAH_ID = 50;
+const COMMODITY_NAME = 'Cabe Rawit Merah';
+const PROVINCE_AVERAGE_LOCATION = 'Jawa Timur';
+
+interface SiskaperbapoRegionPrice {
+  nama?: string;
+  hrg?: number | string | null;
+}
+
+interface SiskaperbapoMapResponse {
+  data?: Record<string, SiskaperbapoRegionPrice>;
+  avg?: number | string | null;
+  tanggal?: string;
+  tgl?: string;
+  komoditas_nama?: string;
+}
+
+interface PriceRow {
+  date: string;
+  commodity: string;
+  location: string;
+  price: number;
+}
 
 export function parsePriceLine(line: string): { location: string; price: number } | null {
   if (!line.includes('Rp')) return null;
@@ -32,105 +43,97 @@ export function parsePriceLine(line: string): { location: string; price: number 
   return { location, price };
 }
 
-export async function fetchAndSavePrice() {
-  const todayObj = new Date();
-  const today = new Date(todayObj.getTime() - (todayObj.getTimezoneOffset() * 60000))
-    .toISOString()
-    .split('T')[0];
+function getJakartaDate(now = new Date()) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
+}
 
-  const supabase = getSupabaseAdmin();
+function toPrice(value: number | string | null | undefined) {
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.round(value) : null;
+  if (typeof value !== 'string') return null;
 
-  let scrapedData: Array<{ location: string; price: number }> = [];
-  let jatimAverage = 68800;
+  const parsed = Number(value.replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(parsed) ? Math.round(parsed) : null;
+}
 
-  try {
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await chromium.executablePath();
+export function parseSiskaperbapoMapResponse(response: SiskaperbapoMapResponse, fallbackDate: string): PriceRow[] {
+  const sourceDate = response.tanggal || response.tgl || fallbackDate;
+  const date = sourceDate.slice(0, 10);
+  const rows: PriceRow[] = [];
 
-    const browser = await puppeteer.launch({
-      args: puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
-      defaultViewport: {
-        deviceScaleFactor: 1,
-        hasTouch: false,
-        height: 1080,
-        isLandscape: true,
-        isMobile: false,
-        width: 1920,
-      },
-      executablePath,
-      headless: 'shell',
+  Object.values(response.data || {}).forEach((entry) => {
+    const location = entry.nama?.trim();
+    const price = toPrice(entry.hrg);
+    if (!location || price === null || price <= 0) return;
+
+    rows.push({
+      date,
+      commodity: COMMODITY_NAME,
+      location,
+      price,
     });
-
-    const page = await browser.newPage();
-    await page.goto('https://siskaperbapo.jatimprov.go.id/', { waitUntil: 'networkidle2' });
-
-    await page.select('#komoditas', '50');
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle2' }).catch(() => {}),
-      page.click('#refresh'),
-    ]);
-
-    await delay(3000);
-
-    const rawLines = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('table tr, .list-group-item')) as HTMLElement[];
-      return rows.map((row) => row.textContent?.trim() || '').filter(Boolean);
-    });
-
-    await browser.close();
-
-    rawLines.forEach((line) => {
-      const parsed = parsePriceLine(line);
-      if (parsed) {
-        scrapedData.push(parsed);
-        if (parsed.location === 'Propinsi Jawa Timur' || parsed.location === 'Jawa Timur') {
-          jatimAverage = parsed.price;
-        }
-      }
-    });
-  } catch (err: any) {
-    console.warn(`[Price Scraper] Scraping gagal (${err.message}).`);
-    scrapedData = [];
-  }
-
-  if (scrapedData.length === 0) {
-    console.warn('[Price Scraper] Tidak ada data riil yang didapat, operasi simpan dibatalkan.');
-    return;
-  }
-
-  const hasJatim = scrapedData.find((d) => d.location === 'Propinsi Jawa Timur' || d.location === 'Jawa Timur');
-  let actualJatimAvg = jatimAverage;
-
-  if (!hasJatim) {
-    const validPrices = scrapedData.filter((d) => d.price > 0);
-    if (validPrices.length > 0) {
-      const sum = validPrices.reduce((acc, curr) => acc + curr.price, 0);
-      actualJatimAvg = Math.round(sum / validPrices.length);
-    }
-    scrapedData.push({ location: 'Jawa Timur', price: actualJatimAvg });
-  } else if (hasJatim) {
-    actualJatimAvg = hasJatim.price;
-  }
-
-  ALL_REGIONS.forEach((region) => {
-    if (!scrapedData.find((d) => d.location === region)) {
-      scrapedData.push({ location: region, price: actualJatimAvg });
-    }
   });
 
-  const uniqueData = Array.from(new Map(scrapedData.map((item) => [item.location, item])).values());
+  const average = toPrice(response.avg);
+  if (average !== null && average > 0) {
+    rows.push({
+      date,
+      commodity: COMMODITY_NAME,
+      location: PROVINCE_AVERAGE_LOCATION,
+      price: average,
+    });
+  }
 
-  const rowsToInsert = uniqueData.map((d) => ({
-    date: today,
-    commodity: 'Cabe Rawit Merah',
-    location: d.location,
-    price: d.price,
-  }));
+  return Array.from(new Map(rows.map((row) => [`${row.date}:${row.commodity}:${row.location}`, row])).values());
+}
+
+async function fetchSiskaperbapoPriceMap(date: string) {
+  const url = new URL(SISKAPERBAPO_API_URL);
+  url.searchParams.set('tanggal', date);
+  url.searchParams.set('komoditas', String(CABE_RAWIT_MERAH_ID));
+
+  const response = await fetch(url, {
+    headers: {
+      accept: 'application/json',
+      'user-agent': 'ArinaAgri/1.0 (+https://arina-agri.vercel.app)',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Siskaperbapo request failed: ${response.status}`);
+  }
+
+  return JSON.parse((await response.text()).trim()) as SiskaperbapoMapResponse;
+}
+
+export async function fetchAndSavePrice() {
+  const requestedDate = getJakartaDate();
+  const response = await fetchSiskaperbapoPriceMap(requestedDate);
+  const rowsToInsert = parseSiskaperbapoMapResponse(response, requestedDate);
+
+  if (rowsToInsert.length === 0) {
+    throw new Error('Siskaperbapo tidak mengembalikan data harga Cabai Rawit Merah.');
+  }
+
+  const supabase = getSupabaseAdmin();
 
   const { error } = await supabase
     .from('commodity_prices')
     .upsert(rowsToInsert, { onConflict: 'date, commodity, location' });
 
   if (error) {
-    console.error('[Price Scraper] Gagal menyimpan ke Supabase:', error.message);
+    throw new Error(`Gagal menyimpan harga ke Supabase: ${error.message}`);
   }
+
+  return {
+    date: rowsToInsert[0]?.date || requestedDate,
+    inserted: rowsToInsert.length,
+    average: rowsToInsert.find((row) => row.location === PROVINCE_AVERAGE_LOCATION)?.price ?? null,
+    source: 'siskaperbapo-json',
+  };
 }

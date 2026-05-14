@@ -11,8 +11,8 @@ export async function GET(request: Request) {
   if (auth) return auth;
 
   try {
-    await fetchAndSavePrice();
-    return NextResponse.json({ success: true, message: 'Price cron completed' });
+    const result = await fetchAndSavePrice();
+    return NextResponse.json({ success: true, message: 'Price cron completed', data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ success: false, message }, { status: 500 });

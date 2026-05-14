@@ -477,10 +477,8 @@ export const stokApi = {
   },
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-
 function resolveApiUrl(path: string) {
-  return API_BASE ? `${API_BASE}${path}` : path;
+  return path;
 }
 
 async function apiFetch<T>(endpoint: string, body: object): Promise<T> {

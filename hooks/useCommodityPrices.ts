@@ -18,6 +18,15 @@ export interface RegionPrice {
   price: number;
 }
 
+const PROVINCE_LOCATIONS = ['Jawa Timur', 'Propinsi Jawa Timur', 'Pasar Induk Malang'];
+
+function preferProvincePrice(current: CommodityPrice | undefined, candidate: CommodityPrice) {
+  if (!current) return candidate;
+  const currentRank = PROVINCE_LOCATIONS.indexOf(current.location);
+  const candidateRank = PROVINCE_LOCATIONS.indexOf(candidate.location);
+  return candidateRank !== -1 && (currentRank === -1 || candidateRank < currentRank) ? candidate : current;
+}
+
 export function useCommodityPrices(limit: number = 30) {
   const { user, loading: authLoading } = useAuth();
   const [prices, setPrices] = useState<CommodityPrice[]>([]);
@@ -34,21 +43,30 @@ export function useCommodityPrices(limit: number = 30) {
         setDbRegionPrices([]);
         return;
       }
-      
+
       // 1. Fetch Trend for Jawa Timur (Provincial Average)
       const { data: trendDataRaw, error: sbError } = await supabase
         .from('commodity_prices')
         .select('*')
         .eq('commodity', 'Cabe Rawit Merah')
-        .in('location', ['Propinsi Jawa Timur', 'Pasar Induk Malang', 'Jawa Timur']) 
+        .in('location', PROVINCE_LOCATIONS)
         .order('date', { ascending: false })
-        .limit(limit);
+        .order('created_at', { ascending: false })
+        .limit(limit * PROVINCE_LOCATIONS.length);
 
       if (sbError) throw new Error(sbError.message);
-      
-      const trendData = (trendDataRaw || []).reverse();
-      
-      setPrices(trendData as CommodityPrice[]);
+
+      const byDate = new Map<string, CommodityPrice>();
+      (trendDataRaw || []).forEach((row) => {
+        const price = row as CommodityPrice;
+        byDate.set(price.date, preferProvincePrice(byDate.get(price.date), price));
+      });
+
+      const trendData = Array.from(byDate.values())
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-limit);
+
+      setPrices(trendData);
 
       // 2. Fetch Map Data for the latest available date
       const latestDate = trendData?.at(-1)?.date;

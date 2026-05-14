@@ -1,0 +1,131 @@
+import { createClient } from '@supabase/supabase-js';
+import { NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
+import { validateSchedulePayload, NotificationScheduleRow } from './schedule';
+
+function getBearerToken(request: Request) {
+  const header = request.headers.get('authorization') || '';
+  if (!header.startsWith('Bearer ')) return null;
+  return header.slice(7);
+}
+
+async function resolveUserId(request: Request) {
+  const token = getBearerToken(request);
+  if (!token) return null;
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) return null;
+
+  const supabase = createClient(url, anonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
+
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id || null;
+}
+
+function mapScheduleRow(row: NotificationScheduleRow) {
+  const to = row.platform === 'whatsapp'
+    ? row.recipient_number || ''
+    : row.telegram_chat_id || '';
+
+  return {
+    enabled: Boolean(row.enabled),
+    time: row.time,
+    timezone: row.timezone || 'Asia/Jakarta',
+    platform: row.platform,
+    to,
+    recipientName: row.recipient_name || 'Petani',
+    customMessage: row.custom_message || '',
+    userId: row.user_id,
+  };
+}
+
+export async function handleScheduleGet(request: Request) {
+  try {
+    const userId = await resolveUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from('notification_schedules')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    if (!data) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: false,
+          time: '07:00',
+          timezone: 'Asia/Jakarta',
+          platform: 'telegram',
+          to: '',
+          recipientName: 'Petani',
+          customMessage: '',
+          userId,
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true, data: mapScheduleRow(data as NotificationScheduleRow) });
+  } catch (err) {
+    console.error('[API Schedule] Error:', err);
+    return NextResponse.json({ success: false, message: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function handleSchedulePost(request: Request) {
+  try {
+    const userId = await resolveUserId(request);
+    if (!userId) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validation = validateSchedulePayload(body);
+    if (!validation.valid || !validation.payload) {
+      return NextResponse.json({ success: false, message: validation.message }, { status: 400 });
+    }
+
+    const payload = validation.payload;
+    const supabase = getSupabaseAdmin();
+
+    const { data, error } = await supabase
+      .from('notification_schedules')
+      .upsert({
+        user_id: userId,
+        enabled: payload.enabled,
+        time: payload.time,
+        timezone: payload.timezone || 'Asia/Jakarta',
+        platform: payload.platform,
+        recipient_number: payload.platform === 'whatsapp' ? payload.to : null,
+        telegram_chat_id: payload.platform === 'telegram' ? payload.to : null,
+        recipient_name: payload.recipientName || 'Petani',
+        custom_message: payload.customMessage || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, data: mapScheduleRow(data as NotificationScheduleRow) });
+  } catch (err) {
+    console.error('[API Schedule] POST Error:', err);
+    return NextResponse.json({ success: false, message: 'Gagal menyimpan jadwal' }, { status: 500 });
+  }
+}

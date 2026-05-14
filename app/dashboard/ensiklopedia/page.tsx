@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTheme, alpha } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -8,7 +8,6 @@ import Card from '@mui/material/Card';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -28,10 +27,16 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import EmojiNatureOutlinedIcon from '@mui/icons-material/EmojiNatureOutlined';
 import CustomSpaIcon from '@mui/icons-material/SpaOutlined'; // Using a similar icon
 import ReactMarkdown from 'react-markdown';
-import type { ChatMessage } from '@/lib/mockData';
 import { aiApi } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'ai';
+  content: string;
+  timestamp: string;
+}
 
 interface HistorySession {
   id: string;
@@ -45,54 +50,27 @@ export default function EnsiklopediaPage() {
   const t = useTranslations('Encyclopedia');
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [mounted, setMounted] = useState(false);
   const [diseaseModalOpen, setDiseaseModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [historyList, setHistoryList] = useState<HistorySession[]>([]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const firstName = (mounted && user?.user_metadata?.full_name)
-    ? user.user_metadata.full_name.split(' ')[0]
-    : (mounted && user?.email)
-      ? user.email.split('@')[0]
-      : 'Petani';
-
-  const initialMessages = useMemo(() => {
-    try {
-      const raw = t.raw('initialMessages');
-      if (!Array.isArray(raw)) return [];
-      const baseTime = mounted ? Date.now() : 1715238000000;
-      return raw.map((m: any, i: number) => ({
-        id: `initial-${i}`,
-        role: m.role,
-        content: m.role === 'ai' ? m.content.replace('{name}', firstName) : m.content,
-        timestamp: new Date(baseTime - (5 - i) * 60 * 1000).toISOString(),
-      }));
-    } catch (e) {
-      return [];
-    }
-  }, [t, firstName, mounted]);
-
-  const AI_RESPONSES: Record<string, string> = {
-    default: t('ai.fallback.default'),
-    antraknosa: t('ai.fallback.anthracnose'),
-    pupuk: t('ai.fallback.fertilizer'),
-  };
-
-  const getBotReply = (message: string): string => {
-    const msg = message.toLowerCase();
-    if (msg.includes('antraknosa') || msg.includes('patek') || msg.includes('busuk')) return AI_RESPONSES.antraknosa;
-    if (msg.includes('pupuk') || msg.includes('npk') || msg.includes('pemupukan')) return AI_RESPONSES.pupuk;
-    return AI_RESPONSES.default;
+  const isValidChatMessage = (value: unknown): value is ChatMessage => {
+    if (!value || typeof value !== 'object') return false;
+    const obj = value as Record<string, unknown>;
+    return (
+      typeof obj.id === 'string' &&
+      (obj.role === 'user' || obj.role === 'ai') &&
+      typeof obj.content === 'string' &&
+      typeof obj.timestamp === 'string'
+    );
   };
 
   const getStorageKey = () => {
     const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
     return `arina_chat_${arinaUserId}`;
   };
+
+  const getHistoryStorageKey = () => `arina_chat_history_${getStorageKey()}`;
 
   useEffect(() => {
     if (!authLoading) {
@@ -101,20 +79,23 @@ export default function EnsiklopediaPage() {
       if (savedChat) {
         try {
           const parsed = JSON.parse(savedChat);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setMessages(parsed);
+          if (Array.isArray(parsed)) {
+            const normalized = parsed
+              .filter(isValidChatMessage)
+              .filter((message) => !message.id.startsWith('initial-'));
+            setMessages(normalized);
           } else {
-            setMessages(initialMessages);
+            setMessages([]);
           }
-        } catch (e) {
-          setMessages(initialMessages);
+        } catch {
+          setMessages([]);
         }
       } else {
-        setMessages(initialMessages);
+        setMessages([]);
       }
 
       // Load history sessions
-      const historyKey = `arina_chat_history_${getStorageKey()}`;
+      const historyKey = getHistoryStorageKey();
       const savedHistory = typeof window !== 'undefined' ? localStorage.getItem(historyKey) : null;
       if (savedHistory) {
         try { setHistoryList(JSON.parse(savedHistory)); } catch { }
@@ -130,23 +111,19 @@ export default function EnsiklopediaPage() {
   }, [messages]);
 
   const handleClearChat = () => {
-    if (messages.length > 1) {
-      const userMessages = messages.filter(m => m.role === 'user');
-      if (userMessages.length > 0) {
-        const newSession: HistorySession = {
-          id: Date.now().toString(),
-          date: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
-          preview: userMessages[0].content.slice(0, 60) + (userMessages[0].content.length > 60 ? '...' : ''),
-          messages: [...messages],
-        };
-        const historyKey = `arina_chat_history_${getStorageKey()}`;
-        const updated = [newSession, ...historyList].slice(0, 20);
-        setHistoryList(updated);
-        localStorage.setItem(historyKey, JSON.stringify(updated));
-      }
-    }
     localStorage.removeItem(getStorageKey());
-    setMessages(initialMessages);
+    setMessages([]);
+  };
+
+  const handleDeleteHistorySession = (sessionId: string) => {
+    const updated = historyList.filter((session) => session.id !== sessionId);
+    setHistoryList(updated);
+    localStorage.setItem(getHistoryStorageKey(), JSON.stringify(updated));
+  };
+
+  const handleClearHistory = () => {
+    setHistoryList([]);
+    localStorage.removeItem(getHistoryStorageKey());
   };
 
   const handleLoadHistory = (session: HistorySession) => {
@@ -194,15 +171,9 @@ export default function EnsiklopediaPage() {
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMsg]);
-    } catch {
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        content: getBotReply(prompt),
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setChatError(t('ai.error'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setChatError(t('ai.error', { error: message }));
     } finally {
       setIsTyping(false);
     }
@@ -304,7 +275,7 @@ export default function EnsiklopediaPage() {
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Riwayat Chat</Box>
             <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Riwayat</Box>
           </Button>
-          <Tooltip title="Hapus & Simpan Sesi">
+          <Tooltip title="Hapus Chat Saat Ini">
             <IconButton
               onClick={handleClearChat}
               size="small"
@@ -570,7 +541,7 @@ export default function EnsiklopediaPage() {
         <Box sx={{ maxWidth: '800px', width: '100%', position: 'relative' }}>
 
           {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
-          {messages.length > initialMessages.length && (
+          {hasUserMessages && (
             <Box sx={{ position: 'relative' }}>
               <Box
                 sx={{
@@ -786,9 +757,22 @@ export default function EnsiklopediaPage() {
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
             Riwayat Chat
           </Typography>
-          <IconButton onClick={() => setHistoryDrawerOpen(false)} size="small">
-            <CloseIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {historyList.length > 0 && (
+              <Tooltip title="Hapus Semua Riwayat">
+                <IconButton
+                  onClick={handleClearHistory}
+                  size="small"
+                  sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}
+                >
+                  <DeleteOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton onClick={() => setHistoryDrawerOpen(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Box>
 
         {historyList.length === 0 ? (
@@ -798,7 +782,7 @@ export default function EnsiklopediaPage() {
           }}>
             <HistoryIcon sx={{ fontSize: 48, opacity: 0.4 }} />
             <Typography variant="body2" color="text.secondary" align="center">
-              Belum ada riwayat percakapan.<br />Tekan ikon hapus untuk menyimpan sesi saat ini.
+              Belum ada riwayat percakapan.
             </Typography>
           </Box>
         ) : (
@@ -841,6 +825,27 @@ export default function EnsiklopediaPage() {
                         <span style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: theme.palette.text.disabled }} />
                         <span>{session.messages.length} pesan</span>
                       </Typography>
+                      <IconButton
+                        className="delete-icon"
+                        size="small"
+                        aria-label="Hapus riwayat chat"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDeleteHistorySession(session.id);
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          right: 6,
+                          top: 6,
+                          opacity: { xs: 1, sm: 0 },
+                          transform: { xs: 'scale(1)', sm: 'scale(0.9)' },
+                          transition: 'all 0.2s ease',
+                          color: 'text.secondary',
+                          '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) },
+                        }}
+                      >
+                        <DeleteOutlinedIcon fontSize="small" />
+                      </IconButton>
                     </Box>
                   ))}
                 </Box>

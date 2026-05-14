@@ -16,6 +16,8 @@ export const SYSTEM_PROMPTS = {
     '',
     'Panduan respons:',
     '- Gunakan Bahasa Indonesia yang mudah dipahami oleh petani dengan latar belakang pendidikan beragam.',
+    '- Jawaban harus padat dan jelas: maksimal 5 poin atau 6 kalimat pendek.',
+    '- Utamakan inti solusi terlebih dulu, hindari pembuka panjang dan pengulangan.',
     '- Berikan jawaban yang praktis, dapat langsung diterapkan di lapangan.',
     '- Jika mendiagnosis penyakit/hama: sebutkan (1) nama penyakit, (2) penyebab, (3) gejala khas, (4) penanganan darurat, (5) pencegahan jangka panjang.',
     '- Jika membahas pupuk/nutrisi: berikan dosis konkret dalam gram/liter atau kg/hektar.',
@@ -23,7 +25,8 @@ export const SYSTEM_PROMPTS = {
     '- Selalu prioritaskan solusi yang terjangkau dan mudah didapat di toko pertanian lokal.',
     '- Gunakan format poin (•) untuk langkah-langkah agar mudah dibaca.',
     '- Jangan memberikan informasi di luar topik pertanian dan budidaya tanaman.',
-    '- Akhiri dengan ajakan untuk bertanya lebih lanjut jika petani membutuhkan klarifikasi.',
+    '- Jangan menambahkan info pasar/harga jika pengguna tidak memintanya.',
+    '- Akhiri singkat dengan 1 kalimat ajakan klarifikasi jika diperlukan.',
   ].join('\n'),
   keuangan: [
     'Anda adalah Arina Finance AI, konsultan keuangan pertanian untuk petani dan pelaku agribisnis UMKM di Indonesia.',
@@ -84,7 +87,7 @@ export const SYSTEM_PROMPTS = {
 export async function generateGeminiReply({ prompt, context, userName }: { prompt: string; context?: string; userName?: string }) {
   const client = getClient();
   if (!client) {
-    throw new Error('Gemini API key belum diisi di environment deployment.');
+    throw new Error('Gemini API key belum diisi. Set salah satu: GEMINI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, atau GOOGLE_API_KEY.');
   }
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -113,10 +116,27 @@ export async function generateGeminiReply({ prompt, context, userName }: { promp
   return text.trim();
 }
 
-export async function generateFinancialAnalysis({ reportData }: { reportData: any }) {
+interface FinancialReportTransaction {
+  jenis: 'pengeluaran' | 'pendapatan';
+  kategori: string;
+  nominal: number;
+  tanggal: string;
+  keterangan?: string;
+}
+
+interface FinancialReportData {
+  periode: string;
+  totalPendapatan: number;
+  totalPengeluaran: number;
+  labaBersih: number;
+  transactions?: FinancialReportTransaction[];
+  userName?: string;
+}
+
+export async function generateFinancialAnalysis({ reportData }: { reportData: FinancialReportData }) {
   const client = getClient();
   if (!client) {
-    throw new Error('Gemini API key belum diisi di environment deployment.');
+    throw new Error('Gemini API key belum diisi. Set salah satu: GEMINI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, atau GOOGLE_API_KEY.');
   }
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
@@ -128,7 +148,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
   const pendapatanPerKategori: Record<string, number> = {};
 
   if (transactions && Array.isArray(transactions)) {
-    transactions.forEach((tx: any) => {
+    transactions.forEach((tx) => {
       if (tx.jenis === 'pengeluaran') {
         pengeluaranPerKategori[tx.kategori] = (pengeluaranPerKategori[tx.kategori] || 0) + tx.nominal;
       } else {
@@ -154,7 +174,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
     'RINCIAN PENDAPATAN PER KATEGORI:',
     ...Object.entries(pendapatanPerKategori).map(([k, v]) => `- ${k}: ${formatRp(v)}`),
     '',
-    `TOTAL TRANSAKSI: ${transactions?.length || 0} transaksi (${transactions?.filter((t: any) => t.jenis === 'pengeluaran').length || 0} pengeluaran, ${transactions?.filter((t: any) => t.jenis === 'pendapatan').length || 0} pendapatan)`,
+    `TOTAL TRANSAKSI: ${transactions?.length || 0} transaksi (${transactions?.filter((t) => t.jenis === 'pengeluaran').length || 0} pengeluaran, ${transactions?.filter((t) => t.jenis === 'pendapatan').length || 0} pendapatan)`,
   ].join('\n');
 
   const mergedPrompt = [

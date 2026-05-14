@@ -33,6 +33,13 @@
     "cuaca": "Cuaca",
     "ensiklopedia": "Ensiklopedia",
     "kalender": "Kalender",
+    "lainnya": "Lainnya",
+    "featureMenuTitle": "Menu Lainnya",
+    "closeFeatureMenu": "Tutup menu lainnya",
+    "operasional": "Operasional",
+    "informasi": "Informasi",
+    "pengaturanSection": "Pengaturan",
+    "featureUnavailable": "Fitur belum tersedia",
     "stok": "Stok",
     "kabarPasar": "Berita",
     "pengaturan": "Pengaturan"
@@ -437,12 +444,7 @@
       "p4": "Cara panen yang benar"
     },
     "ai": {
-      "error": "Gemini belum aktif atau terjadi kendala jaringan. Menampilkan jawaban fallback.",
-      "fallback": {
-        "default": "Maaf, koneksi ke Arina AI sedang tidak tersedia. Silakan cek koneksi internet dan pastikan backend berjalan, kemudian coba lagi. Pertanyaan Anda akan langsung dijawab oleh Gemini AI yang sudah dilatih untuk pertanian cabai.",
-        "anthracnose": "**Antraknosa (Patek)** disebabkan oleh jamur *Colletotrichum capsici*.\n\nGejala: bercak coklat kehitaman pada buah, biasanya mulai dari ujung buah.\n\nPenanganan darurat:\n• Semprot fungisida Mankozeb dosis 2 g/liter air\n• Buang dan bakar buah yang terinfeksi\n• Hindari melukai buah saat pemetikan\n• Jaga jarak tanam agar sirkulasi udara baik\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat.",
-        "fertilizer": "Rekomendasi pemupukan cabai rawit (fase generatif):\n\n• NPK 16-16-16 → 5 g/tanaman, tiap 2 minggu\n• Kalsium Boron → semprot daun 2 ml/liter\n• KCl → 3 g/tanaman untuk memperkuat buah\n\nWaktu terbaik: pagi hari sebelum jam 9.\n\n⚠️ Ini adalah jawaban offline. Terhubung ke internet untuk saran AI yang lebih akurat."
-      }
+      "error": "Arina AI gagal merespons. {error}"
     },
     "quickReference": {
       "title": "Referensi Cepat Penyakit",
@@ -486,20 +488,7 @@
         }
       ]
     },
-    "initialMessages": [
-      {
-        "role": "ai",
-        "content": "Halo, {name}! 👋 Saya Arina, asisten AI khusus budidaya cabai. Silakan tanyakan apa saja — mulai dari pengendalian hama, penyakit, pemupukan, hingga teknik panen. Saya siap membantu!"
-      },
-      {
-        "role": "user",
-        "content": "Cabai saya banyak yang busuk di bagian ujung buah, itu penyakit apa?"
-      },
-      {
-        "role": "ai",
-        "content": "Gejala busuk di ujung buah (ujung buah berwarna coklat kehitaman dan mengering) kemungkinan besar adalah **Blossom End Rot (BER)** atau kekurangan kalsium (Ca). Ini bukan penyakit infeksi, melainkan gangguan fisiologis.\n\n**Penyebab:** Penyerapan kalsium terganggu akibat penyiraman tidak teratur, kadar nitrogen terlalu tinggi, atau pH tanah terlalu rendah.\n\n**Solusi:**\n1. Semprot daun dengan kalsium boron (Ca-B) dosis 2 ml/liter\n2. Atur jadwal penyiraman agar konsisten\n3. Tambahkan kapur dolomit jika pH < 6.0\n\nApakah busuknya mulai dari dalam atau dari permukaan buah, {name}?"
-      }
-    ]
+    "initialMessages": []
   },
   "KabarPasar": {
     "title": "Berita",

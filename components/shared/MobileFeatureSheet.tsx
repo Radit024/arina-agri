@@ -1,0 +1,149 @@
+'use client';
+
+import type { ReactNode } from 'react';
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import Typography from '@mui/material/Typography';
+import CloseIcon from '@mui/icons-material/Close';
+
+export interface MobileFeatureItem {
+  key: string;
+  icon: ReactNode;
+  path: string | null;
+}
+
+export interface MobileFeatureGroup {
+  key: string;
+  titleKey: string;
+  items: MobileFeatureItem[];
+}
+
+interface MobileFeatureSheetProps {
+  open: boolean;
+  title: string;
+  closeLabel: string;
+  groups: MobileFeatureGroup[];
+  getLabel: (key: string) => string;
+  onClose: () => void;
+  onSelect: (item: MobileFeatureItem) => void;
+}
+
+export default function MobileFeatureSheet({
+  open,
+  title,
+  closeLabel,
+  groups,
+  getLabel,
+  onClose,
+  onSelect,
+}: MobileFeatureSheetProps) {
+  return (
+    <SwipeableDrawer
+      anchor="bottom"
+      open={open}
+      onClose={onClose}
+      onOpen={() => {}}
+      disableDiscovery={false}
+      swipeAreaWidth={24}
+      ModalProps={{ keepMounted: true }}
+      slotProps={{
+        paper: {
+          sx: {
+            height: '100dvh',
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+            backgroundColor: 'background.paper',
+          },
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pt: 1.25 }}>
+        <Box
+          aria-hidden
+          sx={{
+            width: 40,
+            height: 4,
+            borderRadius: 999,
+            backgroundColor: 'divider',
+          }}
+        />
+      </Box>
+
+      <Box
+        sx={{
+          px: 2,
+          py: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Typography component="h2" variant="h6" sx={{ fontSize: '1.05rem', fontWeight: 700 }}>
+          {title}
+        </Typography>
+        <IconButton aria-label={closeLabel} onClick={onClose}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <List sx={{ px: 1, pb: 'calc(88px + env(safe-area-inset-bottom))' }}>
+        {groups.map((group, index) => (
+          <Box key={group.key}>
+            <ListSubheader
+              disableSticky
+              sx={{
+                backgroundColor: 'transparent',
+                color: 'text.secondary',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                fontSize: '0.72rem',
+                letterSpacing: '0.04em',
+                lineHeight: 1.4,
+                py: 0.5,
+              }}
+            >
+              {getLabel(group.titleKey)}
+            </ListSubheader>
+
+            {group.items.map((item) => (
+              <ListItemButton
+                key={item.key}
+                onClick={() => onSelect(item)}
+                sx={{
+                  borderRadius: 2,
+                  minHeight: 48,
+                  mb: 0.5,
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={getLabel(item.key)}
+                  slotProps={{
+                    primary: {
+                      sx: {
+                        fontSize: '0.92rem',
+                        fontWeight: 600,
+                        color: 'text.primary',
+                      },
+                    },
+                  }}
+                />
+              </ListItemButton>
+            ))}
+
+            {index < groups.length - 1 && <Divider sx={{ my: 1 }} />}
+          </Box>
+        ))}
+      </List>
+    </SwipeableDrawer>
+  );
+}

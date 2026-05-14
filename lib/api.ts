@@ -487,8 +487,24 @@ async function apiFetch<T>(endpoint: string, body: object): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const json = await res.json();
-  if (!res.ok || !json.success) throw new Error(json.message || `HTTP error ${res.status}`);
+
+  const rawText = await res.text();
+  let json: any = null;
+
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    json = null;
+  }
+
+  if (!res.ok) {
+    throw new Error(json?.message || rawText || `HTTP error ${res.status}`);
+  }
+
+  if (!json?.success) {
+    throw new Error(json?.message || 'Permintaan API gagal.');
+  }
+
   return json.data as T;
 }
 

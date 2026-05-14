@@ -33,6 +33,13 @@
     "cuaca": "Weather",
     "ensiklopedia": "AI Chat",
     "kalender": "Calendar",
+    "lainnya": "More",
+    "featureMenuTitle": "More Menu",
+    "closeFeatureMenu": "Close more menu",
+    "operasional": "Operations",
+    "informasi": "Information",
+    "pengaturanSection": "Settings",
+    "featureUnavailable": "Feature is not available yet",
     "stok": "Stock",
     "kabarPasar": "Market News",
     "pengaturan": "Settings"
@@ -437,12 +444,7 @@
       "p4": "How to harvest properly"
     },
     "ai": {
-      "error": "Gemini is not active yet or network issue. Showing fallback answer.",
-      "fallback": {
-        "default": "Sorry, connection to Arina AI is currently unavailable. Please check your internet connection and ensure the backend is running, then try again. Your question will be answered directly by Gemini AI trained for chili farming.",
-        "anthracnose": "**Anthracnose (Patek)** is caused by the fungus *Colletotrichum capsici*.\n\nSymptoms: brownish-black spots on the fruit, usually starting from the tip.\n\nEmergency treatment:\n• Spray Mancozeb fungicide dose 2 g/liter water\n• Remove and burn infected fruit\n• Avoid wounding fruit during harvest\n• Maintain plant spacing for good air circulation\n\n⚠️ This is an offline answer. Connect to the internet for more accurate AI advice.",
-        "fertilizer": "Cayenne pepper fertilization recommendation (generative phase):\n\n• NPK 16-16-16 → 5 g/plant, every 2 weeks\n• Calcium Boron → leaf spray 2 ml/liter\n• KCl → 3 g/plant to strengthen fruit\n\nBest time: morning before 9 AM.\n\n⚠️ This is an offline answer. Connect to the internet for more accurate AI advice."
-      }
+      "error": "Arina AI failed to respond. {error}"
     },
     "quickReference": {
       "title": "Disease Quick Reference",
@@ -486,20 +488,7 @@
         }
       ]
     },
-    "initialMessages": [
-      {
-        "role": "ai",
-        "content": "Hello, Mr. {name}! 👋 I'm Arina, an AI assistant specializing in chili cultivation. Feel free to ask anything — from pest control, diseases, fertilization, to harvesting techniques. I'm ready to help!"
-      },
-      {
-        "role": "user",
-        "content": "My chilies are rotting at the tips, what disease is that?"
-      },
-      {
-        "role": "ai",
-        "content": "Rotting at the tip (blackish-brown and drying fruit tips) is likely **Blossom End Rot (BER)** or calcium (Ca) deficiency. This is not an infectious disease, but a physiological disorder.\n\n**Cause:** Calcium absorption is disrupted due to irregular watering, too high nitrogen levels, or too low soil pH.\n\n**Solution:**\n1. Spray leaves with calcium boron (Ca-B) at 2 ml/liter\n2. Set a consistent watering schedule\n3. Add dolomite lime if pH < 6.0\n\nDoes the rot start from inside or from the surface of the fruit, sir?"
-      }
-    ]
+    "initialMessages": []
   },
   "KabarPasar": {
     "title": "Market News",

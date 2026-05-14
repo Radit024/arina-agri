@@ -6,6 +6,39 @@ import { validateGeminiPayload } from '@/lib/server/ai/validators';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+interface GeminiHistoryMessage {
+  role: 'user' | 'ai';
+  content: string;
+}
+
+interface GeminiRoutePayload {
+  prompt: string;
+  history?: GeminiHistoryMessage[];
+  userName?: string;
+}
+
+function shouldIncludeMarketInfo(prompt: string) {
+  const normalized = prompt.toLowerCase();
+  const marketKeywords = [
+    'harga',
+    'pasar',
+    'jual',
+    'penjualan',
+    'harga cabe',
+    'harga cabai',
+    'harga cabai rawit',
+    'harga hari ini',
+    'harga terkini',
+    'harga terbaru',
+    'komoditas',
+    'naik turun harga',
+    'trend harga',
+    'tren harga',
+  ];
+
+  return marketKeywords.some((keyword) => normalized.includes(keyword));
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -14,29 +47,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });
     }
 
-    const { prompt, history, userName } = body;
+    const { prompt, history, userName } = body as GeminiRoutePayload;
 
     let context = '';
     if (history && Array.isArray(history)) {
-      context = history.map((msg: any) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
+      context = history.map((msg) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
     }
 
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data: prices } = await supabase
-        .from('commodity_prices')
-        .select('*')
-        .eq('commodity', 'Cabe Rawit Merah')
-        .order('date', { ascending: false })
-        .limit(7);
+    if (shouldIncludeMarketInfo(prompt)) {
+      try {
+        const supabase = getSupabaseAdmin();
+        const { data: prices } = await supabase
+          .from('commodity_prices')
+          .select('*')
+          .eq('commodity', 'Cabe Rawit Merah')
+          .order('date', { ascending: false })
+          .limit(7);
 
-      if (prices && prices.length > 0) {
-        const sortedPrices = prices.reverse();
-        const priceInfo = sortedPrices.map((p) => `- ${p.date}: Rp ${p.price}`).join('\n');
-        context += `\n\nINFO PASAR SAAT INI (Harga Cabai Rawit 7 hari terakhir):\n${priceInfo}\nGunakan info harga ini untuk memberikan saran proaktif terkait panen atau penjualan jika relevan dengan pertanyaan petani.`;
+        if (prices && prices.length > 0) {
+          const sortedPrices = prices.reverse();
+          const priceInfo = sortedPrices.map((p) => `- ${p.date}: Rp ${p.price}`).join('\n');
+          context += `\n\nINFO PASAR SAAT INI (Harga Cabai Rawit 7 hari terakhir):\n${priceInfo}\nGunakan info harga ini hanya jika diminta atau relevan langsung dengan pertanyaan petani.`;
+        }
+      } catch (dbErr) {
+        console.warn('[Gemini Context] Gagal memuat data harga dari Supabase:', dbErr);
       }
-    } catch (dbErr) {
-      console.warn('[Gemini Context] Gagal memuat data harga dari Supabase:', dbErr);
     }
 
     const reply = await generateGeminiReply({ prompt, context, userName });
@@ -46,8 +81,9 @@ export async function POST(request: Request) {
       message: 'OK',
       data: { reply, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' },
     });
-  } catch (error: any) {
-    console.error('[Gemini Error]', error.message);
-    return NextResponse.json({ success: false, message: error.message || 'Gagal memanggil Gemini.' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal memanggil Gemini.';
+    console.error('[Gemini Error]', message);
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

@@ -477,15 +477,14 @@ export const stokApi = {
   },
 };
 
-// ─── AI API — masih pakai Express backend ─────────────────────────
-const AI_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
-if (process.env.NODE_ENV === 'development') {
-  console.log('[API Debug] AI_BASE:', AI_BASE);
+function resolveApiUrl(path: string) {
+  return API_BASE ? `${API_BASE}${path}` : path;
 }
 
-async function aiFetch<T>(endpoint: string, body: object): Promise<T> {
-  const res = await fetch(`${AI_BASE}${endpoint}`, {
+async function apiFetch<T>(endpoint: string, body: object): Promise<T> {
+  const res = await fetch(resolveApiUrl(endpoint), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -495,9 +494,15 @@ async function aiFetch<T>(endpoint: string, body: object): Promise<T> {
   return json.data as T;
 }
 
+async function buildAuthHeaders() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return {};
+  return { Authorization: `Bearer ${session.access_token}` };
+}
+
 export const aiApi = {
-  askGemini: (payload: { prompt: string; history?: GeminiChatMessage[]; userName?: string; }) =>
-    aiFetch<{ reply: string; model: string }>('/ai/gemini', payload),
+  askGemini: (payload: { prompt: string; history?: GeminiChatMessage[]; userName?: string }) =>
+    apiFetch<{ reply: string; model: string }>('/api/ai/gemini', payload),
 
   generateFinancialReport: (payload: {
     periode: string;
@@ -513,19 +518,20 @@ export const aiApi = {
       keterangan?: string;
     }>;
   }) =>
-    aiFetch<{ analysis: string; model: string }>('/ai/financial-report', payload),
+    apiFetch<{ analysis: string; model: string }>('/api/ai/financial-report', payload),
 };
 
 export const notificationApi = {
   decide: (payload: NotificationDecisionInput) =>
-    aiFetch<NotificationDecisionResponse['decision']>('/notification/decide', payload),
+    apiFetch<NotificationDecisionResponse['decision']>('/api/notification/decide', payload),
 
   decideAndSend: (payload: NotificationDecisionInput) =>
-    aiFetch<NotificationDecisionResponse>('/notification/decide-send', payload),
+    apiFetch<NotificationDecisionResponse>('/api/notification/decide-send', payload),
 };
 
 async function getNotificationSchedule(): Promise<NotificationScheduleConfig> {
-  const res = await fetch('/api/notifications/schedule');
+  const headers = await buildAuthHeaders();
+  const res = await fetch('/api/notification/schedule', { headers });
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.message || `HTTP error ${res.status}`);
   return json.data as NotificationScheduleConfig;
@@ -533,11 +539,12 @@ async function getNotificationSchedule(): Promise<NotificationScheduleConfig> {
 
 export const notificationScheduleApi = {
   get: () => getNotificationSchedule(),
-  set: (payload: NotificationScheduleConfig) => {
-    return fetch('/api/notifications/schedule', {
+  set: async (payload: NotificationScheduleConfig) => {
+    const headers = await buildAuthHeaders();
+    return fetch('/api/notification/schedule', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify(payload),
-    }).then(res => res.json());
-  }
+    }).then((res) => res.json());
+  },
 };

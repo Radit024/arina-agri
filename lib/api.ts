@@ -494,7 +494,7 @@ async function apiFetch<T>(endpoint: string, body: object): Promise<T> {
   return json.data as T;
 }
 
-async function buildAuthHeaders() {
+async function buildAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) return {};
   return { Authorization: `Bearer ${session.access_token}` };

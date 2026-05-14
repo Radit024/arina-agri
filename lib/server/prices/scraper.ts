@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'node:timers/promises';
 import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
@@ -46,10 +47,17 @@ export async function fetchAndSavePrice() {
     const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || await chromium.executablePath();
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      args: puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
+      defaultViewport: {
+        deviceScaleFactor: 1,
+        hasTouch: false,
+        height: 1080,
+        isLandscape: true,
+        isMobile: false,
+        width: 1920,
+      },
       executablePath,
-      headless: chromium.headless,
+      headless: 'shell',
     });
 
     const page = await browser.newPage();
@@ -61,7 +69,7 @@ export async function fetchAndSavePrice() {
       page.click('#refresh'),
     ]);
 
-    await page.waitForTimeout(3000);
+    await delay(3000);
 
     const rawLines = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('table tr, .list-group-item')) as HTMLElement[];

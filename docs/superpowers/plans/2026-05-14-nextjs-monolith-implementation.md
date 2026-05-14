@@ -4,7 +4,7 @@
 
 **Goal:** Replace the Express backend with Next.js Route Handlers and Vercel Cron endpoints while keeping API paths intact.
 
-**Architecture:** Server-only logic moves to `lib/server/*` and is invoked by App Router route handlers in `app/api/**/route.ts`. Vercel Cron calls authenticated cron endpoints, while schedule state is stored in Supabase. Client API calls use same-origin `/api/...` endpoints.
+**Architecture:** Server-only logic moves to `lib/server/*` and is invoked by App Router route handlers in `app/api/**/route.ts`. Vercel Cron on the Hobby/free plan calls separate authenticated daily cron endpoints for news, notifications, and prices. Schedule state is stored in Supabase. Client API calls use same-origin `/api/...` endpoints.
 
 **Tech Stack:** Next.js App Router, Supabase JS, Vercel Cron, puppeteer-core + @sparticuz/chromium, Vitest.
 
@@ -47,11 +47,10 @@
 - `app/api/webhook/n8n/route.ts` — use shared Supabase admin helper
 - `app/api/notifications/schedule/route.ts` — re-export schedule handlers
 - `lib/api.ts` — same-origin API base + schedule auth header
-- `vercel.json` — cron schedules for news/notifications/prices
+- `vercel.json` — daily cron schedules for Vercel Hobby/free
 - `package.json` — scripts and dependencies
 
 **Delete**
-- `app/api/cron/daily/route.ts`
 - `lib/notifications/service.ts`
 
 ---
@@ -166,7 +165,7 @@ git commit -m "feat: add cron auth and supabase admin helpers"
 
 ---
 
-### Task 2: News Pipeline + Cron Endpoint
+### Task 2: News Pipeline
 
 **Files:**
 - Create: `lib/server/news/helpers.ts`
@@ -423,37 +422,9 @@ export async function POST() {
 }
 ```
 
-- [ ] **Step 7: Add news cron endpoint**
+- [ ] **Step 7: Add daily news cron endpoint**
 
-```ts
-import { NextResponse } from 'next/server';
-import { requireCronAuth } from '@/lib/server/cron/auth';
-import { cleanupOldNews, fetchNewsAndUpsert } from '@/lib/server/news/fetch';
-
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const maxDuration = 60;
-
-export async function GET(request: Request) {
-  const auth = requireCronAuth(request);
-  if (auth) return auth;
-
-  try {
-    const inserted = await fetchNewsAndUpsert();
-    const deleted = await cleanupOldNews(30);
-
-    return NextResponse.json({
-      success: true,
-      message: 'News cron completed',
-      inserted,
-      deleted,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ success: false, message }, { status: 500 });
-  }
-}
-```
+Create `app/api/cron/news/route.ts` to authenticate with `requireCronAuth`, run `fetchNewsAndUpsert()`, run `cleanupOldNews(30)`, and return `{ success, message, inserted, deleted }`.
 
 - [ ] **Step 8: Run tests**
 
@@ -471,7 +442,7 @@ git commit -m "feat: migrate news pipeline to Next.js"
 
 ---
 
-### Task 3: Notification Core + Schedule + Routes + Cron
+### Task 3: Notification Core + Schedule + Routes
 
 **Files:**
 - Create: `lib/server/notifications/decision.ts`
@@ -486,7 +457,6 @@ git commit -m "feat: migrate news pipeline to Next.js"
 - Create: `app/api/cron/notifications/route.ts`
 - Modify: `app/api/notifications/schedule/route.ts`
 - Delete: `lib/notifications/service.ts`
-- Delete: `app/api/cron/daily/route.ts`
 - Create: `tests/server/notificationSchedule.test.ts`
 
 - [ ] **Step 1: Write the failing test**
@@ -1657,34 +1627,13 @@ export const GET = handleScheduleGet;
 export const POST = handleSchedulePost;
 ```
 
-- [ ] **Step 10: Add notification cron endpoint**
+- [ ] **Step 10: Add daily notification cron endpoint**
 
-```ts
-import { NextResponse } from 'next/server';
-import { requireCronAuth } from '@/lib/server/cron/auth';
-import { processScheduledNotifications } from '@/lib/server/notifications/process';
-
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const maxDuration = 60;
-
-export async function GET(request: Request) {
-  const auth = requireCronAuth(request);
-  if (auth) return auth;
-
-  try {
-    const result = await processScheduledNotifications(false);
-    return NextResponse.json({ success: true, result });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json({ success: false, message }, { status: 500 });
-  }
-}
-```
+Create `app/api/cron/notifications/route.ts` to authenticate with `requireCronAuth`, run `processScheduledNotifications(false)`, and return `{ success, result }`. The due schedule helper uses a 60-minute tolerance for Vercel Hobby hourly precision.
 
 - [ ] **Step 11: Remove unused files**
 
-Delete `lib/notifications/service.ts` and `app/api/cron/daily/route.ts`.
+Delete `lib/notifications/service.ts`.
 
 - [ ] **Step 12: Run tests**
 
@@ -1697,7 +1646,7 @@ Expected: PASS.
 ```bash
 git add lib/server/notifications app/api/notification app/api/notifications/schedule/route.ts app/api/cron/notifications/route.ts tests/server/notificationSchedule.test.ts
 
-git rm lib/notifications/service.ts app/api/cron/daily/route.ts
+git rm lib/notifications/service.ts
 
 git commit -m "feat: migrate notification routes and scheduler"
 ```
@@ -2323,7 +2272,7 @@ git commit -m "feat: add AI routes and update client API"
 
 ---
 
-### Task 5: Price Scraper + Cron Endpoint + Vercel Cron Config
+### Task 5: Price Scraper + Cron Endpoint + Vercel Hobby Cron Config
 
 **Files:**
 - Create: `lib/server/prices/scraper.ts`
@@ -2518,9 +2467,9 @@ export async function GET(request: Request) {
 ```json
 {
   "crons": [
-    { "path": "/api/cron/news", "schedule": "0 6,12,18,0 * * *" },
-    { "path": "/api/cron/notifications", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/prices", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/news", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/notifications", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/prices", "schedule": "0 2 * * *" }
   ]
 }
 ```

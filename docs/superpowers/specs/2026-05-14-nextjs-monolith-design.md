@@ -38,12 +38,16 @@ Migrate the existing Express backend into Next.js App Router Route Handlers to f
 ## Scheduler and Cron
 - Use Vercel Cron to call internal cron endpoints (e.g., `GET /api/cron/news`, `GET /api/cron/notifications`, `GET /api/cron/prices`).
 - Each cron endpoint validates `Authorization: Bearer ${CRON_SECRET}`.
-- Split tasks to avoid long execution and timeouts.
+- Target Vercel Hobby/free cron limits: each cron job must run at most once per day, with hourly scheduling precision. Do not use hourly, multi-hour, or `*/5` cron expressions on Hobby because deployment will fail.
+- Keep tasks split across daily cron endpoints to avoid long execution and timeouts:
+  - `GET /api/cron/news`: `0 0 * * *` (daily around 07:00 Asia/Jakarta; Vercel cron uses UTC).
+  - `GET /api/cron/notifications`: `0 0 * * *` (daily around 07:00 Asia/Jakarta; allow up to 60 minutes of schedule tolerance for Hobby precision).
+  - `GET /api/cron/prices`: `0 2 * * *` (daily around 09:00 Asia/Jakarta).
 
 ## Notification Schedule Storage
 - Replace `backend/data/notificationSchedule.json` with Supabase table `notification_schedules`.
 - Fields: `id`, `enabled`, `time`, `timezone`, `platform`, `to`, `recipient_name`, `custom_message`, `user_id`, `last_sent_at`, `created_at`, `updated_at`.
-- Cron runs every 5 minutes, selects due schedules by timezone and `last_sent_at` to avoid duplicates.
+- On Vercel Hobby/free, notification cron runs once daily and selects due schedules by timezone, `time`, and `last_sent_at` to avoid duplicates. Because Hobby cron precision is hourly, due checks use a 60-minute tolerance. More frequent or exact-time notifications require Vercel Pro or an external scheduler.
 
 ## Price Scraper
 - Serverless-safe scraping with `puppeteer-core` + `@sparticuz/chromium` (Node.js runtime).

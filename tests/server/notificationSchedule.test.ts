@@ -41,6 +41,12 @@ describe('isScheduleDue', () => {
     expect(isScheduleDue(schedule, now)).toBe(true);
   });
 
+  it('allows Vercel Hobby hourly cron precision', () => {
+    const schedule = makeSchedule({ time: '07:00', timezone: 'Asia/Jakarta' });
+    const hobbyPrecisionNow = new Date('2026-05-14T00:59:00Z');
+    expect(isScheduleDue(schedule, hobbyPrecisionNow)).toBe(true);
+  });
+
   it('returns false when already sent today', () => {
     const schedule = makeSchedule({ last_sent_at: '2026-05-14T00:00:00Z' });
     expect(isScheduleDue(schedule, now)).toBe(false);

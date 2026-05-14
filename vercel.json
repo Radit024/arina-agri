@@ -1,7 +1,7 @@
 {
   "crons": [
-    { "path": "/api/cron/news", "schedule": "0 6,12,18,0 * * *" },
-    { "path": "/api/cron/notifications", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/prices", "schedule": "0 9 * * *" }
+    { "path": "/api/cron/news", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/notifications", "schedule": "0 0 * * *" },
+    { "path": "/api/cron/prices", "schedule": "0 2 * * *" }
   ]
 }

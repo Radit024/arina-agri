@@ -46,7 +46,7 @@ function parseTimeToMinutes(time: string) {
 export function isScheduleDue(
   schedule: NotificationScheduleRow,
   now: Date,
-  toleranceMinutes: number = 10
+  toleranceMinutes: number = 60
 ) {
   if (!schedule.enabled) return false;
   if (!isValidScheduleTime(schedule.time)) return false;

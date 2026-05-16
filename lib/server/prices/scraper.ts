@@ -92,7 +92,7 @@ export function parseSiskaperbapoMapResponse(response: SiskaperbapoMapResponse, 
 }
 
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 
 async function fetchSiskaperbapoPriceMap(date: string) {
   const url = new URL(SISKAPERBAPO_API_URL);
@@ -103,7 +103,9 @@ async function fetchSiskaperbapoPriceMap(date: string) {
   try {
     let executablePath = process.env.CHROME_EXECUTABLE_PATH;
     if (process.env.NODE_ENV === 'production') {
-      executablePath = await chromium.executablePath();
+      executablePath = await chromium.executablePath(
+        'https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar'
+      );
     }
 
     browser = await puppeteer.launch({

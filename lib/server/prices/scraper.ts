@@ -110,7 +110,7 @@ async function fetchSiskaperbapoPriceMap(date: string) {
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
       executablePath: executablePath || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      headless: chromium.headless === false ? false : true,
+      headless: chromium.headless,
       ignoreHTTPSErrors: true,
     });
 

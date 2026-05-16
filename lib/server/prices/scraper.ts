@@ -91,29 +91,48 @@ export function parseSiskaperbapoMapResponse(response: SiskaperbapoMapResponse, 
   return Array.from(new Map(rows.map((row) => [`${row.date}:${row.commodity}:${row.location}`, row])).values());
 }
 
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
+
 async function fetchSiskaperbapoPriceMap(date: string) {
   const url = new URL(SISKAPERBAPO_API_URL);
   url.searchParams.set('tanggal', date);
   url.searchParams.set('komoditas', String(CABE_RAWIT_MERAH_ID));
 
-  const response = await fetch(url, {
-    headers: {
-      'Accept': 'application/json, text/plain, */*',
-      'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Referer': 'https://siskaperbapo.jatimprov.go.id/',
-      'Sec-Fetch-Dest': 'empty',
-      'Sec-Fetch-Mode': 'cors',
-      'Sec-Fetch-Site': 'same-origin',
-    },
-    cache: 'no-store',
-  });
+  let browser;
+  try {
+    let executablePath = process.env.CHROME_EXECUTABLE_PATH;
+    if (process.env.NODE_ENV === 'production') {
+      executablePath = await chromium.executablePath();
+    }
 
-  if (!response.ok) {
-    throw new Error(`Siskaperbapo request failed: ${response.status}`);
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: executablePath || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      headless: chromium.headless === false ? false : true,
+      ignoreHTTPSErrors: true,
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+    
+    // Bypass Cloudflare/WAF by navigating as a real browser
+    await page.goto(url.toString(), { waitUntil: 'networkidle2' });
+    
+    const content = await page.evaluate(() => {
+      // API returns JSON, but browser wraps it in <pre> usually
+      return document.querySelector('pre')?.innerText || document.body.innerText;
+    });
+
+    return JSON.parse(content.trim()) as SiskaperbapoMapResponse;
+  } catch (err: any) {
+    throw new Error(`Puppeteer request failed: ${err.message}`);
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
   }
-
-  return JSON.parse((await response.text()).trim()) as SiskaperbapoMapResponse;
 }
 
 export async function fetchAndSavePrice() {
@@ -139,6 +158,6 @@ export async function fetchAndSavePrice() {
     date: rowsToInsert[0]?.date || requestedDate,
     inserted: rowsToInsert.length,
     average: rowsToInsert.find((row) => row.location === PROVINCE_AVERAGE_LOCATION)?.price ?? null,
-    source: 'siskaperbapo-json',
+    source: 'siskaperbapo-puppeteer',
   };
 }

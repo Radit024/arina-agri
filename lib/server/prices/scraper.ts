@@ -98,8 +98,13 @@ async function fetchSiskaperbapoPriceMap(date: string) {
 
   const response = await fetch(url, {
     headers: {
-      accept: 'application/json',
-      'user-agent': 'ArinaAgri/1.0 (+https://arina-agri.vercel.app)',
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Referer': 'https://siskaperbapo.jatimprov.go.id/',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin',
     },
     cache: 'no-store',
   });

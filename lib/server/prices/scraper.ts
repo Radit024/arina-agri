@@ -91,48 +91,27 @@ export function parseSiskaperbapoMapResponse(response: SiskaperbapoMapResponse, 
   return Array.from(new Map(rows.map((row) => [`${row.date}:${row.commodity}:${row.location}`, row])).values());
 }
 
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium-min';
-
 async function fetchSiskaperbapoPriceMap(date: string) {
-  const url = new URL(SISKAPERBAPO_API_URL);
-  url.searchParams.set('tanggal', date);
-  url.searchParams.set('komoditas', String(CABE_RAWIT_MERAH_ID));
+  const targetUrl = new URL(SISKAPERBAPO_API_URL);
+  targetUrl.searchParams.set('tanggal', date);
+  targetUrl.searchParams.set('komoditas', String(CABE_RAWIT_MERAH_ID));
 
-  let browser;
-  try {
-    let executablePath = process.env.CHROME_EXECUTABLE_PATH;
-    if (process.env.NODE_ENV === 'production') {
-      executablePath = await chromium.executablePath(
-        'https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar'
-      );
-    }
+  // Use a free proxy to bypass Siskaperbapo's IP block on Vercel datacenters
+  const proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(targetUrl.toString())}`;
 
-    browser = await puppeteer.launch({
-      args: chromium.args,
-      executablePath: executablePath || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      headless: true,
-    });
+  const response = await fetch(proxyUrl, {
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    },
+    cache: 'no-store',
+  });
 
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
-    
-    // Bypass Cloudflare/WAF by navigating as a real browser
-    await page.goto(url.toString(), { waitUntil: 'networkidle2' });
-    
-    const content = await page.evaluate(() => {
-      // API returns JSON, but browser wraps it in <pre> usually
-      return document.querySelector('pre')?.innerText || document.body.innerText;
-    });
-
-    return JSON.parse(content.trim()) as SiskaperbapoMapResponse;
-  } catch (err: any) {
-    throw new Error(`Puppeteer request failed: ${err.message}`);
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
+  if (!response.ok) {
+    throw new Error(`Siskaperbapo proxy request failed: ${response.status}`);
   }
+
+  return JSON.parse((await response.text()).trim()) as SiskaperbapoMapResponse;
 }
 
 export async function fetchAndSavePrice() {
@@ -158,6 +137,6 @@ export async function fetchAndSavePrice() {
     date: rowsToInsert[0]?.date || requestedDate,
     inserted: rowsToInsert.length,
     average: rowsToInsert.find((row) => row.location === PROVINCE_AVERAGE_LOCATION)?.price ?? null,
-    source: 'siskaperbapo-puppeteer',
+    source: 'siskaperbapo-proxy',
   };
 }

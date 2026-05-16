@@ -108,10 +108,8 @@ async function fetchSiskaperbapoPriceMap(date: string) {
 
     browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
       executablePath: executablePath || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      headless: chromium.headless,
-      ignoreHTTPSErrors: true,
+      headless: true,
     });
 
     const page = await browser.newPage();

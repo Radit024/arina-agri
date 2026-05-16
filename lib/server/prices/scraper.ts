@@ -115,12 +115,29 @@ async function fetchSiskaperbapoPriceMap(date: string) {
 }
 
 export async function fetchAndSavePrice() {
-  const requestedDate = getJakartaDate();
-  const response = await fetchSiskaperbapoPriceMap(requestedDate);
-  const rowsToInsert = parseSiskaperbapoMapResponse(response, requestedDate);
+  let requestedDate = getJakartaDate();
+  let response = await fetchSiskaperbapoPriceMap(requestedDate);
+  let rowsToInsert = parseSiskaperbapoMapResponse(response, requestedDate);
+
+  // Jika data hari ini kosong (semua 0 karena belum update/hari libur), coba ambil data kemarin
+  if (rowsToInsert.length === 0) {
+    const yesterday = new Date();
+    // Gunakan waktu saat ini, kurangi 24 jam untuk mendapatkan kemarin
+    yesterday.setHours(yesterday.getHours() - 24);
+    
+    requestedDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(yesterday);
+
+    response = await fetchSiskaperbapoPriceMap(requestedDate);
+    rowsToInsert = parseSiskaperbapoMapResponse(response, requestedDate);
+  }
 
   if (rowsToInsert.length === 0) {
-    throw new Error('Siskaperbapo tidak mengembalikan data harga Cabai Rawit Merah.');
+    throw new Error(`Siskaperbapo tidak mengembalikan data harga Cabai Rawit Merah untuk tanggal ${requestedDate}.`);
   }
 
   const supabase = getSupabaseAdmin();

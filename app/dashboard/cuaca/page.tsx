@@ -49,6 +49,8 @@ import { useLocale, useTranslations } from 'next-intl';
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 const WEATHER_GPS_LOCATION_KEY = 'arina-weather-gps-location';
+const WEATHER_MANUAL_LOCATION_KEY = 'arina-weather-manual-location';
+const WEATHER_GPS_AUTO_ATTEMPTED_KEY = 'arina-weather-gps-auto-attempted';
 
 interface GpsLocationSnapshot {
   latitude: number;
@@ -56,6 +58,8 @@ interface GpsLocationSnapshot {
   accuracy: number;
   label: string;
 }
+
+type GpsRequestMode = 'auto' | 'manual';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const theme = useTheme();
@@ -100,6 +104,9 @@ export default function CuacaPage() {
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleReady, setScheduleReady] = useState(false);
   const [gpsLocation, setGpsLocation] = useLocalStorage<GpsLocationSnapshot | null>(WEATHER_GPS_LOCATION_KEY, null);
+  const [manualLocation, setManualLocation] = useLocalStorage<string>(WEATHER_MANUAL_LOCATION_KEY, '');
+  const [gpsAutoAttempted, setGpsAutoAttempted] = useLocalStorage<boolean>(WEATHER_GPS_AUTO_ATTEMPTED_KEY, false);
+  const [manualLocationInput, setManualLocationInput] = useState(manualLocation);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsMessage, setGpsMessage] = useState('');
   const [forecastData, setForecastData] = useState<BmkgForecastResponse | null>(null);
@@ -107,6 +114,7 @@ export default function CuacaPage() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState('');
   const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
+  const activeLocationLabel = gpsLocation?.label || manualLocation || undefined;
 
   useEffect(() => {
     setContactValue(savedContact);
@@ -150,7 +158,7 @@ export default function CuacaPage() {
         setWeatherLoading(true);
         setWeatherError('');
         const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast({ locationLabel: gpsLocation?.label }),
+          weatherApi.getForecast({ locationLabel: activeLocationLabel }),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
@@ -169,7 +177,7 @@ export default function CuacaPage() {
     return () => {
       active = false;
     };
-  }, [gpsLocation?.label]);
+  }, [activeLocationLabel]);
 
   const fForecast = forecastData
     ? forecastData.days.map((day) => ({
@@ -240,7 +248,40 @@ export default function CuacaPage() {
     }
   };
 
-  const handleUseGpsLocation = () => {
+  const getGpsErrorMessage = (error: GeolocationPositionError) => {
+    if (error.code === 1) return 'Izin lokasi ditolak. Aktifkan izin lokasi atau gunakan lokasi manual.';
+    if (error.code === 2) return 'Lokasi tidak tersedia. Coba lagi atau gunakan lokasi manual.';
+    if (error.code === 3) return 'GPS timeout. Coba lagi atau gunakan lokasi manual.';
+    return error.message || 'Tidak bisa mengakses GPS.';
+  };
+
+  const getCurrentPosition = (options: PositionOptions) =>
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+
+  const resolveGpsLocation = async () => {
+    try {
+      return await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      });
+    } catch (firstError) {
+      const geoError = firstError as GeolocationPositionError;
+      if (geoError.code !== 3) {
+        throw geoError;
+      }
+
+      return getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 600000,
+      });
+    }
+  };
+
+  const requestGpsLocation = async (mode: GpsRequestMode) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGpsStatus('error');
       setGpsMessage('GPS tidak tersedia di perangkat ini.');
@@ -248,36 +289,52 @@ export default function CuacaPage() {
     }
 
     setGpsStatus('loading');
-    setGpsMessage('Mengambil lokasi GPS...');
+    setGpsMessage(mode === 'auto' ? 'Mengaktifkan GPS otomatis...' : 'Mengambil lokasi GPS...');
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const latitude = Number(position.coords.latitude.toFixed(5));
-        const longitude = Number(position.coords.longitude.toFixed(5));
-        const accuracy = Number(position.coords.accuracy.toFixed(0));
-        const label = `GPS ${latitude}, ${longitude}`;
+    try {
+      const position = await resolveGpsLocation();
+      const latitude = Number(position.coords.latitude.toFixed(5));
+      const longitude = Number(position.coords.longitude.toFixed(5));
+      const accuracy = Number(position.coords.accuracy.toFixed(0));
+      const label = `GPS ${latitude}, ${longitude}`;
 
-        setGpsLocation({
-          latitude,
-          longitude,
-          accuracy,
-          label,
-        });
-
-        setGpsStatus('success');
-        setGpsMessage(`Lokasi GPS aktif: ${label}`);
-      },
-      (error) => {
-        setGpsStatus('error');
-        setGpsMessage(error.message || 'Tidak bisa mengakses GPS.');
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000,
-      }
-    );
+      setGpsLocation({
+        latitude,
+        longitude,
+        accuracy,
+        label,
+      });
+      setManualLocation('');
+      setManualLocationInput('');
+      setGpsStatus('success');
+      setGpsMessage(`Lokasi GPS aktif: ${label}`);
+      setGpsAutoAttempted(true);
+    } catch (error) {
+      const geoError = error as GeolocationPositionError;
+      setGpsStatus('error');
+      setGpsMessage(getGpsErrorMessage(geoError));
+      setGpsAutoAttempted(true);
+    }
   };
+
+  const handleUseGpsLocation = () => {
+    void requestGpsLocation('manual');
+  };
+
+  const handleSaveManualLocation = () => {
+    const trimmed = manualLocationInput.trim();
+    if (!trimmed) return;
+
+    setManualLocation(trimmed);
+    setGpsLocation(null);
+    setGpsStatus('success');
+    setGpsMessage(`Lokasi manual aktif: ${trimmed}`);
+  };
+
+  useEffect(() => {
+    if (gpsAutoAttempted || gpsLocation) return;
+    void requestGpsLocation('auto');
+  }, [gpsAutoAttempted, gpsLocation]);
 
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();
@@ -387,21 +444,43 @@ export default function CuacaPage() {
         <Typography variant="body2" color="text.secondary">
           {t('subtitle')}
         </Typography>
-        <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
-          <Button
-            variant="outlined"
-            onClick={handleUseGpsLocation}
-            disabled={gpsStatus === 'loading'}
-            sx={{ textTransform: 'none' }}
-          >
-            {gpsStatus === 'loading' ? 'Mengaktifkan GPS...' : 'Nyalakan GPS'}
-          </Button>
-          {gpsLocation && (
-            <Typography variant="caption" color="text.secondary">
-              Lokasi aktif: {gpsLocation.label} (akurasi {gpsLocation.accuracy}m)
-            </Typography>
-          )}
-        </Box>
+        <Grid container spacing={1.25} sx={{ mt: 1 }}>
+          <Grid size={{ xs: 12, sm: 'auto' }}>
+            <Button
+              variant="outlined"
+              onClick={handleUseGpsLocation}
+              disabled={gpsStatus === 'loading'}
+              sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' } }}
+            >
+              {gpsStatus === 'loading' ? 'Mengaktifkan GPS...' : 'Nyalakan GPS'}
+            </Button>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 5 }}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Lokasi Manual"
+              placeholder="Contoh: Desa Wonorejo, Malang"
+              value={manualLocationInput}
+              onChange={(event) => setManualLocationInput(event.target.value)}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 'auto' }}>
+            <Button
+              variant="contained"
+              onClick={handleSaveManualLocation}
+              disabled={!manualLocationInput.trim()}
+              sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' } }}
+            >
+              Gunakan Lokasi Manual
+            </Button>
+          </Grid>
+        </Grid>
+        {(gpsLocation || manualLocation) && (
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+            Lokasi aktif: {gpsLocation ? `${gpsLocation.label} (akurasi ${gpsLocation.accuracy}m)` : manualLocation}
+          </Typography>
+        )}
         {gpsStatus === 'success' && gpsMessage && (
           <Alert severity="success" sx={{ mt: 1.25 }}>
             {gpsMessage}

@@ -159,7 +159,40 @@ describe('CuacaPage BMKG data', () => {
     const gpsButtons = await screen.findAllByRole('button', { name: /nyalakan gps/i });
     fireEvent.click(gpsButtons[0]);
 
-    expect(getCurrentPosition).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(screen.getByText(/Lokasi GPS aktif/i)).toBeInTheDocument());
+    expect(getCurrentPosition.mock.calls.length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(screen.getAllByText(/Lokasi GPS aktif/i).length).toBeGreaterThan(0));
+  });
+
+  it('retries geolocation when first attempt times out', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback, error: PositionErrorCallback, options?: PositionOptions) => {
+      if (options?.enableHighAccuracy) {
+        error({ code: 3, message: 'Timeout expired' } as GeolocationPositionError);
+        return;
+      }
+
+      success({
+        coords: {
+          latitude: -7.9845,
+          longitude: 112.6214,
+          accuracy: 25,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+
+    Object.defineProperty(global.navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
+    render(<CuacaPage />);
+
+    await waitFor(() => expect(screen.getAllByText(/Lokasi GPS aktif/i).length).toBeGreaterThan(0));
+    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
+    expect(screen.getAllByLabelText(/Lokasi Manual/i).length).toBeGreaterThan(0);
   });
 });

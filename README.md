@@ -42,6 +42,7 @@ Pengalaman bertani di lapangan dipadukan dengan bantuan AI supaya pengambilan ke
 
 - **Cuaca dan Kalender Tani**
   Cek prakiraan cuaca dan atur agenda tani (panen, pemupukan, dll.) dalam satu tempat.
+  Integrasi BMKG Open Data mendukung prakiraan 3 hari, peringatan dini cuaca, notifikasi risiko, dan tombol GPS untuk menetapkan lokasi pengguna saat prototipe.
 
 - **Bilingual Indonesia dan English**
   Bahasa antarmuka bisa diganti lewat pengaturan sesuai kebutuhan pengguna.

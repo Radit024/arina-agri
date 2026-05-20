@@ -38,6 +38,10 @@ function validateDecisionPayload(body: any): { valid: boolean; message?: string 
     return { valid: false, message: 'Field weather.kondisi harus berupa teks yang valid.' };
   }
 
+  if (body.metadata?.bmkgWarnings !== undefined && !Array.isArray(body.metadata.bmkgWarnings)) {
+    return { valid: false, message: 'metadata.bmkgWarnings harus berupa array.' };
+  }
+
   return { valid: true };
 }
 

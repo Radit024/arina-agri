@@ -27,7 +27,7 @@ import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import EmojiNatureOutlinedIcon from '@mui/icons-material/EmojiNatureOutlined';
 import CustomSpaIcon from '@mui/icons-material/SpaOutlined'; // Using a similar icon
 import ReactMarkdown from 'react-markdown';
-import { aiApi } from '@/lib/api';
+import { aiApi, weatherApi, type GeminiWeatherContextPayload } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 
@@ -53,6 +53,7 @@ export default function EnsiklopediaPage() {
   const [diseaseModalOpen, setDiseaseModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [historyList, setHistoryList] = useState<HistorySession[]>([]);
+  const [weatherContext, setWeatherContext] = useState<GeminiWeatherContextPayload>();
 
   const isValidChatMessage = (value: unknown): value is ChatMessage => {
     if (!value || typeof value !== 'object') return false;
@@ -103,6 +104,39 @@ export default function EnsiklopediaPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWeatherContext() {
+      try {
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast(),
+          weatherApi.getWarnings(),
+        ]);
+        if (!active) return;
+
+        const forecastSummary = forecast.days
+          .slice(0, 3)
+          .map((day) => `${day.date}: ${day.dominantCondition}, hujan ${day.totalRainfallMm}mm`)
+          .join(' | ');
+        const warningSummary = warnings.warnings.length
+          ? warnings.warnings.map((warning) => warning.headline || warning.description || warning.event).join(' | ')
+          : 'Tidak ada peringatan dini aktif';
+
+        setWeatherContext({ forecastSummary, warningSummary });
+      } catch {
+        if (!active) return;
+        setWeatherContext(undefined);
+      }
+    }
+
+    void loadWeatherContext();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -163,7 +197,7 @@ export default function EnsiklopediaPage() {
 
     try {
       const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined;
-      const result = await aiApi.askGemini({ prompt, history: historyPayload, userName });
+      const result = await aiApi.askGemini({ prompt, history: historyPayload, userName, weatherContext });
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'ai',

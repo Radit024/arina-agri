@@ -34,13 +34,28 @@ import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
-import { eventApi, notificationApi, notificationScheduleApi } from '@/lib/api';
+import {
+  eventApi,
+  notificationApi,
+  notificationScheduleApi,
+  weatherApi,
+  type BmkgForecastResponse,
+  type BmkgWarningsResponse,
+} from '@/lib/api';
 import { formatDateShort } from '@/lib/formatters';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useLocale, useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
+const WEATHER_GPS_LOCATION_KEY = 'arina-weather-gps-location';
+
+interface GpsLocationSnapshot {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  label: string;
+}
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const theme = useTheme();
@@ -84,6 +99,13 @@ export default function CuacaPage() {
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleReady, setScheduleReady] = useState(false);
+  const [gpsLocation, setGpsLocation] = useLocalStorage<GpsLocationSnapshot | null>(WEATHER_GPS_LOCATION_KEY, null);
+  const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [gpsMessage, setGpsMessage] = useState('');
+  const [forecastData, setForecastData] = useState<BmkgForecastResponse | null>(null);
+  const [warningsData, setWarningsData] = useState<BmkgWarningsResponse | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState('');
   const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
 
   useEffect(() => {
@@ -120,13 +142,69 @@ export default function CuacaPage() {
     }
   }, [schedulePlatform, scheduleContactFallback, scheduleReady]);
 
-  const fForecast = weatherForecast;
-  const fAlerts = weatherAlerts;
-  const fCurrent = currentWeather;
+  useEffect(() => {
+    let active = true;
+
+    async function loadBmkgWeather() {
+      try {
+        setWeatherLoading(true);
+        setWeatherError('');
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast({ locationLabel: gpsLocation?.label }),
+          weatherApi.getWarnings(),
+        ]);
+        if (!active) return;
+        setForecastData(forecast);
+        setWarningsData(warnings);
+      } catch (error) {
+        if (!active) return;
+        setWeatherError(error instanceof Error ? error.message : 'Gagal memuat data cuaca BMKG.');
+      } finally {
+        if (active) setWeatherLoading(false);
+      }
+    }
+
+    void loadBmkgWeather();
+
+    return () => {
+      active = false;
+    };
+  }, [gpsLocation?.label]);
+
+  const fForecast = forecastData
+    ? forecastData.days.map((day) => ({
+        tanggal: day.date,
+        suhuMin: day.minTemperatureC,
+        suhuMax: day.maxTemperatureC,
+        kondisi: day.dominantCondition,
+        curahHujan: day.totalRainfallMm,
+      }))
+    : weatherForecast;
+  const fAlerts = warningsData?.warnings.length
+    ? warningsData.warnings.map((warning) => ({
+        id: warning.id,
+        tanggal: (warning.effective || warning.expires || new Date().toISOString()).slice(0, 10),
+        jenisPeringatan: warning.event,
+        pesan: warning.headline || warning.description,
+        status: 'terkirim' as const,
+      }))
+    : weatherAlerts;
+  const fCurrent = forecastData
+    ? {
+        suhu: forecastData.current.temperatureC,
+        kelembapan: forecastData.current.humidityPercent,
+        curahHujan: forecastData.current.rainfallMm,
+        kecepatanAngin: forecastData.current.windSpeedKmh,
+        kondisi: forecastData.current.condition,
+        lokasi: forecastData.current.locationLabel,
+      }
+    : currentWeather;
 
   // Keep current card in sync with the forecast tile marked as "Today".
   const todayForecast = fForecast.find((day) => day.tanggal === todayDate);
-  const displayedCurrentWeather = todayForecast
+  const displayedCurrentWeather = forecastData
+    ? fCurrent
+    : todayForecast
     ? {
         ...fCurrent,
         suhu: todayForecast.suhuMax,
@@ -160,6 +238,45 @@ export default function CuacaPage() {
     if (value) {
       setNotificationPlatform(value);
     }
+  };
+
+  const handleUseGpsLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGpsStatus('error');
+      setGpsMessage('GPS tidak tersedia di perangkat ini.');
+      return;
+    }
+
+    setGpsStatus('loading');
+    setGpsMessage('Mengambil lokasi GPS...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = Number(position.coords.latitude.toFixed(5));
+        const longitude = Number(position.coords.longitude.toFixed(5));
+        const accuracy = Number(position.coords.accuracy.toFixed(0));
+        const label = `GPS ${latitude}, ${longitude}`;
+
+        setGpsLocation({
+          latitude,
+          longitude,
+          accuracy,
+          label,
+        });
+
+        setGpsStatus('success');
+        setGpsMessage(`Lokasi GPS aktif: ${label}`);
+      },
+      (error) => {
+        setGpsStatus('error');
+        setGpsMessage(error.message || 'Tidak bisa mengakses GPS.');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000,
+      }
+    );
   };
 
   const handleTestNotification = async () => {
@@ -214,6 +331,7 @@ export default function CuacaPage() {
           dailyEvents: todayEvents,
           forceSend: true,
           locale: locale === 'en' ? 'en' : 'id',
+          bmkgWarnings: warningsData?.warnings || [],
         },
       });
 
@@ -224,9 +342,9 @@ export default function CuacaPage() {
         setTestStatus('skipped');
         setTestFeedback(t('whatsapp.testSkipped', { reason: result.decision.reason }));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       setTestStatus('error');
-      setTestFeedback(error?.message || t('whatsapp.testError'));
+      setTestFeedback(error instanceof Error ? error.message : t('whatsapp.testError'));
     } finally {
       setIsSendingTest(false);
     }
@@ -254,9 +372,9 @@ export default function CuacaPage() {
         userId: user?.id,
       });
       setScheduleStatus('success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       setScheduleStatus('error');
-      setScheduleError(t('whatsapp.scheduleError', { error: error?.message || '' }));
+      setScheduleError(t('whatsapp.scheduleError', { error: error instanceof Error ? error.message : '' }));
     }
   };
 
@@ -269,6 +387,31 @@ export default function CuacaPage() {
         <Typography variant="body2" color="text.secondary">
           {t('subtitle')}
         </Typography>
+        <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
+          <Button
+            variant="outlined"
+            onClick={handleUseGpsLocation}
+            disabled={gpsStatus === 'loading'}
+            sx={{ textTransform: 'none' }}
+          >
+            {gpsStatus === 'loading' ? 'Mengaktifkan GPS...' : 'Nyalakan GPS'}
+          </Button>
+          {gpsLocation && (
+            <Typography variant="caption" color="text.secondary">
+              Lokasi aktif: {gpsLocation.label} (akurasi {gpsLocation.accuracy}m)
+            </Typography>
+          )}
+        </Box>
+        {gpsStatus === 'success' && gpsMessage && (
+          <Alert severity="success" sx={{ mt: 1.25 }}>
+            {gpsMessage}
+          </Alert>
+        )}
+        {gpsStatus === 'error' && gpsMessage && (
+          <Alert severity="error" sx={{ mt: 1.25 }}>
+            {gpsMessage}
+          </Alert>
+        )}
       </Box>
 
       <Grid container spacing={3}>
@@ -348,10 +491,39 @@ export default function CuacaPage() {
             </CardContent>
           </Card>
 
-          {/* 7-Day Forecast */}
+          {(forecastData?.attribution || weatherError) && (
+            <Box sx={{ mt: 1.25 }}>
+              {forecastData?.attribution && (
+                <Typography variant="caption" color="text.secondary">
+                  {forecastData.attribution}{forecastData.isFallback ? ' - menggunakan data cadangan.' : ''}
+                </Typography>
+              )}
+              {weatherError && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Gagal memuat data BMKG terbaru. Menampilkan data cuaca cadangan.
+                </Alert>
+              )}
+            </Box>
+          )}
+
+          {/* BMKG 3-Day Forecast */}
           <Card sx={{ mt: 3 }}>
-            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('forecast.title')}</Typography>} />
+            <CardHeader
+              title={
+                <Box className="flex items-center gap-2">
+                  <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
+                    Prakiraan 3 Hari BMKG
+                  </Typography>
+                  {weatherLoading && <CircularProgress size={16} />}
+                </Box>
+              }
+            />
             <CardContent sx={{ pt: 0 }}>
+              {warningsData?.warnings.length ? (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  {warningsData.warnings[0].headline || warningsData.warnings[0].description}
+                </Alert>
+              ) : null}
               <Box
                 sx={{
                   display: 'flex',

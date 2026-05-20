@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,6 +24,7 @@ import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
 import FormHelperText from '@mui/material/FormHelperText';
+import Alert from '@mui/material/Alert';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -50,6 +51,7 @@ type EventFormData = z.infer<ReturnType<typeof getEventSchema>>;
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
 import type { ApiCalendarEvent } from '@/lib/api';
+import { weatherApi } from '@/lib/api';
 
 export default function KalenderPage() {
   const theme = useTheme();
@@ -69,6 +71,45 @@ export default function KalenderPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [weatherWarningMessage, setWeatherWarningMessage] = useState<string>('');
+  const [weatherPlanningNote, setWeatherPlanningNote] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWeatherPlanningSignal() {
+      try {
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast(),
+          weatherApi.getWarnings(),
+        ]);
+        if (!active) return;
+
+        if (warnings.warnings.length > 0) {
+          const topWarning = warnings.warnings[0];
+          setWeatherWarningMessage(topWarning.headline || topWarning.description || topWarning.event);
+        } else {
+          setWeatherWarningMessage('');
+        }
+
+        const wetDay = forecast.days.find((day) => day.totalRainfallMm >= 15);
+        if (wetDay) {
+          setWeatherPlanningNote(`Saran kalender: ${wetDay.date} berpotensi hujan ${wetDay.totalRainfallMm}mm, prioritaskan pekerjaan non-lapang.`);
+        } else {
+          setWeatherPlanningNote('');
+        }
+      } catch {
+        if (!active) return;
+        setWeatherWarningMessage('');
+        setWeatherPlanningNote('');
+      }
+    }
+
+    void loadWeatherPlanningSignal();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -154,6 +195,18 @@ export default function KalenderPage() {
           {t('addSchedule')}
         </Button>
       </Box>
+
+      {weatherWarningMessage && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {weatherWarningMessage}
+        </Alert>
+      )}
+
+      {weatherPlanningNote && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {weatherPlanningNote}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Calendar */}

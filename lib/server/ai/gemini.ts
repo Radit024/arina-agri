@@ -84,7 +84,22 @@ export const SYSTEM_PROMPTS = {
   ].join('\n'),
 };
 
-export async function generateGeminiReply({ prompt, context, userName }: { prompt: string; context?: string; userName?: string }) {
+export interface GeminiWeatherContext {
+  forecastSummary?: string;
+  warningSummary?: string;
+}
+
+export async function generateGeminiReply({
+  prompt,
+  context,
+  userName,
+  weatherContext,
+}: {
+  prompt: string;
+  context?: string;
+  userName?: string;
+  weatherContext?: GeminiWeatherContext;
+}) {
   const client = getClient();
   if (!client) {
     throw new Error('Gemini API key belum diisi. Set salah satu: GEMINI_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, atau GOOGLE_API_KEY.');
@@ -98,6 +113,10 @@ export async function generateGeminiReply({ prompt, context, userName }: { promp
   const mergedPrompt = [
     SYSTEM_PROMPTS.ensiklopedia,
     `\nPENTING: Nama pengguna (petani) yang sedang bertanya adalah: ${farmerName}. Sapa pengguna dengan namanya sesekali agar lebih personal.`,
+    '',
+    'Konteks cuaca BMKG terbaru:',
+    `- Prakiraan: ${weatherContext?.forecastSummary || 'tidak tersedia'}`,
+    `- Peringatan dini: ${weatherContext?.warningSummary || 'tidak ada peringatan aktif'}`,
     '',
     'Konteks percakapan sebelumnya:',
     context || '(belum ada percakapan sebelumnya)',

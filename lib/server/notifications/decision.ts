@@ -1,4 +1,5 @@
 import { generateNotificationDecisionMessage } from '@/lib/server/ai/gemini';
+import type { BmkgWeatherWarning } from '@/lib/server/weather/bmkgTypes';
 
 export type NotificationPlatform = 'whatsapp' | 'telegram';
 
@@ -25,6 +26,7 @@ export interface DecisionMetadataInput {
   forecastWindowHours?: number;
   dailyEvents?: DailyAgendaItem[];
   forceSend?: boolean;
+  bmkgWarnings?: BmkgWeatherWarning[];
 }
 
 export interface NotificationDecisionInput {
@@ -88,7 +90,7 @@ function normalizeWhatsAppNumber(value: string) {
   return digits;
 }
 
-function evaluateRules(weather: WeatherSnapshotInput): TriggeredRule[] {
+function evaluateRules(weather: WeatherSnapshotInput, bmkgWarnings?: BmkgWeatherWarning[]): TriggeredRule[] {
   const rules: TriggeredRule[] = [];
   const kondisi = weather.kondisi.toLowerCase();
 
@@ -130,6 +132,34 @@ function evaluateRules(weather: WeatherSnapshotInput): TriggeredRule[] {
     });
   }
 
+  const activeWarnings = (bmkgWarnings || []).filter((warning) => {
+    if (!warning.expires) return true;
+    const expiresAt = Date.parse(warning.expires);
+    if (Number.isNaN(expiresAt)) return true;
+    return expiresAt > Date.now();
+  });
+  if (activeWarnings.length > 0) {
+    const severeWarning = activeWarnings.find((warning) => {
+      const severity = (warning.severity || '').toLowerCase();
+      return severity === 'severe' || severity === 'extreme';
+    });
+
+    if (severeWarning) {
+      rules.push({
+        code: 'BMKG_WARNING_SEVERE',
+        reason: severeWarning.headline || severeWarning.description || severeWarning.event,
+        weight: 55,
+      });
+    } else {
+      const firstWarning = activeWarnings[0];
+      rules.push({
+        code: 'BMKG_WARNING_ACTIVE',
+        reason: firstWarning.headline || firstWarning.description || firstWarning.event,
+        weight: 35,
+      });
+    }
+  }
+
   return rules;
 }
 
@@ -161,6 +191,11 @@ function buildRecommendations(triggeredRules: TriggeredRule[]): string[] {
     recommendations.push('Tingkatkan frekuensi cek kelembapan tanah pada zona akar.');
   }
 
+  if (codes.has('BMKG_WARNING_SEVERE') || codes.has('BMKG_WARNING_ACTIVE')) {
+    recommendations.push('Pantau peringatan dini BMKG dan tunda aktivitas lapang berisiko sampai kondisi aman.');
+    recommendations.push('Amankan stok panen, alat, dan jalur distribusi dari hujan lebat atau angin kencang.');
+  }
+
   if (recommendations.length === 0) {
     recommendations.push('Kondisi relatif aman, lanjutkan monitoring cuaca rutin.');
   }
@@ -177,6 +212,7 @@ function buildDraftMessage({
   triggeredRules,
   customMessage,
   dailyEvents,
+  bmkgWarnings,
 }: {
   recipientName: string;
   weather: WeatherSnapshotInput;
@@ -186,6 +222,7 @@ function buildDraftMessage({
   triggeredRules: TriggeredRule[];
   customMessage?: string;
   dailyEvents?: DailyAgendaItem[];
+  bmkgWarnings?: BmkgWeatherWarning[];
 }) {
   const intro = customMessage?.trim();
 
@@ -196,11 +233,15 @@ function buildDraftMessage({
   const triggerLine = triggeredRules.length > 0
     ? `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: ${triggeredRules.map((r) => r.code).join(', ')}.`
     : `Risiko: ${riskLevel.toUpperCase()} (${riskScore}/100). Pemicu: monitoring rutin.`;
+  const warnings = (bmkgWarnings || [])
+    .map((warning) => warning.headline || warning.description || warning.event)
+    .filter(Boolean);
+  const warningLine = warnings.length > 0 ? `Peringatan dini BMKG: ${warnings.join(' | ')}` : '';
   const actionLines = recommendations.map((item, i) => `${i + 1}) ${item}`).join('\n');
   const actionBlock = `Aksi disarankan:\n${actionLines}`;
 
   const agendaSection = dailyEvents ? buildAgendaSection(dailyEvents) : '';
-  return [intro, header, greeting, locationLine, weatherLine, triggerLine, actionBlock, agendaSection]
+  return [intro, header, greeting, locationLine, weatherLine, triggerLine, warningLine, actionBlock, agendaSection]
     .filter(Boolean)
     .join('\n');
 }
@@ -232,7 +273,8 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
   const decisionId = makeDecisionId();
   const recipientName = input.recipientName || 'Petani';
   const weather = normalizeWeatherSnapshot(input.weather);
-  const triggeredRules = evaluateRules(weather);
+  const bmkgWarnings = input.metadata?.bmkgWarnings;
+  const triggeredRules = evaluateRules(weather, bmkgWarnings);
   const score = Math.min(100, triggeredRules.reduce((sum, rule) => sum + rule.weight, 0));
   const riskScore = Math.max(score, 0);
   const riskLevel = riskLevelFromScore(riskScore);
@@ -260,6 +302,7 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
     triggeredRules,
     customMessage: input.metadata?.customMessage,
     dailyEvents: input.metadata?.dailyEvents,
+    bmkgWarnings,
   });
 
   let finalMessage = draftMessage;
@@ -302,6 +345,7 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
     },
     weather: input.weather,
     dailyEvents: input.metadata?.dailyEvents,
+    bmkgWarnings: input.metadata?.bmkgWarnings,
   };
 
   return {

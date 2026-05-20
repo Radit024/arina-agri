@@ -1,4 +1,18 @@
 import { supabase } from '@/lib/supabase';
+import type {
+  BmkgForecastResponse,
+  BmkgWeatherWarning,
+  BmkgWarningsResponse,
+} from '@/lib/server/weather/bmkgTypes';
+
+export type {
+  BmkgForecastDay,
+  BmkgForecastResponse,
+  BmkgForecastSnapshot,
+  BmkgWarningsResponse,
+  BmkgWeatherCondition,
+  BmkgWeatherWarning,
+} from '@/lib/server/weather/bmkgTypes';
 
 // ─── Frontend-facing Types (keeping same shape as before) ─────────
 export interface ApiTransaction {
@@ -64,6 +78,11 @@ export interface GeminiChatMessage {
   content: string;
 }
 
+export interface GeminiWeatherContextPayload {
+  forecastSummary?: string;
+  warningSummary?: string;
+}
+
 export interface NotificationDecisionWeatherInput {
   kondisi: string;
   suhu: number;
@@ -92,6 +111,7 @@ export interface NotificationDecisionInput {
     locale?: 'id' | 'en';
     dailyEvents?: NotificationDecisionDailyEvent[];
     forceSend?: boolean;
+    bmkgWarnings?: BmkgWeatherWarning[];
   };
 }
 
@@ -117,6 +137,12 @@ export interface NotificationScheduleConfig {
   recipientName?: string;
   customMessage?: string;
   userId?: string;
+}
+
+interface ApiEnvelope<T = unknown> {
+  success?: boolean;
+  message?: string;
+  data?: T;
 }
 
 // ─── Helpers to map Supabase rows → frontend shape ────────────────
@@ -489,7 +515,29 @@ async function apiFetch<T>(endpoint: string, body: object): Promise<T> {
   });
 
   const rawText = await res.text();
-  let json: any = null;
+  let json: ApiEnvelope<T> | null = null;
+
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    json = null;
+  }
+
+  if (!res.ok) {
+    throw new Error(json?.message || rawText || `HTTP error ${res.status}`);
+  }
+
+  if (!json?.success) {
+    throw new Error(json?.message || 'Permintaan API gagal.');
+  }
+
+  return json.data as T;
+}
+
+async function apiGet<T>(endpoint: string): Promise<T> {
+  const res = await fetch(resolveApiUrl(endpoint));
+  const rawText = await res.text();
+  let json: ApiEnvelope<T> | null = null;
 
   try {
     json = rawText ? JSON.parse(rawText) : null;
@@ -515,7 +563,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
 }
 
 export const aiApi = {
-  askGemini: (payload: { prompt: string; history?: GeminiChatMessage[]; userName?: string }) =>
+  askGemini: (payload: { prompt: string; history?: GeminiChatMessage[]; userName?: string; weatherContext?: GeminiWeatherContextPayload }) =>
     apiFetch<{ reply: string; model: string }>('/api/ai/gemini', payload),
 
   generateFinancialReport: (payload: {
@@ -560,5 +608,23 @@ export const notificationScheduleApi = {
       headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify(payload),
     }).then((res) => res.json());
+  },
+};
+
+export const weatherApi = {
+  getForecast: (params?: { adm4?: string; locationLabel?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.adm4) search.set('adm4', params.adm4);
+    if (params?.locationLabel) search.set('locationLabel', params.locationLabel);
+    const query = search.toString();
+    return apiGet<BmkgForecastResponse>(`/api/weather/forecast${query ? `?${query}` : ''}`);
+  },
+
+  getWarnings: (params?: { province?: string; provinceName?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.province) search.set('province', params.province);
+    if (params?.provinceName) search.set('provinceName', params.provinceName);
+    const query = search.toString();
+    return apiGet<BmkgWarningsResponse>(`/api/weather/warnings${query ? `?${query}` : ''}`);
   },
 };

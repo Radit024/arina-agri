@@ -20,8 +20,9 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCalendar } from '@/hooks/useCalendar';
-import { useCallback, useMemo, useRef, useState, type TouchEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
+import { weatherApi } from '@/lib/api';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
@@ -43,8 +44,45 @@ export default function DashboardPage() {
   } = useCommodityPrices(7);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [weatherBannerMessage, setWeatherBannerMessage] = useState<string | undefined>();
   const startYRef = useRef(0);
   const pullingRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWeatherSignal() {
+      try {
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast(),
+          weatherApi.getWarnings(),
+        ]);
+        if (!active) return;
+
+        if (warnings.warnings.length > 0) {
+          const topWarning = warnings.warnings[0];
+          setWeatherBannerMessage(`${topWarning.event}: ${topWarning.headline || topWarning.description}`);
+          return;
+        }
+
+        const rainyDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
+        if (rainyDay) {
+          setWeatherBannerMessage(`Prakiraan ${rainyDay.date}: potensi hujan ${rainyDay.totalRainfallMm}mm. Sesuaikan rencana lapang.`);
+          return;
+        }
+
+        setWeatherBannerMessage(undefined);
+      } catch {
+        if (!active) return;
+        setWeatherBannerMessage(undefined);
+      }
+    }
+
+    void loadWeatherSignal();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // ─── Trend & KPI Calculations ─────────────────────────────────────
   const { totalPengeluaran, labaBersih, expTrend, profitTrend } = useMemo(() => {
@@ -244,6 +282,12 @@ export default function DashboardPage() {
               </Box>
 
               {/* KPI Cards */}
+              {weatherBannerMessage && (
+                <Box sx={{ mb: 2.5 }}>
+                  <WeatherBanner message={weatherBannerMessage} />
+                </Box>
+              )}
+
               <DashboardKPI
                 totalPengeluaran={formatRupiah(totalPengeluaran)}
                 expTrend={expTrend}

@@ -1,0 +1,73 @@
+{
+  "lokasi": {
+    "adm4": "35.07.22.2008",
+    "desa": "Wonorejo",
+    "kecamatan": "Lawang",
+    "kotkab": "Malang",
+    "provinsi": "Jawa Timur"
+  },
+  "data": [
+    {
+      "cuaca": [
+        [
+          {
+            "utc_datetime": "2026-05-20 00:00:00",
+            "local_datetime": "2026-05-20 07:00:00",
+            "t": 24,
+            "hu": 82,
+            "weather": 60,
+            "weather_desc": "Hujan Ringan",
+            "weather_desc_en": "Light Rain",
+            "ws": 8,
+            "wd": "Timur",
+            "tcc": 78,
+            "vs_text": "8 km"
+          },
+          {
+            "utc_datetime": "2026-05-20 03:00:00",
+            "local_datetime": "2026-05-20 10:00:00",
+            "t": 29,
+            "hu": 70,
+            "weather": 3,
+            "weather_desc": "Berawan",
+            "weather_desc_en": "Cloudy",
+            "ws": 10,
+            "wd": "Tenggara",
+            "tcc": 65,
+            "vs_text": "10 km"
+          }
+        ],
+        [
+          {
+            "utc_datetime": "2026-05-21 00:00:00",
+            "local_datetime": "2026-05-21 07:00:00",
+            "t": 23,
+            "hu": 80,
+            "weather": 1,
+            "weather_desc": "Cerah Berawan",
+            "weather_desc_en": "Partly Cloudy",
+            "ws": 6,
+            "wd": "Selatan",
+            "tcc": 35,
+            "vs_text": "10 km"
+          }
+        ],
+        [
+          {
+            "utc_datetime": "2026-05-22 00:00:00",
+            "local_datetime": "2026-05-22 07:00:00",
+            "t": 25,
+            "hu": 84,
+            "weather": 61,
+            "weather_desc": "Hujan Sedang",
+            "weather_desc_en": "Rain",
+            "ws": 12,
+            "wd": "Barat",
+            "tcc": 88,
+            "vs_text": "6 km"
+          }
+        ]
+      ]
+    }
+  ]
+}

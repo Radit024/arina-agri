@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { generateGeminiReply } from '@/lib/server/ai/gemini';
 import { validateGeminiPayload } from '@/lib/server/ai/validators';
+import type { GeminiWeatherContext } from '@/lib/server/ai/gemini';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -15,6 +16,7 @@ interface GeminiRoutePayload {
   prompt: string;
   history?: GeminiHistoryMessage[];
   userName?: string;
+  weatherContext?: GeminiWeatherContext;
 }
 
 function shouldIncludeMarketInfo(prompt: string) {
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });
     }
 
-    const { prompt, history, userName } = body as GeminiRoutePayload;
+    const { prompt, history, userName, weatherContext } = body as GeminiRoutePayload;
 
     let context = '';
     if (history && Array.isArray(history)) {
@@ -74,7 +76,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const reply = await generateGeminiReply({ prompt, context, userName });
+    const reply = await generateGeminiReply({ prompt, context, userName, weatherContext });
 
     return NextResponse.json({
       success: true,

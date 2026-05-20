@@ -38,13 +38,14 @@ import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useStok } from '@/hooks/useStok';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import type { ApiHarvestBatch } from '@/lib/api';
+import { weatherApi } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
 // ─── Schemas ──────────────────────────────────────────────────────
@@ -111,6 +112,43 @@ export default function StokPage() {
   const [stockOutDialogOpen, setStockOutDialogOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState<ApiHarvestBatch | null>(null);
   const [mutFilter, setMutFilter] = useState('semua');
+  const [weatherRiskNote, setWeatherRiskNote] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadWeatherRiskNote() {
+      try {
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast(),
+          weatherApi.getWarnings(),
+        ]);
+        if (!active) return;
+
+        if (warnings.warnings.length > 0) {
+          const topWarning = warnings.warnings[0];
+          setWeatherRiskNote(`Peringatan BMKG: ${topWarning.headline || topWarning.description || topWarning.event}`);
+          return;
+        }
+
+        const wetDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
+        if (wetDay) {
+          setWeatherRiskNote(`Risiko distribusi: ${wetDay.date} diprediksi hujan ${wetDay.totalRainfallMm}mm. Siapkan pengemasan dan jalur kirim cadangan.`);
+          return;
+        }
+
+        setWeatherRiskNote('');
+      } catch {
+        if (!active) return;
+        setWeatherRiskNote('');
+      }
+    }
+
+    void loadWeatherRiskNote();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     resolver: zodResolver(batchSchema.extend({
@@ -218,6 +256,12 @@ export default function StokPage() {
             list: alertBatches.map((b) => b.batchCode).join(', '),
             strong: (chunks) => <strong>{chunks}</strong> 
           })}
+        </Alert>
+      )}
+
+      {weatherRiskNote && (
+        <Alert severity="warning" sx={{ mb: 3, borderRadius: 3 }}>
+          {weatherRiskNote}
         </Alert>
       )}
 

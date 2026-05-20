@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Peringatan Dini Cuaca Indonesia</title>
+    <lastBuildDate>Wed, 20 May 2026 07:00:00 +0700</lastBuildDate>
+    <item>
+      <title>Peringatan Dini Cuaca Jawa Timur</title>
+      <link>https://www.bmkg.go.id/alerts/nowcast/id/jatim_alert.xml</link>
+      <description>Malang, Batu, Pasuruan berpotensi hujan sedang hingga lebat.</description>
+      <author>BMKG</author>
+      <pubDate>Wed, 20 May 2026 06:45:00 +0700</pubDate>
+    </item>
+  </channel>
+</rss>

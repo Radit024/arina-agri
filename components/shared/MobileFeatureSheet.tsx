@@ -12,6 +12,7 @@ import ListSubheader from '@mui/material/ListSubheader';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
+import { motion, useReducedMotion } from 'framer-motion';
 
 export interface MobileFeatureItem {
   key: string;
@@ -44,6 +45,20 @@ export default function MobileFeatureSheet({
   onClose,
   onSelect,
 }: MobileFeatureSheetProps) {
+  const reduceMotion = useReducedMotion();
+  const listVariants = {
+    open: { opacity: 1, transition: { staggerChildren: 0.03, delayChildren: 0.05 } },
+    closed: { opacity: 0 },
+  };
+  const itemVariants = {
+    open: { opacity: 1, y: 0, transition: { duration: 0.18, ease: 'easeOut' } },
+    closed: { opacity: 0, y: 8 },
+  };
+  const listMotionProps = reduceMotion
+    ? {}
+    : { variants: listVariants, initial: 'closed', animate: open ? 'open' : 'closed' };
+  const itemMotionProps = reduceMotion ? {} : { variants: itemVariants };
+
   return (
     <SwipeableDrawer
       anchor="bottom"
@@ -94,55 +109,59 @@ export default function MobileFeatureSheet({
       </Box>
 
       <List sx={{ px: 1, pb: 'calc(88px + env(safe-area-inset-bottom))' }}>
-        {groups.map((group, index) => (
-          <Box key={group.key}>
-            <ListSubheader
-              disableSticky
-              sx={{
-                backgroundColor: 'transparent',
-                color: 'text.secondary',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                fontSize: '0.72rem',
-                letterSpacing: '0.04em',
-                lineHeight: 1.4,
-                py: 0.5,
-              }}
-            >
-              {getLabel(group.titleKey)}
-            </ListSubheader>
-
-            {group.items.map((item) => (
-              <ListItemButton
-                key={item.key}
-                onClick={() => onSelect(item)}
+        <motion.div {...listMotionProps}>
+          {groups.map((group, index) => (
+            <Box key={group.key}>
+              <ListSubheader
+                disableSticky
                 sx={{
-                  borderRadius: 2,
-                  minHeight: 48,
-                  mb: 0.5,
+                  backgroundColor: 'transparent',
+                  color: 'text.secondary',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.04em',
+                  lineHeight: 1.4,
+                  py: 0.5,
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={getLabel(item.key)}
-                  slotProps={{
-                    primary: {
-                      sx: {
-                        fontSize: '0.92rem',
-                        fontWeight: 600,
-                        color: 'text.primary',
-                      },
-                    },
-                  }}
-                />
-              </ListItemButton>
-            ))}
+                {getLabel(group.titleKey)}
+              </ListSubheader>
 
-            {index < groups.length - 1 && <Divider sx={{ my: 1 }} />}
-          </Box>
-        ))}
+              {group.items.map((item) => (
+                <motion.div key={item.key} {...itemMotionProps} style={{ width: '100%' }}>
+                  <ListItemButton
+                    onClick={() => onSelect(item)}
+                    sx={{
+                      borderRadius: 2,
+                      minHeight: 50,
+                      py: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36, color: 'text.secondary' }}>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={getLabel(item.key)}
+                      slotProps={{
+                        primary: {
+                          sx: {
+                            fontSize: '0.92rem',
+                            fontWeight: 600,
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
+                    />
+                  </ListItemButton>
+                </motion.div>
+              ))}
+
+              {index < groups.length - 1 && <Divider sx={{ my: 1 }} />}
+            </Box>
+          ))}
+        </motion.div>
       </List>
     </SwipeableDrawer>
   );

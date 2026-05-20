@@ -14,7 +14,6 @@ import WbCloudyIcon from '@mui/icons-material/WbCloudy';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import Divider from '@mui/material/Divider';
 import WeatherBanner from './WeatherBanner';
-import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { formatRupiah } from '@/lib/formatters';
 import Skeleton from '@mui/material/Skeleton';
 
@@ -27,6 +26,11 @@ interface DashboardKPIProps {
   weatherTemp: number;
   weatherCond: string;
   weatherHum: number;
+  priceLoading: boolean;
+  todayPrice: number | null;
+  priceDelta: number | null;
+  priceDeltaPct: string | null;
+  isTrendingUp: boolean | null;
   locale: string;
   t: any; // Translation function
 }
@@ -40,6 +44,11 @@ export default memo(function DashboardKPI({
   weatherTemp,
   weatherCond,
   weatherHum,
+  priceLoading,
+  todayPrice,
+  priceDelta,
+  priceDeltaPct,
+  isTrendingUp,
   locale,
   t
 }: DashboardKPIProps) {
@@ -50,8 +59,6 @@ export default memo(function DashboardKPI({
   
   const profitColor = profitPositive ? theme.palette.success.main : theme.palette.error.main;
 
-  const { todayPrice, priceDelta, priceDeltaPct, isTrendingUp, loading: priceLoading } = useCommodityPrices(7);
-  
   return (
     <Card sx={{ 
       mb: 4, 
@@ -181,7 +188,7 @@ export default memo(function DashboardKPI({
                       <Typography variant="caption" color="text.secondary">vs kemarin</Typography>
                       {priceDelta !== null && (
                         <Typography variant="caption" sx={{ color: isTrendingUp ? 'success.main' : 'error.main', fontWeight: 600 }}>
-                          {isTrendingUp ? '↑' : '↓'} {priceDelta > 0 ? '+' : ''}{formatRupiah(Math.abs(priceDelta))} ({priceDeltaPct}%)
+                          {isTrendingUp ? '↑' : '↓'} {priceDelta > 0 ? '+' : ''}{formatRupiah(Math.abs(priceDelta))} ({priceDeltaPct ? `${priceDeltaPct}%` : '—'})
                         </Typography>
                       )}
                     </Box>

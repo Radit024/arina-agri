@@ -13,9 +13,9 @@ vi.mock('next-intl', () => ({
 }));
 
 describe('MobileTopAppBar', () => {
-  it('renders title and settings button', () => {
+  it('renders title', () => {
     render(<MobileTopAppBar />);
     expect(screen.getByText('keuangan')).toBeInTheDocument();
-    expect(screen.getByLabelText('Open settings')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Open settings')).not.toBeInTheDocument();
   });
 });

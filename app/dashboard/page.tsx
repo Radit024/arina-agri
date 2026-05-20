@@ -5,10 +5,10 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
-import WbCloudyIcon from '@mui/icons-material/WbCloudy';
+import LinearProgress from '@mui/material/LinearProgress';
+import Skeleton from '@mui/material/Skeleton';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import WeatherBanner from '@/components/dashboard/WeatherBanner';
 import QuickActions from '@/components/dashboard/QuickActions';
@@ -20,16 +20,31 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCalendar } from '@/hooks/useCalendar';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState, type TouchEvent } from 'react';
+import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
   const { user } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const firstName = userName.split(' ')[0];
 
-  const { transactions } = useTransactions();
-  const { events } = useCalendar();
+  const { transactions, loading: transactionsLoading, reload: reloadTransactions } = useTransactions();
+  const { events, loading: calendarLoading, reload: reloadCalendar } = useCalendar();
+  const {
+    loading: priceLoading,
+    reload: reloadPrices,
+    todayPrice,
+    priceDelta,
+    priceDeltaPct,
+    isTrendingUp,
+  } = useCommodityPrices(7);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const startYRef = useRef(0);
+  const pullingRef = useRef(false);
 
   // ─── Trend & KPI Calculations ─────────────────────────────────────
   const { totalPengeluaran, labaBersih, expTrend, profitTrend } = useMemo(() => {
@@ -99,6 +114,56 @@ export default function DashboardPage() {
     };
   }, [events, t]);
 
+  const isLoading = transactionsLoading || calendarLoading;
+  const showSkeleton = isLoading && !isRefreshing;
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([reloadTransactions(), reloadCalendar(), reloadPrices()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, reloadTransactions, reloadCalendar, reloadPrices]);
+
+  const handleTouchStart = useCallback(
+    (event: TouchEvent<HTMLDivElement>) => {
+      if (!isMobile || isRefreshing) return;
+      const scrollTop = document.scrollingElement?.scrollTop ?? 0;
+      if (scrollTop > 0) return;
+      startYRef.current = event.touches[0].clientY;
+      pullingRef.current = true;
+    },
+    [isMobile, isRefreshing]
+  );
+
+  const handleTouchMove = useCallback(
+    (event: TouchEvent<HTMLDivElement>) => {
+      if (!pullingRef.current || !isMobile || isRefreshing) return;
+      const delta = event.touches[0].clientY - startYRef.current;
+      if (delta <= 0) {
+        setPullDistance(0);
+        return;
+      }
+      event.preventDefault();
+      setPullDistance(Math.min(delta, 80));
+    },
+    [isMobile, isRefreshing]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (!pullingRef.current) return;
+    pullingRef.current = false;
+    const shouldRefresh = pullDistance >= 60;
+    setPullDistance(0);
+    if (shouldRefresh) {
+      void handleRefresh();
+    }
+  }, [pullDistance, handleRefresh]);
+
+  const contentTransform = pullDistance > 0 ? `translateY(${pullDistance}px)` : 'translateY(0px)';
+
   // ─── Dynamic Greeting ───────────────────────────────────────────
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -109,73 +174,177 @@ export default function DashboardPage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4, lg: 5 }, maxWidth: '1600px', mx: 'auto' }}>
-      {/* Header */}
-      <Box sx={{ 
-        mb: 5, 
-        display: 'flex', 
-        flexDirection: { xs: 'column', md: 'row' }, 
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'flex-start', md: 'flex-end' },
-        gap: 2
-      }}>
-        <Box>
-          <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}>
-            {getGreeting()}
-          </Typography>
-          <Typography
-            component="h1"
-            variant="h3"
-            sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}
-          >
-            {firstName}.
-          </Typography>
-
+    <Box
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      sx={{ position: 'relative' }}
+    >
+      {(isRefreshing || pullDistance > 0) && (
+        <Box sx={{ position: 'sticky', top: 0, zIndex: 2 }}>
+          <LinearProgress
+            color="success"
+            sx={{
+              height: 3,
+              borderRadius: 999,
+              mx: { xs: 2, md: 4 },
+              mb: 1,
+            }}
+          />
         </Box>
-        <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-             {new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())}
-           </Typography>
+      )}
+
+      <Box
+        sx={{
+          transform: contentTransform,
+          transition: pullDistance > 0 ? 'none' : 'transform 0.2s ease',
+        }}
+      >
+        <Box sx={{ p: { xs: 2, md: 4, lg: 5 }, maxWidth: '1600px', mx: 'auto' }}>
+          {showSkeleton ? (
+            <DashboardSkeleton />
+          ) : (
+            <>
+              {/* Header */}
+              <Box
+                sx={{
+                  mb: 5,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  justifyContent: 'space-between',
+                  alignItems: { xs: 'flex-start', md: 'flex-end' },
+                  gap: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: 'success.main', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}
+                  >
+                    {getGreeting()}
+                  </Typography>
+                  <Typography
+                    component="h1"
+                    variant="h3"
+                    sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}
+                  >
+                    {firstName}.
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                    {new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    }).format(new Date())}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* KPI Cards */}
+              <DashboardKPI
+                totalPengeluaran={formatRupiah(totalPengeluaran)}
+                expTrend={expTrend}
+                labaBersih={formatRupiah(labaBersih)}
+                labaBersihRaw={labaBersih}
+                profitTrend={profitTrend}
+                weatherTemp={28}
+                weatherCond={t('locale') === 'en' ? 'Sunny' : 'Cerah'}
+                weatherHum={75}
+                priceLoading={priceLoading}
+                todayPrice={todayPrice}
+                priceDelta={priceDelta}
+                priceDeltaPct={priceDeltaPct}
+                isTrendingUp={isTrendingUp}
+                locale={t('locale')}
+                t={t}
+              />
+
+              {/* Main Content & Sidebar Layout */}
+              <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>
+                {/* Left Column (Charts) */}
+                <Grid size={{ xs: 12, lg: 8 }}>
+                  <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, md: 7 }}>
+                      <TrendChart transactions={transactions} />
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 5 }}>
+                      <KategoriChart transactions={transactions} />
+                    </Grid>
+                    {/* Table or other content could go here in the future */}
+                  </Grid>
+                </Grid>
+
+                {/* Right Column (Sidebar) */}
+                <Grid size={{ xs: 12, lg: 4 }}>
+                  <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <QuickActions />
+                    <NewsWidget layout="vertical" />
+                  </Box>
+                </Grid>
+              </Grid>
+            </>
+          )}
         </Box>
       </Box>
+    </Box>
+  );
+}
 
-      {/* KPI Cards */}
-      <DashboardKPI 
-        totalPengeluaran={formatRupiah(totalPengeluaran)}
-        expTrend={expTrend}
-        labaBersih={formatRupiah(labaBersih)}
-        labaBersihRaw={labaBersih}
-        profitTrend={profitTrend}
-        weatherTemp={28}
-        weatherCond={t('locale') === 'en' ? 'Sunny' : 'Cerah'}
-        weatherHum={75}
-        locale={t('locale')}
-        t={t}
-      />
+function DashboardSkeleton() {
+  return (
+    <>
+      <Box sx={{ mb: 5 }}>
+        <Skeleton variant="text" width={160} height={20} sx={{ mb: 1 }} />
+        <Skeleton variant="text" width={220} height={40} />
+      </Box>
 
-      {/* Main Content & Sidebar Layout */}
+      <Card sx={{ mb: 4, borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+        <CardContent>
+          <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 3 }} />
+        </CardContent>
+      </Card>
+
       <Grid container spacing={3} sx={{ mb: 4, alignItems: 'stretch' }}>
-        {/* Left Column (Charts) */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 7 }}>
-              <TrendChart transactions={transactions} />
+              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                <CardContent>
+                  <Skeleton variant="text" width={180} height={24} sx={{ mb: 2 }} />
+                  <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />
+                </CardContent>
+              </Card>
             </Grid>
             <Grid size={{ xs: 12, md: 5 }}>
-              <KategoriChart transactions={transactions} />
+              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                <CardContent>
+                  <Skeleton variant="text" width={160} height={24} sx={{ mb: 2 }} />
+                  <Skeleton variant="rectangular" height={240} sx={{ borderRadius: 3 }} />
+                </CardContent>
+              </Card>
             </Grid>
-            {/* Table or other content could go here in the future */}
           </Grid>
         </Grid>
-
-        {/* Right Column (Sidebar) */}
         <Grid size={{ xs: 12, lg: 4 }}>
-          <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <QuickActions />
-            <NewsWidget layout="vertical" />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+              <CardContent>
+                <Skeleton variant="text" width={140} height={22} sx={{ mb: 2 }} />
+                <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 3 }} />
+              </CardContent>
+            </Card>
+            <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+              <CardContent>
+                <Skeleton variant="text" width={140} height={22} sx={{ mb: 2 }} />
+                <Skeleton variant="rectangular" height={180} sx={{ borderRadius: 3 }} />
+              </CardContent>
+            </Card>
           </Box>
         </Grid>
       </Grid>
-    </Box>
+    </>
   );
 }

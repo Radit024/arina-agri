@@ -18,6 +18,8 @@ import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useTheme } from '@mui/material/styles';
 import MobileFeatureSheet, {
   type MobileFeatureGroup,
   type MobileFeatureItem,
@@ -77,11 +79,13 @@ const prefetchPaths = Array.from(
 
 export default function MobileBottomNav() {
   const t = useTranslations('MobileNav');
+  const theme = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showUnavailableToast, setShowUnavailableToast] = useState(false);
   const lainnyaButtonRef = useRef<HTMLButtonElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const lainnyaIndex = mobileNavItems.findIndex((item) => item.opensSheet);
 
@@ -126,11 +130,26 @@ export default function MobileBottomNav() {
     if (item.path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(item.path);
   });
+  const selectedIndex = currentValue === -1 ? lainnyaIndex : currentValue;
+
+  const getMotionProps = (isSelected: boolean) => {
+    if (reduceMotion) return {};
+    return {
+      animate: { scale: isSelected ? 1 : 0.98 },
+      whileTap: { scale: 0.96 },
+      transition: { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] },
+    };
+  };
 
   return (
     <>
       <Paper
-        sx={{
+        style={{
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          borderTopColor: theme.palette.divider,
+        }}
+        sx={(theme) => ({
           position: 'fixed',
           bottom: 0,
           left: 0,
@@ -138,15 +157,17 @@ export default function MobileBottomNav() {
           display: { xs: 'block', md: 'none' },
           zIndex: 1200,
           borderTop: '1px solid',
-          borderColor: 'divider',
-          backgroundColor: 'background.paper',
+          boxShadow:
+            theme.palette.mode === 'dark'
+              ? '0 -6px 20px rgba(0, 0, 0, 0.45)'
+              : '0 -6px 16px rgba(0, 0, 0, 0.08)',
           pb: 'env(safe-area-inset-bottom)',
-        }}
+        })}
         elevation={0}
       >
         <BottomNavigation
           aria-label="Navigasi Utama"
-          value={currentValue === -1 ? lainnyaIndex : currentValue}
+          value={selectedIndex}
           onChange={(_, newValue) => {
             const item = mobileNavItems[newValue];
             if (!item) return;
@@ -158,23 +179,53 @@ export default function MobileBottomNav() {
 
             navigateToPath(item.path);
           }}
-          sx={{ height: 64, px: 0.5 }}
+          style={{
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.secondary,
+          }}
+          sx={(theme) => ({
+            height: 64,
+            px: 0.5,
+            borderTop: `1px solid ${theme.palette.divider}`,
+          })}
         >
-          {mobileNavItems.map((item) => (
+          {mobileNavItems.map((item, index) => {
+            const isSelected = index === selectedIndex;
+            return (
             <BottomNavigationAction
               key={item.key}
               ref={item.opensSheet ? lainnyaButtonRef : undefined}
-              label={t(item.key)}
-              icon={item.icon}
+              aria-label={t(item.key)}
+              label={
+                <motion.span
+                  {...getMotionProps(isSelected)}
+                  style={{ display: 'inline-flex', transformOrigin: 'center' }}
+                >
+                  {t(item.key)}
+                </motion.span>
+              }
+              icon={
+                <motion.span
+                  {...getMotionProps(isSelected)}
+                  style={{ display: 'inline-flex', transformOrigin: 'center' }}
+                >
+                  {item.icon}
+                </motion.span>
+              }
               sx={{
+                color: 'text.secondary',
                 '&.Mui-selected': {
                   color: 'primary.main',
+                },
+                '& .MuiBottomNavigationAction-label': {
+                  transition: 'transform 160ms ease',
+                  color: 'inherit',
                 },
                 fontSize: '0.7rem',
                 minWidth: 0,
               }}
             />
-          ))}
+          )})}
         </BottomNavigation>
       </Paper>
 
@@ -199,6 +250,8 @@ export default function MobileBottomNav() {
           onClose={() => setShowUnavailableToast(false)}
           severity="info"
           variant="filled"
+          role="status"
+          aria-live="polite"
           sx={{ borderRadius: 2, fontWeight: 600 }}
         >
           {t('featureUnavailable')}

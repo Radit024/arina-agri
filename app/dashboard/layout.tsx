@@ -6,8 +6,21 @@ import MobileBottomNav from '@/components/shared/MobileBottomNav';
 import SettingsModal from '@/components/shared/SettingsModal';
 import MobileTopAppBar from '@/components/shared/MobileTopAppBar';
 import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
+  const motionProps = reduceMotion
+    ? {}
+    : {
+        initial: { opacity: 0, y: 6 },
+        animate: { opacity: 1, y: 0 },
+        exit: { opacity: 0, y: -6 },
+        transition: { duration: 0.2, ease: 'easeOut' },
+      };
+
   return (
     <Box sx={{ display: { xs: 'block', md: 'flex' }, minHeight: '100dvh' }}>
       {/* Fix #5: Skip-to-main-content link for keyboard/screen reader accessibility */}
@@ -52,7 +65,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       >
         <MobileTopAppBar />
-        {children}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={pathname} {...motionProps}>
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </Box>
 
       {/* Suspense boundary is needed for useSearchParams hooks in mobile nav and settings modal */}

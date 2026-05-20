@@ -1364,6 +1364,8 @@ export default function KeuanganPage() {
           variant="filled"
           severity={snackbar.severity}
           onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          role="status"
+          aria-live="polite"
           sx={{ borderRadius: 2, fontWeight: 600 }}
         >
           {snackbar.message}

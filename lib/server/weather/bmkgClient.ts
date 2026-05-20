@@ -1,4 +1,4 @@
-import { currentWeather, weatherForecast } from '@/lib/mockData';
+
 import {
   BMKG_ATTRIBUTION,
   DEFAULT_BMKG_ADM4,
@@ -55,14 +55,18 @@ async function fetchWithTimeout(url: string, init?: RequestInit) {
 }
 
 function fallbackForecast(adm4: string, locationLabel: string): BmkgForecastResponse {
-  const slots = weatherForecast.map((day) => ({
-    utc_datetime: `${day.tanggal} 00:00:00`,
-    local_datetime: `${day.tanggal} 07:00:00`,
-    t: day.suhuMax,
-    hu: currentWeather.kelembapan,
-    weather_desc: day.kondisi,
-    ws: currentWeather.kecepatanAngin,
-  }));
+  const today = new Date();
+  const dateStr = today.toISOString().slice(0, 10);
+  const slots = [
+    {
+      utc_datetime: `${dateStr} 00:00:00`,
+      local_datetime: `${dateStr} 07:00:00`,
+      t: 28,
+      hu: 75,
+      weather_desc: 'Cerah',
+      ws: 10,
+    }
+  ];
 
   return normalizeBmkgForecast({ data: [{ cuaca: [slots] }] }, { adm4, locationLabel, isFallback: true });
 }

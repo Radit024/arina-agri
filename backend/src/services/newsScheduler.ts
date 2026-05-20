@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import Parser from 'rss-parser';
 import { supabaseAdmin } from './supabase';
-import { isAgriRelevant, extractSnippet, extractImageUrl } from './newsHelpers';
+import { isAgriRelevant, extractSnippet, extractImageUrl, scrapeOgImage } from './newsHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────
 interface NewsArticleInsert {
@@ -54,6 +54,11 @@ async function fetchAndUpsertFeed(source: { name: string; url: string }): Promis
     const isRelevant = isAgriRelevant(item.title, item.contentSnippet || item.summary);
     if (!isRelevant) continue;
 
+    let imageUrl = extractImageUrl(item as Parameters<typeof extractImageUrl>[0]);
+    if (!imageUrl) {
+      imageUrl = await scrapeOgImage(item.link);
+    }
+
     const pubDate = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString();
 
     toInsert.push({
@@ -61,7 +66,7 @@ async function fetchAndUpsertFeed(source: { name: string; url: string }): Promis
       snippet: extractSnippet(item.contentSnippet, item.summary),
       link: item.link,
       source: source.name,
-      image_url: extractImageUrl(item as Parameters<typeof extractImageUrl>[0]),
+      image_url: imageUrl,
       pub_date: pubDate,
     });
   }

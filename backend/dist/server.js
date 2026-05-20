@@ -12,6 +12,7 @@ const webhook_1 = __importDefault(require("./routes/webhook"));
 const news_1 = __importDefault(require("./routes/news"));
 const notificationScheduler_1 = require("./services/notificationScheduler");
 const newsScheduler_1 = require("./services/newsScheduler");
+const priceScraper_1 = require("./services/priceScraper");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
 const corsAllowlist = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:3000')
@@ -46,6 +47,7 @@ app.use('/api/webhook', webhook_1.default);
 app.use('/api/news', news_1.default);
 (0, notificationScheduler_1.startScheduler)();
 (0, newsScheduler_1.startNewsScheduler)();
+(0, priceScraper_1.startPriceScraper)();
 // ─── 404 Handler ─────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan' });

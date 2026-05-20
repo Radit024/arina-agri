@@ -45,13 +45,17 @@ async function fetchAndUpsertFeed(source) {
         const isRelevant = (0, newsHelpers_1.isAgriRelevant)(item.title, item.contentSnippet || item.summary);
         if (!isRelevant)
             continue;
+        let imageUrl = (0, newsHelpers_1.extractImageUrl)(item);
+        if (!imageUrl) {
+            imageUrl = await (0, newsHelpers_1.scrapeOgImage)(item.link);
+        }
         const pubDate = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString();
         toInsert.push({
             title: item.title.trim(),
             snippet: (0, newsHelpers_1.extractSnippet)(item.contentSnippet, item.summary),
             link: item.link,
             source: source.name,
-            image_url: (0, newsHelpers_1.extractImageUrl)(item),
+            image_url: imageUrl,
             pub_date: pubDate,
         });
     }

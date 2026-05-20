@@ -1,4 +1,6 @@
 import Parser from 'rss-parser';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
 
 export const AGRI_KEYWORDS = [
   'cabai', 'pupuk', 'hama', 'cuaca', 'panen', 'pertanian', 'harga', 
@@ -33,4 +35,85 @@ export function extractImageUrl(item: Parser.Item & { enclosure?: { url?: string
   }
 
   return null;
+}
+
+/**
+ * Decodes a Google News RSS article URL to its original source URL.
+ */
+async function decodeGoogleNewsUrl(sourceUrl: string): Promise<string | null> {
+  try {
+    const response = await axios.get(sourceUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+      }
+    });
+
+    const $ = cheerio.load(response.data);
+    const dataP = $('c-wiz[data-p]').attr('data-p');
+    if (!dataP) {
+      return null;
+    }
+
+    const obj = JSON.parse(dataP.replace('%.@.', '["garturlreq",'));
+    const payload = {
+      'f.req': JSON.stringify([
+        [
+          ['Fbv4je', JSON.stringify([...obj.slice(0, -6), ...obj.slice(-2)]), null, 'generic']
+        ]
+      ])
+    };
+
+    const postResponse = await axios.post(
+      'https://news.google.com/_/DotsSplashUi/data/batchexecute',
+      new URLSearchParams(payload).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+        }
+      }
+    );
+
+    const cleanData = postResponse.data.replace(")]}'\n\n", "");
+    const outerArray = JSON.parse(cleanData);
+    const innerArrayString = outerArray[0][2];
+    const finalUrl = JSON.parse(innerArrayString)[1];
+
+    return finalUrl;
+  } catch (error) {
+    console.error('[newsHelpers] Decoding Google News URL failed:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
+ * Extracts Open Graph image from a URL. 
+ * Supports Google News URLs by first decoding them.
+ */
+export async function scrapeOgImage(url: string): Promise<string | null> {
+  try {
+    let targetUrl = url;
+    if (url.includes('news.google.com/rss/articles/')) {
+      const decodedUrl = await decodeGoogleNewsUrl(url);
+      if (decodedUrl) {
+        targetUrl = decodedUrl;
+      } else {
+        return null;
+      }
+    }
+
+    const response = await axios.get(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+      },
+      timeout: 8000
+    });
+    
+    const $ = cheerio.load(response.data);
+    const ogImage = $('meta[property="og:image"]').attr('content') || $('meta[name="og:image"]').attr('content');
+    return ogImage || null;
+  } catch (err) {
+    console.error(`[newsHelpers] scrapeOgImage failed for ${url}:`, err instanceof Error ? err.message : err);
+    return null;
+  }
 }

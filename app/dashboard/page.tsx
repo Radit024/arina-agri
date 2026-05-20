@@ -22,7 +22,18 @@ import { useTransactions } from '@/hooks/useTransactions';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
-import { weatherApi } from '@/lib/api';
+import { weatherApi, type BmkgForecastSnapshot } from '@/lib/api';
+import useLocalStorage from '@/hooks/useLocalStorage';
+
+const WEATHER_GPS_LOCATION_KEY = 'arina-weather-gps-location';
+const WEATHER_MANUAL_LOCATION_KEY = 'arina-weather-manual-location';
+
+interface GpsLocationSnapshot {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+  label: string;
+}
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
@@ -45,19 +56,33 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [weatherBannerMessage, setWeatherBannerMessage] = useState<string | undefined>();
+  const [currentWeather, setCurrentWeather] = useState<BmkgForecastSnapshot | null>(null);
   const startYRef = useRef(0);
   const pullingRef = useRef(false);
+
+  const [gpsLocation] = useLocalStorage<GpsLocationSnapshot | null>(WEATHER_GPS_LOCATION_KEY, null);
+  const [manualLocation] = useLocalStorage<string>(WEATHER_MANUAL_LOCATION_KEY, '');
+  const activeLocationLabel = gpsLocation?.label || manualLocation || undefined;
 
   useEffect(() => {
     let active = true;
 
     async function loadWeatherSignal() {
       try {
-        const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast(),
-          weatherApi.getWarnings(),
-        ]);
+        const warningsPromise = weatherApi.getWarnings();
+        const forecastPromise = activeLocationLabel 
+          ? weatherApi.getForecast({ locationLabel: activeLocationLabel }) 
+          : Promise.resolve(null);
+
+        const [warnings, forecast] = await Promise.all([warningsPromise, forecastPromise]);
+        
         if (!active) return;
+
+        if (forecast) {
+          setCurrentWeather(forecast.current);
+        } else {
+          setCurrentWeather(null);
+        }
 
         if (warnings.warnings.length > 0) {
           const topWarning = warnings.warnings[0];
@@ -65,16 +90,19 @@ export default function DashboardPage() {
           return;
         }
 
-        const rainyDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
-        if (rainyDay) {
-          setWeatherBannerMessage(`Prakiraan ${rainyDay.date}: potensi hujan ${rainyDay.totalRainfallMm}mm. Sesuaikan rencana lapang.`);
-          return;
+        if (forecast) {
+          const rainyDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
+          if (rainyDay) {
+            setWeatherBannerMessage(`Prakiraan ${rainyDay.date}: potensi hujan ${rainyDay.totalRainfallMm}mm. Sesuaikan rencana lapang.`);
+            return;
+          }
         }
 
         setWeatherBannerMessage(undefined);
       } catch {
         if (!active) return;
         setWeatherBannerMessage(undefined);
+        setCurrentWeather(null);
       }
     }
 
@@ -82,7 +110,7 @@ export default function DashboardPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeLocationLabel]);
 
   // ─── Trend & KPI Calculations ─────────────────────────────────────
   const { totalPengeluaran, labaBersih, expTrend, profitTrend } = useMemo(() => {
@@ -294,9 +322,9 @@ export default function DashboardPage() {
                 labaBersih={formatRupiah(labaBersih)}
                 labaBersihRaw={labaBersih}
                 profitTrend={profitTrend}
-                weatherTemp={28}
-                weatherCond={t('locale') === 'en' ? 'Sunny' : 'Cerah'}
-                weatherHum={75}
+                weatherTemp={currentWeather ? currentWeather.temperatureC : 0}
+                weatherCond={currentWeather ? currentWeather.condition : ''}
+                weatherHum={currentWeather ? currentWeather.humidityPercent : 0}
                 priceLoading={priceLoading}
                 todayPrice={todayPrice}
                 priceDelta={priceDelta}

@@ -1,6 +1,6 @@
 import Parser from 'rss-parser';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
-import { extractImageUrl, extractSnippet, isAgriRelevant } from './helpers';
+import { extractImageUrl, extractSnippet, isAgriRelevant, scrapeOgImage } from './helpers';
 
 interface NewsArticleInsert {
   title: string;
@@ -40,6 +40,11 @@ async function fetchSource(parser: Parser, source: { name: string; url: string }
     const isRelevant = isAgriRelevant(item.title, item.contentSnippet || item.summary);
     if (!isRelevant) continue;
 
+    let imageUrl = extractImageUrl(item as Parser.Item & { enclosure?: { url?: string } });
+    if (!imageUrl) {
+      imageUrl = await scrapeOgImage(item.link);
+    }
+
     const pubDate = item.pubDate ? new Date(item.pubDate).toISOString() : new Date().toISOString();
 
     toInsert.push({
@@ -47,7 +52,7 @@ async function fetchSource(parser: Parser, source: { name: string; url: string }
       snippet: extractSnippet(item.contentSnippet, item.summary),
       link: item.link,
       source: source.name,
-      image_url: extractImageUrl(item as Parser.Item & { enclosure?: { url?: string } }),
+      image_url: imageUrl,
       pub_date: pubDate,
     });
   }

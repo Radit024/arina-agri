@@ -33,7 +33,7 @@ import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import AirIcon from '@mui/icons-material/Air';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import TelegramIcon from '@mui/icons-material/Telegram';
-import { currentWeather, weatherForecast, weatherAlerts } from '@/lib/mockData';
+
 import {
   eventApi,
   notificationApi,
@@ -157,13 +157,20 @@ export default function CuacaPage() {
       try {
         setWeatherLoading(true);
         setWeatherError('');
-        const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast({ locationLabel: activeLocationLabel }),
-          weatherApi.getWarnings(),
-        ]);
+        
+        const warnings = await weatherApi.getWarnings();
+        if (!active) return;
+        setWarningsData(warnings);
+
+        if (!activeLocationLabel) {
+          setForecastData(null);
+          setWeatherLoading(false);
+          return;
+        }
+
+        const forecast = await weatherApi.getForecast({ locationLabel: activeLocationLabel });
         if (!active) return;
         setForecastData(forecast);
-        setWarningsData(warnings);
       } catch (error) {
         if (!active) return;
         setWeatherError(error instanceof Error ? error.message : 'Gagal memuat data cuaca BMKG.');
@@ -187,7 +194,7 @@ export default function CuacaPage() {
         kondisi: day.dominantCondition,
         curahHujan: day.totalRainfallMm,
       }))
-    : weatherForecast;
+    : [];
   const fAlerts = warningsData?.warnings.length
     ? warningsData.warnings.map((warning) => ({
         id: warning.id,
@@ -196,7 +203,10 @@ export default function CuacaPage() {
         pesan: warning.headline || warning.description,
         status: 'terkirim' as const,
       }))
-    : weatherAlerts;
+    : [];
+
+  const fallbackLocation = gpsLocation?.label || manualLocation || 'Lokasi tidak diketahui';
+
   const fCurrent = forecastData
     ? {
         suhu: forecastData.current.temperatureC,
@@ -204,9 +214,16 @@ export default function CuacaPage() {
         curahHujan: forecastData.current.rainfallMm,
         kecepatanAngin: forecastData.current.windSpeedKmh,
         kondisi: forecastData.current.condition,
-        lokasi: forecastData.current.locationLabel,
+        lokasi: forecastData.current.locationLabel || fallbackLocation,
       }
-    : currentWeather;
+    : {
+        suhu: 0,
+        kelembapan: 0,
+        curahHujan: 0,
+        kecepatanAngin: 0,
+        kondisi: 'cerah',
+        lokasi: fallbackLocation,
+      };
 
   // Keep current card in sync with the forecast tile marked as "Today".
   const todayForecast = fForecast.find((day) => day.tanggal === todayDate);
@@ -296,7 +313,17 @@ export default function CuacaPage() {
       const latitude = Number(position.coords.latitude.toFixed(5));
       const longitude = Number(position.coords.longitude.toFixed(5));
       const accuracy = Number(position.coords.accuracy.toFixed(0));
-      const label = `GPS ${latitude}, ${longitude}`;
+      let label = `GPS ${latitude}, ${longitude}`;
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        if (res.ok) {
+          const data = await res.json();
+          label = data.address?.village || data.address?.suburb || data.address?.city || data.address?.county || label;
+        }
+      } catch (e) {
+        // Abaikan
+      }
 
       setGpsLocation({
         latitude,
@@ -529,44 +556,58 @@ export default function CuacaPage() {
             )}
 
             <CardContent sx={{ p: 3 }}>
-              <Box className="flex items-start justify-between">
-                <Box>
-                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {t('current.title')}
+              {forecastData ? (
+                <>
+                  <Box className="flex items-start justify-between">
+                    <Box>
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {t('current.title')}
+                      </Typography>
+                      <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff', fontWeight: 700 }}>
+                        {displayedCurrentWeather.suhu}°C
+                      </Typography>
+                      <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
+                        {displayedCurrentWeather.kondisi === 'gerimis' ? t('current.drizzle') : displayedCurrentWeather.kondisi}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
+                        📍 {displayedCurrentWeather.lokasi}
+                      </Typography>
+                    </Box>
+                    <WeatherIcon kondisi={displayedCurrentWeather.kondisi} size="large" />
+                  </Box>
+
+                  <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2.5 }} />
+
+                  <Grid container spacing={2}>
+                    {[
+                      { icon: <WaterDropIcon />, label: t('current.humidity'), value: `${displayedCurrentWeather.kelembapan}%` },
+                      { icon: <GrainIcon />, label: t('current.rainfall'), value: `${displayedCurrentWeather.curahHujan} mm` },
+                      { icon: <AirIcon />, label: t('current.windSpeed'), value: `${displayedCurrentWeather.kecepatanAngin} km/j` },
+                      { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${displayedCurrentWeather.suhu}°C` },
+                    ].map((item) => (
+                      <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
+                        <Box className="flex items-center gap-2">
+                          <Box sx={{ color: 'rgba(255,255,255,0.7)' }}>{item.icon}</Box>
+                          <Box>
+                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{item.label}</Typography>
+                            <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>{item.value}</Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </>
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <CloudIcon sx={{ fontSize: 64, color: 'rgba(255,255,255,0.5)', mb: 2 }} />
+                  <Typography variant="h6" sx={{ color: '#fff', mb: 1, fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
+                    Belum ada data cuaca
                   </Typography>
-                  <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', mt: 0.5, color: '#fff', fontWeight: 700 }}>
-                    {displayedCurrentWeather.suhu}°C
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
-                    {displayedCurrentWeather.kondisi === 'gerimis' ? t('current.drizzle') : displayedCurrentWeather.kondisi}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
-                    📍 {displayedCurrentWeather.lokasi}
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    Nyalakan GPS atau isi lokasi manual untuk mendapatkan data cuaca terkini.
                   </Typography>
                 </Box>
-                <WeatherIcon kondisi={displayedCurrentWeather.kondisi} size="large" />
-              </Box>
-
-              <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)', my: 2.5 }} />
-
-              <Grid container spacing={2}>
-                {[
-                  { icon: <WaterDropIcon />, label: t('current.humidity'), value: `${displayedCurrentWeather.kelembapan}%` },
-                  { icon: <GrainIcon />, label: t('current.rainfall'), value: `${displayedCurrentWeather.curahHujan} mm` },
-                  { icon: <AirIcon />, label: t('current.windSpeed'), value: `${displayedCurrentWeather.kecepatanAngin} km/j` },
-                  { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${displayedCurrentWeather.suhu}°C` },
-                ].map((item) => (
-                  <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
-                    <Box className="flex items-center gap-2">
-                      <Box sx={{ color: 'rgba(255,255,255,0.7)' }}>{item.icon}</Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{item.label}</Typography>
-                        <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>{item.value}</Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
+              )}
             </CardContent>
           </Card>
 

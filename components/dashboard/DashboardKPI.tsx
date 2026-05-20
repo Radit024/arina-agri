@@ -204,20 +204,36 @@ export default memo(function DashboardKPI({
           {/* Row 2: Status Cuaca (Full Width) */}
           <Grid size={12} sx={{ p: 3, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
-              <Box sx={{ minWidth: 200 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {t('kpi.weather.title')}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                  <WbCloudyIcon sx={{ color: 'warning.main' }} />
-                  <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary' }}>
-                    {t('kpi.weather.value', { temp: weatherTemp, cond: weatherCond })}
+              {weatherCond ? (
+                <Box sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('kpi.weather.title')}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                    <WbCloudyIcon sx={{ color: 'warning.main' }} />
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary' }}>
+                      {t('kpi.weather.value', { temp: weatherTemp, cond: weatherCond })}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                    {t('kpi.weather.subtitle', { hum: weatherHum })}
                   </Typography>
                 </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                  {t('kpi.weather.subtitle', { hum: weatherHum })}
-                </Typography>
-              </Box>
+              ) : (
+                <Box sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {t('kpi.weather.title')}
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                      Belum ada data
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      Isi lokasi di menu cuaca
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
               <Box sx={{ flex: 1, width: '100%' }}>
                 <WeatherBanner />
               </Box>

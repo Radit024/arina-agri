@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   BMKG_ATTRIBUTION,
-  DEFAULT_BMKG_ADM4,
-  DEFAULT_BMKG_LOCATION_LABEL,
   type BmkgForecastResponse,
 } from '@/lib/server/weather/bmkgTypes';
 
 describe('BMKG weather types', () => {
-  it('keeps default prototype location and attribution stable', () => {
+  it('keeps forecast response shape and attribution stable', () => {
     const response: BmkgForecastResponse = {
-      adm4: DEFAULT_BMKG_ADM4,
-      locationLabel: DEFAULT_BMKG_LOCATION_LABEL,
+      adm4: '35.07.22.2008',
+      locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
       updatedAt: '2026-05-20T00:00:00.000Z',
       attribution: BMKG_ATTRIBUTION,
       isFallback: false,
@@ -23,8 +21,8 @@ describe('BMKG weather types', () => {
         conditionText: 'Hujan Ringan',
         windSpeedKmh: 8,
         rainfallMm: 0,
-        locationLabel: DEFAULT_BMKG_LOCATION_LABEL,
-        adm4: DEFAULT_BMKG_ADM4,
+        locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
+        adm4: '35.07.22.2008',
         source: 'BMKG',
       },
       days: [],

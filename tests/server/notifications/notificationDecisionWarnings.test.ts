@@ -18,7 +18,7 @@ describe('notification decision with BMKG warnings', () => {
         kelembapan: 80,
         curahHujan: 0,
         kecepatanAngin: 5,
-        lokasi: 'Desa Wonorejo, Malang',
+        lokasi: 'Mulyoagung, Dau, Kabupaten Malang',
       },
       metadata: {
         bmkgWarnings: [{

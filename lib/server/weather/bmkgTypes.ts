@@ -64,8 +64,6 @@ export interface BmkgWarningsResponse {
   isFallback: boolean;
 }
 
-export const DEFAULT_BMKG_ADM4 = '35.07.22.2008';
-export const DEFAULT_BMKG_LOCATION_LABEL = 'Desa Wonorejo, Malang';
 export const DEFAULT_BMKG_PROVINCE_CODE = 'jatim';
 export const DEFAULT_BMKG_PROVINCE_NAME = 'Jawa Timur';
 export const BMKG_ATTRIBUTION = 'Sumber data: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)';

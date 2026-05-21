@@ -1,34 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { Box, Typography, Tooltip, Divider } from '@mui/material';
 import { formatRupiah } from '@/lib/formatters';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface EastJavaMapProps {
   data: { name: string; price: number }[];
   averagePrice: number;
 }
 
-const LEGEND = [
-  { color: '#f97316', label: 'Di bawah 10% rata-rata Provinsi' },
-  { color: '#16a34a', label: 'Dalam range ±10% rata-rata Provinsi' },
-  { color: '#1d4ed8', label: 'Di atas 10% rata-rata Provinsi' },
-  { color: '#9ca3af', label: 'Tidak ada data' },
-];
-
 const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
-  const [currentDate, setCurrentDate] = useState<string>('');
+  const t = useTranslations('KabarPasar.priceChart.map');
+  const locale = useLocale();
   const [hoveredRegion, setHoveredRegion] = useState<{ name: string; price: number | null } | null>(null);
-
-  useEffect(() => {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    setCurrentDate(
-      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
-      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
-    );
-  }, []);
+  const currentDate = useMemo(() => {
+    return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'id-ID', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date());
+  }, [locale]);
 
   const getDataForGeo = (geoName: string) => {
     if (!data) return null;
@@ -98,7 +90,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
                           {geo.properties.NAME_2}
                         </Typography>
                         <Typography variant="caption">
-                          {geoData ? formatRupiah(geoData.price) : 'Data tidak tersedia'}
+                          {geoData ? formatRupiah(geoData.price) : t('noData')}
                         </Typography>
                       </Box>
                     }
@@ -149,7 +141,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
           >
             <Typography variant="caption" sx={{ fontWeight: 600 }}>
               {hoveredRegion.name}
-              {hoveredRegion.price ? ` — ${formatRupiah(hoveredRegion.price)}` : ' — Tidak ada data'}
+              {hoveredRegion.price ? ` - ${formatRupiah(hoveredRegion.price)}` : ` - ${t('noData')}`}
             </Typography>
           </Box>
         )}
@@ -174,7 +166,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
             variant="caption"
             sx={{ color: 'text.disabled', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}
           >
-            Harga Rata-rata Jawa Timur
+            {t('averagePriceTitle')}
           </Typography>
           <Typography
             variant="caption"
@@ -196,7 +188,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
           </Typography>
           {averagePrice > 0 && (
             <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-              /kg · Cabe Rawit Merah
+              {t('commodityUnit')}
             </Typography>
           )}
         </Box>
@@ -207,12 +199,12 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
         {totalRegions > 0 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
             <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Distribusi Kabupaten/Kota
+              {t('distributionTitle')}
             </Typography>
             {[
-              { color: '#f97316', count: belowAvg, label: 'Di bawah rata-rata' },
-              { color: '#16a34a', count: inRange, label: 'Dalam range ±10%' },
-              { color: '#1d4ed8', count: aboveAvg, label: 'Di atas rata-rata' },
+              { color: '#f97316', count: belowAvg, label: t('distribution.belowAverage') },
+              { color: '#16a34a', count: inRange, label: t('distribution.withinRange') },
+              { color: '#1d4ed8', count: aboveAvg, label: t('distribution.aboveAverage') },
             ].map(({ color, count, label }) => (
               <Box key={label} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -234,9 +226,14 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
         {/* Legend */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
           <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Keterangan Warna
+            {t('legendTitle')}
           </Typography>
-          {LEGEND.map(({ color, label }) => (
+          {[
+            { color: '#f97316', label: t('legend.belowProvinceAverage') },
+            { color: '#16a34a', label: t('legend.withinProvinceAverage') },
+            { color: '#1d4ed8', label: t('legend.aboveProvinceAverage') },
+            { color: '#9ca3af', label: t('legend.noData') },
+          ].map(({ color, label }) => (
             <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 10, height: 10, bgcolor: color, borderRadius: 0.5, flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.72rem', lineHeight: 1.4 }}>

@@ -6,7 +6,6 @@ import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Skeleton from '@mui/material/Skeleton';
 import Button from '@mui/material/Button';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -15,10 +14,10 @@ import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import Link from 'next/link';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { formatRupiah } from '@/lib/formatters';
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
 
 
@@ -32,8 +31,8 @@ const EastJavaMap = dynamic(
 
 // ─── Price Trend Chart (used on Kabar Pasar page) ─────────────────
 export function PriceTrendChart() {
-  const theme = useTheme();
-  const { regionPrices, loading, error } = useCommodityPrices(30);
+  const t = useTranslations('KabarPasar.priceChart');
+  const { regionPrices, loading } = useCommodityPrices(30);
 
 
   const averagePrice = useMemo(() => {
@@ -60,7 +59,7 @@ export function PriceTrendChart() {
           <CardHeader
             title={
               <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 400, fontSize: '1rem' }}>
-                Peta harga rata-rata untuk Komoditas: <strong>Cabe Rawit Merah / kg</strong>
+                {t('mapTitle')} <strong>{t('commodity')}</strong>
               </Typography>
             }
             sx={{ pb: 1, pt: 1.5 }}
@@ -82,6 +81,7 @@ export function PriceTrendChart() {
 
 // ─── Price KPI Widget (compact, used on Dashboard) ─────────────────
 export function PriceKpiWidget() {
+  const t = useTranslations('KabarPasar.priceChart');
   const { todayPrice, priceDelta, priceDeltaPct, isTrendingUp, loading } = useCommodityPrices(7);
 
   if (loading) {
@@ -128,7 +128,7 @@ export function PriceKpiWidget() {
               fontSize: '0.7rem',
             }}
           >
-            Harga Cabai Rawit
+            {t('kpiTitle')}
           </Typography>
           <Box
             sx={{
@@ -157,7 +157,7 @@ export function PriceKpiWidget() {
         >
           {todayPrice ? formatRupiah(todayPrice) : '—'}
           <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, ml: 0.5 }}>
-            /kg
+            {t('perKg')}
           </Typography>
         </Typography>
 
@@ -179,7 +179,7 @@ export function PriceKpiWidget() {
             </Typography>
           </Box>
         ) : (
-          <Typography variant="caption" color="text.disabled">vs hari kemarin</Typography>
+          <Typography variant="caption" color="text.disabled">{t('vsYesterday')}</Typography>
         )}
 
         <Box sx={{ mt: 1.5 }}>
@@ -196,7 +196,7 @@ export function PriceKpiWidget() {
               '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
             }}
           >
-            Lihat grafik tren →
+            {t('viewTrend')}
           </Button>
         </Box>
       </CardContent>

@@ -24,16 +24,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } fr
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { weatherApi, type BmkgForecastSnapshot } from '@/lib/api';
 import useLocalStorage from '@/hooks/useLocalStorage';
-
-const WEATHER_GPS_LOCATION_KEY = 'arina-weather-gps-location';
-const WEATHER_MANUAL_LOCATION_KEY = 'arina-weather-manual-location';
-
-interface GpsLocationSnapshot {
-  latitude: number;
-  longitude: number;
-  accuracy: number;
-  label: string;
-}
+import { useWeatherLocation } from '@/hooks/useWeatherLocation';
+import {
+  type GpsLocationSnapshot,
+  type ManualLocationSnapshot,
+} from '@/lib/weatherLocation';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
@@ -60,9 +55,7 @@ export default function DashboardPage() {
   const startYRef = useRef(0);
   const pullingRef = useRef(false);
 
-  const [gpsLocation] = useLocalStorage<GpsLocationSnapshot | null>(WEATHER_GPS_LOCATION_KEY, null);
-  const [manualLocation] = useLocalStorage<string>(WEATHER_MANUAL_LOCATION_KEY, '');
-  const activeLocationLabel = gpsLocation?.label || manualLocation || undefined;
+  const { activeAdm4, activeLocationLabel } = useWeatherLocation();
 
   useEffect(() => {
     let active = true;
@@ -70,8 +63,8 @@ export default function DashboardPage() {
     async function loadWeatherSignal() {
       try {
         const warningsPromise = weatherApi.getWarnings();
-        const forecastPromise = activeLocationLabel 
-          ? weatherApi.getForecast({ locationLabel: activeLocationLabel }) 
+        const forecastPromise = activeAdm4
+          ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
           : Promise.resolve(null);
 
         const [warnings, forecast] = await Promise.all([warningsPromise, forecastPromise]);
@@ -107,10 +100,15 @@ export default function DashboardPage() {
     }
 
     void loadWeatherSignal();
+    const intervalId = window.setInterval(() => {
+      void loadWeatherSignal();
+    }, 5 * 60 * 1000);
+
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
-  }, [activeLocationLabel]);
+  }, [activeAdm4, activeLocationLabel]);
 
   // ─── Trend & KPI Calculations ─────────────────────────────────────
   const { totalPengeluaran, labaBersih, expTrend, profitTrend } = useMemo(() => {

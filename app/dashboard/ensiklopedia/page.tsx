@@ -30,6 +30,12 @@ import ReactMarkdown from 'react-markdown';
 import { aiApi, weatherApi, type GeminiWeatherContextPayload } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
+import useLocalStorage from '@/hooks/useLocalStorage';
+import { useWeatherLocation } from '@/hooks/useWeatherLocation';
+import {
+  type GpsLocationSnapshot,
+  type ManualLocationSnapshot,
+} from '@/lib/weatherLocation';
 
 interface ChatMessage {
   id: string;
@@ -54,6 +60,7 @@ export default function EnsiklopediaPage() {
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [historyList, setHistoryList] = useState<HistorySession[]>([]);
   const [weatherContext, setWeatherContext] = useState<GeminiWeatherContextPayload>();
+  const { activeAdm4, activeLocationLabel } = useWeatherLocation();
 
   const isValidChatMessage = (value: unknown): value is ChatMessage => {
     if (!value || typeof value !== 'object') return false;
@@ -111,15 +118,19 @@ export default function EnsiklopediaPage() {
     async function loadWeatherContext() {
       try {
         const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast(),
+          activeAdm4
+            ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
+            : Promise.resolve(null),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
 
-        const forecastSummary = forecast.days
-          .slice(0, 3)
-          .map((day) => `${day.date}: ${day.dominantCondition}, hujan ${day.totalRainfallMm}mm`)
-          .join(' | ');
+        const forecastSummary = forecast
+          ? forecast.days
+              .slice(0, 3)
+              .map((day) => `${day.date}: ${day.dominantCondition}, hujan ${day.totalRainfallMm}mm`)
+              .join(' | ')
+          : undefined;
         const warningSummary = warnings.warnings.length
           ? warnings.warnings.map((warning) => warning.headline || warning.description || warning.event).join(' | ')
           : 'Tidak ada peringatan dini aktif';
@@ -136,7 +147,7 @@ export default function EnsiklopediaPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeAdm4, activeLocationLabel]);
 
   useEffect(() => {
     if (messages.length > 0) {

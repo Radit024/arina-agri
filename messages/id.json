@@ -129,15 +129,72 @@
     "current": {
       "title": "Cuaca Saat Ini",
       "drizzle": "Gerimis Ringan",
+      "conditions": {
+        "sunny": "Cerah",
+        "cloudy": "Berawan",
+        "overcast": "Mendung",
+        "rain": "Hujan",
+        "drizzle": "Gerimis Ringan"
+      },
       "humidity": "Kelembapan",
       "rainfall": "Curah Hujan",
       "windSpeed": "Kec. Angin",
       "temperature": "Suhu"
     },
+    "units": {
+      "windSpeed": "{value} km/j"
+    },
     "forecast": {
       "title": "Prakiraan 7 Hari",
-      "today": "Hari ini"
+      "today": "Hari ini",
+      "bmkgTitle": "Prakiraan 3 Hari BMKG",
+      "usingFallback": "menggunakan data cadangan."
     },
+    "gps": {
+      "manualLabel": "Lokasi Manual",
+      "manualPlaceholder": "Cari desa, kecamatan, atau kota",
+      "buttons": {
+        "loading": "Mengaktifkan GPS...",
+        "enable": "Nyalakan GPS",
+        "useManual": "Gunakan Lokasi Manual"
+      },
+      "messages": {
+        "autoLoading": "Mengaktifkan GPS otomatis...",
+        "manualLoading": "Mengambil lokasi GPS...",
+        "gpsActive": "Lokasi GPS aktif: {label}",
+        "manualActive": "Lokasi manual aktif: {location}"
+      },
+      "search": {
+        "helper": "Ketik nama desa, kecamatan, atau kota lalu pilih rekomendasi daerah.",
+        "minChars": "Ketik minimal 3 karakter untuk menampilkan rekomendasi.",
+        "loading": "Mencari daerah...",
+        "noResults": "Tidak ada daerah yang cocok.",
+        "typeMore": "Ketik kata kunci lokasi",
+        "error": "Gagal mencari rekomendasi daerah."
+      },
+      "errors": {
+        "permissionDenied": "Izin lokasi ditolak. Aktifkan izin lokasi atau gunakan lokasi manual.",
+        "unavailable": "Lokasi tidak tersedia. Coba lagi atau gunakan lokasi manual.",
+        "timeout": "GPS timeout. Coba lagi atau gunakan lokasi manual.",
+        "unsupported": "GPS tidak tersedia di perangkat ini.",
+        "generic": "Tidak bisa mengakses GPS."
+      }
+    },
+    "location": {
+      "unknown": "Lokasi tidak diketahui",
+      "active": "Lokasi aktif: {location}",
+      "gpsWithAccuracy": "{label} (akurasi {accuracy}m)"
+    },
+    "emptyWeather": {
+      "title": "Belum ada data cuaca",
+      "subtitle": "Nyalakan GPS atau isi lokasi manual untuk mendapatkan data cuaca terkini."
+    },
+    "errors": {
+      "loadBmkg": "Gagal memuat data cuaca BMKG.",
+      "usingFallback": "Gagal memuat data BMKG terbaru. Menampilkan data cuaca cadangan.",
+      "missingBmkgLocation": "Pilih rekomendasi lokasi manual agar prakiraan BMKG dapat dimuat."
+    },
+    "farmerFallback": "Petani",
     "history": {
       "title": "Riwayat Notifikasi",
       "columns": {
@@ -161,6 +218,7 @@
       "telegramPlaceholder": "123456789 atau @username",
       "phoneHelper": "Gunakan format nomor internasional tanpa tanda +, misalnya 6281234567890.",
       "telegramHelper": "Gunakan chat ID atau username Telegram sesuai bot Anda.",
+      "defaultScheduleMessage": "Pengingat harian: cek kondisi cuaca dan rencana kerja hari ini.",
       "saved": "Tersimpan",
       "saveAndEnable": "Simpan kontak notifikasi",
       "activeAlertTypes": "Jenis peringatan aktif",
@@ -284,6 +342,7 @@
         "inputProduction": "Input Produksi",
         "hppPerUnit": "HPP/Unit",
         "bepUnit": "BEP (Unit/Kg)",
+        "invalidBepUnit": "Nilai BEP unit tidak valid",
         "notCalculatable": "Belum dapat dihitung",
         "bepValue": "BEP (Rp)",
         "invalidBepValue": "Nilai BEP tidak valid"
@@ -500,6 +559,41 @@
     "readMore": "Baca Selengkapnya di Sumber",
     "readShort": "Baca di sumber",
     "viewAll": "Lihat Semua",
+    "latestSectionTitle": "Berita & Analisis Terkini",
+    "categories": {
+      "all": "Semua",
+      "price": "Harga",
+      "weather": "Cuaca",
+      "policy": "Kebijakan",
+      "farmingTips": "Tips Tani",
+      "market": "Pasar"
+    },
+    "priceChart": {
+      "mapTitle": "Peta harga rata-rata untuk Komoditas:",
+      "commodity": "Cabe Rawit Merah / kg",
+      "kpiTitle": "Harga Cabai Rawit",
+      "perKg": "/kg",
+      "vsYesterday": "vs hari kemarin",
+      "viewTrend": "Lihat grafik tren →",
+      "map": {
+        "noData": "Data tidak tersedia",
+        "averagePriceTitle": "Harga Rata-rata Jawa Timur",
+        "commodityUnit": "/kg · Cabe Rawit Merah",
+        "distributionTitle": "Distribusi Kabupaten/Kota",
+        "legendTitle": "Keterangan Warna",
+        "distribution": {
+          "belowAverage": "Di bawah rata-rata",
+          "withinRange": "Dalam range ±10%",
+          "aboveAverage": "Di atas rata-rata"
+        },
+        "legend": {
+          "belowProvinceAverage": "Di bawah 10% rata-rata Provinsi",
+          "withinProvinceAverage": "Dalam range ±10% rata-rata Provinsi",
+          "aboveProvinceAverage": "Di atas 10% rata-rata Provinsi",
+          "noData": "Tidak ada data"
+        }
+      }
+    },
     "relativeDate": {
       "justNow": "Baru saja",
       "hoursAgo": "{count} jam lalu",
@@ -515,7 +609,7 @@
     "title": "Manajemen Stok Panen",
     "subtitle": "{commodity} — {location}",
     "commodity": "Cabai Rawit",
-    "location": "Desa Wonorejo, Malang",
+    "location": "Lokasi belum dipilih",
     "offlineMode": "Mode Offline",
     "buttons": {
       "stockOut": "Catat Keluar",
@@ -637,6 +731,7 @@
       "password": "Kata Sandi",
       "confirmPassword": "Konfirmasi Kata Sandi",
       "submit": "Daftar Sekarang",
+      "processing": "Memproses...",
       "google": "Daftar dengan Google",
       "hasAccount": "Sudah punya akun?",
       "loginNow": "Masuk di sini",
@@ -659,6 +754,9 @@
       "email": "Alamat Email",
       "submit": "Kirim Link Reset Password",
       "back": "← Kembali ke Login",
+      "validation": {
+        "email": "Format email tidak valid"
+      },
       "success": {
         "title": "Email Terkirim!",
         "desc": "Cek inbox email Anda dan klik link yang dikirimkan untuk mereset password.",

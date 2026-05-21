@@ -24,16 +24,15 @@ describe('BMKG weather routes', () => {
     expect(json.data.attribution).toContain('BMKG');
   });
 
-  it('returns fallback forecast when BMKG fetch fails', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+  it('rejects forecast requests without a selected BMKG adm4 code', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('should not fetch without adm4')));
 
     const response = await getForecast(new Request('http://localhost/api/weather/forecast'));
     const json = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(json.success).toBe(true);
-    expect(json.data.isFallback).toBe(true);
-    expect(json.data.current.locationLabel).toBe('Desa Wonorejo, Malang');
+    expect(response.status).toBe(400);
+    expect(json.success).toBe(false);
+    expect(json.message).toContain('adm4');
   });
 
   it('returns normalized warnings from RSS and CAP XML', async () => {

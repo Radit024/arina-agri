@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "lint": "eslint",
     "test": "vitest run"
   },

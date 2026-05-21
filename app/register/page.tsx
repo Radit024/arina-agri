@@ -85,8 +85,8 @@ export default function RegisterPage() {
       });
       if (authError) throw authError;
       router.push('/dashboard');
-    } catch (err: any) {
-      const msg = err?.message || '';
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
       if (msg.includes('already registered')) {
         setError(t('error.exists'));
       } else {
@@ -106,8 +106,9 @@ export default function RegisterPage() {
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
       if (authError) throw authError;
-    } catch (err: any) {
-      setError(err.message || t('error.failed'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('error.failed');
+      setError(message);
       setGoogleLoading(false);
     }
   };
@@ -314,7 +315,7 @@ export default function RegisterPage() {
               startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleIcon />}
               sx={{ py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
             >
-              {googleLoading ? t('processing' as any) || 'Memproses...' : t('google')}
+              {googleLoading ? t('processing') : t('google')}
             </Button>
 
             <Box sx={{ mt: 3, textAlign: 'center' }}>

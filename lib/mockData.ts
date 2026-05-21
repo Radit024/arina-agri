@@ -54,7 +54,7 @@ export interface ChatMessage {
 
 export const farmerProfile = {
   nama: 'Budi Santoso',
-  lokasi: 'Desa Wonorejo, Malang',
+  lokasi: 'Lokasi belum dipilih',
   komoditas: 'Cabai Rawit',
   luasLahan: '0.5 Ha',
   hariMenujuPanen: 23,
@@ -148,7 +148,7 @@ export const currentWeather: WeatherData = {
   curahHujan: 12,
   kecepatanAngin: 8,
   kondisi: 'gerimis',
-  lokasi: 'Desa Wonorejo, Malang',
+  lokasi: 'Lokasi belum dipilih',
 };
 
 export const weatherForecast: WeatherForecast[] = [

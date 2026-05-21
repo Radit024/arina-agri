@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema.extend({
-      email: z.string().email(t('validation.email' as any) || 'Invalid email'),
+      email: z.string().email(t('validation.email')),
     })),
     defaultValues: { email: '' },
   });
@@ -47,8 +47,9 @@ export default function ForgotPasswordPage() {
       });
       if (authError) throw authError;
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || t('error'));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('error');
+      setError(message);
     } finally {
       setLoading(false);
     }

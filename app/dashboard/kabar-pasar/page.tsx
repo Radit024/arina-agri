@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -21,12 +21,12 @@ import { useTranslations } from 'next-intl';
 const ITEMS_PER_PAGE = 16;
 
 const CATEGORIES = [
-  { label: 'Semua', value: '' },
-  { label: 'Harga', value: 'harga' },
-  { label: 'Cuaca', value: 'cuaca' },
-  { label: 'Kebijakan', value: 'kebijakan' },
-  { label: 'Tips Tani', value: 'tips' },
-  { label: 'Pasar', value: 'pasar' },
+  { key: 'categories.all', value: '' },
+  { key: 'categories.price', value: 'harga' },
+  { key: 'categories.weather', value: 'cuaca' },
+  { key: 'categories.policy', value: 'kebijakan' },
+  { key: 'categories.farmingTips', value: 'tips' },
+  { key: 'categories.market', value: 'pasar' },
 ];
 
 export default function KabarPasarPage() {
@@ -37,6 +37,7 @@ export default function KabarPasarPage() {
   const { articles, total, isLoading, error, refetch } = useNews({
     limit: ITEMS_PER_PAGE,
     page,
+    category: activeCategory,
   });
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
@@ -50,16 +51,6 @@ export default function KabarPasarPage() {
     setActiveCategory(value);
     setPage(1);
   };
-
-  // Client-side filter by keyword in title/snippet (no backend filter available)
-  const filteredArticles = useMemo(() => {
-    if (!activeCategory) return articles;
-    return articles.filter(
-      (a) =>
-        a.title.toLowerCase().includes(activeCategory) ||
-        (a.snippet ?? '').toLowerCase().includes(activeCategory)
-    );
-  }, [articles, activeCategory]);
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -138,7 +129,7 @@ export default function KabarPasarPage() {
       {/* ─── Section Divider & Category Filter ──────────────────────── */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}>
-          Berita & Analisis Terkini
+          {t('latestSectionTitle')}
         </Typography>
         
         <Stack
@@ -153,7 +144,7 @@ export default function KabarPasarPage() {
           {CATEGORIES.map((cat) => (
             <Chip
               key={cat.value}
-              label={cat.label}
+              label={t(cat.key)}
               onClick={() => handleCategoryChange(cat.value)}
               variant={activeCategory === cat.value ? 'filled' : 'outlined'}
               size="small"
@@ -200,7 +191,7 @@ export default function KabarPasarPage() {
             </Grid>
           ))}
         </Grid>
-      ) : filteredArticles.length === 0 ? (
+      ) : articles.length === 0 ? (
         <Card
           elevation={0}
           sx={{
@@ -223,7 +214,7 @@ export default function KabarPasarPage() {
       ) : (
         <>
           <Grid container spacing={3}>
-            {filteredArticles.map((article, i) => (
+            {articles.map((article, i) => (
               <Grid
                 key={article.id}
                 size={{ xs: 12, sm: 6, md: 4, lg: 3 }}

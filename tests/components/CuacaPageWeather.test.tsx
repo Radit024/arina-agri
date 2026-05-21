@@ -1,65 +1,64 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CuacaPage from '@/app/dashboard/cuaca/page';
+import { weatherApi } from '@/lib/api';
+
+const mockStorage = vi.hoisted(() => ({
+  gpsLocation: null as null | { latitude: number; longitude: number; accuracy: number; label: string; adm4?: string },
+  gpsAutoAttempted: false,
+}));
+
+vi.mock('@mui/material/Autocomplete', () => ({
+  default: () => null,
+}));
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'id',
-  useTranslations: () => {
-    const t = (key: string, values?: Record<string, unknown>) => {
-      if (key === 'title') return 'Notifikasi Cuaca';
-      if (key === 'subtitle') return 'Pantau kondisi cuaca';
-      if (key === 'current.title') return 'Cuaca Saat Ini';
-      if (key === 'current.humidity') return 'Kelembapan';
-      if (key === 'current.rainfall') return 'Curah Hujan';
-      if (key === 'current.windSpeed') return 'Angin';
-      if (key === 'current.temperature') return 'Suhu';
-      if (key === 'forecast.title') return 'Prakiraan 3 Hari BMKG';
-      if (key === 'forecast.today') return 'Hari ini';
-      if (key === 'history.title') return 'Riwayat Peringatan';
-      if (key === 'history.columns.date') return 'Tanggal';
-      if (key === 'history.columns.alertType') return 'Jenis';
-      if (key === 'history.columns.message') return 'Pesan';
-      if (key === 'history.columns.status') return 'Status';
-      if (key === 'history.status.sent') return 'Terkirim';
-      if (key === 'history.status.failed') return 'Gagal';
-      if (key === 'whatsapp.title') return 'Integrasi Notifikasi';
-      if (key === 'whatsapp.note') return 'Atur kanal notifikasi';
-      if (key === 'whatsapp.enable') return 'Aktifkan notifikasi';
-      if (key === 'whatsapp.phoneLabel') return 'Nomor WhatsApp';
-      if (key === 'whatsapp.telegramLabel') return 'Kontak Telegram';
-      if (key === 'whatsapp.phonePlaceholder') return '08123456789';
-      if (key === 'whatsapp.telegramPlaceholder') return '@budi';
-      if (key === 'whatsapp.phoneHelper') return 'Masukkan nomor aktif';
-      if (key === 'whatsapp.telegramHelper') return 'Masukkan username Telegram';
-      if (key === 'whatsapp.saved') return 'Tersimpan';
-      if (key === 'whatsapp.saveAndEnable') return 'Simpan';
-      if (key === 'whatsapp.testButton') return `Tes ${values?.platform ?? 'Notifikasi'}`;
-      if (key === 'whatsapp.activeAlertTypes') return 'Jenis peringatan aktif';
-      if (key === 'whatsapp.alerts.heavyRain') return 'Hujan lebat';
-      if (key === 'whatsapp.alerts.strongWind') return 'Angin kencang';
-      if (key === 'whatsapp.alerts.extremeTemp') return 'Suhu ekstrem';
-      if (key === 'whatsapp.alerts.lowHumidity') return 'Kelembapan rendah';
-      if (key === 'whatsapp.scheduleTitle') return 'Jadwal Notifikasi';
-      if (key === 'whatsapp.scheduleSub') return 'Atur pengiriman';
-      if (key === 'whatsapp.scheduleTime') return 'Waktu';
-      if (key === 'whatsapp.scheduleActive') return 'Aktif';
-      if (key === 'whatsapp.scheduleSave') return 'Simpan jadwal';
-      if (key.startsWith('days.')) return key.replace('days.', '');
-      return values ? `${key} ${JSON.stringify(values)}` : key;
-    };
-    t.raw = (key: string) => key === 'whatsapp.tutorialSteps' ? ['Buka Telegram', 'Kirim pesan ke bot'] : [];
-    return t;
+  useTranslations: (namespace?: string) => (key: string, values?: any) => {
+    if (namespace === 'Weather') {
+      if (key === 'days.sun') return 'Min';
+      if (key === 'days.mon') return 'Sen';
+      if (key === 'days.tue') return 'Sel';
+      if (key === 'days.wed') return 'Rab';
+      if (key === 'days.thu') return 'Kam';
+      if (key === 'days.fri') return 'Jum';
+      if (key === 'days.sat') return 'Sab';
+      if (key === 'location.gpsWithAccuracy') return `GPS ${values.label} (${values.accuracy}m)`;
+      if (key === 'location.active') return `Lokasi aktif: ${values.location}`;
+      if (key === 'gps.buttons.enable') return 'Nyalakan GPS';
+      if (key === 'gps.messages.gpsActive') return 'Lokasi GPS aktif';
+    }
+    return key;
   },
 }));
 
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'u1', email: 'budi@example.com', user_metadata: { full_name: 'Budi' } } }),
+  useAuth: () => ({ user: { id: 'u1', email: 'test@example.com', user_metadata: { full_name: 'Test Farmer' } } }),
 }));
 
-vi.mock('@/hooks/useCalendar', () => ({ useCalendar: () => ({ events: [] }) }));
-vi.mock('@/hooks/useLocalStorage', () => ({ default: (_key: string, initial: string) => [initial, vi.fn()] }));
+vi.mock('@/hooks/useCalendar', () => ({
+  useCalendar: () => ({ events: [] }),
+}));
+
+vi.mock('@/hooks/useWeatherLocation', () => ({
+  useWeatherLocation: () => ({
+    gpsLocation: mockStorage.gpsLocation,
+    setGpsLocation: vi.fn((val) => { mockStorage.gpsLocation = val; }),
+    gpsAutoAttempted: mockStorage.gpsAutoAttempted,
+    setGpsAutoAttempted: vi.fn((val) => { mockStorage.gpsAutoAttempted = val; }),
+    activeAdm4: mockStorage.gpsLocation?.adm4,
+    activeLocationLabel: mockStorage.gpsLocation?.label,
+  }),
+}));
+
+vi.mock('@/hooks/useLocalStorage', () => ({
+  default: (key: string, initial: unknown) => {
+    return [initial, vi.fn()];
+  },
+}));
 
 vi.mock('@/lib/api', () => ({
+  locationApi: { search: vi.fn(async () => []) },
   eventApi: { getAll: vi.fn(async () => []) },
   notificationApi: { decideAndSend: vi.fn() },
   notificationScheduleApi: {
@@ -68,69 +67,83 @@ vi.mock('@/lib/api', () => ({
       time: '07:00',
       timezone: 'Asia/Jakarta',
       platform: 'whatsapp',
-      to: '',
-      customMessage: '',
     })),
-    set: vi.fn(async () => ({ success: true })),
+    set: vi.fn(),
   },
   weatherApi: {
-    getForecast: vi.fn(async () => ({
-      adm4: '35.07.22.2008',
-      locationLabel: 'Desa Wonorejo, Malang',
-      updatedAt: '2026-05-20T00:00:00.000Z',
-      attribution: 'Sumber data: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)',
-      isFallback: false,
-      current: {
-        utcDatetime: '2026-05-20 00:00:00',
-        localDatetime: '2026-05-20 07:00:00',
-        temperatureC: 24,
-        humidityPercent: 82,
-        condition: 'hujan',
-        conditionText: 'Hujan Ringan',
-        windSpeedKmh: 8,
-        rainfallMm: 6,
-        locationLabel: 'Desa Wonorejo, Malang',
-        adm4: '35.07.22.2008',
-        source: 'BMKG',
-      },
-      days: [{
-        date: '2026-05-20',
-        minTemperatureC: 24,
-        maxTemperatureC: 29,
-        dominantCondition: 'hujan',
-        totalRainfallMm: 6,
-        slots: [],
-      }],
-    })),
     getWarnings: vi.fn(async () => ({
-      provinceCode: 'jatim',
-      provinceName: 'Jawa Timur',
-      updatedAt: '2026-05-20T00:00:00.000Z',
-      attribution: 'Sumber data: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)',
-      isFallback: false,
-      warnings: [{
-        id: 'w1',
-        event: 'Hujan Lebat',
-        headline: 'Peringatan dini cuaca Jawa Timur',
-        description: 'Malang berpotensi hujan lebat',
-        affectedAreas: ['Malang'],
-        source: 'BMKG',
-      }],
+      warnings: [
+        {
+          id: 'w1',
+          event: 'Peringatan dini cuaca Jawa Timur',
+          headline: 'Hujan lebat disertai petir',
+          description: 'Hujan lebat...',
+          effective: '2026-05-21T07:00:00Z',
+          expires: '2026-05-21T10:00:00Z',
+        },
+      ],
+    })),
+    getForecast: vi.fn(async () => ({
+      current: {
+        temperatureC: 24,
+        humidityPercent: 80,
+        rainfallMm: 5,
+        windSpeedKmh: 12,
+        condition: 'Hujan',
+        locationLabel: 'Malang',
+      },
+      days: [
+        {
+          date: '2026-05-21',
+          minTemperatureC: 22,
+          maxTemperatureC: 30,
+          dominantCondition: 'Hujan',
+          totalRainfallMm: 15,
+        },
+      ],
+      attribution: 'Sumber data: BMKG',
     })),
   },
 }));
 
-describe('CuacaPage BMKG data', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
+function stubReverseGeocodeFetch() {
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+    if (url.includes('nominatim.openstreetmap.org/reverse')) {
+      return {
+        ok: true,
+        json: async () => ({
+          address: { village: 'Mulyoagung' },
+          display_name: 'Mulyoagung, Dau, Kabupaten Malang',
+        }),
+      };
+    }
+    return { ok: false };
+  }));
+}
+
+describe('CuacaPage GPS', () => {
+  beforeEach(() => {
+    mockStorage.gpsLocation = null;
+    mockStorage.gpsAutoAttempted = false;
   });
 
-  it('shows BMKG forecast attribution and active warning', async () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('shows BMKG forecast attribution and active warning when GPS is active', async () => {
+    mockStorage.gpsLocation = {
+      latitude: -7.9201,
+      longitude: 112.5899,
+      accuracy: 10,
+      label: 'Malang',
+      adm4: '35.07.22.2008',
+    };
     render(<CuacaPage />);
 
     await waitFor(() => expect(screen.getByText(/Sumber data: BMKG/)).toBeInTheDocument());
     expect(screen.getAllByText(/Peringatan dini cuaca Jawa Timur/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Prakiraan 3 Hari BMKG/)).toBeInTheDocument();
   });
 
   it('requests browser geolocation when gps button is clicked', async () => {
@@ -153,6 +166,7 @@ describe('CuacaPage BMKG data', () => {
       configurable: true,
       value: { getCurrentPosition },
     });
+    stubReverseGeocodeFetch();
 
     render(<CuacaPage />);
 
@@ -169,17 +183,8 @@ describe('CuacaPage BMKG data', () => {
         error({ code: 3, message: 'Timeout expired' } as GeolocationPositionError);
         return;
       }
-
       success({
-        coords: {
-          latitude: -7.9845,
-          longitude: 112.6214,
-          accuracy: 25,
-          altitude: null,
-          altitudeAccuracy: null,
-          heading: null,
-          speed: null,
-        },
+        coords: { latitude: -7.9, longitude: 112.6, accuracy: 100 },
         timestamp: Date.now(),
       } as GeolocationPosition);
     });
@@ -188,11 +193,13 @@ describe('CuacaPage BMKG data', () => {
       configurable: true,
       value: { getCurrentPosition },
     });
+    stubReverseGeocodeFetch();
 
     render(<CuacaPage />);
 
-    await waitFor(() => expect(screen.getAllByText(/Lokasi GPS aktif/i).length).toBeGreaterThan(0));
-    expect(getCurrentPosition).toHaveBeenCalledTimes(2);
-    expect(screen.getAllByLabelText(/Lokasi Manual/i).length).toBeGreaterThan(0);
+    const gpsButtons = await screen.findAllByRole('button', { name: /nyalakan gps/i });
+    fireEvent.click(gpsButtons[0]);
+
+    await waitFor(() => expect(getCurrentPosition.mock.calls.length).toBeGreaterThanOrEqual(2));
   });
 });

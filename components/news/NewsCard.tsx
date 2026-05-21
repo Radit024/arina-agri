@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -12,12 +12,14 @@ import NewspaperIcon from '@mui/icons-material/Newspaper';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { alpha } from '@mui/material/styles';
 import type { NewsArticle } from '@/lib/types/news';
 
 // ─── Helpers ──────────────────────────────────────────────────────
-function formatRelativeDate(dateStr: string, t: any): string {
+type KabarPasarTranslator = ReturnType<typeof useTranslations>;
+
+function formatRelativeDate(dateStr: string, t: KabarPasarTranslator, locale: string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -28,7 +30,7 @@ function formatRelativeDate(dateStr: string, t: any): string {
   if (diffHours < 24) return t('relativeDate.hoursAgo', { count: diffHours });
   if (diffDays === 1) return t('relativeDate.yesterday');
   if (diffDays < 7) return t('relativeDate.daysAgo', { count: diffDays });
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'id-ID', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -60,12 +62,9 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
 // ─── Widget Card (horizontal, compact) ───────────────────────────
 function WidgetCard({ article }: { article: NewsArticle }) {
   const t = useTranslations('KabarPasar');
+  const locale = useLocale();
   const [imgError, setImgError] = useState(false);
-  const [formattedDate, setFormattedDate] = useState<string>('');
-
-  useEffect(() => {
-    setFormattedDate(formatRelativeDate(article.pub_date, t));
-  }, [article.pub_date, t]);
+  const formattedDate = formatRelativeDate(article.pub_date, t, locale);
 
   return (
     <Card
@@ -179,12 +178,9 @@ function WidgetCard({ article }: { article: NewsArticle }) {
 // ─── Full Card (vertical, rich) ───────────────────────────────────
 function FullCard({ article }: { article: NewsArticle }) {
   const t = useTranslations('KabarPasar');
+  const locale = useLocale();
   const [imgError, setImgError] = useState(false);
-  const [formattedDate, setFormattedDate] = useState<string>('');
-
-  useEffect(() => {
-    setFormattedDate(formatRelativeDate(article.pub_date, t));
-  }, [article.pub_date, t]);
+  const formattedDate = formatRelativeDate(article.pub_date, t, locale);
 
   return (
     <Card

@@ -52,6 +52,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
 import type { ApiCalendarEvent } from '@/lib/api';
 import { weatherApi } from '@/lib/api';
+import { useWeatherLocation } from '@/hooks/useWeatherLocation';
+import {
+  type GpsLocationSnapshot,
+  type ManualLocationSnapshot,
+} from '@/lib/weatherLocation';
 
 export default function KalenderPage() {
   const theme = useTheme();
@@ -73,6 +78,7 @@ export default function KalenderPage() {
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [weatherWarningMessage, setWeatherWarningMessage] = useState<string>('');
   const [weatherPlanningNote, setWeatherPlanningNote] = useState<string>('');
+  const { activeAdm4, activeLocationLabel } = useWeatherLocation();
 
   useEffect(() => {
     let active = true;
@@ -80,7 +86,9 @@ export default function KalenderPage() {
     async function loadWeatherPlanningSignal() {
       try {
         const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast(),
+          activeAdm4
+            ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
+            : Promise.resolve(null),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
@@ -92,7 +100,7 @@ export default function KalenderPage() {
           setWeatherWarningMessage('');
         }
 
-        const wetDay = forecast.days.find((day) => day.totalRainfallMm >= 15);
+        const wetDay = forecast?.days.find((day) => day.totalRainfallMm >= 15);
         if (wetDay) {
           setWeatherPlanningNote(`Saran kalender: ${wetDay.date} berpotensi hujan ${wetDay.totalRainfallMm}mm, prioritaskan pekerjaan non-lapang.`);
         } else {
@@ -109,7 +117,7 @@ export default function KalenderPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeAdm4, activeLocationLabel]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();

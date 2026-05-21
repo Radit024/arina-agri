@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import type { NewsArticle, UseNewsResult } from '@/lib/types/news';
 
 interface UseNewsOptions {
   limit?: number;
   page?: number;
+  category?: string;
 }
 
-export function useNews({ limit = 10, page = 1 }: UseNewsOptions = {}): UseNewsResult {
+export function useNews({ limit = 10, page = 1, category = '' }: UseNewsOptions = {}): UseNewsResult {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +27,12 @@ export function useNews({ limit = 10, page = 1 }: UseNewsOptions = {}): UseNewsR
 
       try {
         // Use relative path for internal Next.js API route
-        const url = `/api/news?limit=${limit}&page=${page}`;
+        const params = new URLSearchParams({
+          limit: String(limit),
+          page: String(page),
+        });
+        if (category) params.set('category', category);
+        const url = `/api/news?${params.toString()}`;
         
         const res = await fetch(url);
         const json = await res.json();
@@ -57,7 +62,7 @@ export function useNews({ limit = 10, page = 1 }: UseNewsOptions = {}): UseNewsR
     return () => {
       isMounted = false;
     };
-  }, [limit, page, trigger]);
+  }, [limit, page, category, trigger]);
 
   return { articles, total, isLoading, error, refetch };
 }

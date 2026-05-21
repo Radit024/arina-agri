@@ -1,8 +1,6 @@
 
 import {
   BMKG_ATTRIBUTION,
-  DEFAULT_BMKG_ADM4,
-  DEFAULT_BMKG_LOCATION_LABEL,
   DEFAULT_BMKG_PROVINCE_CODE,
   DEFAULT_BMKG_PROVINCE_NAME,
   type BmkgForecastResponse,
@@ -14,12 +12,12 @@ import {
   parseBmkgWarningRssItems,
 } from './bmkgNormalize';
 
-const cacheTtlMinutes = Number(process.env.BMKG_FORECAST_CACHE_MINUTES || 30);
+const cacheTtlMinutes = Number(process.env.BMKG_FORECAST_CACHE_MINUTES || 5);
 const fetchTimeoutMs = Number(process.env.BMKG_FETCH_TIMEOUT_MS || 8000);
 
 const CACHE_TTL_MS = Number.isFinite(cacheTtlMinutes) && cacheTtlMinutes > 0
   ? cacheTtlMinutes * 60 * 1000
-  : 30 * 60 * 1000;
+  : 5 * 60 * 1000;
 const FETCH_TIMEOUT_MS = Number.isFinite(fetchTimeoutMs) && fetchTimeoutMs > 0
   ? fetchTimeoutMs
   : 8000;
@@ -54,38 +52,45 @@ async function fetchWithTimeout(url: string, init?: RequestInit) {
   }
 }
 
-function fallbackForecast(adm4: string, locationLabel: string): BmkgForecastResponse {
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10);
-  const slots = [
-    {
-      utc_datetime: `${dateStr} 00:00:00`,
-      local_datetime: `${dateStr} 07:00:00`,
-      t: 28,
-      hu: 75,
-      weather_desc: 'Cerah',
-      ws: 10,
-    }
-  ];
+function withForecastLocationLabel(forecast: BmkgForecastResponse, locationLabel: string): BmkgForecastResponse {
+  if (forecast.locationLabel === locationLabel && forecast.current.locationLabel === locationLabel) {
+    return forecast;
+  }
 
-  return normalizeBmkgForecast({ data: [{ cuaca: [slots] }] }, { adm4, locationLabel, isFallback: true });
+  return {
+    ...forecast,
+    locationLabel,
+    current: {
+      ...forecast.current,
+      locationLabel,
+    },
+    days: forecast.days.map((day) => ({
+      ...day,
+      slots: day.slots.map((slot) => ({
+        ...slot,
+        locationLabel,
+      })),
+    })),
+  };
 }
 
-export async function getBmkgForecast(params?: { adm4?: string; locationLabel?: string }): Promise<BmkgForecastResponse> {
-  const adm4 = params?.adm4 || DEFAULT_BMKG_ADM4;
-  const locationLabel = params?.locationLabel || DEFAULT_BMKG_LOCATION_LABEL;
+export async function getBmkgForecast(params: { adm4: string; locationLabel?: string }): Promise<BmkgForecastResponse> {
+  const adm4 = params.adm4.trim();
+  if (!adm4) {
+    throw new Error('BMKG adm4 code is required.');
+  }
+
+  const locationLabel = params.locationLabel?.trim() || adm4;
   const cacheKey = `forecast:${adm4}`;
   const cached = readCache<BmkgForecastResponse>(cacheKey);
-  if (cached) return cached;
+  if (cached) return withForecastLocationLabel(cached, locationLabel);
 
-  try {
-    const response = await fetchWithTimeout(`https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${encodeURIComponent(adm4)}`);
-    if (!response.ok) throw new Error(`BMKG forecast HTTP ${response.status}`);
-    const raw: unknown = await response.json();
-    return writeCache(cacheKey, normalizeBmkgForecast(raw, { adm4, locationLabel, isFallback: false }));
-  } catch {
-    return fallbackForecast(adm4, locationLabel);
-  }
+  const response = await fetchWithTimeout(`https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4=${encodeURIComponent(adm4)}`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(`BMKG forecast HTTP ${response.status}`);
+  const raw: unknown = await response.json();
+  return writeCache(cacheKey, normalizeBmkgForecast(raw, { adm4, locationLabel, isFallback: false }));
 }
 
 export async function getBmkgWarnings(params?: { provinceCode?: string; provinceName?: string }): Promise<BmkgWarningsResponse> {

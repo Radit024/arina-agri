@@ -15,7 +15,7 @@ describe('BMKG forecast normalizer', () => {
     const raw = JSON.parse(fixture('bmkgForecast.json'));
     const result = normalizeBmkgForecast(raw, {
       adm4: '35.07.22.2008',
-      locationLabel: 'Desa Wonorejo, Malang',
+      locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
       isFallback: false,
     });
 
@@ -31,7 +31,7 @@ describe('BMKG forecast normalizer', () => {
     expect(() =>
       normalizeBmkgForecast({ lokasi: {}, data: [] }, {
         adm4: '35.07.22.2008',
-        locationLabel: 'Desa Wonorejo, Malang',
+        locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
         isFallback: false,
       })
     ).toThrow('BMKG forecast payload has no forecast slots');

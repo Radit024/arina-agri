@@ -46,6 +46,12 @@ import { useStok } from '@/hooks/useStok';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import type { ApiHarvestBatch } from '@/lib/api';
 import { weatherApi } from '@/lib/api';
+import useLocalStorage from '@/hooks/useLocalStorage';
+import { useWeatherLocation } from '@/hooks/useWeatherLocation';
+import {
+  type GpsLocationSnapshot,
+  type ManualLocationSnapshot,
+} from '@/lib/weatherLocation';
 import { useTranslations } from 'next-intl';
 
 // ─── Schemas ──────────────────────────────────────────────────────
@@ -113,6 +119,7 @@ export default function StokPage() {
   const [editingBatch, setEditingBatch] = useState<ApiHarvestBatch | null>(null);
   const [mutFilter, setMutFilter] = useState('semua');
   const [weatherRiskNote, setWeatherRiskNote] = useState('');
+  const { activeAdm4, activeLocationLabel } = useWeatherLocation();
 
   useEffect(() => {
     let active = true;
@@ -120,7 +127,9 @@ export default function StokPage() {
     async function loadWeatherRiskNote() {
       try {
         const [forecast, warnings] = await Promise.all([
-          weatherApi.getForecast(),
+          activeAdm4
+            ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
+            : Promise.resolve(null),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
@@ -131,7 +140,7 @@ export default function StokPage() {
           return;
         }
 
-        const wetDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
+        const wetDay = forecast?.days.find((day) => day.totalRainfallMm >= 20);
         if (wetDay) {
           setWeatherRiskNote(`Risiko distribusi: ${wetDay.date} diprediksi hujan ${wetDay.totalRainfallMm}mm. Siapkan pengemasan dan jalur kirim cadangan.`);
           return;
@@ -148,7 +157,7 @@ export default function StokPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeAdm4, activeLocationLabel]);
 
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     resolver: zodResolver(batchSchema.extend({

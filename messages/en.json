@@ -129,15 +129,72 @@
     "current": {
       "title": "Current Weather",
       "drizzle": "Light Drizzle",
+      "conditions": {
+        "sunny": "Sunny",
+        "cloudy": "Cloudy",
+        "overcast": "Overcast",
+        "rain": "Rain",
+        "drizzle": "Light Drizzle"
+      },
       "humidity": "Humidity",
       "rainfall": "Rainfall",
       "windSpeed": "Wind Speed",
       "temperature": "Temperature"
     },
+    "units": {
+      "windSpeed": "{value} km/h"
+    },
     "forecast": {
       "title": "7-Day Forecast",
-      "today": "Today"
+      "today": "Today",
+      "bmkgTitle": "3-Day BMKG Forecast",
+      "usingFallback": "using fallback data."
     },
+    "gps": {
+      "manualLabel": "Manual Location",
+      "manualPlaceholder": "Search village, district, or city",
+      "buttons": {
+        "loading": "Activating GPS...",
+        "enable": "Enable GPS",
+        "useManual": "Use Manual Location"
+      },
+      "messages": {
+        "autoLoading": "Activating GPS automatically...",
+        "manualLoading": "Getting GPS location...",
+        "gpsActive": "GPS location active: {label}",
+        "manualActive": "Manual location active: {location}"
+      },
+      "search": {
+        "helper": "Type a village, district, or city name, then choose a suggested area.",
+        "minChars": "Type at least 3 characters to show suggestions.",
+        "loading": "Searching areas...",
+        "noResults": "No matching areas found.",
+        "typeMore": "Type a location keyword",
+        "error": "Failed to search area suggestions."
+      },
+      "errors": {
+        "permissionDenied": "Location permission was denied. Enable location permission or use a manual location.",
+        "unavailable": "Location is unavailable. Try again or use a manual location.",
+        "timeout": "GPS timed out. Try again or use a manual location.",
+        "unsupported": "GPS is not available on this device.",
+        "generic": "Unable to access GPS."
+      }
+    },
+    "location": {
+      "unknown": "Unknown location",
+      "active": "Active location: {location}",
+      "gpsWithAccuracy": "{label} ({accuracy}m accuracy)"
+    },
+    "emptyWeather": {
+      "title": "No weather data yet",
+      "subtitle": "Enable GPS or enter a manual location to get the latest weather data."
+    },
+    "errors": {
+      "loadBmkg": "Failed to load BMKG weather data.",
+      "usingFallback": "Failed to load the latest BMKG data. Showing fallback weather data.",
+      "missingBmkgLocation": "Choose a manual location recommendation so the BMKG forecast can be loaded."
+    },
+    "farmerFallback": "Farmer",
     "history": {
       "title": "Notification History",
       "columns": {
@@ -161,6 +218,7 @@
       "telegramPlaceholder": "123456789 or @username",
       "phoneHelper": "Use international format without the + sign, e.g., 6281234567890.",
       "telegramHelper": "Use Telegram chat ID or username according to your bot.",
+      "defaultScheduleMessage": "Daily reminder: check today's weather conditions and work plan.",
       "saved": "Saved",
       "saveAndEnable": "Save notification contact",
       "activeAlertTypes": "Active alert types",
@@ -284,6 +342,7 @@
         "inputProduction": "Production Input",
         "hppPerUnit": "HPP/Unit (COGS)",
         "bepUnit": "BEP (Unit/Kg)",
+        "invalidBepUnit": "Invalid BEP unit value",
         "notCalculatable": "Cannot be calculated",
         "bepValue": "BEP (Rp)",
         "invalidBepValue": "Invalid BEP value"
@@ -500,6 +559,41 @@
     "readMore": "Read Full Article at Source",
     "readShort": "Read at source",
     "viewAll": "View All",
+    "latestSectionTitle": "Latest News & Analysis",
+    "categories": {
+      "all": "All",
+      "price": "Prices",
+      "weather": "Weather",
+      "policy": "Policy",
+      "farmingTips": "Farming Tips",
+      "market": "Market"
+    },
+    "priceChart": {
+      "mapTitle": "Average price map for commodity:",
+      "commodity": "Red Bird's Eye Chili / kg",
+      "kpiTitle": "Bird's Eye Chili Price",
+      "perKg": "/kg",
+      "vsYesterday": "vs yesterday",
+      "viewTrend": "View trend chart →",
+      "map": {
+        "noData": "Data unavailable",
+        "averagePriceTitle": "East Java Average Price",
+        "commodityUnit": "/kg · Red Bird's Eye Chili",
+        "distributionTitle": "Regency/City Distribution",
+        "legendTitle": "Color Legend",
+        "distribution": {
+          "belowAverage": "Below average",
+          "withinRange": "Within ±10% range",
+          "aboveAverage": "Above average"
+        },
+        "legend": {
+          "belowProvinceAverage": "Below 10% of provincial average",
+          "withinProvinceAverage": "Within ±10% of provincial average",
+          "aboveProvinceAverage": "Above 10% of provincial average",
+          "noData": "No data"
+        }
+      }
+    },
     "relativeDate": {
       "justNow": "Just now",
       "hoursAgo": "{count} hours ago",
@@ -515,7 +609,7 @@
     "title": "Harvest Stock Management",
     "subtitle": "{commodity} — {location}",
     "commodity": "Cayenne Pepper",
-    "location": "Wonorejo Village, Malang",
+    "location": "Location not selected",
     "offlineMode": "Offline Mode",
     "buttons": {
       "stockOut": "Record Out",
@@ -637,6 +731,7 @@
       "password": "Password",
       "confirmPassword": "Confirm Password",
       "submit": "Register Now",
+      "processing": "Processing...",
       "google": "Register with Google",
       "hasAccount": "Already have an account?",
       "loginNow": "Log in here",
@@ -659,6 +754,9 @@
       "email": "Email Address",
       "submit": "Send Reset Link",
       "back": "← Back to Login",
+      "validation": {
+        "email": "Invalid email format"
+      },
       "success": {
         "title": "Email Sent!",
         "desc": "Check your email inbox and click the link sent to reset your password.",

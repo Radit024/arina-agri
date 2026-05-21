@@ -83,6 +83,16 @@ export interface GeminiWeatherContextPayload {
   warningSummary?: string;
 }
 
+export interface LocationSearchResult {
+  id: string;
+  adm4: string;
+  label: string;
+  name: string;
+  detail: string;
+  latitude: number;
+  longitude: number;
+}
+
 export interface NotificationDecisionWeatherInput {
   kondisi: string;
   suhu: number;
@@ -612,12 +622,12 @@ export const notificationScheduleApi = {
 };
 
 export const weatherApi = {
-  getForecast: (params?: { adm4?: string; locationLabel?: string }) => {
+  getForecast: (params: { adm4: string; locationLabel?: string }) => {
     const search = new URLSearchParams();
-    if (params?.adm4) search.set('adm4', params.adm4);
-    if (params?.locationLabel) search.set('locationLabel', params.locationLabel);
+    search.set('adm4', params.adm4);
+    if (params.locationLabel) search.set('locationLabel', params.locationLabel);
     const query = search.toString();
-    return apiGet<BmkgForecastResponse>(`/api/weather/forecast${query ? `?${query}` : ''}`);
+    return apiGet<BmkgForecastResponse>(`/api/weather/forecast?${query}`);
   },
 
   getWarnings: (params?: { province?: string; provinceName?: string }) => {
@@ -626,5 +636,14 @@ export const weatherApi = {
     if (params?.provinceName) search.set('provinceName', params.provinceName);
     const query = search.toString();
     return apiGet<BmkgWarningsResponse>(`/api/weather/warnings${query ? `?${query}` : ''}`);
+  },
+};
+
+export const locationApi = {
+  search: (params: { query: string; limit?: number }) => {
+    const search = new URLSearchParams();
+    search.set('q', params.query);
+    if (params.limit) search.set('limit', String(params.limit));
+    return apiGet<LocationSearchResult[]>(`/api/location/search?${search.toString()}`);
   },
 };

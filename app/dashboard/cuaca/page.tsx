@@ -39,6 +39,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 import {
   eventApi,
+  locationApi,
   notificationApi,
   notificationScheduleApi,
   weatherApi,

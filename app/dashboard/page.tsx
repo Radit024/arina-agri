@@ -27,7 +27,6 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import {
   type GpsLocationSnapshot,
-  type ManualLocationSnapshot,
 } from '@/lib/weatherLocation';
 
 export default function DashboardPage() {

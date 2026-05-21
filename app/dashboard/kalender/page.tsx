@@ -55,7 +55,6 @@ import { weatherApi } from '@/lib/api';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import {
   type GpsLocationSnapshot,
-  type ManualLocationSnapshot,
 } from '@/lib/weatherLocation';
 
 export default function KalenderPage() {

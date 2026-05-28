@@ -86,7 +86,7 @@ export default function RegisterPage() {
       if (authError) throw authError;
       router.push('/dashboard');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
+      const msg = (err as any)?.message || '';
       if (msg.includes('already registered')) {
         setError(t('error.exists'));
       } else {
@@ -107,7 +107,7 @@ export default function RegisterPage() {
       });
       if (authError) throw authError;
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('error.failed');
+      const message = (err as any)?.message || t('error.failed');
       setError(message);
       setGoogleLoading(false);
     }

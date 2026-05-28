@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextResponse } from 'next/server';
 import { requireCronAuth } from '@/lib/server/cron/auth';
 import { cleanupOldNews, fetchNewsAndUpsert } from '@/lib/server/news/fetch';

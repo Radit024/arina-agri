@@ -357,21 +357,16 @@ export default function CuacaPage() {
       let adm4: string | undefined;
 
       try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-        if (res.ok) {
-          const data = await res.json();
-          label = data.address?.village || data.address?.suburb || data.address?.city || data.address?.county || label;
-          const searchQuery = data.display_name || label;
-          if (searchQuery && searchQuery.length >= 3) {
-            const [resolvedLocation] = await locationApi.search({ query: searchQuery, limit: 1 });
-            if (resolvedLocation) {
-              label = resolvedLocation.label;
-              adm4 = resolvedLocation.adm4;
-            }
-          }
+        const resolvedLocation = await locationApi.reverse({ lat: latitude, lon: longitude });
+        if (resolvedLocation && resolvedLocation.adm4) {
+          label = resolvedLocation.label;
+          adm4 = resolvedLocation.adm4;
+        } else if (resolvedLocation && resolvedLocation.label) {
+          // It resolved partially but no adm4 found
+          label = resolvedLocation.label;
         }
-      } catch {
-        // Ignore reverse geocoding failures; the coordinate label is still useful.
+      } catch (err) {
+        console.warn('Reverse geocoding failed', err);
       }
 
       setGpsLocation({

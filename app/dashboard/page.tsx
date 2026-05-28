@@ -11,7 +11,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import WeatherBanner from '@/components/dashboard/WeatherBanner';
-import QuickActions from '@/components/dashboard/QuickActions';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
 import { farmerProfile } from '@/lib/mockData';
@@ -149,33 +148,6 @@ export default function DashboardPage() {
       profitTrend: calcTrend(currentKPI.profit, lastKPI.profit),
     };
   }, [transactions]);
-
-  // ─── Harvest Countdown Logic ──────────────────────────────────────
-  const harvestInfo = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const nextHarvest = events
-      .filter(e => (e.jenis === 'pemetikan' || e.judul.toLowerCase().includes('panen')) && new Date(e.tanggal) >= today)
-      .sort((a, b) => new Date(a.tanggal).getTime() - new Date(b.tanggal).getTime())[0];
-
-    if (nextHarvest) {
-      const harvestDate = new Date(nextHarvest.tanggal);
-      const diffTime = harvestDate.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const formattedDate = new Intl.DateTimeFormat(t('locale') === 'en' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'long' }).format(harvestDate);
-      
-      return {
-        days: diffDays,
-        subtitle: t('kpi.harvest.subtitle', { date: formattedDate }),
-      };
-    }
-
-    return {
-      days: farmerProfile.hariMenujuPanen,
-      subtitle: t('kpi.harvest.subtitle', { date: '—' }),
-    };
-  }, [events, t]);
 
   const isLoading = transactionsLoading || calendarLoading;
   const showSkeleton = isLoading && !isRefreshing;
@@ -349,7 +321,6 @@ export default function DashboardPage() {
                 {/* Right Column (Sidebar) */}
                 <Grid size={{ xs: 12, lg: 4 }}>
                   <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <QuickActions />
                     <NewsWidget layout="vertical" />
                   </Box>
                 </Grid>
@@ -399,12 +370,6 @@ function DashboardSkeleton() {
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
-              <CardContent>
-                <Skeleton variant="text" width={140} height={22} sx={{ mb: 2 }} />
-                <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 3 }} />
-              </CardContent>
-            </Card>
             <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
               <CardContent>
                 <Skeleton variant="text" width={140} height={22} sx={{ mb: 2 }} />

@@ -646,4 +646,10 @@ export const locationApi = {
     if (params.limit) search.set('limit', String(params.limit));
     return apiGet<LocationSearchResult[]>(`/api/location/search?${search.toString()}`);
   },
+  reverse: (params: { lat: number; lon: number }) => {
+    const search = new URLSearchParams();
+    search.set('lat', String(params.lat));
+    search.set('lon', String(params.lon));
+    return apiGet<LocationSearchResult>(`/api/location/reverse?${search.toString()}`);
+  },
 };

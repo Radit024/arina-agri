@@ -45,7 +45,7 @@ Di luar MVP:
 |---|---:|---:|---:|
 | Prompt AI per bulan | 10 | 300 | 1500 (fair use) |
 | Akses kalender | Tidak | Ya | Ya |
-| Export laporan | CSV | CSV + PDF | CSV + PDF + insight |
+| Export laporan | CSV | CSV + PDF | CSV + PDF + insight AI (Powered by Gemini) |
 | Jumlah anggota tim | 1 | 1 | 5 |
 
 Catatan prompt AI:

@@ -58,6 +58,8 @@ import { useTransactions } from '@/hooks/useTransactions';
 import type { ApiTransaction } from '@/lib/api';
 import Snackbar from '@mui/material/Snackbar';
 import DialogActions from '@mui/material/DialogActions';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import Fab from '@mui/material/Fab';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
@@ -125,6 +127,8 @@ export default function KeuanganPage() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema.extend({
@@ -413,7 +417,6 @@ export default function KeuanganPage() {
 
   // Pie chart data
   const normalizeCategory = (value: string) => value.trim().toLowerCase();
-  const theme = useTheme();
   const pieColors = [
     theme.palette.error.main,     // Pestisida
     theme.palette.success.main,   // Pupuk
@@ -570,128 +573,215 @@ export default function KeuanganPage() {
                 >
                   {t('buttons.hppBep')}
                 </Button>
-                <Button
-                  id="btn-catat-transaksi"
-                  variant="contained"
-                  startIcon={<AddCircleIcon />}
-                  onClick={openAddDialog}
-                  sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
-                >
-                  {t('buttons.addTransaction')}
-                </Button>
+                {!isMobile && (
+                  <Button
+                    id="btn-catat-transaksi"
+                    variant="contained"
+                    startIcon={<AddCircleIcon />}
+                    onClick={openAddDialog}
+                    sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
+                  >
+                    {t('buttons.addTransaction')}
+                  </Button>
+                )}
               </Box>
             </Box>
 
-            <CardContent sx={{ pt: 0, flex: 1, px: 2, pb: 2 }}>
-              <TableContainer sx={{ maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
-                <Table size="medium" stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      {[t('ledger.columns.date'), t('ledger.columns.category'), t('ledger.columns.note'), t('ledger.columns.type'), t('ledger.columns.value'), t('ledger.columns.action')].map((h) => (
-                        <TableCell
-                          key={h}
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '0.78rem',
-                            color: 'text.secondary',
-                            backgroundColor: 'background.paper',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.03em',
-                          }}
-                        >
-                          {h}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {displayedTransactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {t('ledger.empty')}
+            <CardContent sx={{ pt: 0, flex: 1, px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
+              {isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto', pb: 10 }}>
+                  {displayedTransactions.length === 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
+                      <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {t('ledger.empty')}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    displayedTransactions.map((tx) => (
+                      <Card key={tx._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider' }}>
+                        <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                {tx.kategori}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDateShort(tx.tanggal)}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                }}
+                              >
+                                {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                              </Typography>
+                              <Chip
+                                label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
+                                size="small"
+                                sx={{
+                                  backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
+                                  color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
+                                  fontWeight: 700,
+                                  fontSize: '0.65rem',
+                                  height: 20,
+                                }}
+                              />
+                            </Box>
+                          </Box>
+                          
+                          {tx.keterangan && (
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1 }}>
+                              "{tx.keterangan}"
                             </Typography>
-                            <Button size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
-                              {t('ledger.addFirst')}
+                          )}
+                          
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 0.5 }}>
+                            <Button
+                              size="small"
+                              startIcon={<EditOutlinedIcon />}
+                              onClick={() => handleEdit(tx)}
+                              sx={{ color: 'primary.main', bgcolor: 'primary.light', borderRadius: 2, px: 2, py: 0.5, textTransform: 'none', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="small"
+                              startIcon={<DeleteIcon />}
+                              onClick={() => handleDelete(tx._id)}
+                              sx={{ color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1), borderRadius: 2, px: 2, py: 0.5, textTransform: 'none', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
+                            >
+                              Hapus
                             </Button>
                           </Box>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      displayedTransactions.map((tx) => (
-                        <TableRow key={tx._id} sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' } }}>
-                          <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 90 }}>
-                            {formatDateShort(tx.tanggal)}
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 120 }}>
-                            {tx.kategori}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
-                            <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-                              {tx.keterangan || '—'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                              size="small"
-                              sx={{
-                                backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
-                                color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                                fontWeight: 800,
-                                fontSize: '0.75rem',
-                                borderRadius: 1.5,
-                              }}
-                            />
-                          </TableCell>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                  <Fab 
+                    color="primary" 
+                    aria-label="add" 
+                    onClick={openAddDialog}
+                    sx={{ position: 'fixed', bottom: 84, right: 24, zIndex: 1000 }}
+                  >
+                    <AddCircleIcon />
+                  </Fab>
+                </Box>
+              ) : (
+                <TableContainer sx={{ maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
+                  <Table size="medium" stickyHeader>
+                    <TableHead>
+                      <TableRow>
+                        {[t('ledger.columns.date'), t('ledger.columns.category'), t('ledger.columns.note'), t('ledger.columns.type'), t('ledger.columns.value'), t('ledger.columns.action')].map((h) => (
                           <TableCell
+                            key={h}
                             sx={{
-                              fontWeight: 800,
-                              fontSize: '0.9rem',
-                              color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                              minWidth: 120,
+                              fontWeight: 700,
+                              fontSize: '0.78rem',
+                              color: 'text.secondary',
+                              backgroundColor: 'background.paper',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.03em',
                             }}
                           >
-                            {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                            {h}
                           </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                aria-label="Edit Transaksi"
-                                onClick={() => handleEdit(tx)}
-                                sx={{
-                                  borderRadius: 2,
-                                  color: 'primary.main',
-                                  bgcolor: 'primary.light',
-                                  '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                                }}
-                              >
-                                <EditOutlinedIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                aria-label="Hapus Transaksi"
-                                onClick={() => handleDelete(tx._id)}
-                                sx={{
-                                  borderRadius: 2,
-                                  color: 'error.main',
-                                  bgcolor: alpha(theme.palette.error.main, 0.1),
-                                  '&:hover': { bgcolor: 'error.main', color: 'white' },
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {displayedTransactions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                              <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                              <Typography variant="body2" color="text.secondary">
+                                {t('ledger.empty')}
+                              </Typography>
+                              <Button size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
+                                {t('ledger.addFirst')}
+                              </Button>
                             </Box>
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                      ) : (
+                        displayedTransactions.map((tx) => (
+                          <TableRow key={tx._id} sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' } }}>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 90 }}>
+                              {formatDateShort(tx.tanggal)}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 120 }}>
+                              {tx.kategori}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
+                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
+                                {tx.keterangan || '—'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
+                                size="small"
+                                sx={{
+                                  backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
+                                  color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
+                                  fontWeight: 800,
+                                  fontSize: '0.75rem',
+                                  borderRadius: 1.5,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                fontWeight: 800,
+                                fontSize: '0.9rem',
+                                color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                minWidth: 120,
+                              }}
+                            >
+                              {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                            </TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                <IconButton
+                                  size="small"
+                                  aria-label="Edit Transaksi"
+                                  onClick={() => handleEdit(tx)}
+                                  sx={{
+                                    borderRadius: 2,
+                                    color: 'primary.main',
+                                    bgcolor: 'primary.light',
+                                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
+                                  }}
+                                >
+                                  <EditOutlinedIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  aria-label="Hapus Transaksi"
+                                  onClick={() => handleDelete(tx._id)}
+                                  sx={{
+                                    borderRadius: 2,
+                                    color: 'error.main',
+                                    bgcolor: alpha(theme.palette.error.main, 0.1),
+                                    '&:hover': { bgcolor: 'error.main', color: 'white' },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
             </CardContent>
           </Card>
         </Grid>

@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
       if (authError) throw authError;
       setSuccess(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('error');
+      const message = (err as any)?.message || t('error');
       setError(message);
     } finally {
       setLoading(false);

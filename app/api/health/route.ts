@@ -6,6 +6,6 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     message: 'Arina Agri API is running',
-    timestamp: new Date().toISOString(),
+    timestamp: new globalThis.Date().toISOString(),
   });
 }

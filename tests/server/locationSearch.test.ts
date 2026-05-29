@@ -54,7 +54,7 @@ describe('location search route', () => {
     expect(json.success).toBe(true);
     expect(json.data[0]).toMatchObject({
       adm4: '35.07.22.2008',
-      label: 'Mulyoagung, Dau, Kabupaten Malang, Jawa Timur',
+      label: 'Mulyoagung, Kec. Dau, Kabupaten Malang, Jawa Timur',
       name: 'Mulyoagung',
     });
   });

@@ -7,9 +7,10 @@ interface UseNewsOptions {
   limit?: number;
   page?: number;
   category?: string;
+  enabled?: boolean;
 }
 
-export function useNews({ limit = 10, page = 1, category = '' }: UseNewsOptions = {}): UseNewsResult {
+export function useNews({ limit = 10, page = 1, category = '', enabled = true }: UseNewsOptions = {}): UseNewsResult {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +23,11 @@ export function useNews({ limit = 10, page = 1, category = '' }: UseNewsOptions 
     let isMounted = true;
 
     async function fetchNews() {
+      if (!enabled) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -62,7 +68,7 @@ export function useNews({ limit = 10, page = 1, category = '' }: UseNewsOptions 
     return () => {
       isMounted = false;
     };
-  }, [limit, page, category, trigger]);
+  }, [limit, page, category, trigger, enabled]);
 
   return { articles, total, isLoading, error, refetch };
 }

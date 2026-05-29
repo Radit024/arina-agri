@@ -1,34 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
+import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
 import { validateSchedulePayload, NotificationScheduleRow } from './schedule';
-
-function getBearerToken(request: Request) {
-  const header = request.headers.get('authorization') || '';
-  if (!header.startsWith('Bearer ')) return null;
-  return header.slice(7);
-}
-
-async function resolveUserId(request: Request) {
-  const token = getBearerToken(request);
-  if (!token) return null;
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) return null;
-
-  const supabase = createClient(url, anonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  });
-
-  const { data: { user } } = await supabase.auth.getUser();
-  return user?.id || null;
-}
 
 function mapScheduleRow(row: NotificationScheduleRow) {
   const to = row.platform === 'whatsapp'
@@ -49,7 +22,7 @@ function mapScheduleRow(row: NotificationScheduleRow) {
 
 export async function handleScheduleGet(request: Request) {
   try {
-    const userId = await resolveUserId(request);
+    const userId = await resolveRequestUserId(request);
     if (!userId) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }
@@ -90,7 +63,7 @@ export async function handleScheduleGet(request: Request) {
 
 export async function handleSchedulePost(request: Request) {
   try {
-    const userId = await resolveUserId(request);
+    const userId = await resolveRequestUserId(request);
     if (!userId) {
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
     }

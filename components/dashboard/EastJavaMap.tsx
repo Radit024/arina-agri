@@ -11,6 +11,10 @@ interface EastJavaMapProps {
   averagePrice: number;
 }
 
+function normalizeRegionName(name: string) {
+  return name.toLowerCase().replace('kabupaten ', '').replace('kota ', '').trim();
+}
+
 const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
   const t = useTranslations('KabarPasar.priceChart.map');
   const locale = useLocale();
@@ -22,13 +26,22 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
     }).format(new Date());
   }, [locale]);
 
+  const normalizedPrices = useMemo(() => {
+    return data.map((item) => ({
+      key: normalizeRegionName(item.name),
+      value: item,
+    }));
+  }, [data]);
+
+  const priceByRegion = useMemo(() => {
+    return new Map(normalizedPrices.map((item) => [item.key, item.value]));
+  }, [normalizedPrices]);
+
   const getDataForGeo = (geoName: string) => {
-    if (!data) return null;
-    const cleanGeoName = geoName.toLowerCase();
-    return data.find((d) => {
-      const cleanDataName = d.name.toLowerCase().replace('kabupaten ', '').replace('kota ', '');
-      return cleanGeoName.includes(cleanDataName) || cleanDataName.includes(cleanGeoName);
-    });
+    const cleanGeoName = normalizeRegionName(geoName);
+    return priceByRegion.get(cleanGeoName)
+      || normalizedPrices.find((item) => cleanGeoName.includes(item.key) || item.key.includes(cleanGeoName))?.value
+      || null;
   };
 
   // Colorblind-safe: orange / green / blue
@@ -39,10 +52,17 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
     return '#16a34a';
   };
 
-  const totalRegions = data.length;
-  const aboveAvg = data.filter(d => d.price > averagePrice * 1.1).length;
-  const belowAvg = data.filter(d => d.price < averagePrice * 0.9).length;
-  const inRange = totalRegions - aboveAvg - belowAvg;
+  const { totalRegions, aboveAvg, belowAvg, inRange } = useMemo(() => {
+    const total = data.length;
+    const above = data.filter(d => d.price > averagePrice * 1.1).length;
+    const below = data.filter(d => d.price < averagePrice * 0.9).length;
+    return {
+      totalRegions: total,
+      aboveAvg: above,
+      belowAvg: below,
+      inRange: total - above - below,
+    };
+  }, [averagePrice, data]);
 
   return (
     <Box

@@ -12,14 +12,16 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import PieChartOutlinedIcon from '@mui/icons-material/PieChartOutlined';
 import Link from 'next/link';
 import { useTheme } from '@mui/material/styles';
-import { trendChartData, kategoriChartData } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { useTranslations, useLocale } from 'next-intl';
-import type { ApiTransaction } from '@/lib/api';
-import { useMemo } from 'react';
+import type { DashboardCategoryPoint, DashboardTrendPoint } from '@/lib/dashboard/summary';
 
-interface ChartProps {
-  transactions: ApiTransaction[];
+interface TrendChartProps {
+  data: DashboardTrendPoint[];
+}
+
+interface KategoriChartProps {
+  data: DashboardCategoryPoint[];
 }
 
 const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })), {
@@ -32,36 +34,10 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
 });
 
-export function TrendChart({ transactions }: ChartProps) {
+export function TrendChart({ data }: TrendChartProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
-  
-  const data = useMemo(() => {
-    if (!transactions) return [];
-    
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-    const dataMap = new Map();
-    
-    const today = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      dataMap.set(key, { bulan: months[d.getMonth()], pendapatan: 0, pengeluaran: 0 });
-    }
-
-    transactions.forEach(tx => {
-      const key = tx.tanggal.substring(0, 7);
-      if (dataMap.has(key)) {
-        const item = dataMap.get(key);
-        if (tx.jenis === 'pendapatan') item.pendapatan += tx.nominal;
-        else if (tx.jenis === 'pengeluaran') item.pengeluaran += tx.nominal;
-      }
-    });
-    
-    const result = Array.from(dataMap.values());
-    const hasData = result.some(d => d.pendapatan > 0 || d.pengeluaran > 0);
-    return hasData ? result : [];
-  }, [transactions]);
+  const hasData = data.some((item) => item.pendapatan > 0 || item.pengeluaran > 0);
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>
@@ -86,7 +62,7 @@ export function TrendChart({ transactions }: ChartProps) {
         </Box>
         
         <Box sx={{ flex: 1, width: '100%', minHeight: 260, position: 'relative' }}>
-          {data.length === 0 ? (
+          {!hasData ? (
             <Box sx={{ 
               height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
               bgcolor: 'action.hover', borderRadius: 2, border: '1px dashed', borderColor: 'divider', gap: 2
@@ -138,30 +114,10 @@ export function TrendChart({ transactions }: ChartProps) {
   );
 }
 
-export function KategoriChart({ transactions }: ChartProps) {
+export function KategoriChart({ data }: KategoriChartProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
   const locale = useLocale();
-  
-  const data = useMemo(() => {
-    if (!transactions) return [];
-    
-    const currentMonthKey = new Date().toISOString().substring(0, 7);
-    const expenses = transactions.filter(tx => tx.jenis === 'pengeluaran' && tx.tanggal.startsWith(currentMonthKey));
-    
-    if (expenses.length === 0) return [];
-    
-    const categoryMap = new Map<string, number>();
-    expenses.forEach(tx => {
-      const current = categoryMap.get(tx.kategori) || 0;
-      categoryMap.set(tx.kategori, current + tx.nominal);
-    });
-
-    return Array.from(categoryMap.entries())
-      .map(([kategori, jumlah]) => ({ kategori, jumlah }))
-      .sort((a, b) => b.jumlah - a.jumlah)
-      .slice(0, 5);
-  }, [transactions]);
   
   const getCategoryColor = (category: string) => {
     const c = category.toLowerCase();
@@ -277,7 +233,7 @@ export function KategoriChart({ transactions }: ChartProps) {
   );
 }
 
-function pieDataTotal(data: typeof kategoriChartData) {
+function pieDataTotal(data: DashboardCategoryPoint[]) {
   const total = data.reduce((sum, item) => sum + item.jumlah, 0);
   return total > 0 ? total : 1;
 }

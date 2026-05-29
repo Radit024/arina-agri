@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import MobileBottomNav from '@/components/shared/MobileBottomNav';
 
@@ -65,7 +65,8 @@ describe('MobileBottomNav', () => {
     view.getByRole('button', { name: 'stok' }).click();
     expect(pushMock).toHaveBeenCalledWith('/dashboard/stok');
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(view.queryByText('featureMenuTitle')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(view.getByText('featureMenuTitle')).not.toBeVisible();
+    });
   });
 });

@@ -17,16 +17,9 @@ import { farmerProfile } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useCalendar } from '@/hooks/useCalendar';
-import { useCallback, useEffect, useMemo, useRef, useState, type TouchEvent } from 'react';
-import { useCommodityPrices } from '@/hooks/useCommodityPrices';
-import { weatherApi, type BmkgForecastSnapshot } from '@/lib/api';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import { useCallback, useRef, useState, type TouchEvent } from 'react';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
-import {
-  type GpsLocationSnapshot,
-} from '@/lib/weatherLocation';
+import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.home');
@@ -36,131 +29,38 @@ export default function DashboardPage() {
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const firstName = userName.split(' ')[0];
 
-  const { transactions, loading: transactionsLoading, reload: reloadTransactions } = useTransactions();
-  const { events, loading: calendarLoading, reload: reloadCalendar } = useCalendar();
-  const {
-    loading: priceLoading,
-    reload: reloadPrices,
-    todayPrice,
-    priceDelta,
-    priceDeltaPct,
-    isTrendingUp,
-  } = useCommodityPrices(7);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
-  const [weatherBannerMessage, setWeatherBannerMessage] = useState<string | undefined>();
-  const [currentWeather, setCurrentWeather] = useState<BmkgForecastSnapshot | null>(null);
   const startYRef = useRef(0);
   const pullingRef = useRef(false);
 
   const { activeAdm4, activeLocationLabel } = useWeatherLocation();
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadWeatherSignal() {
-      try {
-        const warningsPromise = weatherApi.getWarnings();
-        const forecastPromise = activeAdm4
-          ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
-          : Promise.resolve(null);
-
-        const [warnings, forecast] = await Promise.all([warningsPromise, forecastPromise]);
-        
-        if (!active) return;
-
-        if (forecast) {
-          setCurrentWeather(forecast.current);
-        } else {
-          setCurrentWeather(null);
-        }
-
-        if (warnings.warnings.length > 0) {
-          const topWarning = warnings.warnings[0];
-          setWeatherBannerMessage(`${topWarning.event}: ${topWarning.headline || topWarning.description}`);
-          return;
-        }
-
-        if (forecast) {
-          const rainyDay = forecast.days.find((day) => day.totalRainfallMm >= 20);
-          if (rainyDay) {
-            setWeatherBannerMessage(`Prakiraan ${rainyDay.date}: potensi hujan ${rainyDay.totalRainfallMm}mm. Sesuaikan rencana lapang.`);
-            return;
-          }
-        }
-
-        setWeatherBannerMessage(undefined);
-      } catch {
-        if (!active) return;
-        setWeatherBannerMessage(undefined);
-        setCurrentWeather(null);
-      }
-    }
-
-    void loadWeatherSignal();
-    const intervalId = window.setInterval(() => {
-      void loadWeatherSignal();
-    }, 5 * 60 * 1000);
-
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-    };
-  }, [activeAdm4, activeLocationLabel]);
-
-  // ─── Trend & KPI Calculations ─────────────────────────────────────
-  const { totalPengeluaran, labaBersih, expTrend, profitTrend } = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-
-    const thisMonthTxs = transactions.filter(t => {
-      const d = new Date(t.tanggal);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    });
-
-    const prevMonthTxs = transactions.filter(t => {
-      const d = new Date(t.tanggal);
-      return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-    });
-
-    const getKPI = (txs: typeof transactions) => {
-      const exp = txs.filter(t => t.jenis === 'pengeluaran').reduce((acc, t) => acc + t.nominal, 0);
-      const inc = txs.filter(t => t.jenis === 'pendapatan').reduce((acc, t) => acc + t.nominal, 0);
-      return { exp, profit: inc - exp };
-    };
-
-    const currentKPI = getKPI(thisMonthTxs);
-    const lastKPI = getKPI(prevMonthTxs);
-
-    const calcTrend = (curr: number, prev: number) => {
-      if (prev === 0) return curr > 0 ? 100 : 0;
-      return Math.round(((curr - prev) / prev) * 100);
-    };
-
-    return {
-      totalPengeluaran: currentKPI.exp,
-      labaBersih: currentKPI.profit,
-      expTrend: calcTrend(currentKPI.exp, lastKPI.exp),
-      profitTrend: calcTrend(currentKPI.profit, lastKPI.profit),
-    };
-  }, [transactions]);
-
-  const isLoading = transactionsLoading || calendarLoading;
+  const { summary, loading: summaryLoading, reload: reloadSummary } = useDashboardSummary({
+    adm4: activeAdm4,
+    locationLabel: activeLocationLabel,
+  });
+  const totalPengeluaran = summary?.kpi.totalPengeluaran ?? 0;
+  const labaBersih = summary?.kpi.labaBersih ?? 0;
+  const expTrend = summary?.kpi.expTrend ?? 0;
+  const profitTrend = summary?.kpi.profitTrend ?? 0;
+  const todayPrice = summary?.price.todayPrice ?? null;
+  const priceDelta = summary?.price.priceDelta ?? null;
+  const priceDeltaPct = summary?.price.priceDeltaPct ?? null;
+  const isTrendingUp = summary?.price.isTrendingUp ?? null;
+  const currentWeather = summary?.weather.currentWeather ?? null;
+  const weatherBannerMessage = summary?.weather.weatherBannerMessage;
+  const isLoading = summaryLoading;
   const showSkeleton = isLoading && !isRefreshing;
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await Promise.all([reloadTransactions(), reloadCalendar(), reloadPrices()]);
+      await reloadSummary();
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, reloadTransactions, reloadCalendar, reloadPrices]);
+  }, [isRefreshing, reloadSummary]);
 
   const handleTouchStart = useCallback(
     (event: TouchEvent<HTMLDivElement>) => {
@@ -294,7 +194,7 @@ export default function DashboardPage() {
                 weatherTemp={currentWeather ? currentWeather.temperatureC : 0}
                 weatherCond={currentWeather ? currentWeather.condition : ''}
                 weatherHum={currentWeather ? currentWeather.humidityPercent : 0}
-                priceLoading={priceLoading}
+                priceLoading={false}
                 todayPrice={todayPrice}
                 priceDelta={priceDelta}
                 priceDeltaPct={priceDeltaPct}
@@ -309,10 +209,10 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, lg: 8 }}>
                   <Grid container spacing={3}>
                     <Grid size={{ xs: 12, md: 7 }}>
-                      <TrendChart transactions={transactions} />
+                      <TrendChart data={summary?.trend ?? []} />
                     </Grid>
                     <Grid size={{ xs: 12, md: 5 }}>
-                      <KategoriChart transactions={transactions} />
+                      <KategoriChart data={summary?.category ?? []} />
                     </Grid>
                     {/* Table or other content could go here in the future */}
                   </Grid>
@@ -321,7 +221,7 @@ export default function DashboardPage() {
                 {/* Right Column (Sidebar) */}
                 <Grid size={{ xs: 12, lg: 4 }}>
                   <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <NewsWidget layout="vertical" />
+                    <NewsWidget layout="vertical" initialArticles={summary?.news.articles ?? []} />
                   </Box>
                 </Grid>
               </Grid>

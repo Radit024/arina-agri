@@ -12,16 +12,25 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { useNews } from '@/hooks/useNews';
 import { useTranslations } from 'next-intl';
+import type { NewsArticle } from '@/lib/types/news';
 
 interface NewsWidgetProps {
   layout?: 'horizontal' | 'vertical';
+  initialArticles?: NewsArticle[];
 }
 
-export default function NewsWidget({ layout = 'vertical' }: NewsWidgetProps) {
+export default function NewsWidget({ layout = 'vertical', initialArticles }: NewsWidgetProps) {
   const router = useRouter();
   const t = useTranslations('KabarPasar');
   const limitCount = layout === 'vertical' ? 6 : 3;
-  const { articles, isLoading } = useNews({ limit: limitCount, page: 1 });
+  const shouldFetch = !initialArticles;
+  const { articles: fetchedArticles, isLoading: fetchedLoading } = useNews({
+    limit: limitCount,
+    page: 1,
+    enabled: shouldFetch,
+  });
+  const articles = initialArticles ?? fetchedArticles;
+  const isLoading = shouldFetch ? fetchedLoading : false;
 
   return (
     <Box sx={{ mt: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>

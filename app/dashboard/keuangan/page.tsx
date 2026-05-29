@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -46,7 +47,6 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { mockTransactions } from '@/lib/mockData';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import type { Transaction } from '@/lib/mockData';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { useTranslations } from 'next-intl';
 import { aiApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -60,6 +60,12 @@ import Snackbar from '@mui/material/Snackbar';
 import DialogActions from '@mui/material/DialogActions';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Fab from '@mui/material/Fab';
+import Skeleton from '@mui/material/Skeleton';
+
+const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
+  ssr: false,
+  loading: () => <Skeleton variant="rectangular" width={300} height={200} sx={{ borderRadius: 2 }} />,
+});
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
@@ -636,7 +642,7 @@ export default function KeuanganPage() {
                           
                           {tx.keterangan && (
                             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1 }}>
-                              "{tx.keterangan}"
+                              &quot;{tx.keterangan}&quot;
                             </Typography>
                           )}
                           

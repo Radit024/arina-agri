@@ -8,7 +8,7 @@ function makeRequest(auth?: string) {
     headers: auth ? { authorization: auth } : {},
   });
 }
-
+``
 afterEach(() => {
   process.env = { ...originalEnv };
 });

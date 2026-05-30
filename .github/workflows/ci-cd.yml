@@ -204,6 +204,6 @@ jobs:
           echo "Production deployment: $deployment_url" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Smoke check production
-      env: 
-        DEPLOYMENT_URL: ${{ secrets.PRODUCTION_URL }}
-        run: npm run smoke:deploy 
+        env:
+          DEPLOYMENT_URL: ${{ secrets.PRODUCTION_URL }}
+        run: npm run smoke:deploy

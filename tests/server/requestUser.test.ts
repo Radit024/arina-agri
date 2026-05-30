@@ -25,12 +25,12 @@ describe('getBearerToken', () => {
 
 describe('resolveRequestUserId', () => {
   it('uses dev-user-id for the development mock token', async () => {
-    process.env.NODE_ENV = 'development';
+    Object.assign(process.env, { NODE_ENV: 'development' });
     await expect(resolveRequestUserId(makeRequest('Bearer mock-token'))).resolves.toBe('dev-user-id');
   });
 
   it('returns null when no token is present', async () => {
-    process.env.NODE_ENV = 'production';
+    Object.assign(process.env, { NODE_ENV: 'production' });
     await expect(resolveRequestUserId(makeRequest())).resolves.toBeNull();
   });
 });

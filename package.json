@@ -9,7 +9,10 @@
     "perf:bundles": "node scripts/perf-bundles.mjs",
     "i18n:check": "node scripts/check-i18n.mjs",
     "lint": "eslint",
-    "test": "vitest run"
+    "typecheck": "next typegen && tsc --noEmit --pretty false",
+    "test": "vitest run",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run i18n:check && npm run build",
+    "smoke:deploy": "node scripts/smoke-deploy.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

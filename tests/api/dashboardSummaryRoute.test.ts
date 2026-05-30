@@ -24,7 +24,7 @@ describe('dashboard summary route', () => {
   });
 
   it('returns summary data for the development mock token', async () => {
-    process.env.NODE_ENV = 'development';
+    Object.assign(process.env, { NODE_ENV: 'development' });
     const { GET } = await import('@/app/api/dashboard/summary/route');
 
     const response = await GET(new Request('http://localhost/api/dashboard/summary?adm4=35.07.22.2008', {

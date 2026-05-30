@@ -97,18 +97,20 @@ Kalau mau coba jalanin project ini secara lokal, ikuti langkah berikut:
 5. **Buka aplikasi di browser**
    Akses <kbd>http://localhost:3000</kbd>
 
-Tambahan perintah monorepo:
+Tambahan perintah proyek:
 
 ```bash
-# Build frontend saja
-npm run build:web
+# Lint, typecheck, test, cek i18n, dan build seperti di CI
+npm run ci
 
-# Build backend saja
-npm run build:api
+# Build produksi Next.js
+npm run build
 
-# Build keduanya
-npm run build:all
+# Ringkasan ukuran bundle setelah build
+npm run perf:bundles
 ```
+
+CI/CD dijalankan lewat GitHub Actions. Lihat `docs/deployment/github-actions.md` untuk konfigurasi secret, preview deployment, production deployment, dan smoke check.
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/grass.png" width="100%" />

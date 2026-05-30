@@ -1,0 +1,363 @@
+import { Controller, type Control, type FieldErrors, type SubmitHandler, type UseFormHandleSubmit } from 'react-hook-form';
+import { useTheme, alpha } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Chip from '@mui/material/Chip';
+import FormHelperText from '@mui/material/FormHelperText';
+import Alert from '@mui/material/Alert';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloseIcon from '@mui/icons-material/Close';
+import { formatDateLong } from '@/lib/formatters';
+import { useTranslations } from 'next-intl';
+import type { ApiCalendarEvent } from '@/lib/api';
+import type { EventFormData } from '../_lib/eventSchema';
+
+interface KalenderViewProps {
+  calendarCells: (number | null)[];
+  control: Control<EventFormData>;
+  currentDate: Date;
+  dayNames: string[];
+  dialogOpen: boolean;
+  editingEventId: string | null;
+  errors: FieldErrors<EventFormData>;
+  getDateStr: (day: number) => string;
+  getEventsForDate: (day: number) => ApiCalendarEvent[];
+  handleDelete: () => Promise<void>;
+  handleSubmit: UseFormHandleSubmit<EventFormData>;
+  jenisLabels: Record<string, string>;
+  month: number;
+  monthNames: string[];
+  onSubmit: SubmitHandler<EventFormData>;
+  openAddDialog: (dateStr?: string) => void;
+  openEditDialog: (event: ApiCalendarEvent) => void;
+  setCurrentDate: (date: Date) => void;
+  setDialogOpen: (open: boolean) => void;
+  todayStr: string;
+  upcomingEvents: ApiCalendarEvent[];
+  weatherPlanningNote: string;
+  weatherWarningMessage: string;
+  year: number;
+}
+
+export default function KalenderView({
+  calendarCells,
+  control,
+  dayNames,
+  dialogOpen,
+  editingEventId,
+  errors,
+  getDateStr,
+  getEventsForDate,
+  handleDelete,
+  handleSubmit,
+  jenisLabels,
+  month,
+  monthNames,
+  onSubmit,
+  openAddDialog,
+  openEditDialog,
+  setCurrentDate,
+  setDialogOpen,
+  todayStr,
+  upcomingEvents,
+  weatherPlanningNote,
+  weatherWarningMessage,
+  year,
+}: KalenderViewProps) {
+  const theme = useTheme();
+  const t = useTranslations('Calendar');
+
+  const jenisColors = {
+    pemupukan: { bg: alpha(theme.palette.success.main, 0.12), text: theme.palette.success.main, dot: theme.palette.success.main },
+    penyemprotan: { bg: alpha(theme.palette.error.main, 0.12), text: theme.palette.error.main, dot: theme.palette.error.main },
+    irigasi: { bg: alpha(theme.palette.info.main, 0.12), text: theme.palette.info.main, dot: theme.palette.info.main },
+    pemetikan: { bg: alpha(theme.palette.warning.main, 0.12), text: theme.palette.warning.dark, dot: theme.palette.warning.main },
+    lainnya: { bg: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary, dot: theme.palette.grey[500] },
+  };
+
+  return (
+    <Box sx={{ p: { xs: 2, md: 3 } }}>
+      <Box className="flex items-center justify-between" sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+              {t('title')}
+          </Typography>
+            <Typography variant="body2" color="text.secondary">{t('subtitle')}</Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => openAddDialog()}
+          sx={{ display: { xs: 'none', sm: 'flex' } }}
+        >
+          {t('addSchedule')}
+        </Button>
+      </Box>
+
+      {weatherWarningMessage && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {weatherWarningMessage}
+        </Alert>
+      )}
+
+      {weatherPlanningNote && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {weatherPlanningNote}
+        </Alert>
+      )}
+
+      <Grid container spacing={3}>
+        {/* Calendar */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <Card>
+            <CardHeader
+              title={
+                <Box className="flex items-center justify-between">
+                  <Box className="flex items-center gap-2">
+                    <IconButton size="small" aria-label="Previous month" onClick={() => setCurrentDate(new Date(year, month - 1))}>
+                      <ChevronLeftIcon />
+                    </IconButton>
+                    <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', minWidth: 180, textAlign: 'center', fontWeight: 700 }}>
+                      {monthNames[month]} {year}
+                    </Typography>
+                    <IconButton size="small" aria-label="Next month" onClick={() => setCurrentDate(new Date(year, month + 1))}>
+                      <ChevronRightIcon />
+                    </IconButton>
+                  </Box>
+                  <Button size="small" onClick={() => setCurrentDate(new Date())} variant="outlined">
+                    {t('today')}
+                  </Button>
+                </Box>
+              }
+            />
+            <CardContent sx={{ pt: 0 }}>
+              {/* Day headers */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
+                {dayNames.map((d: string) => (
+                  <Box key={d} sx={{ textAlign: 'center', py: 1 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{d}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* Calendar grid */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
+                {calendarCells.map((day, idx) => {
+                  if (!day) return <Box key={`empty-${idx}`} sx={{ minHeight: 80 }} />;
+                  const dateStr = getDateStr(day);
+                  const dayEvents = getEventsForDate(day);
+                  const isToday = dateStr === todayStr;
+
+                  return (
+                    <Box
+                      key={day}
+                      sx={{
+                        minHeight: 80,
+                        p: 0.75,
+                        borderRadius: 1.5,
+                        border: '1px solid',
+                        borderColor: isToday ? 'primary.main' : 'transparent',
+                        backgroundColor: isToday ? 'primary.light' : 'transparent',
+                        '&:hover': { backgroundColor: '#f8fafc' },
+                        cursor: 'pointer',
+                        transition: 'background-color 0.1s',
+                      }}
+                      onClick={() => openAddDialog(dateStr)}
+                    >
+                      <Typography
+                        variant="caption"
+                        sx={{ color: isToday ? 'primary.main' : 'text.primary', display: 'block', mb: 0.5, fontWeight: isToday ? 700 : 500 }}
+                      >
+                        {day}
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                        {dayEvents.slice(0, 3).map((ev) => (
+                          <Box
+                            key={ev._id}
+                            onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }}
+                            sx={{
+                              borderRadius: 1,
+                              backgroundColor: jenisColors[ev.jenis]?.bg || '#f1f5f9',
+                              borderLeft: '2px solid',
+                              borderLeftColor: jenisColors[ev.jenis]?.dot || '#94a3b8',
+                              px: 0.5,
+                              py: 0.25,
+                              overflow: 'hidden',
+                              '&:hover': { filter: 'brightness(0.95)' }
+                            }}
+                          >
+                             <Typography noWrap variant="caption" sx={{ fontSize: '0.65rem', display: 'block', color: jenisColors[ev.jenis]?.text, fontWeight: 600 }}>{ev.judul}</Typography>
+                          </Box>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', pl: 0.5 }}>
+                            +{dayEvents.length - 3} {t('more')}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              {/* Legend */}
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                {Object.entries(jenisColors).map(([key, val]) => (
+                  <Box key={key} className="flex items-center gap-1">
+                    <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: val.dot }} />
+                    <Typography variant="caption" color="text.secondary">{jenisLabels[key as keyof typeof jenisLabels]}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Upcoming Events */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => openAddDialog()}
+            fullWidth
+            sx={{ mb: 2, display: { xs: 'flex', sm: 'none' } }}
+          >
+            {t('addSchedule')}
+          </Button>
+
+          <Card>
+            <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('upcomingTitle')}</Typography>} subheader={t('next7Days')} />
+            <CardContent sx={{ pt: 0 }}>
+              {upcomingEvents.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">{t('emptyUpcoming')}</Typography>
+                  <Button size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
+                </Box>
+              ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {upcomingEvents.map((ev) => {
+                    const colors = jenisColors[ev.jenis] || jenisColors.lainnya;
+                    return (
+                      <Box
+                        key={ev._id}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          backgroundColor: colors.bg,
+                          borderLeft: '3px solid',
+                          borderLeftColor: colors.dot,
+                        }}
+                      >
+                        <Box className="flex items-start justify-between">
+                          <Typography variant="body2" sx={{ color: colors.text, fontWeight: 600 }}>
+                            {ev.judul}
+                          </Typography>
+                          <Box className="flex items-center gap-1">
+                            <Chip
+                              label={jenisLabels[ev.jenis]}
+                              size="small"
+                              sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: colors.text, fontWeight: 600, fontSize: '0.65rem' }}
+                            />
+                            <IconButton size="small" aria-label="Edit event" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ ml: 0.5, color: colors.text, p: 0.5 }}>
+                              <EditIcon sx={{ fontSize: '1.25rem' }} />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                        <Typography variant="caption" sx={{ color: colors.text, opacity: 0.8, mt: 0.5, display: 'block' }}>
+                          📅 {formatDateLong(ev.tanggal)}{ev.waktu ? ` · ${ev.waktu}` : ''}
+                        </Typography>
+                        {ev.catatan && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                            {ev.catatan}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Add Event Dialog */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Box className="flex items-center justify-between">
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
+              {editingEventId ? t('dialog.editTitle') : t('dialog.addTitle')}
+            </Typography>
+            <IconButton size="small" onClick={() => setDialogOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" id="event-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+            <Controller name="judul" control={control} render={({ field }) => (
+              <TextField {...field} label={t('dialog.fields.title')} placeholder={t('dialog.fields.titlePlaceholder')} error={!!errors.judul} helperText={errors.judul?.message} fullWidth />
+            )} />
+
+            <Controller name="jenis" control={control} render={({ field }) => (
+              <FormControl fullWidth error={!!errors.jenis}>
+                <InputLabel>{t('dialog.fields.type')}</InputLabel>
+                <Select {...field} label={t('dialog.fields.type')}>
+                  <MenuItem value="pemupukan">🌿 {t('dialog.options.fertilizing')}</MenuItem>
+                  <MenuItem value="penyemprotan">💧 {t('dialog.options.spraying')}</MenuItem>
+                  <MenuItem value="irigasi">🚿 {t('dialog.options.irrigation')}</MenuItem>
+                  <MenuItem value="pemetikan">🌶️ {t('dialog.options.harvest')}</MenuItem>
+                  <MenuItem value="lainnya">📝 {t('dialog.options.other')}</MenuItem>
+                </Select>
+                {errors.jenis && <FormHelperText>{errors.jenis.message}</FormHelperText>}
+              </FormControl>
+            )} />
+
+            <Box className="flex gap-3">
+              <Controller name="tanggal" control={control} render={({ field }) => (
+                <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+              )} />
+              <Controller name="waktu" control={control} render={({ field }) => (
+                <TextField {...field} type="time" label={t('dialog.fields.timeOptional')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+              )} />
+            </Box>
+
+            <Controller name="catatan" control={control} render={({ field }) => (
+              <TextField {...field} label={t('dialog.fields.noteOptional')} multiline rows={3} placeholder={t('dialog.fields.notePlaceholder')} fullWidth />
+            )} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between' }}>
+          <Box>
+            {editingEventId && (
+              <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>{t('delete')}</Button>
+            )}
+          </Box>
+          <Box className="flex gap-2">
+            <Button onClick={() => setDialogOpen(false)} color="inherit">{t('cancel')}</Button>
+            <Button type="submit" form="event-form" variant="contained">{t('saveSchedule')}</Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}

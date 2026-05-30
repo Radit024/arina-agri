@@ -1,5 +1,15 @@
 import { pathToFileURL } from 'node:url';
 
+/**
+ * @typedef {object} CheckDeploymentOptions
+ * @property {string | undefined} deploymentUrl
+ * @property {typeof fetch} [fetchImpl]
+ * @property {number} [timeoutMs]
+ */
+
+/**
+ * @param {string | undefined | null} value
+ */
 export function normalizeDeploymentUrl(value) {
   if (!value || typeof value !== 'string') {
     throw new Error('DEPLOYMENT_URL is required.');
@@ -13,6 +23,11 @@ export function normalizeDeploymentUrl(value) {
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 }
 
+/**
+ * @param {typeof fetch} fetchImpl
+ * @param {string} url
+ * @param {number} timeoutMs
+ */
 async function fetchWithTimeout(fetchImpl, url, timeoutMs) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -24,11 +39,16 @@ async function fetchWithTimeout(fetchImpl, url, timeoutMs) {
   }
 }
 
-export async function checkDeployment({
-  deploymentUrl,
-  fetchImpl = globalThis.fetch,
-  timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 10000),
-} = {}) {
+/**
+ * @param {CheckDeploymentOptions} [options]
+ */
+export async function checkDeployment(options = {}) {
+  const {
+    deploymentUrl,
+    fetchImpl = globalThis.fetch,
+    timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 10000),
+  } = options;
+
   if (typeof fetchImpl !== 'function') {
     throw new Error('A fetch implementation is required.');
   }

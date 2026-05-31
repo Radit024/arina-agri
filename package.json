@@ -22,7 +22,7 @@
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@mui/icons-material": "^9.0.0",
-    "@mui/material": "^9.0.0",
+    "@mui/material": "^9.0.1",
     "@mui/material-nextjs": "^9.0.1",
     "@mui/x-charts": "^9.0.2",
     "@supabase/supabase-js": "^2.104.1",

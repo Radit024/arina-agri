@@ -60,13 +60,22 @@ function normalizeName(value: string) {
     .trim();
 }
 
-function matchWilayahItem(items: WilayahItem[], candidates: Array<string | undefined>) {
-  const normalizedCandidates = new Set(
-    uniqueParts(candidates)
-      .map((candidate) => normalizeName(candidate))
-      .filter(Boolean),
-  );
+function normalizeStrictName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
 
+function matchWilayahItem(items: WilayahItem[], candidates: Array<string | undefined>) {
+  const cleanCandidates = uniqueParts(candidates);
+  const strictCandidates = new Set(cleanCandidates.map((candidate) => normalizeStrictName(candidate)).filter(Boolean));
+  const strictMatch = items.find((item) => strictCandidates.has(normalizeStrictName(item.name)));
+  if (strictMatch) return strictMatch;
+
+  const normalizedCandidates = new Set(cleanCandidates.map((candidate) => normalizeName(candidate)).filter(Boolean));
   if (!normalizedCandidates.size) return null;
 
   return items.find((item) => normalizedCandidates.has(normalizeName(item.name))) || null;

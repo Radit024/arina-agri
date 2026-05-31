@@ -9,14 +9,15 @@ import {
 } from '@/lib/weatherLocation';
 
 export function useWeatherLocation() {
-  const [gpsLocation, setGpsLocation] = useLocalStorage<GpsLocationSnapshot | null>(
+  const [gpsLocation, setGpsLocation, gpsLocationHydrated] = useLocalStorage<GpsLocationSnapshot | null>(
     WEATHER_GPS_LOCATION_KEY,
     null
   );
-  const [gpsAutoAttempted, setGpsAutoAttempted] = useLocalStorage<boolean>(
+  const [gpsAutoAttempted, setGpsAutoAttempted, gpsAutoAttemptedHydrated] = useLocalStorage<boolean>(
     WEATHER_GPS_AUTO_ATTEMPTED_KEY,
     false
   );
+  const isWeatherLocationHydrated = gpsLocationHydrated && gpsAutoAttemptedHydrated;
 
   const activeLocation = useMemo(() => {
     return gpsLocation;
@@ -35,6 +36,7 @@ export function useWeatherLocation() {
     setGpsLocation,
     gpsAutoAttempted,
     setGpsAutoAttempted,
+    isWeatherLocationHydrated,
     activeLocation,
     activeLocationLabel,
     activeAdm4,

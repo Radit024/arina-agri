@@ -38,6 +38,7 @@ export function useCuacaController() {
     setGpsLocation,
     gpsAutoAttempted,
     setGpsAutoAttempted,
+    isWeatherLocationHydrated,
     activeAdm4,
     activeLocationLabel,
   } = useWeatherLocation();
@@ -386,9 +387,9 @@ export function useCuacaController() {
   };
 
   useEffect(() => {
-    if (gpsAutoAttempted || gpsLocation) return;
+    if (!isWeatherLocationHydrated || gpsAutoAttempted || gpsLocation) return;
     void requestGpsLocation('auto');
-  }, [gpsAutoAttempted, gpsLocation]);
+  }, [gpsAutoAttempted, gpsLocation, isWeatherLocationHydrated]);
 
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();

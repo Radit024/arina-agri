@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     try {
@@ -13,6 +14,8 @@ function useLocalStorage<T>(key: string, initialValue: T) {
       }
     } catch (error) {
       console.error(`Error reading localStorage key "${key}":`, error);
+    } finally {
+      setIsHydrated(true);
     }
   }, [key]);
 
@@ -30,7 +33,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
     [key, storedValue]
   );
 
-  return [storedValue, setValue] as const;
+  return [storedValue, setValue, isHydrated] as const;
 }
 
 export default useLocalStorage;

@@ -6,6 +6,7 @@ import { locationApi, weatherApi } from '@/lib/api';
 const mockStorage = vi.hoisted(() => ({
   gpsLocation: null as null | { latitude: number; longitude: number; accuracy: number; label: string; adm4?: string },
   gpsAutoAttempted: false,
+  isWeatherLocationHydrated: true,
 }));
 
 vi.mock('@mui/material/Autocomplete', () => ({
@@ -61,6 +62,7 @@ vi.mock('@/hooks/useWeatherLocation', async () => {
           mockStorage.gpsAutoAttempted = nextValue;
           setGpsAutoAttemptedState(nextValue);
         }),
+        isWeatherLocationHydrated: mockStorage.isWeatherLocationHydrated,
         activeAdm4: gpsLocation?.adm4,
         activeLocationLabel: gpsLocation?.label,
       };
@@ -153,6 +155,7 @@ describe('CuacaPage GPS', () => {
   beforeEach(() => {
     mockStorage.gpsLocation = null;
     mockStorage.gpsAutoAttempted = false;
+    mockStorage.isWeatherLocationHydrated = true;
   });
 
   afterEach(() => {
@@ -223,6 +226,22 @@ describe('CuacaPage GPS', () => {
 
     expect(getCurrentPosition.mock.calls.length).toBeGreaterThanOrEqual(1);
     await waitFor(() => expect(screen.getAllByText(/Lokasi GPS aktif/i).length).toBeGreaterThan(0));
+  });
+
+  it('does not auto-track GPS again after the first automatic attempt', async () => {
+    mockStorage.gpsAutoAttempted = true;
+    const getCurrentPosition = vi.fn();
+
+    Object.defineProperty(global.navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
+    render(<CuacaPage />);
+
+    await screen.findByRole('button', { name: /nyalakan gps/i });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(getCurrentPosition).not.toHaveBeenCalled();
   });
 
   it('retries geolocation when first attempt times out', async () => {

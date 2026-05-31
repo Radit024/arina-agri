@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import {
+  buildLatestRegionPrices,
+  type CommodityRegionPriceRow,
+  type RegionPrice,
+} from '@/lib/commodityPriceRegions';
 
 export interface CommodityPrice {
   id: string;
@@ -11,11 +16,6 @@ export interface CommodityPrice {
   location: string;
   price: number;
   created_at: string;
-}
-
-export interface RegionPrice {
-  name: string;
-  price: number;
 }
 
 const PROVINCE_LOCATIONS = ['Jawa Timur', 'Propinsi Jawa Timur', 'Pasar Induk Malang'];
@@ -68,35 +68,28 @@ export function useCommodityPrices(limit: number = 30) {
 
       setPrices(trendData);
 
-      // 2. Fetch Map Data for the latest available date
-      const latestDate = trendData?.at(-1)?.date;
-      if (latestDate) {
-        const { data: mapData, error: mapError } = await supabase
-          .from('commodity_prices')
-          .select('*')
-          .eq('commodity', 'Cabe Rawit Merah')
-          .eq('date', latestDate);
-          
-        if (mapError) console.error('Map data fetch error:', mapError.message);
+      // 2. Fetch map data from recent rows, then keep the latest available price per region.
+      // Siskaperbapo can publish partial regional data on a given day, so using only one
+      // global latest date leaves some map areas empty even when recent data exists.
+      const { data: mapData, error: mapError } = await supabase
+        .from('commodity_prices')
+        .select('date,location,price,created_at')
+        .eq('commodity', 'Cabe Rawit Merah')
+        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(limit * 50);
 
-        if (mapData && mapData.length > 0) {
-          // Exclude the provincial average from the map regions
-          const regionsOnly = mapData.filter(d => 
-            !d.location.includes('Propinsi') && 
-            !d.location.includes('Jawa Timur')
-          );
-          setDbRegionPrices(regionsOnly.map(d => ({ name: d.location, price: d.price })));
-        } else {
-          setDbRegionPrices([]);
-        }
-      } else {
+      if (mapError) {
+        console.error('Map data fetch error:', mapError.message);
         setDbRegionPrices([]);
+      } else {
+        setDbRegionPrices(buildLatestRegionPrices((mapData || []) as CommodityRegionPriceRow[]));
       }
       
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Data load error:', err);
-      setError(err.message || 'Gagal memuat data harga dari database');
+      setError(err instanceof Error ? err.message : 'Gagal memuat data harga dari database');
       setPrices([]);
       setDbRegionPrices([]);
     } finally {

@@ -5,14 +5,11 @@ import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { Box, Typography, Tooltip, Divider } from '@mui/material';
 import { formatRupiah } from '@/lib/formatters';
 import { useLocale, useTranslations } from 'next-intl';
+import { normalizeRegionName } from '@/lib/commodityPriceRegions';
 
 interface EastJavaMapProps {
   data: { name: string; price: number }[];
   averagePrice: number;
-}
-
-function normalizeRegionName(name: string) {
-  return name.toLowerCase().replace('kabupaten ', '').replace('kota ', '').trim();
 }
 
 const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {

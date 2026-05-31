@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CuacaPage from '@/app/dashboard/cuaca/page';
-import { weatherApi } from '@/lib/api';
+import { locationApi, weatherApi } from '@/lib/api';
 
 const mockStorage = vi.hoisted(() => ({
   gpsLocation: null as null | { latitude: number; longitude: number; accuracy: number; label: string; adm4?: string },
@@ -40,16 +40,33 @@ vi.mock('@/hooks/useCalendar', () => ({
   useCalendar: () => ({ events: [] }),
 }));
 
-vi.mock('@/hooks/useWeatherLocation', () => ({
-  useWeatherLocation: () => ({
-    gpsLocation: mockStorage.gpsLocation,
-    setGpsLocation: vi.fn((val) => { mockStorage.gpsLocation = val; }),
-    gpsAutoAttempted: mockStorage.gpsAutoAttempted,
-    setGpsAutoAttempted: vi.fn((val) => { mockStorage.gpsAutoAttempted = val; }),
-    activeAdm4: mockStorage.gpsLocation?.adm4,
-    activeLocationLabel: mockStorage.gpsLocation?.label,
-  }),
-}));
+vi.mock('@/hooks/useWeatherLocation', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+
+  return {
+    useWeatherLocation: () => {
+      const [gpsLocation, setGpsLocationState] = React.useState(mockStorage.gpsLocation);
+      const [gpsAutoAttempted, setGpsAutoAttemptedState] = React.useState(mockStorage.gpsAutoAttempted);
+
+      return {
+        gpsLocation,
+        setGpsLocation: vi.fn((val) => {
+          const nextValue = typeof val === 'function' ? val(gpsLocation) : val;
+          mockStorage.gpsLocation = nextValue;
+          setGpsLocationState(nextValue);
+        }),
+        gpsAutoAttempted,
+        setGpsAutoAttempted: vi.fn((val) => {
+          const nextValue = typeof val === 'function' ? val(gpsAutoAttempted) : val;
+          mockStorage.gpsAutoAttempted = nextValue;
+          setGpsAutoAttemptedState(nextValue);
+        }),
+        activeAdm4: gpsLocation?.adm4,
+        activeLocationLabel: gpsLocation?.label,
+      };
+    },
+  };
+});
 
 vi.mock('@/hooks/useLocalStorage', () => ({
   default: (key: string, initial: unknown) => {
@@ -58,7 +75,18 @@ vi.mock('@/hooks/useLocalStorage', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
-  locationApi: { search: vi.fn(async () => []) },
+  locationApi: {
+    search: vi.fn(async () => []),
+    reverse: vi.fn(async () => ({
+      id: '35.73.05.1008',
+      adm4: '35.73.05.1008',
+      label: 'Tunjungsekar, Kec. Lowokwaru, Kota Malang, Jawa Timur',
+      name: 'Tunjungsekar',
+      detail: 'Kec. Lowokwaru, Kota Malang, Jawa Timur',
+      latitude: -7.93167,
+      longitude: 112.63784,
+    })),
+  },
   eventApi: { getAll: vi.fn(async () => []) },
   notificationApi: { decideAndSend: vi.fn() },
   notificationScheduleApi: {
@@ -144,6 +172,26 @@ describe('CuacaPage GPS', () => {
 
     await waitFor(() => expect(screen.getByText(/Sumber data: BMKG/)).toBeInTheDocument());
     expect(screen.getAllByText(/Peringatan dini cuaca Jawa Timur/).length).toBeGreaterThan(0);
+  });
+
+  it('hydrates a saved GPS location without adm4 before loading BMKG forecast', async () => {
+    mockStorage.gpsLocation = {
+      latitude: -7.93167,
+      longitude: 112.63784,
+      accuracy: 100,
+      label: 'Tunjungsekar',
+    };
+
+    render(<CuacaPage />);
+
+    await waitFor(() => expect(locationApi.reverse).toHaveBeenCalledWith({ lat: -7.93167, lon: 112.63784 }));
+    await waitFor(() => {
+      expect(weatherApi.getForecast).toHaveBeenCalledWith({
+        adm4: '35.73.05.1008',
+        locationLabel: 'Tunjungsekar, Kec. Lowokwaru, Kota Malang, Jawa Timur',
+      });
+    });
+    expect(await screen.findByText(/Sumber data: BMKG/)).toBeInTheDocument();
   });
 
   it('requests browser geolocation when gps button is clicked', async () => {

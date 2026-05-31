@@ -1,20 +1,20 @@
 'use client';
 
 import { useTheme } from '@mui/material/styles';
-import { useEffect,useState,type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import {
-eventApi,
-locationApi,
-notificationApi,
-notificationScheduleApi,
-weatherApi,
-type BmkgForecastResponse,
-type BmkgWarningsResponse,
+  eventApi,
+  locationApi,
+  notificationApi,
+  notificationScheduleApi,
+  weatherApi,
+  type BmkgForecastResponse,
+  type BmkgWarningsResponse,
 } from '@/lib/api';
-import { useLocale,useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
@@ -73,6 +73,7 @@ export function useCuacaController() {
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState('');
   const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
+  const gpsAdm4LookupAttemptsRef = useRef(new Set<string>());
 
   const missingBmkgLocationMessage = t('errors.missingBmkgLocation');
   const loadBmkgErrorMessage = t('errors.loadBmkg');
@@ -110,6 +111,45 @@ export function useCuacaController() {
       setScheduleTo(fallback);
     }
   }, [schedulePlatform, scheduleContactFallback, scheduleReady]);
+
+  useEffect(() => {
+    if (!gpsLocation || gpsLocation.adm4) return;
+
+    const savedGpsLocation = gpsLocation;
+    const lookupKey = `${savedGpsLocation.latitude}:${savedGpsLocation.longitude}`;
+    if (gpsAdm4LookupAttemptsRef.current.has(lookupKey)) return;
+    gpsAdm4LookupAttemptsRef.current.add(lookupKey);
+
+    let active = true;
+
+    async function resolveSavedGpsAdm4() {
+      try {
+        const resolvedLocation = await locationApi.reverse({
+          lat: savedGpsLocation.latitude,
+          lon: savedGpsLocation.longitude,
+        });
+
+        if (!active || !resolvedLocation.adm4) return;
+
+        const resolvedLabel = resolvedLocation.label || savedGpsLocation.label;
+        setGpsLocation({
+          ...savedGpsLocation,
+          label: resolvedLabel,
+          adm4: resolvedLocation.adm4,
+        });
+        setGpsStatus('success');
+        setGpsMessage(t('gps.messages.gpsActive', { label: resolvedLabel }));
+      } catch (error) {
+        console.warn('Saved GPS location could not be mapped to BMKG adm4', error);
+      }
+    }
+
+    void resolveSavedGpsAdm4();
+
+    return () => {
+      active = false;
+    };
+  }, [gpsLocation, setGpsLocation, t]);
 
   useEffect(() => {
     let active = true;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -52,6 +52,10 @@ interface TargetState {
   rect: SpotlightRect | null;
 }
 
+interface RefreshTargetOptions {
+  scroll?: boolean;
+}
+
 const SPOTLIGHT_PADDING = 6;
 const CARD_GAP = 12;
 const VIEWPORT_MARGIN = 14;
@@ -72,6 +76,12 @@ function getViewportSize() {
     width: window.innerWidth || document.documentElement.clientWidth || 1024,
     height: window.innerHeight || document.documentElement.clientHeight || 768,
   };
+}
+
+function isMobileGuideViewport() {
+  if (typeof window === 'undefined') return false;
+
+  return window.matchMedia?.('(max-width: 899.95px)').matches ?? window.innerWidth < 900;
 }
 
 function getGuideTargetSelector(target: string) {
@@ -180,10 +190,26 @@ function getPopoverPosition(rect: SpotlightRect | null, placement: GuidePlacemen
   };
 }
 
+function areSpotlightRectsEqual(first: SpotlightRect | null, second: SpotlightRect | null) {
+  if (!first || !second) return first === second;
+
+  return (
+    Math.abs(first.left - second.left) < 0.5 &&
+    Math.abs(first.top - second.top) < 0.5 &&
+    Math.abs(first.width - second.width) < 0.5 &&
+    Math.abs(first.height - second.height) < 0.5
+  );
+}
+
+function areTargetStatesEqual(first: TargetState | null, second: TargetState) {
+  return first?.targetKey === second.targetKey && first.target === second.target && areSpotlightRectsEqual(first.rect, second.rect);
+}
+
 export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) {
   const t = useTranslations('Guide');
   const [activeStep, setActiveStep] = useState(0);
   const [targetState, setTargetState] = useState<TargetState | null>(null);
+  const rafRefreshRef = useRef<number | null>(null);
 
   const currentStep = guide?.steps[activeStep] ?? guide?.steps[0] ?? null;
   const stepTargets = useMemo(() => {
@@ -193,35 +219,64 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   const primaryTarget = stepTargets[0] ?? guide?.id ?? 'guide';
   const stepTargetKey = stepTargets.join('|');
 
-  const refreshTarget = useCallback(() => {
+  const commitTargetState = useCallback((nextState: TargetState) => {
+    setTargetState((currentState) => (areTargetStatesEqual(currentState, nextState) ? currentState : nextState));
+  }, []);
+
+  const refreshTarget = useCallback((options: RefreshTargetOptions = {}) => {
     if (!open || stepTargets.length === 0) return;
 
     const target = resolveGuideTarget(stepTargets);
     if (!target) {
-      setTargetState({ targetKey: stepTargetKey, target: primaryTarget, rect: null });
+      commitTargetState({ targetKey: stepTargetKey, target: primaryTarget, rect: null });
       return;
     }
 
-    target.element.scrollIntoView?.({ block: 'center', inline: 'center', behavior: 'smooth' });
-    setTargetState({
+    if (options.scroll) {
+      target.element.scrollIntoView?.({
+        block: 'center',
+        inline: 'center',
+        behavior: isMobileGuideViewport() ? 'auto' : 'smooth',
+      });
+    }
+
+    commitTargetState({
       targetKey: stepTargetKey,
       target: target.target,
       rect: getSpotlightRect(target.element),
     });
-  }, [open, primaryTarget, stepTargetKey, stepTargets]);
+  }, [commitTargetState, open, primaryTarget, stepTargetKey, stepTargets]);
+
+  const scheduleRefreshTarget = useCallback(
+    (options: RefreshTargetOptions = {}) => {
+      if (rafRefreshRef.current !== null) return;
+
+      rafRefreshRef.current = window.requestAnimationFrame(() => {
+        rafRefreshRef.current = null;
+        refreshTarget(options);
+      });
+    },
+    [refreshTarget]
+  );
 
   useEffect(() => {
     if (!open) return;
 
-    const frameId = window.requestAnimationFrame?.(refreshTarget);
-    const timeoutId = window.setTimeout(refreshTarget, 180);
-    const resizeHandler = () => refreshTarget();
+    const isMobileViewport = isMobileGuideViewport();
+    const timeoutId = window.setTimeout(() => scheduleRefreshTarget(), 180);
+    const resizeHandler = () => scheduleRefreshTarget();
 
-    window.addEventListener('resize', resizeHandler);
-    window.addEventListener('scroll', resizeHandler, true);
+    scheduleRefreshTarget({ scroll: true });
 
-    const observer = new MutationObserver(refreshTarget);
-    observer.observe(document.body, {
+    window.addEventListener('resize', resizeHandler, { passive: true });
+    window.addEventListener('scroll', resizeHandler, { capture: true, passive: true });
+
+    const observer =
+      !isMobileViewport && typeof MutationObserver !== 'undefined'
+        ? new MutationObserver(() => scheduleRefreshTarget())
+        : null;
+
+    observer?.observe(document.body, {
       attributes: true,
       childList: true,
       subtree: true,
@@ -229,13 +284,16 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
     });
 
     return () => {
-      if (frameId) window.cancelAnimationFrame?.(frameId);
+      if (rafRefreshRef.current !== null) {
+        window.cancelAnimationFrame(rafRefreshRef.current);
+        rafRefreshRef.current = null;
+      }
       window.clearTimeout(timeoutId);
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('scroll', resizeHandler, true);
-      observer.disconnect();
+      observer?.disconnect();
     };
-  }, [open, refreshTarget]);
+  }, [open, scheduleRefreshTarget]);
 
   useEffect(() => {
     if (!open) return;
@@ -263,6 +321,9 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   const spotlightRect = targetRect ?? getFallbackSpotlightRect();
   const spotlightTarget = activeTargetState?.target ?? primaryTarget;
   const popoverPosition = getPopoverPosition(targetRect, currentStep.placement);
+  const spotlightRight = spotlightRect.left + spotlightRect.width;
+  const spotlightBottom = spotlightRect.top + spotlightRect.height;
+  const backdropColor = 'rgba(15, 23, 42, 0.54)';
 
   const handleNext = () => {
     if (isLastStep) {
@@ -277,6 +338,22 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
     <Portal>
       <Box sx={{ position: 'fixed', inset: 0, zIndex: 1500, pointerEvents: 'none' }}>
         <Box aria-hidden sx={{ position: 'fixed', inset: 0, pointerEvents: 'auto' }} />
+        <Box
+          aria-hidden
+          sx={{ position: 'fixed', left: 0, top: 0, right: 0, height: spotlightRect.top, bgcolor: backdropColor }}
+        />
+        <Box
+          aria-hidden
+          sx={{ position: 'fixed', left: 0, top: spotlightBottom, right: 0, bottom: 0, bgcolor: backdropColor }}
+        />
+        <Box
+          aria-hidden
+          sx={{ position: 'fixed', left: 0, top: spotlightRect.top, width: spotlightRect.left, height: spotlightRect.height, bgcolor: backdropColor }}
+        />
+        <Box
+          aria-hidden
+          sx={{ position: 'fixed', left: spotlightRight, top: spotlightRect.top, right: 0, height: spotlightRect.height, bgcolor: backdropColor }}
+        />
 
         <Box
           aria-hidden
@@ -284,16 +361,18 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
           data-guide-target={spotlightTarget}
           sx={{
             position: 'fixed',
-            left: spotlightRect.left,
-            top: spotlightRect.top,
+            left: 0,
+            top: 0,
             width: spotlightRect.width,
             height: spotlightRect.height,
+            transform: `translate3d(${spotlightRect.left}px, ${spotlightRect.top}px, 0)`,
             borderRadius: 2,
             border: '1px solid',
             borderColor: 'success.main',
-            boxShadow:
-              '0 0 0 9999px rgba(15, 23, 42, 0.54), 0 0 0 4px rgba(34, 197, 94, 0.16), 0 10px 30px rgba(22, 163, 74, 0.24)',
-            transition: 'left 180ms ease, top 180ms ease, width 180ms ease, height 180ms ease',
+            boxShadow: '0 0 0 4px rgba(34, 197, 94, 0.16), 0 10px 30px rgba(22, 163, 74, 0.18)',
+            contain: 'layout paint style',
+            transition: 'transform 180ms ease, width 180ms ease, height 180ms ease',
+            willChange: 'transform, width, height',
             pointerEvents: 'none',
           }}
         />
@@ -305,8 +384,9 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
           elevation={18}
           sx={{
             position: 'fixed',
-            left: popoverPosition.left,
-            top: popoverPosition.top,
+            left: 0,
+            top: 0,
+            transform: `translate3d(${popoverPosition.left}px, ${popoverPosition.top}px, 0)`,
             width: popoverPosition.width,
             maxWidth: 'calc(100vw - 32px)',
             borderRadius: 2,
@@ -317,9 +397,11 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
               xs: '0 18px 44px rgba(15, 23, 42, 0.24)',
               sm: '0 20px 54px rgba(15, 23, 42, 0.26)',
             },
+            contain: 'layout paint style',
             overflow: 'hidden',
             pointerEvents: 'auto',
-            transition: 'left 180ms ease, top 180ms ease',
+            transition: 'transform 180ms ease',
+            willChange: 'transform',
           }}
         >
           <Box

@@ -10,8 +10,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import GuideDialog from '@/components/shared/guide/GuideDialog';
 import {
   GLOBAL_GUIDE,
   type GuideDefinition,
@@ -21,6 +21,10 @@ import {
   isGuideSeen,
   markGuideSeen,
 } from '@/components/shared/guide/guideConfig';
+
+const GuideDialog = dynamic(() => import('@/components/shared/guide/GuideDialog'), {
+  ssr: false,
+});
 
 interface GuideContextValue {
   openGuide: (guideId?: GuideId) => void;

@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import Box from '@mui/material/Box';
 import Sidebar from '@/components/shared/Sidebar';
 import MobileTopAppBar from '@/components/shared/MobileTopAppBar';
+import GuideProvider from '@/components/shared/guide/GuideProvider';
 
 const MobileBottomNav = dynamic(() => import('@/components/shared/MobileBottomNav'), {
   ssr: false,
@@ -16,7 +17,7 @@ const SettingsModal = dynamic(() => import('@/components/shared/SettingsModal'),
 
 export default function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <GuideProvider>
       <Sidebar />
       <Box
         component="main"
@@ -42,6 +43,6 @@ export default function DashboardChrome({ children }: { children: React.ReactNod
       <Suspense fallback={null}>
         <SettingsModal />
       </Suspense>
-    </>
+    </GuideProvider>
   );
 }

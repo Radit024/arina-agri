@@ -23,6 +23,7 @@
     "kalender": "Smart Calendar",
     "stok": "Harvest Stock",
     "kabarPasar": "Market News",
+    "guide": "Guide",
     "pengaturan": "Settings",
     "logout": "Log Out",
     "farmer": "Farmer"
@@ -42,7 +43,180 @@
     "featureUnavailable": "Feature is not available yet",
     "stok": "Stock",
     "kabarPasar": "Market News",
-    "pengaturan": "Settings"
+    "pengaturan": "Settings",
+    "guide": "Guide"
+  },
+  "Guide": {
+    "stepProgress": "Step {current} of {total}",
+    "actions": {
+      "close": "Close guide",
+      "skip": "Skip",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish"
+    },
+    "global": {
+      "eyebrow": "Quick start",
+      "title": "Meet Arina Agri",
+      "intro": "This short guide introduces the main dashboard areas before you start recording farm activity.",
+      "steps": {
+        "dashboard": {
+          "title": "Track summaries from Dashboard",
+          "body": "Dashboard shows important conditions such as finance, weather, stock, and recent activity so you can quickly see what needs attention today."
+        },
+        "finance": {
+          "title": "Record cash flow in Finance",
+          "body": "Use Finance to record income and expenses, review cost categories, and export reports when needed."
+        },
+        "operations": {
+          "title": "Manage stock and work schedules",
+          "body": "Stock tracks harvest batches and movements. Calendar helps plan fertilizing, spraying, irrigation, and harvest work."
+        },
+        "insights": {
+          "title": "Make decisions with information",
+          "body": "Weather provides forecasts and alerts, Market News tracks market updates, and AI Chat helps find chili disease and cultivation references."
+        },
+        "settings": {
+          "title": "Set profile and preferences",
+          "body": "Open Settings to update your profile, language, theme, and notification contact. You can reopen this guide from the Guide button."
+        }
+      }
+    },
+    "pages": {
+      "finance": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Finance",
+        "intro": "This page records transactions and helps you read farm cash-flow health.",
+        "steps": {
+          "overview": {
+            "title": "Read the summary first",
+            "body": "Check total income, expenses, and estimated net profit to understand the current month."
+          },
+          "record": {
+            "title": "Record the first transaction",
+            "body": "Use Record Transaction to enter date, category, amount, and a short note so reports stay tidy."
+          },
+          "report": {
+            "title": "Export when reporting is needed",
+            "body": "Use Excel export or AI reports once transaction data is complete enough to share or evaluate."
+          }
+        }
+      },
+      "stock": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Stock",
+        "intro": "Stock helps track harvest from inbound batch to outbound movement.",
+        "steps": {
+          "overview": {
+            "title": "Review ready stock",
+            "body": "Summary cards show available stock, sold stock, estimated value, and batches that need priority."
+          },
+          "batch": {
+            "title": "Input harvest batches",
+            "body": "Add a batch for every harvest with date, grade, weight, storage location, and expiry estimate."
+          },
+          "mutation": {
+            "title": "Record stock out",
+            "body": "When stock is sold or shipped, record outbound movement so remaining weight and shipping history stay accurate."
+          }
+        }
+      },
+      "weather": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Weather",
+        "intro": "Weather helps read farm conditions and prepare daily alerts.",
+        "steps": {
+          "overview": {
+            "title": "Check current weather",
+            "body": "Use the weather card and forecast to adjust fertilizing, spraying, or irrigation schedules."
+          },
+          "location": {
+            "title": "Choose farm location",
+            "body": "Enable GPS or search manually so the BMKG forecast matches your working area."
+          },
+          "notification": {
+            "title": "Enable important notifications",
+            "body": "Save WhatsApp or Telegram contact details to receive reminders and extreme weather alerts."
+          }
+        }
+      },
+      "market": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Market News",
+        "intro": "Market News helps follow relevant market and agriculture updates.",
+        "steps": {
+          "overview": {
+            "title": "Read the latest updates",
+            "body": "Start from the latest article list to follow price trends, weather, policy, and farming tips."
+          },
+          "categories": {
+            "title": "Use categories",
+            "body": "Category filters help you focus on prices, market, weather, policy, or cultivation tips."
+          },
+          "prices": {
+            "title": "Watch price signals",
+            "body": "When available, use the price map and chart to compare market conditions before selling harvest."
+          }
+        }
+      },
+      "encyclopedia": {
+        "eyebrow": "Feature guide",
+        "title": "Start using AI Chat",
+        "intro": "AI Chat helps answer questions about chili, diseases, pests, and cultivation.",
+        "steps": {
+          "overview": {
+            "title": "Start with a simple question",
+            "body": "Ask about symptoms, cultivation schedules, or pest handling with short and clear wording."
+          },
+          "ask": {
+            "title": "Add farm context",
+            "body": "Include plant age, weather, symptoms, and actions already tried so the answer is more useful."
+          },
+          "reference": {
+            "title": "Use quick references",
+            "body": "Read disease cards to compare common symptoms before making field decisions."
+          }
+        }
+      },
+      "calendar": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Calendar",
+        "intro": "Calendar helps plan and remember recurring farm activities.",
+        "steps": {
+          "overview": {
+            "title": "Review upcoming work",
+            "body": "The upcoming schedule area shows near-term activities so daily work is easier to prioritize."
+          },
+          "schedule": {
+            "title": "Add an activity schedule",
+            "body": "Record title, activity type, date, time, and notes so the team knows what work needs doing."
+          },
+          "reminder": {
+            "title": "Use it as a work reminder",
+            "body": "Add fertilizing, spraying, irrigation, and harvest activities to keep farm routines consistent."
+          }
+        }
+      },
+      "settings": {
+        "eyebrow": "Feature guide",
+        "title": "Start using Settings",
+        "intro": "Settings stores appearance preferences, profile details, contacts, and system information.",
+        "steps": {
+          "overview": {
+            "title": "Know the settings tabs",
+            "body": "Use Profile, General, Notifications, and System Info tabs based on what you need to change."
+          },
+          "profile": {
+            "title": "Complete your profile",
+            "body": "Make sure name, main commodity, and notification contact are correct so the app feels more personal."
+          },
+          "preferences": {
+            "title": "Adjust the interface",
+            "body": "Choose the language and theme that feel most comfortable on desktop or mobile."
+          }
+        }
+      }
+    }
   },
   "Dashboard": {
     "home": {

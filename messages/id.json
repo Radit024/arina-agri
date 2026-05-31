@@ -23,6 +23,7 @@
     "kalender": "Smart Kalender",
     "stok": "Manajemen Stok Panen",
     "kabarPasar": "Berita",
+    "guide": "Panduan",
     "pengaturan": "Pengaturan",
     "logout": "Keluar",
     "farmer": "Petani"
@@ -42,7 +43,180 @@
     "featureUnavailable": "Fitur belum tersedia",
     "stok": "Stok",
     "kabarPasar": "Berita",
-    "pengaturan": "Pengaturan"
+    "pengaturan": "Pengaturan",
+    "guide": "Panduan"
+  },
+  "Guide": {
+    "stepProgress": "Langkah {current} dari {total}",
+    "actions": {
+      "close": "Tutup panduan",
+      "skip": "Lewati",
+      "back": "Kembali",
+      "next": "Berikutnya",
+      "finish": "Selesai"
+    },
+    "global": {
+      "eyebrow": "Mulai cepat",
+      "title": "Kenalan dengan Arina Agri",
+      "intro": "Panduan singkat ini membantu Anda mengenali area utama dashboard sebelum mulai mencatat aktivitas kebun.",
+      "steps": {
+        "dashboard": {
+          "title": "Pantau ringkasan dari Dashboard",
+          "body": "Dashboard menampilkan kondisi penting seperti ringkasan keuangan, cuaca, stok, dan aktivitas terbaru agar Anda cepat tahu apa yang perlu dicek hari ini."
+        },
+        "finance": {
+          "title": "Catat arus kas di Keuangan",
+          "body": "Gunakan Keuangan untuk mencatat pemasukan dan pengeluaran, melihat kategori biaya, lalu mengekspor laporan saat dibutuhkan."
+        },
+        "operations": {
+          "title": "Kelola stok dan jadwal kerja",
+          "body": "Stok membantu memantau batch panen dan mutasi keluar masuk. Kalender membantu menyusun jadwal pemupukan, penyemprotan, irigasi, dan panen."
+        },
+        "insights": {
+          "title": "Ambil keputusan dengan informasi",
+          "body": "Cuaca memberi prakiraan dan notifikasi, Berita memantau kabar pasar, dan AI Chat membantu mencari referensi penyakit atau budidaya cabai."
+        },
+        "settings": {
+          "title": "Atur profil dan preferensi",
+          "body": "Buka Pengaturan untuk memperbarui profil, bahasa, tema, dan kontak notifikasi. Anda bisa membuka panduan ini lagi dari tombol Panduan."
+        }
+      }
+    },
+    "pages": {
+      "finance": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Keuangan",
+        "intro": "Halaman ini dipakai untuk mencatat transaksi dan membaca kesehatan arus kas kebun.",
+        "steps": {
+          "overview": {
+            "title": "Baca ringkasan terlebih dahulu",
+            "body": "Periksa total pemasukan, pengeluaran, dan estimasi laba bersih untuk memahami posisi bulan berjalan."
+          },
+          "record": {
+            "title": "Catat transaksi pertama",
+            "body": "Gunakan Catat Transaksi untuk memasukkan tanggal, kategori, nominal, dan catatan singkat agar laporan tetap rapi."
+          },
+          "report": {
+            "title": "Ekspor saat perlu dilaporkan",
+            "body": "Gunakan ekspor Excel atau laporan AI ketika data transaksi sudah cukup lengkap untuk dibagikan atau dievaluasi."
+          }
+        }
+      },
+      "stock": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Stok",
+        "intro": "Halaman Stok membantu melacak hasil panen dari batch masuk sampai barang keluar.",
+        "steps": {
+          "overview": {
+            "title": "Lihat stok siap jual",
+            "body": "Kartu ringkasan menunjukkan stok tersedia, stok terjual, estimasi nilai, dan batch yang perlu diprioritaskan."
+          },
+          "batch": {
+            "title": "Input batch panen",
+            "body": "Tambahkan batch setiap kali ada panen baru dengan tanggal, grade, berat, lokasi simpan, dan estimasi kadaluarsa."
+          },
+          "mutation": {
+            "title": "Catat barang keluar",
+            "body": "Saat stok dijual atau dikirim, catat mutasi keluar supaya sisa berat dan riwayat pengiriman tetap akurat."
+          }
+        }
+      },
+      "weather": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Cuaca",
+        "intro": "Cuaca membantu membaca kondisi lokasi kebun dan menyiapkan peringatan harian.",
+        "steps": {
+          "overview": {
+            "title": "Cek cuaca saat ini",
+            "body": "Gunakan kartu cuaca dan prakiraan untuk menyesuaikan jadwal pemupukan, penyemprotan, atau irigasi."
+          },
+          "location": {
+            "title": "Pilih lokasi kebun",
+            "body": "Nyalakan GPS atau cari lokasi manual agar prakiraan BMKG sesuai dengan area kerja Anda."
+          },
+          "notification": {
+            "title": "Aktifkan notifikasi penting",
+            "body": "Simpan kontak WhatsApp atau Telegram untuk menerima pengingat dan peringatan cuaca ekstrem."
+          }
+        }
+      },
+      "market": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Berita",
+        "intro": "Berita membantu mengikuti kabar pasar dan informasi pertanian yang relevan.",
+        "steps": {
+          "overview": {
+            "title": "Lihat kabar terbaru",
+            "body": "Mulai dari daftar artikel terbaru untuk mengetahui tren harga, cuaca, kebijakan, dan tips tani."
+          },
+          "categories": {
+            "title": "Gunakan kategori",
+            "body": "Filter kategori membantu Anda fokus pada berita harga, pasar, cuaca, kebijakan, atau tips budidaya."
+          },
+          "prices": {
+            "title": "Pantau sinyal harga",
+            "body": "Jika tersedia, gunakan peta dan grafik harga untuk membandingkan kondisi pasar sebelum menjual panen."
+          }
+        }
+      },
+      "encyclopedia": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai AI Chat",
+        "intro": "AI Chat membantu menjawab pertanyaan seputar cabai, penyakit, hama, dan budidaya.",
+        "steps": {
+          "overview": {
+            "title": "Mulai dari pertanyaan sederhana",
+            "body": "Tanyakan gejala, jadwal budidaya, atau cara penanganan hama dengan kalimat singkat dan jelas."
+          },
+          "ask": {
+            "title": "Tambahkan konteks kebun",
+            "body": "Sertakan umur tanaman, cuaca, gejala, dan tindakan yang sudah dicoba agar jawaban lebih berguna."
+          },
+          "reference": {
+            "title": "Gunakan referensi cepat",
+            "body": "Baca kartu penyakit untuk membandingkan gejala umum sebelum mengambil keputusan lapangan."
+          }
+        }
+      },
+      "calendar": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Kalender",
+        "intro": "Kalender membantu menyusun dan mengingat kegiatan kebun yang berulang.",
+        "steps": {
+          "overview": {
+            "title": "Lihat jadwal mendatang",
+            "body": "Bagian jadwal mendatang menunjukkan aktivitas dalam waktu dekat supaya pekerjaan harian lebih mudah diprioritaskan."
+          },
+          "schedule": {
+            "title": "Tambah jadwal kegiatan",
+            "body": "Catat judul, jenis kegiatan, tanggal, waktu, dan catatan agar tim tahu pekerjaan yang perlu dilakukan."
+          },
+          "reminder": {
+            "title": "Gunakan sebagai pengingat kerja",
+            "body": "Masukkan pemupukan, penyemprotan, irigasi, dan panen agar pola kerja kebun lebih konsisten."
+          }
+        }
+      },
+      "settings": {
+        "eyebrow": "Panduan fitur",
+        "title": "Mulai memakai Pengaturan",
+        "intro": "Pengaturan menyimpan preferensi tampilan, profil, kontak, dan informasi sistem.",
+        "steps": {
+          "overview": {
+            "title": "Kenali tab pengaturan",
+            "body": "Gunakan tab Profil, Umum, Notifikasi, dan Informasi Sistem sesuai kebutuhan perubahan."
+          },
+          "profile": {
+            "title": "Lengkapi profil",
+            "body": "Pastikan nama, komoditas utama, dan kontak notifikasi sudah benar agar data aplikasi lebih personal."
+          },
+          "preferences": {
+            "title": "Sesuaikan tampilan",
+            "body": "Pilih bahasa dan tema yang paling nyaman untuk dipakai saat bekerja di desktop atau ponsel."
+          }
+        }
+      }
+    }
   },
   "Dashboard": {
     "home": {

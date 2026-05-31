@@ -104,6 +104,7 @@ export default function KalenderView({
             <Typography variant="body2" color="text.secondary">{t('subtitle')}</Typography>
         </Box>
         <Button
+          data-guide-target="calendar-add-schedule"
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => openAddDialog()}
@@ -128,7 +129,7 @@ export default function KalenderView({
       <Grid container spacing={3}>
         {/* Calendar */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Card>
+          <Card data-guide-target="calendar-grid">
             <CardHeader
               title={
                 <Box className="flex items-center justify-between">
@@ -235,6 +236,7 @@ export default function KalenderView({
         {/* Upcoming Events */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Button
+            data-guide-target="calendar-add-schedule"
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => openAddDialog()}
@@ -244,13 +246,13 @@ export default function KalenderView({
             {t('addSchedule')}
           </Button>
 
-          <Card>
+          <Card data-guide-target="calendar-upcoming">
             <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('upcomingTitle')}</Typography>} subheader={t('next7Days')} />
             <CardContent sx={{ pt: 0 }}>
               {upcomingEvents.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <Typography variant="body2" color="text.secondary">{t('emptyUpcoming')}</Typography>
-                  <Button size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
+                  <Button data-guide-target="calendar-add-schedule" size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>

@@ -28,10 +28,12 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
+import { useGuide } from '@/components/shared/guide/GuideProvider';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
@@ -52,6 +54,7 @@ export default function Sidebar() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
+  const { openGuide } = useGuide();
 
   useEffect(() => {
     setMounted(true);
@@ -85,6 +88,50 @@ export default function Sidebar() {
       return next;
     });
   }, []);
+
+  const guideButton = (
+    <ListItemButton
+      data-guide-target="guide-launcher"
+      onClick={() => openGuide()}
+      sx={{
+        borderRadius: 3,
+        py: 1.1,
+        mb: 1,
+        minHeight: 44,
+        justifyContent: isOpen ? 'initial' : 'center',
+        color: 'text.secondary',
+        '&:hover': { bgcolor: 'action.hover', color: 'primary.main' },
+      }}
+    >
+      <ListItemIcon
+        sx={{
+          minWidth: 0,
+          mr: isOpen ? 1.5 : 'auto',
+          justifyContent: 'center',
+          color: 'inherit',
+        }}
+      >
+        <HelpOutlineOutlinedIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText
+        primary={t('guide')}
+        sx={{
+          display: isOpen ? 'block' : 'none',
+          opacity: isOpen ? 1 : 0,
+          m: 0,
+        }}
+        slotProps={{
+          primary: {
+            sx: {
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: 'inherit',
+            },
+          },
+        }}
+      />
+    </ListItemButton>
+  );
 
   return (
     <Drawer
@@ -152,6 +199,7 @@ export default function Sidebar() {
             const navButton = (
               <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
                 <ListItemButton
+                  data-guide-target={`nav-${item.key}`}
                   onClick={() => {
                     if (pathname !== item.path) {
                       router.push(item.path);
@@ -214,6 +262,12 @@ export default function Sidebar() {
       {/* Bottom Area */}
       <Box sx={{ p: 2 }}>
         {isOpen && <Divider sx={{ mb: 2, mx: 1 }} />}
+
+        {isOpen ? guideButton : (
+          <Tooltip title={t('guide')} placement="right" arrow>
+            {guideButton}
+          </Tooltip>
+        )}
 
         {isOpen && (
           <Collapse in={isProfileDropdownOpen} timeout="auto" unmountOnExit>

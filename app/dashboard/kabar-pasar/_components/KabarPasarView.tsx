@@ -91,6 +91,7 @@ export default function KabarPasarView({
 
           <Tooltip title={t('refetch')}>
             <IconButton
+              data-guide-target="market-refresh"
               onClick={onRefetch}
               size="small"
               aria-label={t('refetch')}
@@ -120,7 +121,7 @@ export default function KabarPasarView({
         ) : null}
       </Box>
 
-      <Box sx={{ mb: 4 }}>
+      <Box data-guide-target="market-price-chart" sx={{ mb: 4 }}>
         <PriceTrendChart />
       </Box>
 
@@ -130,6 +131,7 @@ export default function KabarPasarView({
         </Typography>
 
         <Stack
+          data-guide-target="market-categories"
           direction="row"
           spacing={1}
           sx={{
@@ -208,7 +210,7 @@ export default function KabarPasarView({
         </Card>
       ) : (
         <>
-          <Grid container spacing={3}>
+          <Grid data-guide-target="market-news-grid" container spacing={3}>
             {articles.map((article, i) => (
               <Grid
                 key={article.id}

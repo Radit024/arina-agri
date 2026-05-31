@@ -136,6 +136,7 @@ export default function KeuanganView({
           </Typography>
         </Box>
         <Button
+          data-guide-target="finance-export"
           variant="outlined"
           startIcon={<DownloadIcon />}
           onClick={handleExportExcel}
@@ -149,7 +150,7 @@ export default function KeuanganView({
       <Grid container spacing={3} sx={{ flex: 1, alignItems: 'stretch' }}>
         {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
         <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
-          <Card sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card data-guide-target="finance-ledger" sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -197,6 +198,7 @@ export default function KeuanganView({
               {/* Actions row */}
               <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                 <Button
+                  data-guide-target="finance-hpp-bep"
                   id="btn-hpp-bep"
                   variant="outlined"
                   startIcon={<AccountBalanceIcon />}
@@ -207,6 +209,7 @@ export default function KeuanganView({
                 </Button>
                 {!isMobile && (
                   <Button
+                    data-guide-target="finance-add-transaction"
                     id="btn-catat-transaksi"
                     variant="contained"
                     startIcon={<AddCircleIcon />}
@@ -294,7 +297,8 @@ export default function KeuanganView({
                       </Card>
                     ))
                   )}
-                  <Fab 
+                  <Fab
+                    data-guide-target="finance-add-transaction"
                     color="primary" 
                     aria-label="add" 
                     onClick={openAddDialog}
@@ -334,7 +338,7 @@ export default function KeuanganView({
                               <Typography variant="body2" color="text.secondary">
                                 {t('ledger.empty')}
                               </Typography>
-                              <Button size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
+                              <Button data-guide-target="finance-add-transaction" size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
                                 {t('ledger.addFirst')}
                               </Button>
                             </Box>
@@ -421,7 +425,7 @@ export default function KeuanganView({
         {/* ─── KANAN: Ringkasan & Grafik ─── */}
         <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex', flexDirection: 'column' }}>
           {/* Kartu Ringkasan */}
-          <Card sx={{ mb: 3 }}>
+          <Card data-guide-target="finance-summary" sx={{ mb: 3 }}>
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -430,6 +434,7 @@ export default function KeuanganView({
               }
               action={
                 <IconButton
+                  data-guide-target="finance-report"
                   onClick={() => setAiDialogOpen(true)}
                   sx={{
                     color: 'primary.dark',

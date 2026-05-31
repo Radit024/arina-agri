@@ -110,6 +110,7 @@ export default function CuacaView({
         <Grid container spacing={1.25} sx={{ mt: 1 }}>
           <Grid size={{ xs: 12, sm: 'auto' }}>
             <Button
+              data-guide-target="weather-gps"
               variant="contained"
               startIcon={gpsStatus === 'loading' ? <CircularProgress color="inherit" size={16} /> : <MyLocationIcon />}
               onClick={handleUseGpsLocation}
@@ -162,7 +163,7 @@ export default function CuacaView({
       <Grid container spacing={3}>
         {/* Current Weather */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Card sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+          <Card data-guide-target="weather-current" sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
             {isRainy && (
               <Box className="weather-rain-layer" aria-hidden>
                 {Array.from({ length: 16 }).map((_, i) => (
@@ -404,7 +405,7 @@ export default function CuacaView({
 
         {/* Notification Integration */}
           <Grid size={{ xs: 12, lg: 4 }}>
-            <Card>
+            <Card data-guide-target="weather-notifications">
               <CardHeader
                 avatar={isWhatsappPlatform ? <WhatsAppIcon sx={{ color: '#25d366' }} /> : <TelegramIcon sx={{ color: '#229ED9' }} />}
                 title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.title')}</Typography>}

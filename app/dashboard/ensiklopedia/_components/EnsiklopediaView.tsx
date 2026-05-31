@@ -105,6 +105,7 @@ export default function EnsiklopediaView({
         {/* Right Side: Actions */}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Button
+            data-guide-target="ai-quick-reference"
             variant="text"
             startIcon={<BugReportOutlinedIcon />}
             onClick={() => setDiseaseModalOpen(true)}
@@ -122,6 +123,7 @@ export default function EnsiklopediaView({
           </Button>
           <Tooltip title={t('quickReference.title')}>
             <IconButton
+              data-guide-target="ai-quick-reference"
               onClick={() => setDiseaseModalOpen(true)}
               size="small"
               sx={{ display: { xs: 'flex', sm: 'none' }, color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' } }}
@@ -219,7 +221,7 @@ export default function EnsiklopediaView({
               </Typography>
 
               {/* Suggestion Cards */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%', maxWidth: '640px' }}>
+              <Box data-guide-target="ai-quick-prompts" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%', maxWidth: '640px' }}>
                 {[
                   { text: t('prompts.p1'), icon: <WaterDropOutlinedIcon sx={{ color: 'info.main' }} />, bg: alpha(theme.palette.info.main, 0.05), border: alpha(theme.palette.info.main, 0.2) },
                   { text: t('prompts.p2'), icon: <ShieldOutlinedIcon sx={{ color: 'error.main' }} />, bg: alpha(theme.palette.error.main, 0.05), border: alpha(theme.palette.error.main, 0.2) },
@@ -416,7 +418,7 @@ export default function EnsiklopediaView({
 
           {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
           {hasUserMessages && (
-            <Box sx={{ position: 'relative' }}>
+            <Box data-guide-target="ai-quick-prompts" sx={{ position: 'relative' }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -465,6 +467,7 @@ export default function EnsiklopediaView({
 
           {/* Input Box - Glassmorphism */}
           <Box
+            data-guide-target="ai-chat-input"
             sx={{
               display: 'flex',
               alignItems: 'flex-end',

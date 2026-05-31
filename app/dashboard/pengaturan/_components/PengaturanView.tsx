@@ -114,6 +114,7 @@ export default function PengaturanView({
                     <Typography variant="body2" color="text.secondary">Pilih tema tampilan aplikasi yang nyaman untuk mata Anda.</Typography>
                   </Box>
                   <ToggleButtonGroup
+                    data-guide-target="settings-theme-toggle"
                     value={mode}
                     exclusive
                     onChange={(_, newMode) => newMode && onThemeModeChange(newMode)}
@@ -222,7 +223,7 @@ export default function PengaturanView({
                <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                  {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                </Typography>
-                <Button variant="contained" sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' }, width: { xs: '100%', sm: 'auto' } }} onClick={onSaveProfile}>
+                <Button data-guide-target="settings-profile-save" variant="contained" sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' }, width: { xs: '100%', sm: 'auto' } }} onClick={onSaveProfile}>
                   {t('profile.saveChanges')}
                 </Button>
              </Box>
@@ -346,6 +347,7 @@ export default function PengaturanView({
           }}
         >
             <Card 
+              data-guide-target="settings-tabs"
               elevation={0}
               sx={{ 
                bgcolor: { xs: 'transparent', md: 'background.default' }, 
@@ -364,6 +366,7 @@ export default function PengaturanView({
             <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
               {SETTINGS_TABS.map((tab) => (
                 <Card
+                  data-guide-target={`settings-tab-${tab.id}`}
                   key={tab.id}
                   elevation={0}
                   onClick={() => onTabChange(tab.id)}
@@ -411,6 +414,7 @@ export default function PengaturanView({
                 return (
                   <ListItem key={tab.id} disablePadding sx={{ mb: 0.5 }}>
                     <ListItemButton
+                      data-guide-target={`settings-tab-${tab.id}`}
                       onClick={() => onTabChange(tab.id)}
                       sx={{
                         borderRadius: 2,

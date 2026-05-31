@@ -18,6 +18,7 @@ export interface MobileFeatureItem {
   key: string;
   icon: ReactNode;
   path: string | null;
+  action?: 'guide';
 }
 
 export interface MobileFeatureGroup {
@@ -131,6 +132,7 @@ export default function MobileFeatureSheet({
               {group.items.map((item) => (
                 <motion.div key={item.key} {...itemMotionProps} style={{ width: '100%' }}>
                   <ListItemButton
+                    data-guide-target={`mobile-feature-${item.key}`}
                     onClick={() => onSelect(item)}
                     sx={{
                       borderRadius: 2,

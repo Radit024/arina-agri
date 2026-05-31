@@ -17,9 +17,11 @@ import NewspaperIcon from '@mui/icons-material/Newspaper';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@mui/material/styles';
+import { useGuide } from '@/components/shared/guide/GuideProvider';
 import MobileFeatureSheet, {
   type MobileFeatureGroup,
   type MobileFeatureItem,
@@ -60,6 +62,7 @@ const mobileFeatureGroups: MobileFeatureGroup[] = [
     key: 'pengaturan',
     titleKey: 'pengaturanSection',
     items: [
+      { key: 'guide', icon: <HelpOutlineOutlinedIcon />, path: null, action: 'guide' },
       { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: '/dashboard/pengaturan' },
     ],
   },
@@ -86,6 +89,7 @@ export default function MobileBottomNav() {
   const [showUnavailableToast, setShowUnavailableToast] = useState(false);
   const lainnyaButtonRef = useRef<HTMLButtonElement | null>(null);
   const reduceMotion = useReducedMotion();
+  const { openGuide } = useGuide();
 
   const lainnyaIndex = mobileNavItems.findIndex((item) => item.opensSheet);
 
@@ -119,6 +123,11 @@ export default function MobileBottomNav() {
 
   const handleFeatureSelect = (item: MobileFeatureItem) => {
     setSheetOpen(false);
+    if (item.action === 'guide') {
+      openGuide();
+      return;
+    }
+
     if (!item.path || pathname === item.path) {
       focusLainnyaButton();
     }
@@ -195,6 +204,7 @@ export default function MobileBottomNav() {
             <BottomNavigationAction
               key={item.key}
               ref={item.opensSheet ? lainnyaButtonRef : undefined}
+              data-guide-target={item.opensSheet ? 'nav-lainnya' : `nav-${item.key}`}
               aria-label={t(item.key)}
               label={
                 <motion.span

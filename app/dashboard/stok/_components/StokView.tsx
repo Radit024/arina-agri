@@ -146,10 +146,10 @@ export default function StokView({
           </Box>
         </Box>
         <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)} sx={{ borderRadius: 8 }}>
+          <Button data-guide-target="stock-stock-out" variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)} sx={{ borderRadius: 8 }}>
             {t('buttons.stockOut')}
           </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={openAddBatch} sx={{ borderRadius: 8 }}>
+          <Button data-guide-target="stock-add-batch" variant="contained" startIcon={<AddIcon />} onClick={openAddBatch} sx={{ borderRadius: 8 }}>
             {t('buttons.addBatch')}
           </Button>
         </Box>
@@ -173,7 +173,7 @@ export default function StokView({
       )}
 
       {/* KPI Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+      <Grid data-guide-target="stock-summary" container spacing={2.5} sx={{ mb: 3 }}>
         {[
           { label: t('kpi.ready'), value: `${summary.totalStokSiapJual.toLocaleString()} kg`, icon: <InventoryIcon />, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.12) },
           { label: t('kpi.sold'), value: `${summary.stokTerjualMingguIni.toLocaleString()} kg`, icon: <LocalShippingIcon />, color: theme.palette.info.main, bg: alpha(theme.palette.info.main, 0.12) },
@@ -197,7 +197,7 @@ export default function StokView({
       </Grid>
 
       {/* Tabs */}
-      <Card sx={{ borderRadius: 4 }}>
+      <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Tab label={t('tabs.batches')} />
           <Tab label={t('tabs.mutations')} />

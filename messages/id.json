@@ -597,24 +597,28 @@
     "upcomingTitle": "Jadwal Mendatang",
     "next7Days": "7 hari ke depan",
     "emptyUpcoming": "Belum ada jadwal mendatang",
+    "loading": "Memuat jadwal",
+    "retry": "Coba lagi",
     "dialog": {
       "addTitle": "Tambah Jadwal Kegiatan",
       "editTitle": "Edit Jadwal Kegiatan",
+      "close": "Tutup dialog jadwal",
       "fields": {
         "title": "Judul Kegiatan",
         "titlePlaceholder": "Contoh: Pemupukan Susulan NPK",
         "type": "Jenis Kegiatan",
         "date": "Tanggal",
         "timeOptional": "Waktu (opsional)",
+        "scheduleTimeGroup": "Tanggal dan waktu jadwal",
         "noteOptional": "Catatan (opsional)",
         "notePlaceholder": "Tambahkan catatan tambahan..."
       },
       "options": {
-        "fertilizing": "🌿 Pemupukan",
-        "spraying": "💧 Penyemprotan Pestisida",
-        "irrigation": "🚿 Irigasi",
-        "harvest": "🌶️ Pemetikan/Panen",
-        "other": "📝 Lainnya"
+        "fertilizing": "Pemupukan",
+        "spraying": "Penyemprotan Pestisida",
+        "irrigation": "Irigasi",
+        "harvest": "Pemetikan/Panen",
+        "other": "Lainnya"
       }
     },
     "delete": "Hapus",

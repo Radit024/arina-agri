@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
@@ -12,7 +12,7 @@ import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_li
 
 export default function KalenderController() {
   const t = useTranslations('Calendar');
-  const { events, addEvent, updateEvent, deleteEvent } = useCalendar();
+  const { events, loading, error, addEvent, updateEvent, deleteEvent, reload } = useCalendar();
   const { warningMessage: weatherWarningMessage, planningNote: weatherPlanningNote } = useWeatherRiskSignal('calendar');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -35,8 +35,20 @@ export default function KalenderController() {
     defaultValues: { judul: '', jenis: 'pemupukan', tanggal: todayStr, waktu: '', catatan: '' },
   });
 
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, ApiCalendarEvent[]>();
+
+    for (const event of events) {
+      const list = map.get(event.tanggal) ?? [];
+      list.push(event);
+      map.set(event.tanggal, list);
+    }
+
+    return map;
+  }, [events]);
+
   const getDateStr = (day: number) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  const getEventsForDate = (day: number) => events.filter((event) => event.tanggal === getDateStr(day));
+  const getEventsForDate = (day: number) => eventsByDate.get(getDateStr(day)) ?? [];
 
   const openAddDialog = (dateStr?: string) => {
     setEditingEventId(null);
@@ -90,11 +102,14 @@ export default function KalenderController() {
       handleDelete={handleDelete}
       handleSubmit={form.handleSubmit}
       jenisLabels={t.raw('jenisLabels')}
+      loading={loading}
       month={month}
       monthNames={t.raw('months')}
+      onRetry={reload}
       onSubmit={onSubmit}
       openAddDialog={openAddDialog}
       openEditDialog={openEditDialog}
+      error={error}
       setCurrentDate={setCurrentDate}
       setDialogOpen={setDialogOpen}
       todayStr={todayStr}

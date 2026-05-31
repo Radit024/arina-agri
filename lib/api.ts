@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { DEVELOPMENT_ACCESS_TOKEN, DEVELOPMENT_USER_ID } from '@/lib/devAuth';
 import type {
   BmkgForecastResponse,
   BmkgWeatherWarning,
@@ -169,19 +170,6 @@ function mapTx(row: any): ApiTransaction {
   };
 }
 
-function mapEvent(row: any): ApiCalendarEvent {
-  return {
-    _id: row.id,
-    judul: row.title,
-    tanggal: row.date,
-    jenis: row.category,
-    waktu: row.waktu ?? '',
-    catatan: row.description ?? '',
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
 function mapBatch(row: any): ApiHarvestBatch {
   return {
     _id: row.id,
@@ -230,13 +218,55 @@ async function resolveCurrentUser() {
   if (user) return user;
 
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    const devUserId = window.localStorage.getItem('arina_user_id');
-    if (devUserId) {
-      return { id: devUserId };
-    }
+    return { id: DEVELOPMENT_USER_ID };
   }
 
   return null;
+}
+
+async function buildCurrentAuthHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session?.access_token) {
+    return { Authorization: `Bearer ${session.access_token}` };
+  }
+
+  if (process.env.NODE_ENV === 'development') {
+    return { Authorization: `Bearer ${DEVELOPMENT_ACCESS_TOKEN}` };
+  }
+
+  return {};
+}
+
+async function calendarEventRequest<T>(endpoint: string, init: { method: string; body?: object }): Promise<T> {
+  const headers: Record<string, string> = {
+    ...(await buildCurrentAuthHeaders()),
+  };
+
+  if (init.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(endpoint, {
+    method: init.method,
+    headers,
+    body: init.body ? JSON.stringify(init.body) : undefined,
+    cache: 'no-store',
+  });
+  const rawText = await response.text();
+  let json: ApiEnvelope<T> | null = null;
+
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    json = null;
+  }
+
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.message || rawText || `HTTP error ${response.status}`);
+  }
+
+  return json.data as T;
 }
 
 // ─── Transaction API ──────────────────────────────────────────────
@@ -299,68 +329,29 @@ export const transactionApi = {
 // ─── Calendar Events API ──────────────────────────────────────────
 export const eventApi = {
   getAll: async (): Promise<ApiCalendarEvent[]> => {
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .select('*')
-      .order('date', { ascending: true });
-    if (error) throw new Error(error.message);
-    return (data ?? []).map(mapEvent);
+    return calendarEventRequest<ApiCalendarEvent[]>('/api/calendar/events', { method: 'GET' });
   },
 
   create: async (payload: Omit<ApiCalendarEvent, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiCalendarEvent> => {
-    const user = await resolveCurrentUser();
-    if (!user) throw new Error('Belum login');
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .insert({
-        user_id: user.id,
-        title: payload.judul,
-        date: payload.tanggal,
-        category: payload.jenis,
-        description: payload.catatan ?? '',
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return mapEvent(data);
+    return calendarEventRequest<ApiCalendarEvent>('/api/calendar/events', { method: 'POST', body: payload });
   },
 
   update: async (id: string, payload: Partial<ApiCalendarEvent>): Promise<ApiCalendarEvent> => {
-    const update: any = {};
-    if (payload.judul !== undefined) update.title = payload.judul;
-    if (payload.tanggal !== undefined) update.date = payload.tanggal;
-    if (payload.jenis !== undefined) update.category = payload.jenis;
-    if (payload.catatan !== undefined) update.description = payload.catatan;
-    update.updated_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .update(update)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return mapEvent(data);
+    return calendarEventRequest<ApiCalendarEvent>('/api/calendar/events', {
+      method: 'PATCH',
+      body: { id, ...payload },
+    });
   },
 
   toggleComplete: async (id: string): Promise<ApiCalendarEvent> => {
-    const { data: current, error: fetchErr } = await supabase
-      .from('calendar_events').select('completed').eq('id', id).single();
-    if (fetchErr) throw new Error(fetchErr.message);
-    const { data, error } = await supabase
-      .from('calendar_events')
-      .update({ completed: !current.completed, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return mapEvent(data);
+    return calendarEventRequest<ApiCalendarEvent>('/api/calendar/events', {
+      method: 'PATCH',
+      body: { id, action: 'toggleComplete' },
+    });
   },
 
   delete: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('calendar_events').delete().eq('id', id);
-    if (error) throw new Error(error.message);
-    return null;
+    return calendarEventRequest<null>(`/api/calendar/events?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 };
 

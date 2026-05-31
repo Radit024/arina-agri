@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { DEVELOPMENT_ACCESS_TOKEN, DEVELOPMENT_USER_ID } from '@/lib/devAuth';
 
 export function getBearerToken(request: Request) {
   const header = request.headers.get('authorization') || '';
@@ -11,8 +12,8 @@ export async function resolveRequestUserId(request: Request) {
   const token = getBearerToken(request);
   if (!token) return null;
 
-  if (process.env.NODE_ENV === 'development' && token === 'mock-token') {
-    return 'dev-user-id';
+  if (process.env.NODE_ENV === 'development' && token === DEVELOPMENT_ACCESS_TOKEN) {
+    return DEVELOPMENT_USER_ID;
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;

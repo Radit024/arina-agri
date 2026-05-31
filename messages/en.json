@@ -597,24 +597,28 @@
     "upcomingTitle": "Upcoming Schedule",
     "next7Days": "next 7 days",
     "emptyUpcoming": "No upcoming schedule",
+    "loading": "Loading schedule",
+    "retry": "Try again",
     "dialog": {
       "addTitle": "Add Activity Schedule",
       "editTitle": "Edit Activity Schedule",
+      "close": "Close schedule dialog",
       "fields": {
         "title": "Activity Title",
         "titlePlaceholder": "Example: Follow-up NPK fertilization",
         "type": "Activity Type",
         "date": "Date",
         "timeOptional": "Time (optional)",
+        "scheduleTimeGroup": "Schedule date and time",
         "noteOptional": "Notes (optional)",
         "notePlaceholder": "Add extra notes..."
       },
       "options": {
-        "fertilizing": "🌿 Fertilizing",
-        "spraying": "💧 Pesticide Spraying",
-        "irrigation": "🚿 Irrigation",
-        "harvest": "🌶️ Harvesting",
-        "other": "📝 Other"
+        "fertilizing": "Fertilizing",
+        "spraying": "Pesticide Spraying",
+        "irrigation": "Irrigation",
+        "harvest": "Harvesting",
+        "other": "Other"
       }
     },
     "delete": "Delete",

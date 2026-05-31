@@ -195,6 +195,21 @@ describe('GuideProvider', () => {
     expect(await findGuideDialog()).toHaveTextContent('pages.finance.title');
   });
 
+  it('prefers the calendar guide on direct calendar entry even when global onboarding is unseen', async () => {
+    mockPathname = '/dashboard/kalender';
+
+    render(
+      <GuideProvider>
+        <button data-guide-target="calendar-grid">Calendar target</button>
+        <button data-guide-target="calendar-add-schedule">Add schedule target</button>
+        <button data-guide-target="calendar-upcoming">Upcoming target</button>
+      </GuideProvider>
+    );
+
+    expect(await findGuideDialog()).toHaveTextContent('pages.calendar.title');
+    expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'calendar-grid');
+  });
+
   it('manual launcher opens the current page guide even after it was seen', async () => {
     mockPathname = '/dashboard/stok';
     markGuideSeen(window.localStorage, 'global');

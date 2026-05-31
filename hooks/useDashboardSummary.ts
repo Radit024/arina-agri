@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DashboardSummary } from '@/lib/dashboard/summary';
+import { DEVELOPMENT_ACCESS_TOKEN } from '@/lib/devAuth';
 
 interface DashboardSummaryParams {
   adm4?: string;
@@ -35,7 +36,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   }
 
   if (process.env.NODE_ENV === 'development') {
-    return { Authorization: 'Bearer mock-token' };
+    return { Authorization: `Bearer ${DEVELOPMENT_ACCESS_TOKEN}` };
   }
 
   return {};

@@ -3,6 +3,7 @@ import { getBmkgForecast, getBmkgWarnings } from '@/lib/server/weather/bmkgClien
 import { DEFAULT_BMKG_PROVINCE_NAME } from '@/lib/server/weather/bmkgTypes';
 import type { NewsArticle } from '@/lib/types/news';
 import { currentWeather, mockTransactions } from '@/lib/mockData';
+import { DEVELOPMENT_USER_ID } from '@/lib/devAuth';
 import {
   buildDashboardMetrics,
   buildPriceKpi,
@@ -15,7 +16,6 @@ import {
 
 const PROVINCE_LOCATIONS = ['Jawa Timur', 'Propinsi Jawa Timur', 'Pasar Induk Malang'];
 const NEWS_LIMIT = 6;
-const DEV_USER_ID = 'dev-user-id';
 
 interface CommodityPriceRow extends DashboardPricePoint {
   location: string;
@@ -140,7 +140,7 @@ export async function getDashboardSummary({
   locationLabel?: string;
   now?: Date;
 }): Promise<DashboardSummary> {
-  if (userId === DEV_USER_ID) {
+  if (userId === DEVELOPMENT_USER_ID) {
     return buildDevDashboardSummary({ locationLabel, now });
   }
 

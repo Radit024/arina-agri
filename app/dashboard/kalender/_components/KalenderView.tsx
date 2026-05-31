@@ -20,16 +20,20 @@ import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
 import FormHelperText from '@mui/material/FormHelperText';
 import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { formatDateLong } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 import type { ApiCalendarEvent } from '@/lib/api';
 import type { EventFormData } from '../_lib/eventSchema';
+import CalendarCategoryIcon from './CalendarCategoryIcon';
+import CalendarDayCell from './CalendarDayCell';
 
 interface KalenderViewProps {
   calendarCells: (number | null)[];
@@ -44,8 +48,10 @@ interface KalenderViewProps {
   handleDelete: () => Promise<void>;
   handleSubmit: UseFormHandleSubmit<EventFormData>;
   jenisLabels: Record<string, string>;
+  loading: boolean;
   month: number;
   monthNames: string[];
+  onRetry: () => void | Promise<void>;
   onSubmit: SubmitHandler<EventFormData>;
   openAddDialog: (dateStr?: string) => void;
   openEditDialog: (event: ApiCalendarEvent) => void;
@@ -56,6 +62,7 @@ interface KalenderViewProps {
   weatherPlanningNote: string;
   weatherWarningMessage: string;
   year: number;
+  error: string | null;
 }
 
 export default function KalenderView({
@@ -70,8 +77,10 @@ export default function KalenderView({
   handleDelete,
   handleSubmit,
   jenisLabels,
+  loading,
   month,
   monthNames,
+  onRetry,
   onSubmit,
   openAddDialog,
   openEditDialog,
@@ -82,6 +91,7 @@ export default function KalenderView({
   weatherPlanningNote,
   weatherWarningMessage,
   year,
+  error,
 }: KalenderViewProps) {
   const theme = useTheme();
   const t = useTranslations('Calendar');
@@ -94,9 +104,17 @@ export default function KalenderView({
     lainnya: { bg: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary, dot: theme.palette.grey[500] },
   };
 
+  const getEventColor = (jenis: ApiCalendarEvent['jenis']) => jenisColors[jenis] || jenisColors.lainnya;
+
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Box className="flex items-center justify-between" sx={{ mb: 3 }}>
+    <Box
+      data-testid="calendar-page-root"
+      sx={{
+        p: { xs: 2, md: 3 },
+        pb: { xs: 'calc(96px + env(safe-area-inset-bottom))', md: 3 },
+      }}
+    >
+      <Box className="flex items-center justify-between" sx={{ mb: { xs: 2, md: 3 }, gap: 2 }}>
         <Box>
           <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
               {t('title')}
@@ -105,10 +123,11 @@ export default function KalenderView({
         </Box>
         <Button
           data-guide-target="calendar-add-schedule"
+          data-touch-target="44"
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => openAddDialog()}
-          sx={{ display: { xs: 'none', sm: 'flex' } }}
+          sx={{ display: { xs: 'none', sm: 'flex' }, minHeight: 44 }}
         >
           {t('addSchedule')}
         </Button>
@@ -126,35 +145,63 @@ export default function KalenderView({
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          action={
+            <Button data-touch-target="44" color="inherit" size="small" onClick={() => void onRetry()} sx={{ minHeight: 44 }}>
+              {t('retry')}
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+
+      <Grid container spacing={{ xs: 2, md: 3 }}>
         {/* Calendar */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <Card data-guide-target="calendar-grid">
             <CardHeader
+              sx={{
+                p: { xs: 2, sm: 2 },
+                pb: { xs: 1, sm: 2 },
+              }}
               title={
-                <Box className="flex items-center justify-between">
+                <Box
+                  sx={{
+                    alignItems: 'center',
+                    display: 'flex',
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                    gap: 1,
+                    justifyContent: 'space-between',
+                  }}
+                >
                   <Box className="flex items-center gap-2">
-                    <IconButton size="small" aria-label="Previous month" onClick={() => setCurrentDate(new Date(year, month - 1))}>
+                    <IconButton data-touch-target="44" size="small" aria-label="Previous month" onClick={() => setCurrentDate(new Date(year, month - 1))} sx={{ height: 44, width: 44 }}>
                       <ChevronLeftIcon />
                     </IconButton>
-                    <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', minWidth: 180, textAlign: 'center', fontWeight: 700 }}>
+                    <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', minWidth: { xs: 112, sm: 180 }, textAlign: 'center', fontWeight: 700 }}>
                       {monthNames[month]} {year}
                     </Typography>
-                    <IconButton size="small" aria-label="Next month" onClick={() => setCurrentDate(new Date(year, month + 1))}>
+                    <IconButton data-touch-target="44" size="small" aria-label="Next month" onClick={() => setCurrentDate(new Date(year, month + 1))} sx={{ height: 44, width: 44 }}>
                       <ChevronRightIcon />
                     </IconButton>
                   </Box>
-                  <Button size="small" onClick={() => setCurrentDate(new Date())} variant="outlined">
+                  <Button data-touch-target="44" size="small" onClick={() => setCurrentDate(new Date())} variant="outlined" sx={{ minHeight: 44, px: 1.5 }}>
                     {t('today')}
                   </Button>
                 </Box>
               }
             />
-            <CardContent sx={{ pt: 0 }}>
+            <CardContent sx={{ pt: 0, pb: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
+              {loading && <LinearProgress aria-label={t('loading')} sx={{ mb: 2 }} />}
+
               {/* Day headers */}
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: { xs: 0.5, sm: 1 } }}>
                 {dayNames.map((d: string) => (
-                  <Box key={d} sx={{ textAlign: 'center', py: 1 }}>
+                  <Box key={d} sx={{ textAlign: 'center', py: { xs: 0.5, sm: 1 } }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{d}</Typography>
                   </Box>
                 ))}
@@ -163,65 +210,30 @@ export default function KalenderView({
               {/* Calendar grid */}
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
                 {calendarCells.map((day, idx) => {
-                  if (!day) return <Box key={`empty-${idx}`} sx={{ minHeight: 80 }} />;
+                  if (!day) return <Box key={`empty-${idx}`} sx={{ minHeight: { xs: 44, sm: 64, md: 80 } }} />;
                   const dateStr = getDateStr(day);
                   const dayEvents = getEventsForDate(day);
                   const isToday = dateStr === todayStr;
+                  const dateLabel = `${day} ${monthNames[month]} ${year}`;
 
                   return (
-                    <Box
+                    <CalendarDayCell
                       key={day}
-                      sx={{
-                        minHeight: 80,
-                        p: 0.75,
-                        borderRadius: 1.5,
-                        border: '1px solid',
-                        borderColor: isToday ? 'primary.main' : 'transparent',
-                        backgroundColor: isToday ? 'primary.light' : 'transparent',
-                        '&:hover': { backgroundColor: '#f8fafc' },
-                        cursor: 'pointer',
-                        transition: 'background-color 0.1s',
-                      }}
-                      onClick={() => openAddDialog(dateStr)}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{ color: isToday ? 'primary.main' : 'text.primary', display: 'block', mb: 0.5, fontWeight: isToday ? 700 : 500 }}
-                      >
-                        {day}
-                      </Typography>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                        {dayEvents.slice(0, 3).map((ev) => (
-                          <Box
-                            key={ev._id}
-                            onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }}
-                            sx={{
-                              borderRadius: 1,
-                              backgroundColor: jenisColors[ev.jenis]?.bg || '#f1f5f9',
-                              borderLeft: '2px solid',
-                              borderLeftColor: jenisColors[ev.jenis]?.dot || '#94a3b8',
-                              px: 0.5,
-                              py: 0.25,
-                              overflow: 'hidden',
-                              '&:hover': { filter: 'brightness(0.95)' }
-                            }}
-                          >
-                             <Typography noWrap variant="caption" sx={{ fontSize: '0.65rem', display: 'block', color: jenisColors[ev.jenis]?.text, fontWeight: 600 }}>{ev.judul}</Typography>
-                          </Box>
-                        ))}
-                        {dayEvents.length > 3 && (
-                          <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', pl: 0.5 }}>
-                            +{dayEvents.length - 3} {t('more')}
-                          </Typography>
-                        )}
-                      </Box>
-                    </Box>
+                      dateLabel={dateLabel}
+                      day={day}
+                      events={dayEvents}
+                      getEventColor={getEventColor}
+                      isToday={isToday}
+                      moreLabel={t('more')}
+                      onAdd={() => openAddDialog(dateStr)}
+                      onEdit={openEditDialog}
+                    />
                   );
                 })}
               </Box>
 
               {/* Legend */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 1.5 }, mt: { xs: 1.5, sm: 2.5 }, pt: { xs: 1.25, sm: 2 }, borderTop: '1px solid', borderColor: 'divider' }}>
                 {Object.entries(jenisColors).map(([key, val]) => (
                   <Box key={key} className="flex items-center gap-1">
                     <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: val.dot }} />
@@ -237,11 +249,12 @@ export default function KalenderView({
         <Grid size={{ xs: 12, lg: 4 }}>
           <Button
             data-guide-target="calendar-add-schedule"
+            data-touch-target="44"
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => openAddDialog()}
             fullWidth
-            sx={{ mb: 2, display: { xs: 'flex', sm: 'none' } }}
+            sx={{ mb: 2, display: { xs: 'flex', sm: 'none' }, minHeight: 44 }}
           >
             {t('addSchedule')}
           </Button>
@@ -252,7 +265,7 @@ export default function KalenderView({
               {upcomingEvents.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 4 }}>
                   <Typography variant="body2" color="text.secondary">{t('emptyUpcoming')}</Typography>
-                  <Button data-guide-target="calendar-add-schedule" size="small" sx={{ mt: 1 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
+                  <Button data-guide-target="calendar-add-schedule" data-touch-target="44" size="small" sx={{ mt: 1, minHeight: 44 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -279,13 +292,16 @@ export default function KalenderView({
                               size="small"
                               sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: colors.text, fontWeight: 600, fontSize: '0.65rem' }}
                             />
-                            <IconButton size="small" aria-label="Edit event" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ ml: 0.5, color: colors.text, p: 0.5 }}>
+                            <IconButton data-touch-target="44" size="small" aria-label="Edit event" onClick={(e) => { e.stopPropagation(); openEditDialog(ev); }} sx={{ height: 44, ml: 0.5, color: colors.text, width: 44 }}>
                               <EditIcon sx={{ fontSize: '1.25rem' }} />
                             </IconButton>
                           </Box>
                         </Box>
                         <Typography variant="caption" sx={{ color: colors.text, opacity: 0.8, mt: 0.5, display: 'block' }}>
-                          📅 {formatDateLong(ev.tanggal)}{ev.waktu ? ` · ${ev.waktu}` : ''}
+                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                            <CalendarMonthIcon sx={{ fontSize: 14 }} aria-hidden />
+                            <span>{formatDateLong(ev.tanggal)}{ev.waktu ? ` - ${ev.waktu}` : ''}</span>
+                          </Box>
                         </Typography>
                         {ev.catatan && (
                           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
@@ -303,13 +319,28 @@ export default function KalenderView({
       </Grid>
 
       {/* Add Event Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        aria-labelledby="calendar-event-dialog-title"
+        slotProps={{
+          paper: {
+            sx: {
+              m: { xs: 2, sm: 4 },
+              width: { xs: 'calc(100% - 32px)', sm: '100%' },
+              borderRadius: 2,
+            },
+          },
+        }}
+      >
+        <DialogTitle id="calendar-event-dialog-title">
           <Box className="flex items-center justify-between">
             <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
               {editingEventId ? t('dialog.editTitle') : t('dialog.addTitle')}
             </Typography>
-            <IconButton size="small" onClick={() => setDialogOpen(false)}>
+            <IconButton data-touch-target="44" size="small" aria-label={t('dialog.close')} onClick={() => setDialogOpen(false)} sx={{ height: 44, width: 44 }}>
               <CloseIcon />
             </IconButton>
           </Box>
@@ -324,17 +355,50 @@ export default function KalenderView({
               <FormControl fullWidth error={!!errors.jenis}>
                 <InputLabel>{t('dialog.fields.type')}</InputLabel>
                 <Select {...field} label={t('dialog.fields.type')}>
-                  <MenuItem value="pemupukan">🌿 {t('dialog.options.fertilizing')}</MenuItem>
-                  <MenuItem value="penyemprotan">💧 {t('dialog.options.spraying')}</MenuItem>
-                  <MenuItem value="irigasi">🚿 {t('dialog.options.irrigation')}</MenuItem>
-                  <MenuItem value="pemetikan">🌶️ {t('dialog.options.harvest')}</MenuItem>
-                  <MenuItem value="lainnya">📝 {t('dialog.options.other')}</MenuItem>
+                  <MenuItem value="pemupukan">
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarCategoryIcon jenis="pemupukan" />
+                      {t('dialog.options.fertilizing')}
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="penyemprotan">
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarCategoryIcon jenis="penyemprotan" />
+                      {t('dialog.options.spraying')}
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="irigasi">
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarCategoryIcon jenis="irigasi" />
+                      {t('dialog.options.irrigation')}
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="pemetikan">
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarCategoryIcon jenis="pemetikan" />
+                      {t('dialog.options.harvest')}
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="lainnya">
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                      <CalendarCategoryIcon jenis="lainnya" />
+                      {t('dialog.options.other')}
+                    </Box>
+                  </MenuItem>
                 </Select>
                 {errors.jenis && <FormHelperText>{errors.jenis.message}</FormHelperText>}
               </FormControl>
             )} />
 
-            <Box className="flex gap-3">
+            <Box
+              role="group"
+              aria-label={t('dialog.fields.scheduleTimeGroup')}
+              sx={{
+                display: 'grid',
+                gap: 1.5,
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+              }}
+            >
               <Controller name="tanggal" control={control} render={({ field }) => (
                 <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
@@ -348,15 +412,24 @@ export default function KalenderView({
             )} />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, display: 'flex', justifyContent: 'space-between' }}>
+        <DialogActions
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            justifyContent: 'space-between',
+            px: { xs: 2, sm: 3 },
+            py: 2,
+          }}
+        >
           <Box>
             {editingEventId && (
-              <Button onClick={handleDelete} color="error" startIcon={<DeleteIcon />}>{t('delete')}</Button>
+              <Button data-touch-target="44" onClick={handleDelete} color="error" startIcon={<DeleteIcon />} sx={{ minHeight: 44 }}>{t('delete')}</Button>
             )}
           </Box>
           <Box className="flex gap-2">
-            <Button onClick={() => setDialogOpen(false)} color="inherit">{t('cancel')}</Button>
-            <Button type="submit" form="event-form" variant="contained">{t('saveSchedule')}</Button>
+            <Button data-touch-target="44" onClick={() => setDialogOpen(false)} color="inherit" sx={{ minHeight: 44 }}>{t('cancel')}</Button>
+            <Button data-touch-target="44" type="submit" form="event-form" variant="contained" sx={{ minHeight: 44 }}>{t('saveSchedule')}</Button>
           </Box>
         </DialogActions>
       </Dialog>

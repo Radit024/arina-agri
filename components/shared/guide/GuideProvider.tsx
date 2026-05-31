@@ -41,13 +41,13 @@ export function useGuide() {
 function getAutoGuide(pathname: string) {
   if (typeof window === 'undefined') return null;
 
-  if (!isGuideSeen(window.localStorage, GLOBAL_GUIDE.id)) {
-    return GLOBAL_GUIDE;
-  }
-
   const pageGuide = getGuideForPathname(pathname);
   if (pageGuide && !isGuideSeen(window.localStorage, pageGuide.id)) {
     return pageGuide;
+  }
+
+  if (pathname === '/dashboard' && !isGuideSeen(window.localStorage, GLOBAL_GUIDE.id)) {
+    return GLOBAL_GUIDE;
   }
 
   return null;

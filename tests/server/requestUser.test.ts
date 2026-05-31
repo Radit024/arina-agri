@@ -8,7 +8,7 @@ function makeRequest(auth?: string) {
     headers: auth ? { authorization: auth } : {},
   });
 }
-``
+
 afterEach(() => {
   process.env = { ...originalEnv };
 });
@@ -24,9 +24,12 @@ describe('getBearerToken', () => {
 });
 
 describe('resolveRequestUserId', () => {
-  it('uses dev-user-id for the development mock token', async () => {
+  it('uses a UUID-shaped development user id for the development mock token', async () => {
     Object.assign(process.env, { NODE_ENV: 'development' });
-    await expect(resolveRequestUserId(makeRequest('Bearer mock-token'))).resolves.toBe('dev-user-id');
+    const userId = await resolveRequestUserId(makeRequest('Bearer mock-token'));
+
+    expect(userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(userId).not.toBe('dev-user-id');
   });
 
   it('returns null when no token is present', async () => {

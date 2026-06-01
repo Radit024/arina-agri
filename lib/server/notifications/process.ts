@@ -2,6 +2,8 @@ import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { buildNotificationDecision } from './decision';
 import { sendDirectNotification } from './channels';
 import { isScheduleDue, NotificationScheduleRow } from './schedule';
+import { weatherSnapshotFromBmkgForecast } from './weatherSnapshot';
+import { getBmkgForecast, getBmkgWarnings } from '@/lib/server/weather/bmkgClient';
 
 export async function processScheduledNotifications(forceAll: boolean = false) {
   const supabase = getSupabaseAdmin();
@@ -34,6 +36,16 @@ export async function processScheduledNotifications(forceAll: boolean = false) {
         continue;
       }
 
+      const weatherAdm4 = raw.weather_adm4?.trim();
+      if (!weatherAdm4) {
+        results.push({
+          user_id: raw.user_id,
+          skipped: true,
+          reason: 'Lokasi BMKG belum tersimpan untuk jadwal notifikasi.',
+        });
+        continue;
+      }
+
       const dateStr = new Intl.DateTimeFormat('en-CA', {
         timeZone: raw.timezone || 'Asia/Jakarta',
         year: 'numeric',
@@ -55,25 +67,40 @@ export async function processScheduledNotifications(forceAll: boolean = false) {
         note: e.description || undefined,
       }));
 
+      let weather;
+      let bmkgWarnings;
+      try {
+        const [forecast, warnings] = await Promise.all([
+          getBmkgForecast({
+            adm4: weatherAdm4,
+            locationLabel: raw.weather_location_label || weatherAdm4,
+          }),
+          getBmkgWarnings(),
+        ]);
+        weather = weatherSnapshotFromBmkgForecast(forecast, raw.weather_location_label);
+        bmkgWarnings = warnings.warnings;
+      } catch (weatherError) {
+        results.push({
+          user_id: raw.user_id,
+          success: false,
+          error: `Gagal memuat data cuaca BMKG: ${weatherError instanceof Error ? weatherError.message : String(weatherError)}`,
+        });
+        continue;
+      }
+
       const decision = await buildNotificationDecision({
         platform: raw.platform,
         to,
         recipientName: raw.recipient_name || 'Petani',
         notificationsEnabled: true,
-        weather: {
-          kondisi: 'cerah',
-          suhu: 28,
-          kelembapan: 75,
-          curahHujan: 0,
-          kecepatanAngin: 5,
-          lokasi: 'Kebun Anda',
-        },
+        weather,
         metadata: {
           source: 'vercel-cron-scheduler',
           customMessage: raw.custom_message || undefined,
           dailyEvents,
           forceSend: true,
           locale: 'id',
+          bmkgWarnings,
         },
       });
 

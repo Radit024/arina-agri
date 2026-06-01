@@ -42,6 +42,7 @@ export interface DashboardWeatherWarningLike {
   event: string;
   headline?: string | null;
   description?: string | null;
+  affectedAreas?: string[] | null;
 }
 
 export interface DashboardForecastDayLike {
@@ -188,15 +189,43 @@ export function buildPriceKpi(prices: DashboardPricePoint[]): DashboardPriceKpi 
   };
 }
 
+function normalizeWarningArea(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\bkab\./g, 'kabupaten')
+    .replace(/\bkec\./g, 'kecamatan')
+    .replace(/\bkab\b/g, 'kabupaten')
+    .replace(/\bkec\b/g, 'kecamatan')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function warningMatchesLocation(warning: DashboardWeatherWarningLike, locationLabel?: string) {
+  const affectedAreas = warning.affectedAreas?.map(normalizeWarningArea).filter(Boolean) ?? [];
+  if (!locationLabel?.trim() || affectedAreas.length === 0) return true;
+
+  const normalizedLocation = normalizeWarningArea(locationLabel);
+  if (!normalizedLocation) return true;
+
+  return affectedAreas.some((area) =>
+    normalizedLocation.includes(area) || area.includes(normalizedLocation)
+  );
+}
+
 export function buildWeatherSignal<TCurrent extends DashboardWeatherCurrentLike>({
   warnings,
   forecast,
+  locationLabel,
 }: {
   warnings: DashboardWeatherWarningLike[];
   forecast: DashboardForecastLike<TCurrent> | null;
+  locationLabel?: string;
 }) {
-  if (warnings.length > 0) {
-    const topWarning = warnings[0];
+  const relevantWarnings = warnings.filter((warning) => warningMatchesLocation(warning, locationLabel));
+
+  if (relevantWarnings.length > 0) {
+    const topWarning = relevantWarnings[0];
     return {
       currentWeather: forecast?.current ?? null,
       weatherBannerMessage: `${topWarning.event}: ${topWarning.headline || topWarning.description || ''}`.trim(),

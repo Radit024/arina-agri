@@ -1,4 +1,5 @@
 'use client';
+
 import { useTheme, alpha, type Theme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -27,6 +28,8 @@ import Divider from '@mui/material/Divider';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import InputAdornment from '@mui/material/InputAdornment';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -47,7 +50,6 @@ import type {
   StockOutFormOutput,
 } from '../_lib/stockSchemas';
 
-// ─── Schemas ──────────────────────────────────────────────────────
 // ─── Status badge ─────────────────────────────────────────────────
 type StockTranslator = ReturnType<typeof useTranslations>;
 
@@ -128,6 +130,7 @@ export default function StokView({
   weatherRiskNote,
 }: StokViewProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const t = useTranslations('Stock');
 
   return (
@@ -141,7 +144,7 @@ export default function StokView({
           <Box sx={{ typography: 'body2', color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
             {t('subtitle', { commodity: t('commodity'), location: t('location') })}
             {!backendOnline && (
-              <Chip label={t('offlineMode')} size="small" sx={{ ml: 1.5, bgcolor: '#fef9c3', color: '#ca8a04', fontWeight: 600, fontSize: '0.65rem' }} />
+              <Chip label={t('offlineMode')} size="small" sx={{ ml: 1.5, bgcolor: alpha(theme.palette.warning.main, 0.12), color: theme.palette.warning.main, fontWeight: 600, fontSize: '0.65rem' }} />
             )}
           </Box>
         </Box>
@@ -180,7 +183,7 @@ export default function StokView({
           { label: t('kpi.value'), value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, color: theme.palette.warning.main, bg: alpha(theme.palette.warning.main, 0.12) },
           { label: t('kpi.alert'), value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.12) },
         ].map((kpi) => (
-          <Grid size={{ xs: 6, md: 3 }} key={kpi.label}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={kpi.label}>
             <Card sx={{ borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
               <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Box sx={{ width: 44, height: 44, borderRadius: 3, bgcolor: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
@@ -206,65 +209,160 @@ export default function StokView({
         {/* Tab 1: Batch List */}
         {tab === 0 && (
           <CardContent sx={{ p: 0 }}>
-            <TableContainer sx={{ maxHeight: 520 }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow>
-                    {[t('table.batchId'), t('table.harvestDate'), t('table.grade'), t('table.initialWeight'), t('table.remainingWeight'), t('table.price'), t('table.location'), t('table.expiry'), t('table.status'), t('table.action')].map((h) => (
-                      <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>
-                        {h}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={10} align="center" sx={{ py: 6 }}>{t('table.loading')}</TableCell></TableRow>
-                  ) : activeBatches.length === 0 ? (
+            {isMobile ? (
+              <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {loading ? (
+                  <Typography variant="body2" align="center" color="text.secondary" sx={{ py: 6 }}>
+                    {t('table.loading')}
+                  </Typography>
+                ) : activeBatches.length === 0 ? (
+                  <Box sx={{ py: 8, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
+                    <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
+                  </Box>
+                ) : (
+                  activeBatches.map((b) => (
+                    <Card key={b._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider', boxShadow: 'none' }}>
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                          <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
+                            {b.batchCode}
+                          </Typography>
+                          <StatusChip status={b.status} theme={theme} t={t} />
+                        </Box>
+
+                        <Box sx={{ display: 'flex', gap: 1.25, mb: 1.5, alignItems: 'center' }}>
+                          <GradeChip grade={b.grade} theme={theme} t={t} />
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                            {b.stokTersisa} kg / {b.beratMasuk} kg
+                          </Typography>
+                        </Box>
+
+                        <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                          <Grid size={{ xs: 6 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                              {t('table.price')}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {formatRupiah(b.hargaJual)}
+                            </Typography>
+                          </Grid>
+                          <Grid size={{ xs: 6 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                              {t('table.expiry')}
+                            </Typography>
+                            <Typography variant="body2">
+                              {formatDateShort(b.estimasiKadaluarsa)}
+                            </Typography>
+                          </Grid>
+                          <Grid size={{ xs: 6 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                              {t('table.harvestDate')}
+                            </Typography>
+                            <Typography variant="body2">
+                              {formatDateShort(b.tanggalPanen)}
+                            </Typography>
+                          </Grid>
+                          <Grid size={{ xs: 6 }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+                              {t('table.location')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" noWrap>
+                              {b.lokasiPenyimpanan}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+
+                        <Divider sx={{ mb: 1.5 }} />
+
+                        <Box sx={{ display: 'flex', gap: 1.5 }}>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            size="small"
+                            startIcon={<LocalShippingIcon />}
+                            onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
+                            sx={{ borderRadius: 2, height: 40, textTransform: 'none', fontWeight: 600 }}
+                          >
+                            {t('buttons.stockOut')}
+                          </Button>
+                          <Button
+                            color="error"
+                            variant="outlined"
+                            size="small"
+                            onClick={() => deleteBatch(b._id)}
+                            sx={{ borderRadius: 2, minWidth: 44, width: 44, height: 40 }}
+                            aria-label="Delete batch"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </Box>
+            ) : (
+              <TableContainer sx={{ maxHeight: 520 }}>
+                <Table stickyHeader size="small">
+                  <TableHead>
                     <TableRow>
-                      <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
-                        <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
-                        <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    activeBatches.map((b) => (
-                      <TableRow key={b._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
-                        <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
-                        <TableCell><GradeChip grade={b.grade} theme={theme} t={t} /></TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
-                        <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? '#dc2626' : '#16a34a' }}>
-                          {b.stokTersisa} kg
+                      {[t('table.batchId'), t('table.harvestDate'), t('table.grade'), t('table.initialWeight'), t('table.remainingWeight'), t('table.price'), t('table.location'), t('table.expiry'), t('table.status'), t('table.action')].map((h) => (
+                        <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>
+                          {h}
                         </TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
-                        <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
-                        <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
-                        <TableCell><StatusChip status={b.status} theme={theme} t={t} /></TableCell>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
-                              sx={{ color: theme.palette.info.main, bgcolor: alpha(theme.palette.info.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: 'white' } }}>
-                              <LocalShippingIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" aria-label="Delete batch" onClick={() => deleteBatch(b._id)}
-                              sx={{ color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: 'white' } }}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow><TableCell colSpan={10} align="center" sx={{ py: 6 }}>{t('table.loading')}</TableCell></TableRow>
+                    ) : activeBatches.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                          <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
+                          <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                    ) : (
+                      activeBatches.map((b) => (
+                        <TableRow key={b._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
+                          <TableCell><GradeChip grade={b.grade} theme={theme} t={t} /></TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? '#dc2626' : '#16a34a' }}>
+                            {b.stokTersisa} kg
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
+                          <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
+                          <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
+                          <TableCell><StatusChip status={b.status} theme={theme} t={t} /></TableCell>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
+                                sx={{ color: theme.palette.info.main, bgcolor: alpha(theme.palette.info.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: 'white' } }}>
+                                <LocalShippingIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" aria-label="Delete batch" onClick={() => deleteBatch(b._id)}
+                                sx={{ color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: 'white' } }}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardContent>
         )}
 
         {/* Tab 2: Mutasi */}
         {tab === 1 && (
-          <CardContent>
+          <CardContent sx={{ p: isMobile ? 2 : 3 }}>
             <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
               <FormControl size="small" sx={{ minWidth: 150 }}>
                 <InputLabel>{t('mutationTable.filterGrade')}</InputLabel>
@@ -276,162 +374,408 @@ export default function StokView({
                 </Select>
               </FormControl>
             </Box>
-            <TableContainer sx={{ maxHeight: 480 }}>
-              <Table stickyHeader size="small">
-                <TableHead>
-                  <TableRow>
-                    {[t('mutationTable.date'), t('mutationTable.batch'), t('mutationTable.type'), t('mutationTable.weight'), t('mutationTable.target'), t('mutationTable.note')].map((h) => (
-                      <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>{h}</TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredMutations.map((m) => (
-                    <TableRow key={m._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
-                      <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(m.tanggal)}</TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 600 }}>{m.batchCode}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
-                          size="small"
-                          sx={{ bgcolor: m.tipe === 'masuk' ? '#dcfce7' : '#fee2e2', color: m.tipe === 'masuk' ? '#16a34a' : '#dc2626', fontWeight: 700, borderRadius: 1.5 }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.berat} kg</TableCell>
-                      <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{m.tujuan || '—'}</TableCell>
-                      <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>
-                        <Typography variant="caption" noWrap sx={{ display: 'block' }}>{m.catatan || '—'}</Typography>
-                      </TableCell>
+
+            {isMobile ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                {filteredMutations.length === 0 ? (
+                  <Typography variant="body2" align="center" color="text.secondary" sx={{ py: 6 }}>
+                    Belum ada data mutasi.
+                  </Typography>
+                ) : (
+                  filteredMutations.map((m) => (
+                    <Card key={m._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider', boxShadow: 'none' }}>
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {formatDateShort(m.tanggal)}
+                          </Typography>
+                          <Chip
+                            label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
+                            size="small"
+                            sx={{
+                              bgcolor: m.tipe === 'masuk' ? '#dcfce7' : '#fee2e2',
+                              color: m.tipe === 'masuk' ? '#16a34a' : '#dc2626',
+                              fontWeight: 700,
+                              borderRadius: 1.5,
+                              fontSize: '0.72rem'
+                            }}
+                          />
+                        </Box>
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
+                            {m.batchCode}
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                            {m.berat} kg
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1 }}>
+                          {m.tujuan && (
+                            <Typography variant="caption" color="text.secondary">
+                              <strong>Tujuan:</strong> {m.tujuan}
+                            </Typography>
+                          )}
+                          {m.catatan && (
+                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                              <strong>Catatan:</strong> {m.catatan}
+                            </Typography>
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </Box>
+            ) : (
+              <TableContainer sx={{ maxHeight: 480 }}>
+                <Table stickyHeader size="small">
+                  <TableHead>
+                    <TableRow>
+                      {[t('mutationTable.date'), t('mutationTable.batch'), t('mutationTable.type'), t('mutationTable.weight'), t('mutationTable.target'), t('mutationTable.note')].map((h) => (
+                        <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>{h}</TableCell>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredMutations.map((m) => (
+                      <TableRow key={m._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
+                        <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(m.tanggal)}</TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 600 }}>{m.batchCode}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
+                            size="small"
+                            sx={{ bgcolor: m.tipe === 'masuk' ? '#dcfce7' : '#fee2e2', color: m.tipe === 'masuk' ? '#16a34a' : '#dc2626', fontWeight: 700, borderRadius: 1.5 }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.berat} kg</TableCell>
+                        <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{m.tujuan || '—'}</TableCell>
+                        <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>
+                          <Typography variant="caption" noWrap sx={{ display: 'block' }}>{m.catatan || '—'}</Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
           </CardContent>
         )}
       </Card>
 
-      {/* ─── Dialog: Input Batch Panen ─── */}
-      <Dialog open={batchDialogOpen} onClose={() => setBatchDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4 } } }}>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>{t('dialogs.addTitle')}</Typography>
-            <IconButton size="small" onClick={() => setBatchDialogOpen(false)}><CloseIcon /></IconButton>
+      {/* ─── Dialog / Bottom Sheet: Input Batch Panen ─── */}
+      {isMobile ? (
+        <SwipeableDrawer
+          anchor="bottom"
+          open={batchDialogOpen}
+          onClose={() => setBatchDialogOpen(false)}
+          onOpen={() => {}}
+          disableDiscovery={false}
+          swipeAreaWidth={24}
+          ModalProps={{ keepMounted: true }}
+          slotProps={{
+            paper: {
+              sx: {
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                maxHeight: '85vh',
+                minHeight: '50vh',
+                height: 'auto',
+                backgroundColor: 'background.paper',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              },
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', p: 2.5 }}>
+            {/* Drag Handle */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pb: 2, flexShrink: 0 }}>
+              <Box aria-hidden sx={{ width: 40, height: 4, borderRadius: 999, backgroundColor: 'divider' }} />
+            </Box>
+
+            {/* Title */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexShrink: 0 }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+                {t('dialogs.addTitle')}
+              </Typography>
+              <IconButton size="small" onClick={() => setBatchDialogOpen(false)}><CloseIcon /></IconButton>
+            </Box>
+
+            {/* Scrollable Form Body */}
+            <Box sx={{ overflowY: 'auto', flex: 1, pr: 0.5 }}>
+              <Box component="form" onSubmit={batchForm.handleSubmit(onBatchSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="tanggalPanen" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} type="date" label={t('dialogs.fields.date')} fullWidth error={!!batchForm.formState.errors.tanggalPanen} slotProps={{ inputLabel: { shrink: true } }} />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="grade" control={batchForm.control} render={({ field }) => (
+                      <FormControl fullWidth>
+                        <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
+                        <Select {...field} label={t('dialogs.fields.grade')}>
+                          <MenuItem value="A">{t('dialogs.options.gradeA')}</MenuItem>
+                          <MenuItem value="B">{t('dialogs.options.gradeB')}</MenuItem>
+                          <MenuItem value="C">{t('dialogs.options.gradeC')}</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="beratMasuk" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} type="number" label={t('dialogs.fields.weight')} fullWidth error={!!batchForm.formState.errors.beratMasuk} helperText={batchForm.formState.errors.beratMasuk?.message} slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
+                      <FormControl fullWidth>
+                        <InputLabel>{t('dialogs.fields.location')}</InputLabel>
+                        <Select {...field} label={t('dialogs.fields.location')}>
+                          <MenuItem value="Gudang Utama">{t('dialogs.options.store1')}</MenuItem>
+                          <MenuItem value="Gudang Cadangan">{t('dialogs.options.store2')}</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="hargaModal" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} type="number" label={t('dialogs.fields.cost')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> }, htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="hargaJual" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} type="number" label={t('dialogs.fields.price')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> }, htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} slotProps={{ inputLabel: { shrink: true } }} />
+                    )} />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Controller name="catatan" control={batchForm.control} render={({ field }) => (
+                      <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
+                    )} />
+                  </Grid>
+                </Grid>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: 'flex', gap: 2, pb: 2 }}>
+                  <Button variant="outlined" color="inherit" onClick={() => setBatchDialogOpen(false)} sx={{ flex: 1, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 600 }}>{t('dialogs.buttons.cancel')}</Button>
+                  <Button type="submit" variant="contained" sx={{ flex: 2, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 700 }}>{t('dialogs.buttons.save')}</Button>
+                </Box>
+              </Box>
+            </Box>
           </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: '12px !important' }}>
-          <Box component="form" onSubmit={batchForm.handleSubmit(onBatchSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="tanggalPanen" control={batchForm.control} render={({ field }) => (
-                  <TextField {...field} type="date" label={t('dialogs.fields.date')} fullWidth error={!!batchForm.formState.errors.tanggalPanen} slotProps={{ inputLabel: { shrink: true } }} />
-                )} />
+        </SwipeableDrawer>
+      ) : (
+        <Dialog open={batchDialogOpen} onClose={() => setBatchDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 4 } } }}>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>{t('dialogs.addTitle')}</Typography>
+              <IconButton size="small" onClick={() => setBatchDialogOpen(false)}><CloseIcon /></IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent sx={{ pt: '12px !important' }}>
+            <Box component="form" onSubmit={batchForm.handleSubmit(onBatchSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="tanggalPanen" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} type="date" label={t('dialogs.fields.date')} fullWidth error={!!batchForm.formState.errors.tanggalPanen} slotProps={{ inputLabel: { shrink: true } }} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="grade" control={batchForm.control} render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
+                      <Select {...field} label={t('dialogs.fields.grade')}>
+                        <MenuItem value="A">{t('dialogs.options.gradeA')}</MenuItem>
+                        <MenuItem value="B">{t('dialogs.options.gradeB')}</MenuItem>
+                        <MenuItem value="C">{t('dialogs.options.gradeC')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="beratMasuk" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} type="number" label={t('dialogs.fields.weight')} fullWidth error={!!batchForm.formState.errors.beratMasuk} helperText={batchForm.formState.errors.beratMasuk?.message} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
+                    <FormControl fullWidth>
+                      <InputLabel>{t('dialogs.fields.location')}</InputLabel>
+                      <Select {...field} label={t('dialogs.fields.location')}>
+                        <MenuItem value="Gudang Utama">{t('dialogs.options.store1')}</MenuItem>
+                        <MenuItem value="Gudang Cadangan">{t('dialogs.options.store2')}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="hargaModal" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} type="number" label={t('dialogs.fields.cost')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> } }} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller name="hargaJual" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} type="number" label={t('dialogs.fields.price')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> } }} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} slotProps={{ inputLabel: { shrink: true } }} />
+                  )} />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Controller name="catatan" control={batchForm.control} render={({ field }) => (
+                    <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
+                  )} />
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="grade" control={batchForm.control} render={({ field }) => (
-                  <FormControl fullWidth>
-                    <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
-                    <Select {...field} label={t('dialogs.fields.grade')}>
-                      <MenuItem value="A">{t('dialogs.options.gradeA')}</MenuItem>
-                      <MenuItem value="B">{t('dialogs.options.gradeB')}</MenuItem>
-                      <MenuItem value="C">{t('dialogs.options.gradeC')}</MenuItem>
+              <Divider />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button variant="outlined" color="inherit" onClick={() => setBatchDialogOpen(false)} sx={{ flex: 1, borderRadius: 8 }}>{t('dialogs.buttons.cancel')}</Button>
+                <Button type="submit" variant="contained" sx={{ flex: 2, borderRadius: 8 }}>{t('dialogs.buttons.save')}</Button>
+              </Box>
+            </Box>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ─── Dialog / Bottom Sheet: Catat Keluar Stok ─── */}
+      {isMobile ? (
+        <SwipeableDrawer
+          anchor="bottom"
+          open={stockOutDialogOpen}
+          onClose={() => setStockOutDialogOpen(false)}
+          onOpen={() => {}}
+          disableDiscovery={false}
+          swipeAreaWidth={24}
+          ModalProps={{ keepMounted: true }}
+          slotProps={{
+            paper: {
+              sx: {
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                maxHeight: '85vh',
+                minHeight: '40vh',
+                height: 'auto',
+                backgroundColor: 'background.paper',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              },
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', p: 2.5 }}>
+            {/* Drag Handle */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', pb: 2, flexShrink: 0 }}>
+              <Box aria-hidden sx={{ width: 40, height: 4, borderRadius: 999, backgroundColor: 'divider' }} />
+            </Box>
+
+            {/* Title */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexShrink: 0 }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+                {t('dialogs.outTitle')}
+              </Typography>
+              <IconButton size="small" onClick={() => setStockOutDialogOpen(false)}><CloseIcon /></IconButton>
+            </Box>
+
+            {/* Scrollable Form Body */}
+            <Box sx={{ overflowY: 'auto', flex: 1, pr: 0.5 }}>
+              <Box component="form" onSubmit={stockOutForm.handleSubmit(onStockOutSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+                <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
+                  <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
+                    <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
+                    <Select {...field} label={t('dialogs.fields.batch')}>
+                      {activeBatches.map((b) => (
+                        <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 )} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="beratMasuk" control={batchForm.control} render={({ field }) => (
-                  <TextField {...field} type="number" label={t('dialogs.fields.weight')} fullWidth error={!!batchForm.formState.errors.beratMasuk} helperText={batchForm.formState.errors.beratMasuk?.message} />
+                <Controller name="berat" control={stockOutForm.control} render={({ field }) => (
+                  <TextField {...field} type="number" label={t('dialogs.fields.outWeight')} fullWidth error={!!stockOutForm.formState.errors.berat} helperText={stockOutForm.formState.errors.berat?.message} slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
                 )} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
+                <Controller name="tujuan" control={stockOutForm.control} render={({ field }) => (
                   <FormControl fullWidth>
-                    <InputLabel>{t('dialogs.fields.location')}</InputLabel>
-                    <Select {...field} label={t('dialogs.fields.location')}>
-                      <MenuItem value="Gudang Utama">{t('dialogs.options.store1')}</MenuItem>
-                      <MenuItem value="Gudang Cadangan">{t('dialogs.options.store2')}</MenuItem>
+                    <InputLabel>{t('dialogs.fields.target')}</InputLabel>
+                    <Select {...field} label={t('dialogs.fields.target')}>
+                      <MenuItem value="Pasar Lokal">{t('dialogs.options.market')}</MenuItem>
+                      <MenuItem value="Distributor">{t('dialogs.options.distributor')}</MenuItem>
+                      <MenuItem value="Restoran">{t('dialogs.options.restaurant')}</MenuItem>
+                      <MenuItem value="Lainnya">{t('dialogs.options.other')}</MenuItem>
                     </Select>
                   </FormControl>
                 )} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="hargaModal" control={batchForm.control} render={({ field }) => (
-                  <TextField {...field} type="number" label={t('dialogs.fields.cost')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> } }} />
+                <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
+                  <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
                 )} />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller name="hargaJual" control={batchForm.control} render={({ field }) => (
-                  <TextField {...field} type="number" label={t('dialogs.fields.price')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> } }} />
-                )} />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                  <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} slotProps={{ inputLabel: { shrink: true } }} />
-                )} />
-              </Grid>
-              <Grid size={{ xs: 12 }}>
-                <Controller name="catatan" control={batchForm.control} render={({ field }) => (
+                <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
                   <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
                 )} />
-              </Grid>
-            </Grid>
-            <Divider />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" color="inherit" onClick={() => setBatchDialogOpen(false)} sx={{ flex: 1, borderRadius: 8 }}>{t('dialogs.buttons.cancel')}</Button>
-              <Button type="submit" variant="contained" sx={{ flex: 2, borderRadius: 8 }}>{t('dialogs.buttons.save')}</Button>
+                <Box sx={{ display: 'flex', gap: 2, pb: 2, mt: 1 }}>
+                  <Button variant="outlined" color="inherit" onClick={() => setStockOutDialogOpen(false)} sx={{ flex: 1, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 600 }}>{t('dialogs.buttons.cancel')}</Button>
+                  <Button type="submit" variant="contained" color="error" sx={{ flex: 2, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 700 }}>{t('dialogs.buttons.submit')}</Button>
+                </Box>
+              </Box>
             </Box>
           </Box>
-        </DialogContent>
-      </Dialog>
-
-      {/* ─── Dialog: Catat Keluar Stok ─── */}
-      <Dialog open={stockOutDialogOpen} onClose={() => setStockOutDialogOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 4 } } }}>
-        <DialogTitle>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>{t('dialogs.outTitle')}</Typography>
-            <IconButton size="small" onClick={() => setStockOutDialogOpen(false)}><CloseIcon /></IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent sx={{ pt: '12px !important' }}>
-          <Box component="form" onSubmit={stockOutForm.handleSubmit(onStockOutSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
-              <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
-                <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
-                <Select {...field} label={t('dialogs.fields.batch')}>
-                  {activeBatches.map((b) => (
-                    <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )} />
-            <Controller name="berat" control={stockOutForm.control} render={({ field }) => (
-              <TextField {...field} type="number" label={t('dialogs.fields.outWeight')} fullWidth error={!!stockOutForm.formState.errors.berat} helperText={stockOutForm.formState.errors.berat?.message} />
-            )} />
-            <Controller name="tujuan" control={stockOutForm.control} render={({ field }) => (
-              <FormControl fullWidth>
-                <InputLabel>{t('dialogs.fields.target')}</InputLabel>
-                <Select {...field} label={t('dialogs.fields.target')}>
-                  <MenuItem value="Pasar Lokal">{t('dialogs.options.market')}</MenuItem>
-                  <MenuItem value="Distributor">{t('dialogs.options.distributor')}</MenuItem>
-                  <MenuItem value="Restoran">{t('dialogs.options.restaurant')}</MenuItem>
-                  <MenuItem value="Lainnya">{t('dialogs.options.other')}</MenuItem>
-                </Select>
-              </FormControl>
-            )} />
-            <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
-              <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
-            )} />
-            <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
-              <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
-            )} />
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" color="inherit" onClick={() => setStockOutDialogOpen(false)} sx={{ flex: 1, borderRadius: 8 }}>{t('dialogs.buttons.cancel')}</Button>
-              <Button type="submit" variant="contained" color="error" sx={{ flex: 2, borderRadius: 8 }}>{t('dialogs.buttons.submit')}</Button>
+        </SwipeableDrawer>
+      ) : (
+        <Dialog open={stockOutDialogOpen} onClose={() => setStockOutDialogOpen(false)} maxWidth="xs" fullWidth slotProps={{ paper: { sx: { borderRadius: 4 } } }}>
+          <DialogTitle>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>{t('dialogs.outTitle')}</Typography>
+              <IconButton size="small" onClick={() => setStockOutDialogOpen(false)}><CloseIcon /></IconButton>
             </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
+          </DialogTitle>
+          <DialogContent sx={{ pt: '12px !important' }}>
+            <Box component="form" onSubmit={stockOutForm.handleSubmit(onStockOutSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
+                <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
+                  <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
+                  <Select {...field} label={t('dialogs.fields.batch')}>
+                    {activeBatches.map((b) => (
+                      <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )} />
+              <Controller name="berat" control={stockOutForm.control} render={({ field }) => (
+                <TextField {...field} type="number" label={t('dialogs.fields.outWeight')} fullWidth error={!!stockOutForm.formState.errors.berat} helperText={stockOutForm.formState.errors.berat?.message} />
+              )} />
+              <Controller name="tujuan" control={stockOutForm.control} render={({ field }) => (
+                <FormControl fullWidth>
+                  <InputLabel>{t('dialogs.fields.target')}</InputLabel>
+                  <Select {...field} label={t('dialogs.fields.target')}>
+                    <MenuItem value="Pasar Lokal">{t('dialogs.options.market')}</MenuItem>
+                    <MenuItem value="Distributor">{t('dialogs.options.distributor')}</MenuItem>
+                    <MenuItem value="Restoran">{t('dialogs.options.restaurant')}</MenuItem>
+                    <MenuItem value="Lainnya">{t('dialogs.options.other')}</MenuItem>
+                  </Select>
+                </FormControl>
+              )} />
+              <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
+                <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+              )} />
+              <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
+                <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
+              )} />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button variant="outlined" color="inherit" onClick={() => setStockOutDialogOpen(false)} sx={{ flex: 1, borderRadius: 8 }}>{t('dialogs.buttons.cancel')}</Button>
+                <Button type="submit" variant="contained" color="error" sx={{ flex: 2, borderRadius: 8 }}>{t('dialogs.buttons.submit')}</Button>
+              </Box>
+            </Box>
+          </DialogContent>
+        </Dialog>
+      )}
     </Box>
   );
 }

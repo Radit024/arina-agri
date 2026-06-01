@@ -63,7 +63,7 @@ const mobileFeatureGroups: MobileFeatureGroup[] = [
     titleKey: 'pengaturanSection',
     items: [
       { key: 'guide', icon: <HelpOutlineOutlinedIcon />, path: null, action: 'guide' },
-      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: '/dashboard/pengaturan' },
+      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: null, action: 'settings' },
     ],
   },
 ];
@@ -125,6 +125,11 @@ export default function MobileBottomNav() {
     setSheetOpen(false);
     if (item.action === 'guide') {
       openGuide();
+      return;
+    }
+
+    if (item.action === 'settings') {
+      router.push(pathname + '?settings=true&tab=general');
       return;
     }
 

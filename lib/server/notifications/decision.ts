@@ -317,6 +317,8 @@ export async function buildNotificationDecision(input: NotificationDecisionInput
         recommendedActions: recommendations,
         weatherSummary: `kondisi=${weather.kondisi}, suhu=${weather.suhu}C, kelembapan=${weather.kelembapan}%, hujan=${weather.curahHujan}mm, angin=${weather.kecepatanAngin}km/j`,
         draftMessage,
+        dailyEvents: input.metadata?.dailyEvents,
+        bmkgWarnings,
       });
     } catch {
       finalMessage = draftMessage;

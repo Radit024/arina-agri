@@ -188,31 +188,40 @@ export function parseBmkgWarningRssItems(xml: string): RssItem[] {
 }
 
 export function normalizeBmkgWarningsFromCap(xml: string, options: WarningOptions): BmkgWarningsResponse {
-  const areaDescriptions = tagValues(xml, 'areaDesc').flatMap((value) =>
-    value.split(';').map((item) => item.trim()).filter(Boolean)
-  );
+  const baseIdentifier = firstTag(xml, 'identifier') || `${options.provinceCode}-${Date.now()}`;
+  const infoBlocks = tagValues(xml, 'info');
+  const warningSources = infoBlocks.length ? infoBlocks : [xml];
 
-  const warning: BmkgWeatherWarning = {
-    id: firstTag(xml, 'identifier') || `${options.provinceCode}-${Date.now()}`,
-    event: firstTag(xml, 'event') || 'Peringatan Dini Cuaca',
-    headline: firstTag(xml, 'headline') || options.provinceTitle || 'Peringatan dini cuaca',
-    description: firstTag(xml, 'description'),
-    severity: firstTag(xml, 'severity') || undefined,
-    urgency: firstTag(xml, 'urgency') || undefined,
-    certainty: firstTag(xml, 'certainty') || undefined,
-    effective: firstTag(xml, 'effective') || undefined,
-    expires: firstTag(xml, 'expires') || undefined,
-    senderName: firstTag(xml, 'senderName') || undefined,
-    web: firstTag(xml, 'web') || undefined,
-    affectedAreas: areaDescriptions,
-    provinceTitle: options.provinceTitle,
-    source: 'BMKG',
-  };
+  const warnings = warningSources
+    .map((infoXml, index): BmkgWeatherWarning => {
+      const areaDescriptions = tagValues(infoXml, 'areaDesc').flatMap((value) =>
+        value.split(';').map((item) => item.trim()).filter(Boolean)
+      );
+      const id = warningSources.length > 1 ? `${baseIdentifier}-${index + 1}` : baseIdentifier;
+
+      return {
+        id,
+        event: firstTag(infoXml, 'event') || 'Peringatan Dini Cuaca',
+        headline: firstTag(infoXml, 'headline') || options.provinceTitle || 'Peringatan dini cuaca',
+        description: firstTag(infoXml, 'description'),
+        severity: firstTag(infoXml, 'severity') || undefined,
+        urgency: firstTag(infoXml, 'urgency') || undefined,
+        certainty: firstTag(infoXml, 'certainty') || undefined,
+        effective: firstTag(infoXml, 'effective') || undefined,
+        expires: firstTag(infoXml, 'expires') || undefined,
+        senderName: firstTag(infoXml, 'senderName') || firstTag(xml, 'senderName') || undefined,
+        web: firstTag(infoXml, 'web') || firstTag(xml, 'web') || undefined,
+        affectedAreas: areaDescriptions,
+        provinceTitle: options.provinceTitle,
+        source: 'BMKG',
+      };
+    })
+    .filter((warning) => warning.description || warning.affectedAreas.length);
 
   return {
     provinceCode: options.provinceCode,
     provinceName: options.provinceName,
-    warnings: warning.description || warning.affectedAreas.length ? [warning] : [],
+    warnings,
     updatedAt: new Date().toISOString(),
     attribution: BMKG_ATTRIBUTION,
     isFallback: options.isFallback,

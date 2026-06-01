@@ -16,6 +16,8 @@ function mapScheduleRow(row: NotificationScheduleRow) {
     to,
     recipientName: row.recipient_name || 'Petani',
     customMessage: row.custom_message || '',
+    weatherAdm4: row.weather_adm4 || '',
+    weatherLocationLabel: row.weather_location_label || '',
     userId: row.user_id,
   };
 }
@@ -49,6 +51,8 @@ export async function handleScheduleGet(request: Request) {
           to: '',
           recipientName: 'Petani',
           customMessage: '',
+          weatherAdm4: '',
+          weatherLocationLabel: '',
           userId,
         },
       });
@@ -89,6 +93,8 @@ export async function handleSchedulePost(request: Request) {
         telegram_chat_id: payload.platform === 'telegram' ? payload.to : null,
         recipient_name: payload.recipientName || 'Petani',
         custom_message: payload.customMessage || null,
+        weather_adm4: payload.weatherAdm4 || null,
+        weather_location_label: payload.weatherLocationLabel || null,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
       .select()

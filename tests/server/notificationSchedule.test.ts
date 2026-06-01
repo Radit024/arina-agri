@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isScheduleDue, isValidScheduleTime } from '@/lib/server/notifications/schedule';
+import { isScheduleDue, isValidScheduleTime, validateSchedulePayload } from '@/lib/server/notifications/schedule';
 
 const now = new Date('2026-05-14T00:10:00Z');
 
@@ -50,5 +50,49 @@ describe('isScheduleDue', () => {
   it('returns false when already sent today', () => {
     const schedule = makeSchedule({ last_sent_at: '2026-05-14T00:00:00Z' });
     expect(isScheduleDue(schedule, now)).toBe(false);
+  });
+});
+
+describe('validateSchedulePayload', () => {
+  it('requires a BMKG adm4 location when enabling a schedule', () => {
+    const result = validateSchedulePayload({
+      enabled: true,
+      time: '07:00',
+      platform: 'telegram',
+      to: '123456',
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.message).toContain('weatherAdm4');
+  });
+
+  it('allows disabled schedules without a BMKG adm4 location', () => {
+    const result = validateSchedulePayload({
+      enabled: false,
+      time: '07:00',
+      platform: 'telegram',
+      to: '123456',
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.payload?.weatherAdm4).toBeUndefined();
+  });
+
+  it('preserves BMKG location fields for a valid enabled schedule', () => {
+    const result = validateSchedulePayload({
+      enabled: true,
+      time: '07:00',
+      timezone: 'Asia/Jakarta',
+      platform: 'whatsapp',
+      to: '08123456789',
+      weatherAdm4: '35.07.22.2008',
+      weatherLocationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
+    });
+
+    expect(result.valid).toBe(true);
+    expect(result.payload).toMatchObject({
+      weatherAdm4: '35.07.22.2008',
+      weatherLocationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
+    });
   });
 });

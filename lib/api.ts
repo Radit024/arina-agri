@@ -147,6 +147,8 @@ export interface NotificationScheduleConfig {
   to: string;
   recipientName?: string;
   customMessage?: string;
+  weatherAdm4?: string;
+  weatherLocationLabel?: string;
   userId?: string;
 }
 

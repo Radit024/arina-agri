@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { BmkgWeatherWarning } from '@/lib/server/weather/bmkgTypes';
 
 function getClient() {
   const apiKey =
@@ -225,6 +226,8 @@ export async function generateNotificationDecisionMessage({
   recommendedActions,
   weatherSummary,
   draftMessage,
+  dailyEvents,
+  bmkgWarnings,
 }: {
   farmerName: string;
   location?: string;
@@ -234,6 +237,8 @@ export async function generateNotificationDecisionMessage({
   recommendedActions: string[];
   weatherSummary: string;
   draftMessage: string;
+  dailyEvents?: Array<{ title: string; time?: string; category?: string; note?: string }>;
+  bmkgWarnings?: BmkgWeatherWarning[];
 }) {
   const client = getClient();
   if (!client) {
@@ -242,6 +247,16 @@ export async function generateNotificationDecisionMessage({
 
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
+  const agendaSummary = dailyEvents?.length
+    ? dailyEvents
+      .map((event) => `${event.time ? `${event.time} ` : ''}${event.title}${event.category ? ` (${event.category})` : ''}${event.note ? ` - ${event.note}` : ''}`)
+      .join(' | ')
+    : 'Tidak ada agenda terjadwal.';
+  const warningSummary = bmkgWarnings?.length
+    ? bmkgWarnings
+      .map((warning) => `${warning.headline || warning.event}: ${warning.description || 'tanpa deskripsi'}${warning.affectedAreas?.length ? ` Area: ${warning.affectedAreas.join(', ')}` : ''}`)
+      .join(' | ')
+    : 'Tidak ada peringatan BMKG aktif.';
 
   const mergedPrompt = [
     SYSTEM_PROMPTS.notificationDecision,
@@ -254,6 +269,13 @@ export async function generateNotificationDecisionMessage({
     `- Triggered rules: ${triggeredRules.join(', ') || 'tidak ada'}`,
     `- Recommended actions: ${recommendedActions.join(' | ') || 'tidak ada'}`,
     `- Ringkasan cuaca: ${weatherSummary}`,
+    `- Agenda hari ini: ${agendaSummary}`,
+    `- Peringatan BMKG: ${warningSummary}`,
+    '',
+    'ARAHAN SARAN KEGIATAN:',
+    '- Sesuaikan 2-3 aksi dengan cuaca, agenda hari ini, dan peringatan BMKG.',
+    '- Jika ada hujan/angin/peringatan, sarankan menunda penyemprotan atau kerja lapang berisiko.',
+    '- Jika tidak ada risiko berarti, sarankan kegiatan aman seperti monitoring, penyiraman ringan, atau cek kebun.',
     '',
     'DRAFT PESAN SAAT INI:',
     draftMessage,

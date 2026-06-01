@@ -120,6 +120,7 @@ async function loadWeather(adm4?: string, locationLabel?: string) {
     return buildWeatherSignal({
       warnings: warnings.warnings,
       forecast,
+      locationLabel: locationLabel || forecast?.locationLabel,
     });
   } catch {
     return {

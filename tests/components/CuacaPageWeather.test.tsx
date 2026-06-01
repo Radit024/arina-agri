@@ -177,6 +177,31 @@ describe('CuacaPage GPS', () => {
     expect(screen.getAllByText(/Peringatan dini cuaca Jawa Timur/).length).toBeGreaterThan(0);
   });
 
+  it('exposes responsive weather UI hooks for mobile and desktop polish', async () => {
+    mockStorage.gpsLocation = {
+      latitude: -7.9201,
+      longitude: 112.5899,
+      accuracy: 10,
+      label: 'Malang',
+      adm4: '35.07.22.2008',
+    };
+
+    const { container } = render(<CuacaPage />);
+
+    await waitFor(() => expect(screen.getByText(/Sumber data: BMKG/)).toBeInTheDocument());
+
+    expect(container.querySelector('[data-guide-target="weather-gps"]')).toHaveAttribute('data-touch-target', '44');
+    expect(container.querySelector('[data-weather-forecast-grid="fit-mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather-history-layout="stretch-column"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather-history-card="fills-empty-space"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather-history-mobile="cards"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather-history-table="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-weather-notification-panel="sticky"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-testid="LocationOnIcon"]')).toBeInTheDocument();
+    expect(container.textContent).not.toContain(String.fromCodePoint(0x1f4cd));
+    expect(container.textContent).not.toContain(String.fromCodePoint(0x1f4a7));
+  });
+
   it('hydrates a saved GPS location without adm4 before loading BMKG forecast', async () => {
     mockStorage.gpsLocation = {
       latitude: -7.93167,

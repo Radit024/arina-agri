@@ -75,6 +75,39 @@ describe('buildWeatherSignal', () => {
       weatherBannerMessage: 'Hujan Lebat: Waspada hujan sore ini',
     });
   });
+
+  it('uses the BMKG warning that matches the selected weather location', () => {
+    expect(buildWeatherSignal({
+      warnings: [
+        { event: 'Hujan Lebat', headline: 'Waspada Batu', description: 'Detail Batu', affectedAreas: ['Batu'] },
+        { event: 'Angin Kencang', headline: 'Waspada Dau', description: 'Detail Dau', affectedAreas: ['Dau', 'Lowokwaru'] },
+      ],
+      forecast: {
+        current: { temperatureC: 29, condition: 'berawan', humidityPercent: 80 },
+        days: [{ date: '2026-05-15', totalRainfallMm: 0 }],
+      },
+      locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
+    })).toEqual({
+      currentWeather: { temperatureC: 29, condition: 'berawan', humidityPercent: 80 },
+      weatherBannerMessage: 'Angin Kencang: Waspada Dau',
+    });
+  });
+
+  it('does not show unrelated BMKG warnings for another selected location', () => {
+    expect(buildWeatherSignal({
+      warnings: [
+        { event: 'Hujan Lebat', headline: 'Waspada Batu', description: 'Detail Batu', affectedAreas: ['Batu'] },
+      ],
+      forecast: {
+        current: { temperatureC: 29, condition: 'berawan', humidityPercent: 80 },
+        days: [{ date: '2026-05-15', totalRainfallMm: 0 }],
+      },
+      locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
+    })).toEqual({
+      currentWeather: { temperatureC: 29, condition: 'berawan', humidityPercent: 80 },
+      weatherBannerMessage: undefined,
+    });
+  });
 });
 
 describe('buildDevDashboardSummary', () => {

@@ -42,6 +42,27 @@ function writeCache<T>(key: string, value: T) {
   return value;
 }
 
+function normalizeWarningLookupText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/\bprovinsi\b|\bpropinsi\b/g, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchesWarningProvince(item: { title: string; description: string; link: string }, provinceCode: string, provinceName: string) {
+  const legacyCode = provinceCode.toLowerCase().trim();
+  const link = item.link.toLowerCase();
+  if (legacyCode && link.includes(`/${legacyCode}_alert.xml`)) return true;
+
+  const province = normalizeWarningLookupText(provinceName);
+  if (!province) return false;
+
+  const searchable = normalizeWarningLookupText(`${item.title} ${item.description}`);
+  return searchable.includes(province);
+}
+
 async function fetchWithTimeout(url: string, init?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -104,7 +125,9 @@ export async function getBmkgWarnings(params?: { provinceCode?: string; province
     const rssResponse = await fetchWithTimeout('https://www.bmkg.go.id/alerts/nowcast/id');
     if (!rssResponse.ok) throw new Error(`BMKG warnings RSS HTTP ${rssResponse.status}`);
     const rss = await rssResponse.text();
-    const matching = parseBmkgWarningRssItems(rss).find((item) => item.link.includes(`/${provinceCode}_alert.xml`));
+    const matching = parseBmkgWarningRssItems(rss).find((item) =>
+      matchesWarningProvince(item, provinceCode, provinceName)
+    );
     if (!matching) {
       return writeCache(cacheKey, {
         provinceCode,

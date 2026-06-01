@@ -3,6 +3,7 @@
 import AirIcon from '@mui/icons-material/Air';
 import CloudIcon from '@mui/icons-material/Cloud';
 import GrainIcon from '@mui/icons-material/Grain';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
@@ -21,7 +22,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
-import { alpha,useTheme } from '@mui/material/styles';
+import Skeleton from '@mui/material/Skeleton';
+import { alpha, useTheme } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -111,12 +113,13 @@ export default function CuacaView({
           <Grid size={{ xs: 12, sm: 'auto' }}>
             <Button
               data-guide-target="weather-gps"
+              data-touch-target="44"
               variant="contained"
               startIcon={gpsStatus === 'loading' ? <CircularProgress color="inherit" size={16} /> : <MyLocationIcon />}
               onClick={handleUseGpsLocation}
               disabled={gpsStatus === 'loading'}
               sx={{
-                minHeight: 40,
+                minHeight: 44,
                 px: 2.25,
                 borderRadius: 999,
                 textTransform: 'none',
@@ -162,7 +165,11 @@ export default function CuacaView({
 
       <Grid container spacing={3}>
         {/* Current Weather */}
-        <Grid size={{ xs: 12, lg: 8 }}>
+        <Grid
+          data-weather-history-layout="stretch-column"
+          size={{ xs: 12, lg: 8 }}
+          sx={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}
+        >
           <Card data-guide-target="weather-current" sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
             {isRainy && (
               <Box className="weather-rain-layer" aria-hidden>
@@ -195,10 +202,31 @@ export default function CuacaView({
               </Box>
             )}
 
-            <CardContent sx={{ p: 3 }}>
-              {forecastData ? (
+            <CardContent sx={{ p: { xs: 2.25, md: 3 }, minHeight: { xs: 312, sm: 278 } }}>
+              {weatherLoading && !forecastData ? (
+                <Box data-weather-loading="current" sx={{ display: 'grid', gap: 2.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Skeleton width={96} height={20} sx={{ bgcolor: 'rgba(255,255,255,0.22)' }} />
+                      <Skeleton width="45%" height={64} sx={{ mt: 0.5, bgcolor: 'rgba(255,255,255,0.28)' }} />
+                      <Skeleton width="58%" height={28} sx={{ bgcolor: 'rgba(255,255,255,0.2)' }} />
+                      <Skeleton width="76%" height={22} sx={{ mt: 0.5, bgcolor: 'rgba(255,255,255,0.18)' }} />
+                    </Box>
+                    <Skeleton variant="circular" width={56} height={56} sx={{ bgcolor: 'rgba(255,255,255,0.22)', flexShrink: 0 }} />
+                  </Box>
+                  <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
+                  <Grid container spacing={2}>
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Grid key={`current-weather-skeleton-${index}`} size={{ xs: 6, sm: 3 }}>
+                        <Skeleton width="78%" height={20} sx={{ bgcolor: 'rgba(255,255,255,0.18)' }} />
+                        <Skeleton width="52%" height={24} sx={{ bgcolor: 'rgba(255,255,255,0.26)' }} />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Box>
+              ) : forecastData ? (
                 <>
-                  <Box className="flex items-start justify-between">
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
                     <Box>
                       <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         {t('current.title')}
@@ -209,9 +237,12 @@ export default function CuacaView({
                       <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.85)', mt: 0.5, textTransform: 'capitalize' }}>
                         {getConditionLabel(displayedCurrentWeather.kondisi)}
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mt: 1 }}>
-                        📍 {displayedCurrentWeather.lokasi}
-                      </Typography>
+                      <Box sx={{ color: 'rgba(255,255,255,0.76)', mt: 1, display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                        <LocationOnIcon sx={{ fontSize: 18, flexShrink: 0 }} />
+                        <Typography variant="body2" sx={{ color: 'inherit', overflowWrap: 'anywhere' }}>
+                          {displayedCurrentWeather.lokasi}
+                        </Typography>
+                      </Box>
                     </Box>
                     <WeatherIcon kondisi={displayedCurrentWeather.kondisi} size="large" />
                   </Box>
@@ -295,16 +326,24 @@ export default function CuacaView({
                   {warningsData.warnings[0].headline || warningsData.warnings[0].description}
                 </Alert>
               ) : null}
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: 'repeat(3, minmax(116px, 1fr))', sm: 'repeat(3, 1fr)' },
-                  gap: { xs: 1.25, sm: 2 },
-                  overflowX: 'auto',
-                  pb: 0.5,
-                  width: '100%',
-                }}
-              >
+              {weatherLoading && !fForecast.length ? (
+                <Box data-weather-loading="forecast" sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: { xs: 1.25, sm: 2 }, width: '100%' }}>
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <Skeleton key={`forecast-skeleton-${index}`} variant="rounded" height={134} sx={{ borderRadius: 3 }} />
+                  ))}
+                </Box>
+              ) : (
+                <Box
+                  data-weather-forecast-grid="fit-mobile"
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                    gap: { xs: 1.25, sm: 2 },
+                    pb: 0.5,
+                    width: '100%',
+                    minWidth: 0,
+                  }}
+                >
                 {fForecast.map((day) => {
                   const date = new Date(day.tanggal);
                   const dayName = dayNames[date.getDay()];
@@ -314,8 +353,8 @@ export default function CuacaView({
                     <Box
                       key={day.tanggal}
                       sx={{
-                        minWidth: { xs: 116, sm: 0 },
-                        p: { xs: 1.75, sm: 2.25 },
+                        minWidth: 0,
+                        p: { xs: 1.25, sm: 2.25 },
                         borderRadius: 3,
                         textAlign: 'center',
                         border: '1px solid',
@@ -327,6 +366,12 @@ export default function CuacaView({
                         '&:hover': {
                           transform: 'translateY(-3px)',
                           borderColor: 'rgba(255,255,255,0.62)',
+                        },
+                        '@media (prefers-reduced-motion: reduce)': {
+                          transition: 'none',
+                          '&:hover': {
+                            transform: 'none',
+                          },
                         },
                         '& .MuiTypography-root': {
                           color: 'rgba(255,255,255,0.86)',
@@ -350,22 +395,74 @@ export default function CuacaView({
                       <Typography variant="caption" sx={{ display: 'block', fontWeight: 700 }}>{day.suhuMax}°</Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{day.suhuMin}°</Typography>
                       {day.curahHujan > 0 && (
-                        <Typography variant="caption" sx={{ display: 'block', color: '#3b82f6', mt: 0.5 }}>
-                          💧{day.curahHujan}mm
-                        </Typography>
+                        <Box sx={{ color: 'rgba(255,255,255,0.86)', mt: 0.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.25, minWidth: 0 }}>
+                          <WaterDropIcon sx={{ fontSize: 14, flexShrink: 0 }} />
+                          <Typography variant="caption" sx={{ color: 'inherit', fontWeight: 700 }}>
+                            {day.curahHujan}mm
+                          </Typography>
+                        </Box>
                       )}
                     </Box>
                   );
                 })}
-              </Box>
+                </Box>
+              )}
             </CardContent>
           </Card>
 
-          {/* Alert History */}
-          <Card sx={{ mt: 3 }}>
+          <Card
+            data-weather-history-card="fills-empty-space"
+            sx={{
+              mt: 3,
+              display: 'flex',
+              flexDirection: 'column',
+              flexGrow: { lg: 1 },
+              minHeight: { xs: 0, lg: 360 },
+            }}
+          >
             <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('history.title')}</Typography>} />
-            <CardContent sx={{ pt: 0 }}>
-              <TableContainer>
+            <CardContent sx={{ pt: 0, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+              <Box data-weather-history-mobile="cards" sx={{ display: { xs: 'grid', md: 'none' }, gap: 1.25 }}>
+                {fAlerts.map((alert) => (
+                  <Box
+                    key={alert.id}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      p: 1.5,
+                      bgcolor: alpha(theme.palette.background.default, 0.72),
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5, mb: 1 }}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          {formatDateShort(alert.tanggal)}
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+                          {alert.jenisPeringatan}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={alert.status === 'terkirim' ? t('history.status.sent') : t('history.status.failed')}
+                        size="small"
+                        sx={{
+                          backgroundColor: alert.status === 'terkirim' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.error.main, 0.12),
+                          color: alert.status === 'terkirim' ? theme.palette.success.main : theme.palette.error.main,
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          flexShrink: 0,
+                        }}
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, overflowWrap: 'anywhere' }}>
+                      {alert.pesan}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              <TableContainer data-weather-history-table="desktop" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
                 <Table size="small">
                   <TableHead>
                     <TableRow>
@@ -376,7 +473,7 @@ export default function CuacaView({
                   </TableHead>
                   <TableBody>
                     {fAlerts.map((alert) => (
-                      <TableRow key={alert.id} sx={{ '&:hover': { backgroundColor: '#f8fafc' } }}>
+                      <TableRow key={alert.id} sx={{ '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.04) } }}>
                         <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{formatDateShort(alert.tanggal)}</TableCell>
                         <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500 }}>{alert.jenisPeringatan}</TableCell>
                         <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary', maxWidth: 280 }}>
@@ -405,6 +502,15 @@ export default function CuacaView({
 
         {/* Notification Integration */}
           <Grid size={{ xs: 12, lg: 4 }}>
+            <Box
+              data-weather-notification-panel="sticky"
+              sx={{
+                position: { lg: 'sticky' },
+                top: { lg: 24 },
+                display: 'grid',
+                gap: 3,
+              }}
+            >
             <Card data-guide-target="weather-notifications">
               <CardHeader
                 avatar={isWhatsappPlatform ? <WhatsAppIcon sx={{ color: '#25d366' }} /> : <TelegramIcon sx={{ color: '#229ED9' }} />}
@@ -418,15 +524,16 @@ export default function CuacaView({
                 </Box>
 
                 <ToggleButtonGroup fullWidth exclusive value={notificationPlatform} onChange={handlePlatformChange} sx={{ mb: 2.5 }}>
-                  <ToggleButton value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  <ToggleButton data-touch-target="44" value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
                   </ToggleButton>
-                  <ToggleButton value="telegram" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  <ToggleButton data-touch-target="44" value="telegram" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram
                   </ToggleButton>
                 </ToggleButtonGroup>
 
                 <FormControlLabel
+                  data-touch-target="44"
                   control={
                     <Switch
                       checked={notifAktif}
@@ -439,7 +546,7 @@ export default function CuacaView({
                       {t('whatsapp.enable')}
                     </Typography>
                   }
-                  sx={{ mb: 2.5, display: 'flex' }}
+                  sx={{ mb: 2.5, display: 'flex', minHeight: 44 }}
                 />
 
                 <TextField
@@ -461,6 +568,8 @@ export default function CuacaView({
                   disabled={!notifAktif || !contactValue.trim()}
                   onClick={() => setSavedContact(contactValue.trim())}
                   startIcon={isWhatsappPlatform ? <WhatsAppIcon /> : <TelegramIcon />}
+                  data-touch-target="44"
+                  sx={{ minHeight: 44 }}
                 >
                   {isCurrentContactSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
                 </Button>
@@ -470,7 +579,8 @@ export default function CuacaView({
                   variant="outlined"
                   onClick={handleTestNotification}
                   disabled={!notifAktif || !(savedContact || contactValue).trim() || isSendingTest}
-                  sx={{ mt: 1.5 }}
+                  data-touch-target="44"
+                  sx={{ mt: 1.5, minHeight: 44 }}
                 >
                   {isSendingTest ? <CircularProgress size={20} /> : t('whatsapp.testButton', { platform: notificationPlatform === 'whatsapp' ? 'WhatsApp' : 'Telegram' })}
                 </Button>
@@ -507,7 +617,7 @@ export default function CuacaView({
                       ))}
                     </Box>
                     {notificationPlatform === 'telegram' && (
-                      <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2, backgroundColor: '#f8fafc' }}>
+                      <Box sx={{ flex: 1, border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2, backgroundColor: alpha(theme.palette.info.main, 0.06) }}>
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                           {t('whatsapp.tutorialTitle')}
                         </Typography>
@@ -524,22 +634,23 @@ export default function CuacaView({
               </CardContent>
             </Card>
 
-            <Card sx={{ mt: 3 }}>
+            <Card>
               <CardHeader
                 title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('whatsapp.scheduleTitle')}</Typography>}
                 subheader={t('whatsapp.scheduleSub')}
               />
               <CardContent sx={{ pt: 0 }}>
                 <ToggleButtonGroup
+                  fullWidth
                   exclusive
                   value={schedulePlatform}
                   onChange={(_event, value) => value && setSchedulePlatform(value)}
                   sx={{ mb: 2 }}
                 >
-                  <ToggleButton value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  <ToggleButton data-touch-target="44" value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
                   </ToggleButton>
-                  <ToggleButton value="telegram" sx={{ textTransform: 'none', fontWeight: 600 }}>
+                  <ToggleButton data-touch-target="44" value="telegram" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram
                   </ToggleButton>
                 </ToggleButtonGroup>
@@ -560,8 +671,8 @@ export default function CuacaView({
                   </Grid>
                 </Grid>
 
-                <Box className="flex items-center justify-between" sx={{ mt: 3, gap: 2, flexWrap: 'wrap' }}>
-                  <Box className="flex items-center gap-2">
+                <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
+                  <Box data-touch-target="44" sx={{ display: 'flex', alignItems: 'center', gap: 1, minHeight: 44 }}>
                     <Switch
                       checked={scheduleEnabled}
                       onChange={(e) => setScheduleEnabled(e.target.checked)}
@@ -569,7 +680,7 @@ export default function CuacaView({
                     />
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>{t('whatsapp.scheduleActive')}</Typography>
                   </Box>
-                  <Button variant="contained" sx={{ borderRadius: 2 }} onClick={handleSaveSchedule}>
+                  <Button data-touch-target="44" variant="contained" sx={{ borderRadius: 2, minHeight: 44, width: { xs: '100%', sm: 'auto' } }} onClick={handleSaveSchedule}>
                     {t('whatsapp.scheduleSave')}
                   </Button>
                 </Box>
@@ -587,7 +698,9 @@ export default function CuacaView({
                 )}
               </CardContent>
             </Card>
+            </Box>
           </Grid>
+
       </Grid>
     </Box>
   );

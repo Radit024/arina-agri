@@ -261,7 +261,7 @@ export function useCuacaController() {
       : currentCondition === 'berawan' || currentCondition === 'mendung'
         ? 'linear-gradient(135deg, var(--weather-cloudy-start) 0%, var(--weather-cloudy-mid) 55%, var(--weather-cloudy-end) 100%)'
         : 'linear-gradient(135deg, var(--weather-rainy-start) 0%, var(--weather-rainy-mid) 60%, var(--weather-rainy-end) 100%)';
-  const forecastSectionBackground = '#fff';
+  const forecastSectionBackground = theme.palette.background.paper;
   const getForecastDayBackground = (condition: string) => {
     const normalized = condition.toLowerCase();
     if (normalized === 'cerah') {
@@ -470,6 +470,12 @@ export function useCuacaController() {
       return;
     }
 
+    if (scheduleEnabled && !activeAdm4) {
+      setScheduleStatus('error');
+      setScheduleError(missingBmkgLocationMessage);
+      return;
+    }
+
     try {
       setScheduleStatus('idle');
       setScheduleError('');
@@ -481,6 +487,8 @@ export function useCuacaController() {
         to: targetContact,
         recipientName,
         customMessage: scheduleMessage.trim(),
+        weatherAdm4: activeAdm4,
+        weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
         userId: user?.id,
       });
       setScheduleStatus('success');

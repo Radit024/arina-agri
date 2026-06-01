@@ -1,6 +1,11 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -67,6 +72,8 @@ export default function PengaturanView({
 }: PengaturanViewProps) {
   const t = useTranslations('Settings');
   const theme = useTheme();
+  const router = useRouter();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const SETTINGS_TABS = [
     { id: 'general' as const, label: t('general.tab'), icon: <TuneIcon /> },
@@ -306,7 +313,8 @@ export default function PengaturanView({
     );
   };
 
-  return (
+  // Shared inner content (used by both mobile sheet and desktop page)
+  const innerContent = (
     <Box sx={{ p: { xs: 2, md: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       
       {/* Header */}
@@ -467,4 +475,63 @@ export default function PengaturanView({
       </Box>
     </Box>
   );
+
+  // Mobile: Bottom sheet (SwipeableDrawer)
+  if (isMobile) {
+    return (
+      <SwipeableDrawer
+        anchor="bottom"
+        open={true}
+        onClose={() => router.back()}
+        onOpen={() => {}}
+        disableSwipeToOpen
+        swipeAreaWidth={0}
+        ModalProps={{ keepMounted: true }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '20px 20px 0 0',
+              maxHeight: '60vh',
+              minHeight: '45vh',
+              height: 'auto',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+            },
+          },
+        }}
+      >
+        {/* Drag Handle */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            pt: 1.5,
+            pb: 0.5,
+            flexShrink: 0,
+          }}
+        >
+          <Box
+            sx={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              bgcolor: 'divider',
+            }}
+          />
+        </Box>
+
+        {/* Scrollable Sheet Body */}
+        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+          {innerContent}
+        </Box>
+
+        {/* Safe area bottom */}
+        <Box sx={{ pb: 'env(safe-area-inset-bottom)', flexShrink: 0 }} />
+      </SwipeableDrawer>
+    );
+  }
+
+  // Desktop: Full page layout
+  return innerContent;
 }

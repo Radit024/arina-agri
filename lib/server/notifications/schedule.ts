@@ -11,6 +11,8 @@ export interface NotificationScheduleRow {
   telegram_chat_id?: string | null;
   recipient_name?: string | null;
   custom_message?: string | null;
+  weather_adm4?: string | null;
+  weather_location_label?: string | null;
   last_sent_at?: string | null;
 }
 
@@ -22,6 +24,8 @@ export interface NotificationSchedulePayload {
   to: string;
   recipientName?: string;
   customMessage?: string;
+  weatherAdm4?: string;
+  weatherLocationLabel?: string;
 }
 
 export function isValidScheduleTime(time: string) {
@@ -93,6 +97,11 @@ export function validateSchedulePayload(body: any): { valid: boolean; message?: 
     return { valid: false, message: 'Field "to" wajib diisi.' };
   }
 
+  const weatherAdm4 = typeof body.weatherAdm4 === 'string' ? body.weatherAdm4.trim() : '';
+  if (Boolean(body.enabled) && !weatherAdm4) {
+    return { valid: false, message: 'Field weatherAdm4 wajib diisi saat jadwal notifikasi aktif.' };
+  }
+
   return {
     valid: true,
     payload: {
@@ -103,6 +112,10 @@ export function validateSchedulePayload(body: any): { valid: boolean; message?: 
       to: body.to,
       recipientName: body.recipientName || 'Petani',
       customMessage: body.customMessage,
+      weatherAdm4: weatherAdm4 || undefined,
+      weatherLocationLabel: typeof body.weatherLocationLabel === 'string'
+        ? body.weatherLocationLabel.trim() || undefined
+        : undefined,
     },
   };
 }

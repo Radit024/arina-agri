@@ -70,4 +70,40 @@ describe('BMKG warning normalizer', () => {
       source: 'BMKG',
     });
   });
+
+  it('keeps separate CAP info blocks so location filtering uses the matching affected area', () => {
+    const warnings = normalizeBmkgWarningsFromCap(`<?xml version="1.0"?>
+      <alert>
+        <identifier>bmkg-jatim-202606010700</identifier>
+        <info>
+          <event>Hujan Lebat</event>
+          <headline>Waspada Batu</headline>
+          <description>Hujan lebat di Batu.</description>
+          <area><areaDesc>Batu</areaDesc></area>
+        </info>
+        <info>
+          <event>Angin Kencang</event>
+          <headline>Waspada Malang</headline>
+          <description>Angin kencang di Dau.</description>
+          <area><areaDesc>Dau; Lowokwaru</areaDesc></area>
+        </info>
+      </alert>`, {
+      provinceCode: 'jatim',
+      provinceName: 'Jawa Timur',
+      provinceTitle: 'Peringatan Dini Cuaca Jawa Timur',
+      isFallback: false,
+    });
+
+    expect(warnings.warnings).toHaveLength(2);
+    expect(warnings.warnings[0]).toMatchObject({
+      id: 'bmkg-jatim-202606010700-1',
+      event: 'Hujan Lebat',
+      affectedAreas: ['Batu'],
+    });
+    expect(warnings.warnings[1]).toMatchObject({
+      id: 'bmkg-jatim-202606010700-2',
+      event: 'Angin Kencang',
+      affectedAreas: ['Dau', 'Lowokwaru'],
+    });
+  });
 });

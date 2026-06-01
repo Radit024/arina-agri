@@ -666,6 +666,21 @@
     "online": "● Online",
     "typing": "Arina sedang mengetik...",
     "inputPlaceholder": "Tanya Arina tentang cabai...",
+    "inputLabel": "Pesan untuk Arina AI",
+    "sendMessage": "Kirim pesan",
+    "sendingMessage": "Arina AI sedang menjawab",
+    "retryLastPrompt": "Coba lagi",
+    "composerHelper": "Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.",
+    "currentChatClear": "Hapus chat saat ini",
+    "historyTitle": "Riwayat Chat",
+    "historyOpen": "Buka riwayat chat",
+    "historyClose": "Tutup riwayat chat",
+    "historyClearAll": "Hapus semua riwayat",
+    "historyDeleteSession": "Hapus riwayat chat",
+    "historyEmpty": "Belum ada riwayat percakapan.",
+    "historyToday": "Hari Ini",
+    "historyPrevious": "Sebelumnya",
+    "historyMessageCount": "{count} pesan",
     "welcome": {
       "title": "Tanya apa saja seputar cabai",
       "subtitle": "Temukan panduan budidaya, penanganan hama, dan jadwal pemupukan yang cerdas."
@@ -686,6 +701,7 @@
     "quickReference": {
       "title": "Referensi Cepat Penyakit",
       "risk": "Risiko {value}",
+      "close": "Tutup referensi cepat",
       "diseases": [
         {
           "id": "1",

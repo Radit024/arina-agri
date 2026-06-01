@@ -666,6 +666,21 @@
     "online": "● Online",
     "typing": "Arina is typing...",
     "inputPlaceholder": "Ask Arina about chili...",
+    "inputLabel": "Message for Arina AI",
+    "sendMessage": "Send message",
+    "sendingMessage": "Arina AI is replying",
+    "retryLastPrompt": "Try again",
+    "composerHelper": "Press Enter to send, Shift + Enter for a new line. This AI is tuned for bird's eye chili.",
+    "currentChatClear": "Clear current chat",
+    "historyTitle": "Chat History",
+    "historyOpen": "Open chat history",
+    "historyClose": "Close chat history",
+    "historyClearAll": "Clear all history",
+    "historyDeleteSession": "Delete chat history",
+    "historyEmpty": "No conversation history yet.",
+    "historyToday": "Today",
+    "historyPrevious": "Previous",
+    "historyMessageCount": "{count} messages",
     "welcome": {
       "title": "Ask anything about chili",
       "subtitle": "Find cultivation guides, pest management, and smart fertilization schedules."
@@ -686,6 +701,7 @@
     "quickReference": {
       "title": "Disease Quick Reference",
       "risk": "Risk {value}",
+      "close": "Close quick reference",
       "diseases": [
         {
           "id": "1",

@@ -1,5 +1,19 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getBearerToken, resolveRequestUserId } from '@/lib/server/auth/requestUser';
+
+const { listUsers } = vi.hoisted(() => ({
+  listUsers: vi.fn(),
+}));
+
+vi.mock('@/lib/server/supabaseAdmin', () => ({
+  getSupabaseAdmin: () => ({
+    auth: {
+      admin: {
+        listUsers,
+      },
+    },
+  }),
+}));
 
 const originalEnv = { ...process.env };
 
@@ -8,6 +22,10 @@ function makeRequest(auth?: string) {
     headers: auth ? { authorization: auth } : {},
   });
 }
+
+beforeEach(() => {
+  listUsers.mockReset();
+});
 
 afterEach(() => {
   process.env = { ...originalEnv };
@@ -24,12 +42,29 @@ describe('getBearerToken', () => {
 });
 
 describe('resolveRequestUserId', () => {
-  it('uses a UUID-shaped development user id for the development mock token', async () => {
-    Object.assign(process.env, { NODE_ENV: 'development' });
+  it('uses a configured development user id for the development mock token', async () => {
+    Object.assign(process.env, {
+      DEV_USER_ID: '11111111-1111-4111-8111-111111111111',
+      NODE_ENV: 'development',
+    });
     const userId = await resolveRequestUserId(makeRequest('Bearer mock-token'));
 
-    expect(userId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    expect(userId).not.toBe('dev-user-id');
+    expect(userId).toBe('11111111-1111-4111-8111-111111111111');
+    expect(listUsers).not.toHaveBeenCalled();
+  });
+
+  it('uses an existing Supabase auth user for the development mock token when no dev id is configured', async () => {
+    Object.assign(process.env, { NODE_ENV: 'development' });
+    listUsers.mockResolvedValue({
+      data: {
+        users: [{ id: '22222222-2222-4222-8222-222222222222' }],
+      },
+      error: null,
+    });
+    const userId = await resolveRequestUserId(makeRequest('Bearer mock-token'));
+
+    expect(userId).toBe('22222222-2222-4222-8222-222222222222');
+    expect(listUsers).toHaveBeenCalledWith({ page: 1, perPage: 1 });
   });
 
   it('returns null when no token is present', async () => {

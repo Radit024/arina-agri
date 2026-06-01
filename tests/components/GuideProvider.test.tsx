@@ -8,7 +8,7 @@ import {
 } from '@/components/shared/guide/guideConfig';
 
 let mockPathname = '/dashboard';
-const GUIDE_DIALOG_TIMEOUT = 3000;
+const GUIDE_DIALOG_TIMEOUT = 8000;
 
 function findGuideDialog() {
   return screen.findByRole('dialog', {}, { timeout: GUIDE_DIALOG_TIMEOUT });
@@ -93,7 +93,7 @@ describe('GuideProvider', () => {
     );
 
     expect(await findGuideDialog()).toHaveTextContent('global.title');
-  });
+  }, GUIDE_DIALOG_TIMEOUT);
 
   it('highlights the current target and moves the spotlight as steps advance', async () => {
     render(

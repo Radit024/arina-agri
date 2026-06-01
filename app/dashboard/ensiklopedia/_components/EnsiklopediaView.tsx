@@ -14,6 +14,7 @@ import WaterDropOutlinedIcon from '@mui/icons-material/WaterDropOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonBase from '@mui/material/ButtonBase';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
@@ -26,6 +27,7 @@ import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import ReactMarkdown from 'react-markdown';
 
 interface QuickReferenceDisease {
@@ -58,10 +60,27 @@ export default function EnsiklopediaView({
   chatError,
   messagesEndRef,
   handleSend,
+  handleRetryLastPrompt,
   handleKeyDown,
+  canRetryLastPrompt,
 }: UseEnsiklopediaControllerResult) {
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+
   return (
-    <Box sx={{ height: { xs: 'calc(100dvh - 148px)', md: '100dvh' }, display: 'flex', flexDirection: 'column', position: 'relative', bgcolor: 'background.default', overflow: 'hidden' }}>
+    <Box
+      sx={{
+        height: {
+          xs: 'calc(100dvh - 56px - 84px - env(safe-area-inset-bottom))',
+          md: '100dvh',
+        },
+        minHeight: { xs: 0, md: '100dvh' },
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        bgcolor: 'background.default',
+        overflow: 'hidden',
+      }}
+    >
 
       {/* Minimal Header */}
       <Box
@@ -106,6 +125,7 @@ export default function EnsiklopediaView({
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
           <Button
             data-guide-target="ai-quick-reference"
+            data-touch-target="44"
             variant="text"
             startIcon={<BugReportOutlinedIcon />}
             onClick={() => setDiseaseModalOpen(true)}
@@ -115,6 +135,7 @@ export default function EnsiklopediaView({
               borderRadius: 2,
               textTransform: 'none',
               fontWeight: 600,
+              minHeight: 44,
               color: 'text.secondary',
               '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' },
             }}
@@ -123,16 +144,26 @@ export default function EnsiklopediaView({
           </Button>
           <Tooltip title={t('quickReference.title')}>
             <IconButton
+              aria-label={t('quickReference.title')}
               data-guide-target="ai-quick-reference"
+              data-touch-target="44"
               onClick={() => setDiseaseModalOpen(true)}
               size="small"
-              sx={{ display: { xs: 'flex', sm: 'none' }, color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' } }}
+              sx={{
+                display: { xs: 'flex', sm: 'none' },
+                minHeight: 44,
+                minWidth: 44,
+                color: 'text.secondary',
+                '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' },
+              }}
             >
               <BugReportOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
 
           <Button
+            aria-label={t('historyOpen')}
+            data-touch-target="44"
             variant="outlined"
             startIcon={<HistoryIcon sx={{ mr: { xs: -0.5, sm: 0 } }} />}
             onClick={() => setHistoryDrawerOpen(true)}
@@ -142,20 +173,28 @@ export default function EnsiklopediaView({
               textTransform: 'none',
               fontWeight: 600,
               px: { xs: 1.5, sm: 2 },
+              minHeight: 44,
               fontSize: { xs: '0.75rem', sm: '0.8125rem' },
               borderColor: alpha(theme.palette.primary.main, 0.3),
               color: 'primary.main',
               '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05), borderColor: 'primary.main' },
             }}
           >
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Riwayat Chat</Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Riwayat</Box>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('historyTitle')}</Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('historyTitle')}</Box>
           </Button>
-          <Tooltip title="Hapus Chat Saat Ini">
+          <Tooltip title={t('currentChatClear')}>
             <IconButton
+              aria-label={t('currentChatClear')}
+              data-touch-target="44"
               onClick={handleClearChat}
               size="small"
-              sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}
+              sx={{
+                minHeight: 44,
+                minWidth: 44,
+                color: 'text.secondary',
+                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' },
+              }}
             >
               <DeleteOutlinedIcon fontSize="small" />
             </IconButton>
@@ -179,7 +218,7 @@ export default function EnsiklopediaView({
             maxWidth: '800px',
             width: '100%',
             p: { xs: 2, md: 4 },
-            pb: { xs: 4, md: 6 },
+            pb: { xs: 3, md: 6 },
             display: 'flex',
             flexDirection: 'column',
             gap: 4
@@ -195,7 +234,7 @@ export default function EnsiklopediaView({
               alignItems: 'center',
               minHeight: '60vh',
               px: 2,
-              animation: 'fadeIn 0.5s ease-out',
+              animation: reduceMotion ? 'none' : 'fadeIn 0.5s ease-out',
               '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(16px)' }, to: { opacity: 1, transform: 'translateY(0)' } }
             }}>
               {/* Icon */}
@@ -227,41 +266,66 @@ export default function EnsiklopediaView({
                   { text: t('prompts.p2'), icon: <ShieldOutlinedIcon sx={{ color: 'error.main' }} />, bg: alpha(theme.palette.error.main, 0.05), border: alpha(theme.palette.error.main, 0.2) },
                   { text: t('prompts.p3'), icon: <CustomSpaIcon sx={{ color: 'success.main' }} />, bg: alpha(theme.palette.success.main, 0.05), border: alpha(theme.palette.success.main, 0.2) },
                   { text: t('prompts.p4'), icon: <EmojiNatureOutlinedIcon sx={{ color: 'warning.main' }} />, bg: alpha(theme.palette.warning.main, 0.05), border: alpha(theme.palette.warning.main, 0.2) }
-                ].map((prompt, idx) => (
-                  <Card
-                    key={`prompt-${idx}`}
-                    elevation={0}
-                    onClick={() => { setInputValue(prompt.text); }}
+                ].map((prompt) => (
+                  <ButtonBase
+                    key={prompt.text}
+                    data-touch-target="44"
+                    onClick={() => setInputValue(prompt.text)}
                     sx={{
-                      p: 2.5, border: '1px solid', borderColor: prompt.border, borderRadius: 4,
-                      bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.1) : prompt.bg,
-                      cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      display: 'flex', alignItems: 'center', gap: 2,
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: `0 8px 24px ${alpha(theme.palette.text.primary, 0.08)}`,
-                      }
+                      alignItems: 'stretch',
+                      borderRadius: 4,
+                      display: 'block',
+                      minHeight: 64,
+                      textAlign: 'left',
+                      width: '100%',
+                      '&:focus-visible': {
+                        outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+                        outlineOffset: 2,
+                      },
                     }}
                   >
-                    <Box sx={{
-                      width: 40, height: 40, borderRadius: '50%',
-                      bgcolor: theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
-                    }}>
-                      {prompt.icon}
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.4 }}>
-                      {prompt.text}
-                    </Typography>
-                  </Card>
+                    <Card
+                      elevation={0}
+                      sx={{
+                        p: 2.5, border: '1px solid', borderColor: prompt.border, borderRadius: 4,
+                        bgcolor: theme.palette.mode === 'dark' ? alpha(prompt.bg, 0.1) : prompt.bg,
+                        cursor: 'pointer', transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+                        display: 'flex', alignItems: 'center', gap: 2,
+                        height: '100%',
+                        '&:hover': {
+                          transform: reduceMotion ? 'none' : 'translateY(-2px)',
+                          boxShadow: `0 8px 24px ${alpha(theme.palette.text.primary, 0.08)}`,
+                        }
+                      }}
+                    >
+                      <Box sx={{
+                        width: 40, height: 40, borderRadius: '50%',
+                        bgcolor: theme.palette.mode === 'dark' ? alpha('#fff', 0.08) : '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
+                      }}>
+                        {prompt.icon}
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.4 }}>
+                        {prompt.text}
+                      </Typography>
+                    </Card>
+                  </ButtonBase>
                 ))}
               </Box>
             </Box>
           )}
 
           {chatError && (
-            <Alert severity="warning" sx={{ borderRadius: 3, mb: 2 }}>
+            <Alert
+              severity="warning"
+              sx={{ borderRadius: 3, mb: 2 }}
+              action={canRetryLastPrompt ? (
+                <Button color="inherit" size="small" onClick={handleRetryLastPrompt} sx={{ minHeight: 44 }}>
+                  {t('retryLastPrompt')}
+                </Button>
+              ) : undefined}
+            >
               {chatError}
             </Alert>
           )}
@@ -276,7 +340,7 @@ export default function EnsiklopediaView({
                   gap: { xs: 1.5, sm: 2 },
                   justifyContent: isUser ? 'flex-end' : 'flex-start',
                   width: '100%',
-                  animation: 'slideUpFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                  animation: reduceMotion ? 'none' : 'slideUpFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                   '@keyframes slideUpFadeIn': {
                     '0%': { opacity: 0, transform: 'translateY(20px) scale(0.98)' },
                     '100%': { opacity: 1, transform: 'translateY(0) scale(1)' }
@@ -322,7 +386,7 @@ export default function EnsiklopediaView({
                         borderColor: alpha(theme.palette.divider, 0.5)
                       }}
                     >
-                      <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>{msg.content}</Typography>
+                      <Typography variant="body1" sx={{ whiteSpace: 'pre-line', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>{msg.content}</Typography>
                     </Box>
                   ) : (
                     <Box
@@ -334,6 +398,8 @@ export default function EnsiklopediaView({
                         lineHeight: 1.8, // More breathing room
                         color: 'text.primary',
                         boxShadow: 'none', // Flat look for AI to contrast with User
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
                         '& p': { m: 0, mb: 2.5, '&:last-of-type': { mb: 0 } },
                         '& ul, & ol': { m: 0, pl: 3, mb: 2.5 },
                         '& li': { mb: 1.5, pl: 0.5 },
@@ -347,6 +413,26 @@ export default function EnsiklopediaView({
                           bgcolor: alpha(theme.palette.success.main, 0.05),
                           m: 0, mb: 2.5, p: 2, borderRadius: '0 8px 8px 0',
                           color: 'text.secondary'
+                        },
+                        '& a': {
+                          color: 'success.dark',
+                          textDecoration: 'underline',
+                          overflowWrap: 'anywhere',
+                        },
+                        '& pre': {
+                          maxWidth: '100%',
+                          overflowX: 'auto',
+                        },
+                        '& table': {
+                          display: 'block',
+                          maxWidth: '100%',
+                          overflowX: 'auto',
+                          borderCollapse: 'collapse',
+                        },
+                        '& th, & td': {
+                          borderBottom: `1px solid ${theme.palette.divider}`,
+                          p: 1,
+                          textAlign: 'left',
                         }
                       }}
                     >
@@ -360,7 +446,7 @@ export default function EnsiklopediaView({
 
           {/* Typing Indicator */}
           {isTyping && (
-            <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, justifyContent: 'flex-start', width: '100%', animation: 'slideUpFadeIn 0.3s ease-out forwards' }}>
+            <Box sx={{ display: 'flex', gap: { xs: 1.5, sm: 2 }, justifyContent: 'flex-start', width: '100%', animation: reduceMotion ? 'none' : 'slideUpFadeIn 0.3s ease-out forwards' }}>
               <Box
                 sx={{
                   width: { xs: 32, sm: 36 },
@@ -383,7 +469,7 @@ export default function EnsiklopediaView({
                     <Box key={delay} sx={{
                       width: 8, height: 8, borderRadius: '50%',
                       bgcolor: 'success.main',
-                      animation: 'bounce 1s infinite cubic-bezier(0.4, 0, 0.2, 1)',
+                      animation: reduceMotion ? 'none' : 'bounce 1s infinite cubic-bezier(0.4, 0, 0.2, 1)',
                       animationDelay: `${delay}ms`,
                       opacity: 0.6,
                       '@keyframes bounce': {
@@ -456,7 +542,7 @@ export default function EnsiklopediaView({
                         backgroundColor: theme.palette.mode === 'dark' ? alpha('#fff', 0.15) : '#fff',
                         color: 'success.main',
                         borderColor: 'success.main',
-                        transform: 'translateY(-2px)',
+                        transform: reduceMotion ? 'none' : 'translateY(-2px)',
                       },
                     }}
                   />
@@ -484,12 +570,13 @@ export default function EnsiklopediaView({
               '&:focus-within': {
                 borderColor: theme.palette.success.main,
                 boxShadow: theme.palette.mode === 'dark' ? `0 10px 40px ${alpha(theme.palette.success.main, 0.3)}` : `0 15px 50px ${alpha(theme.palette.success.main, 0.25)}`,
-                transform: 'translateY(-2px)',
+                transform: reduceMotion ? 'none' : 'translateY(-2px)',
               }
             }}
           >
             <TextField
               fullWidth
+              aria-label={t('inputLabel')}
               placeholder={t('inputPlaceholder')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -510,20 +597,22 @@ export default function EnsiklopediaView({
               }}
             />
             <IconButton
+              aria-label={isTyping ? t('sendingMessage') : t('sendMessage')}
+              data-touch-target="44"
               onClick={handleSend}
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isTyping}
               sx={{
-                bgcolor: inputValue.trim() ? 'success.main' : alpha(theme.palette.text.disabled, 0.1),
-                color: inputValue.trim() ? '#fff' : 'text.disabled',
+                bgcolor: inputValue.trim() && !isTyping ? 'success.main' : alpha(theme.palette.text.disabled, 0.1),
+                color: inputValue.trim() && !isTyping ? '#fff' : 'text.disabled',
                 width: 44,
                 height: 44,
                 borderRadius: '50%',
                 '&:hover': {
-                  bgcolor: inputValue.trim() ? 'success.dark' : alpha(theme.palette.text.disabled, 0.2),
-                  transform: inputValue.trim() ? 'scale(1.05)' : 'none',
+                  bgcolor: inputValue.trim() && !isTyping ? 'success.dark' : alpha(theme.palette.text.disabled, 0.2),
+                  transform: inputValue.trim() && !isTyping && !reduceMotion ? 'scale(1.03)' : 'none',
                 },
                 flexShrink: 0,
-                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                transition: 'background-color 0.2s ease, transform 0.2s ease',
                 mb: 0.5,
                 mr: 0.5
               }}
@@ -531,8 +620,12 @@ export default function EnsiklopediaView({
               <SendIcon sx={{ fontSize: '1.2rem', ml: inputValue.trim() ? 0.5 : 0 }} />
             </IconButton>
           </Box>
-          <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 1, mb: 1, color: 'text.secondary', fontSize: '0.7rem', fontWeight: 500 }}>
-            Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.
+          <Typography
+            data-mobile-helper="desktop-only"
+            variant="caption"
+            sx={{ display: { xs: 'none', sm: 'block' }, textAlign: 'center', mt: 1, mb: 1, color: 'text.secondary', fontSize: '0.75rem', fontWeight: 500 }}
+          >
+            {t('composerHelper')}
           </Typography>
         </Box>
       </Box>
@@ -563,7 +656,13 @@ export default function EnsiklopediaView({
             </Box>
             {t('quickReference.title')}
           </Box>
-          <IconButton onClick={() => setDiseaseModalOpen(false)} size="small" sx={{ color: 'text.secondary' }}>
+          <IconButton
+            aria-label={t('quickReference.close')}
+            data-touch-target="44"
+            onClick={() => setDiseaseModalOpen(false)}
+            size="small"
+            sx={{ minHeight: 44, minWidth: 44, color: 'text.secondary' }}
+          >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
@@ -632,21 +731,29 @@ export default function EnsiklopediaView({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            Riwayat Chat
+            {t('historyTitle')}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {historyList.length > 0 && (
-              <Tooltip title="Hapus Semua Riwayat">
+              <Tooltip title={t('historyClearAll')}>
                 <IconButton
+                  aria-label={t('historyClearAll')}
+                  data-touch-target="44"
                   onClick={handleClearHistory}
                   size="small"
-                  sx={{ color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}
+                  sx={{ minHeight: 44, minWidth: 44, color: 'text.secondary', '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1), color: 'error.main' } }}
                 >
                   <DeleteOutlinedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
-            <IconButton onClick={() => setHistoryDrawerOpen(false)} size="small">
+            <IconButton
+              aria-label={t('historyClose')}
+              data-touch-target="44"
+              onClick={() => setHistoryDrawerOpen(false)}
+              size="small"
+              sx={{ minHeight: 44, minWidth: 44 }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>
@@ -659,7 +766,7 @@ export default function EnsiklopediaView({
           }}>
             <HistoryIcon sx={{ fontSize: 48, opacity: 0.4 }} />
             <Typography variant="body2" color="text.secondary" align="center">
-              Belum ada riwayat percakapan.
+              {t('historyEmpty')}
             </Typography>
           </Box>
         ) : (
@@ -667,7 +774,7 @@ export default function EnsiklopediaView({
             {Object.entries(
               historyList.reduce((acc, session) => {
                 const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-                const group = session.date === today ? 'Hari Ini' : 'Sebelumnya';
+                const group = session.date === today ? t('historyToday') : t('historyPrevious');
                 if (!acc[group]) acc[group] = [];
                 acc[group].push(session);
                 return acc;
@@ -681,11 +788,9 @@ export default function EnsiklopediaView({
                   {sessions.map((session) => (
                     <Box
                       key={session.id}
-                      onClick={() => handleLoadHistory(session)}
                       sx={{
                         borderRadius: 2,
-                        p: 1.5,
-                        cursor: 'pointer',
+                        minHeight: 56,
                         transition: 'all 0.2s ease',
                         position: 'relative',
                         '&:hover': { 
@@ -694,18 +799,38 @@ export default function EnsiklopediaView({
                         }
                       }}
                     >
-                      <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600, mb: 0.5, pr: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {session.preview}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <span>{session.date}</span>
-                        <span style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: theme.palette.text.disabled }} />
-                        <span>{session.messages.length} pesan</span>
-                      </Typography>
+                      <ButtonBase
+                        aria-label={`${session.preview}, ${session.date}, ${t('historyMessageCount', { count: session.messages.length })}`}
+                        onClick={() => handleLoadHistory(session)}
+                        sx={{
+                          alignItems: 'stretch',
+                          borderRadius: 2,
+                          display: 'block',
+                          minHeight: 56,
+                          p: 1.5,
+                          pr: 6,
+                          textAlign: 'left',
+                          width: '100%',
+                          '&:focus-visible': {
+                            outline: `3px solid ${alpha(theme.palette.primary.main, 0.45)}`,
+                            outlineOffset: 2,
+                          },
+                        }}
+                      >
+                        <Typography variant="body2" color="text.primary" sx={{ fontWeight: 600, mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {session.preview}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <span>{session.date}</span>
+                          <span style={{ width: 4, height: 4, borderRadius: '50%', backgroundColor: theme.palette.text.disabled }} />
+                          <span>{t('historyMessageCount', { count: session.messages.length })}</span>
+                        </Typography>
+                      </ButtonBase>
                       <IconButton
                         className="delete-icon"
                         size="small"
-                        aria-label="Hapus riwayat chat"
+                        aria-label={t('historyDeleteSession')}
+                        data-touch-target="44"
                         onClick={(event) => {
                           event.stopPropagation();
                           handleDeleteHistorySession(session.id);
@@ -714,11 +839,17 @@ export default function EnsiklopediaView({
                           position: 'absolute',
                           right: 6,
                           top: 6,
+                          minHeight: 44,
+                          minWidth: 44,
                           opacity: { xs: 1, sm: 0 },
                           transform: { xs: 'scale(1)', sm: 'scale(0.9)' },
                           transition: 'all 0.2s ease',
                           color: 'text.secondary',
                           '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1) },
+                          '&.Mui-focusVisible': {
+                            opacity: 1,
+                            transform: 'scale(1)',
+                          },
                         }}
                       >
                         <DeleteOutlinedIcon fontSize="small" />

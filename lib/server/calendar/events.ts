@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
 import type { ApiCalendarEvent } from '@/lib/api';
 
-const EVENT_SELECT = 'id,title,date,category,waktu,description,created_at,updated_at,completed';
+const EVENT_SELECT = 'id,title,date,category,description,created_at,updated_at,completed';
 const CATEGORIES = ['pemupukan', 'penyemprotan', 'irigasi', 'pemetikan', 'lainnya'] as const;
 
 type CalendarEventCategory = ApiCalendarEvent['jenis'];
@@ -13,7 +13,6 @@ interface CalendarEventRow {
   title: string;
   date: string;
   category: CalendarEventCategory;
-  waktu?: string | null;
   description?: string | null;
   created_at: string;
   updated_at: string;
@@ -35,7 +34,7 @@ function mapEvent(row: CalendarEventRow): ApiCalendarEvent {
     judul: row.title,
     tanggal: row.date,
     jenis: row.category,
-    waktu: row.waktu ?? '',
+    waktu: '',
     catatan: row.description ?? '',
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -65,7 +64,6 @@ function parseCreatePayload(body: CalendarEventPayload) {
     title: body.judul.trim(),
     date: body.tanggal.trim(),
     category: body.jenis,
-    waktu: readOptionalString(body.waktu) ?? '',
     description: readOptionalString(body.catatan) ?? '',
   };
 }
@@ -77,7 +75,6 @@ function parseUpdatePayload(body: CalendarEventPayload) {
   if (typeof body.judul === 'string') update.title = body.judul.trim();
   if (typeof body.tanggal === 'string') update.date = body.tanggal.trim();
   if (isCategory(body.jenis)) update.category = body.jenis;
-  if (typeof body.waktu === 'string') update.waktu = body.waktu;
   if (typeof body.catatan === 'string') update.description = body.catatan;
 
   return {
@@ -118,8 +115,7 @@ export async function handleCalendarEventsGet(request: Request) {
       .from('calendar_events')
       .select(EVENT_SELECT)
       .eq('user_id', auth.userId)
-      .order('date', { ascending: true })
-      .order('waktu', { ascending: true });
+      .order('date', { ascending: true });
 
     if (error) throw error;
 

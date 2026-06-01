@@ -2,24 +2,19 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
-import { aiApi,weatherApi,type GeminiWeatherContextPayload } from '@/lib/api';
+import { aiApi, weatherApi, type GeminiWeatherContextPayload } from '@/lib/api';
 import { useTheme } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
-import { useEffect,useRef,useState } from 'react';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'ai';
-  content: string;
-  timestamp: string;
-}
-
-interface HistorySession {
-  id: string;
-  date: string;
-  preview: string;
-  messages: ChatMessage[];
-}
+import { useEffect, useRef, useState } from 'react';
+import {
+  buildGeminiHistoryPayload,
+  buildHistorySession,
+  isValidChatMessage,
+  normalizeHistorySessions,
+  upsertHistorySession,
+  type ChatMessage,
+  type HistorySession,
+} from './chatHistory';
 
 export function useEnsiklopediaController() {
 
@@ -32,17 +27,6 @@ export function useEnsiklopediaController() {
   const [historyList, setHistoryList] = useState<HistorySession[]>([]);
   const [weatherContext, setWeatherContext] = useState<GeminiWeatherContextPayload>();
   const { activeAdm4, activeLocationLabel } = useWeatherLocation();
-
-  const isValidChatMessage = (value: unknown): value is ChatMessage => {
-    if (!value || typeof value !== 'object') return false;
-    const obj = value as Record<string, unknown>;
-    return (
-      typeof obj.id === 'string' &&
-      (obj.role === 'user' || obj.role === 'ai') &&
-      typeof obj.content === 'string' &&
-      typeof obj.timestamp === 'string'
-    );
-  };
 
   const getStorageKey = () => {
     const arinaUserId = typeof window !== 'undefined' ? localStorage.getItem('arina_user_id') || 'guest' : 'guest';
@@ -77,7 +61,11 @@ export function useEnsiklopediaController() {
       const historyKey = getHistoryStorageKey();
       const savedHistory = typeof window !== 'undefined' ? localStorage.getItem(historyKey) : null;
       if (savedHistory) {
-        try { setHistoryList(JSON.parse(savedHistory)); } catch { }
+        try {
+          setHistoryList(normalizeHistorySessions(JSON.parse(savedHistory)));
+        } catch {
+          setHistoryList([]);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,9 +114,82 @@ export function useEnsiklopediaController() {
     }
   }, [messages]);
 
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [lastFailedPrompt, setLastFailedPrompt] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => { scrollToBottom(); }, [messages]);
+
+  const persistHistory = (nextMessages: ChatMessage[]) => {
+    const dateLabel = new Date().toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const session = buildHistorySession(nextMessages, dateLabel);
+    if (!session) return;
+
+    setHistoryList((prev) => {
+      const updated = upsertHistorySession(prev, session);
+      localStorage.setItem(getHistoryStorageKey(), JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const sendPrompt = async (prompt: string, options: { appendUserMessage: boolean }) => {
+    if (!prompt.trim() || isTyping) return;
+
+    const trimmedPrompt = prompt.trim();
+    setChatError(null);
+    setLastFailedPrompt(null);
+
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: trimmedPrompt,
+      timestamp: new Date().toISOString(),
+    };
+
+    const historyPayload = buildGeminiHistoryPayload(messages, trimmedPrompt, {
+      excludeTrailingCurrentPrompt: !options.appendUserMessage,
+    });
+    const baseMessages = options.appendUserMessage ? [...messages, userMsg] : messages;
+
+    if (options.appendUserMessage) {
+      setMessages(baseMessages);
+    }
+    setInputValue('');
+    setIsTyping(true);
+
+    try {
+      const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined;
+      const result = await aiApi.askGemini({ prompt: trimmedPrompt, history: historyPayload, userName, weatherContext });
+      const aiMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'ai',
+        content: result.reply,
+        timestamp: new Date().toISOString(),
+      };
+      const nextMessages = [...baseMessages, aiMsg];
+      setMessages(nextMessages);
+      persistHistory(nextMessages);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setLastFailedPrompt(trimmedPrompt);
+      setChatError(t('ai.error', { error: message }));
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
   const handleClearChat = () => {
     localStorage.removeItem(getStorageKey());
     setMessages([]);
+    setChatError(null);
+    setLastFailedPrompt(null);
   };
 
   const handleDeleteHistorySession = (sessionId: string) => {
@@ -144,56 +205,21 @@ export function useEnsiklopediaController() {
 
   const handleLoadHistory = (session: HistorySession) => {
     setMessages(session.messages);
+    setChatError(null);
+    setLastFailedPrompt(null);
     setHistoryDrawerOpen(false);
   };
 
-  const hasUserMessages = messages.some(m => m.role === 'user');
-  const [inputValue, setInputValue] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  useEffect(() => { scrollToBottom(); }, [messages]);
-
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
-    setChatError(null);
-
-    const prompt = inputValue;
-    const userMsg: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: prompt,
-      timestamp: new Date().toISOString(),
-    };
-
-    const historyPayload = messages.slice(-10).map((m) => ({
-      role: m.role,
-      content: m.content,
-    }));
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInputValue('');
-    setIsTyping(true);
-
-    try {
-      const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined;
-      const result = await aiApi.askGemini({ prompt, history: historyPayload, userName, weatherContext });
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'ai',
-        content: result.reply,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      setChatError(t('ai.error', { error: message }));
-    } finally {
-      setIsTyping(false);
-    }
+    await sendPrompt(inputValue, { appendUserMessage: true });
   };
+
+  const handleRetryLastPrompt = async () => {
+    if (!lastFailedPrompt) return;
+    await sendPrompt(lastFailedPrompt, { appendUserMessage: false });
+  };
+
+  const hasUserMessages = messages.some((message) => message.role === 'user');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -222,7 +248,9 @@ export function useEnsiklopediaController() {
     chatError,
     messagesEndRef,
     handleSend,
+    handleRetryLastPrompt,
     handleKeyDown,
+    canRetryLastPrompt: Boolean(lastFailedPrompt),
   };
 }
 

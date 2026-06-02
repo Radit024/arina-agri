@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import LinearProgress from '@mui/material/LinearProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
@@ -27,6 +28,7 @@ interface LoginViewProps {
   handleSubmit: UseFormHandleSubmit<LoginForm>;
   loading: boolean;
   onSubmit: SubmitHandler<LoginForm>;
+  redirecting: boolean;
   showPassword: boolean;
   t: AuthTranslator;
   togglePassword: () => void;
@@ -41,10 +43,14 @@ export default function LoginView({
   handleSubmit,
   loading,
   onSubmit,
+  redirecting,
   showPassword,
   t,
   togglePassword,
 }: LoginViewProps) {
+  const busy = loading || googleLoading || redirecting;
+  const submitLabel = redirecting ? t('preparingDashboard') : t('processing');
+
   return (
     <AuthShell brandSubtitle={t('branding')}>
       <Box sx={{ mb: 4, textAlign: 'center' }}>
@@ -62,7 +68,42 @@ export default function LoginView({
         </Alert>
       )}
 
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      {redirecting && (
+        <Box
+          role="status"
+          aria-live="polite"
+          sx={{
+            mb: 3,
+            p: 2,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'success.light',
+            bgcolor: 'rgba(46, 125, 50, 0.08)',
+            color: 'success.dark',
+            animation: 'loginLoadingPulse 1.4s ease-in-out infinite',
+            '@keyframes loginLoadingPulse': {
+              '0%, 100%': { opacity: 0.82, transform: 'translateY(0)' },
+              '50%': { opacity: 1, transform: 'translateY(-2px)' },
+            },
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+            },
+          }}
+        >
+          <LinearProgress color="success" aria-hidden sx={{ mb: 1.5, borderRadius: 999 }} />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            {t('preparingDashboard')}
+          </Typography>
+        </Box>
+      )}
+
+      <Box
+        component="form"
+        aria-label={t('formLabel')}
+        aria-busy={busy}
+        onSubmit={handleSubmit(onSubmit)}
+        sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+      >
         <Controller
           name="email"
           control={control}
@@ -74,6 +115,7 @@ export default function LoginView({
               fullWidth
               autoComplete="email"
               inputMode="email"
+              disabled={busy}
               error={!!errors.email}
               helperText={errors.email?.message}
               slotProps={{
@@ -100,6 +142,7 @@ export default function LoginView({
               variant="outlined"
               fullWidth
               autoComplete="current-password"
+              disabled={busy}
               error={!!errors.password}
               helperText={errors.password?.message}
               slotProps={{
@@ -111,7 +154,7 @@ export default function LoginView({
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={togglePassword} edge="end" size="small">
+                      <IconButton onClick={togglePassword} edge="end" size="small" disabled={busy}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -135,10 +178,15 @@ export default function LoginView({
           variant="contained"
           size="large"
           fullWidth
-          disabled={loading || googleLoading}
+          disabled={busy}
           sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
+          {loading || redirecting ? (
+            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <CircularProgress size={20} color="inherit" aria-label={submitLabel} />
+              <span>{submitLabel}</span>
+            </Box>
+          ) : t('submit')}
         </Button>
 
         <Button
@@ -147,7 +195,7 @@ export default function LoginView({
           size="large"
           fullWidth
           onClick={handleGoogleSignIn}
-          disabled={loading || googleLoading}
+          disabled={busy}
           startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleIcon />}
           sx={{ py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
         >

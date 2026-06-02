@@ -4,7 +4,6 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
-import WeatherBanner from '@/components/dashboard/WeatherBanner';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
 import type { DashboardCategoryPoint, DashboardTrendPoint } from '@/lib/dashboard/summary';
@@ -132,12 +131,6 @@ export default function DashboardHomeView({
                 </Box>
               </Box>
 
-              {weatherBannerMessage && (
-                <Box sx={{ mb: 2.5 }}>
-                  <WeatherBanner message={weatherBannerMessage} />
-                </Box>
-              )}
-
               <DashboardKPI
                 totalPengeluaran={kpi.totalPengeluaran}
                 expTrend={kpi.expTrend}
@@ -147,6 +140,7 @@ export default function DashboardHomeView({
                 weatherTemp={currentWeather ? currentWeather.temperatureC : 0}
                 weatherCond={currentWeather ? currentWeather.condition : ''}
                 weatherHum={currentWeather ? currentWeather.humidityPercent : 0}
+                weatherBannerMessage={weatherBannerMessage}
                 priceLoading={false}
                 todayPrice={kpi.todayPrice}
                 priceDelta={kpi.priceDelta}

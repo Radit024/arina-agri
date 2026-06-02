@@ -22,8 +22,14 @@ export function useLoginController() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [loginRedirecting, setLoginRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { user, loading: authLoading } = useAuth();
+  const redirecting = loginRedirecting || (!authLoading && Boolean(user));
+
+  useEffect(() => {
+    router.prefetch('/dashboard');
+  }, [router]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -51,11 +57,12 @@ export function useLoginController() {
         password: data.password,
       });
       if (authError) throw authError;
-      router.push('/dashboard');
+      setLoginRedirecting(true);
+      router.replace('/dashboard');
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       setError(msg.includes('Invalid login credentials') ? t('error.invalid') : t('error.failed'));
-    } finally {
+      setLoginRedirecting(false);
       setLoading(false);
     }
   };
@@ -84,6 +91,7 @@ export function useLoginController() {
     handleSubmit: form.handleSubmit,
     loading,
     onSubmit,
+    redirecting,
     showPassword,
     t,
     togglePassword: () => setShowPassword((value) => !value),

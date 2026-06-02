@@ -13,8 +13,9 @@ interface WeatherBannerProps {
 export default function WeatherBanner({ message }: WeatherBannerProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.weatherBanner');
-  const defaultMessage =
-    t('defaultMessage');
+  const alertMessage = message?.trim();
+
+  if (!alertMessage) return null;
 
   return (
     <Box
@@ -47,7 +48,7 @@ export default function WeatherBanner({ message }: WeatherBannerProps) {
           {t('title')}
         </Typography>
         <Typography variant="caption" sx={{ color: alpha(theme.palette.warning.dark, 0.9), lineHeight: 1.4, fontSize: '0.7rem', display: 'block' }}>
-          {message || defaultMessage}
+          {alertMessage}
         </Typography>
       </Box>
     </Box>

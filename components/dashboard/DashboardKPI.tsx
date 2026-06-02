@@ -26,6 +26,7 @@ interface DashboardKPIProps {
   weatherTemp: number;
   weatherCond: string;
   weatherHum: number;
+  weatherBannerMessage?: string;
   priceLoading: boolean;
   todayPrice: number | null;
   priceDelta: number | null;
@@ -44,6 +45,7 @@ export default memo(function DashboardKPI({
   weatherTemp,
   weatherCond,
   weatherHum,
+  weatherBannerMessage,
   priceLoading,
   todayPrice,
   priceDelta,
@@ -234,9 +236,11 @@ export default memo(function DashboardKPI({
                   </Box>
                 </Box>
               )}
-              <Box sx={{ flex: 1, width: '100%' }}>
-                <WeatherBanner />
-              </Box>
+              {weatherBannerMessage && (
+                <Box sx={{ flex: 1, width: '100%' }}>
+                  <WeatherBanner message={weatherBannerMessage} />
+                </Box>
+              )}
             </Box>
           </Grid>
         </Grid>

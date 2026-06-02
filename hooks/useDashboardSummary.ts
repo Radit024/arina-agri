@@ -6,6 +6,8 @@ import { DEVELOPMENT_ACCESS_TOKEN } from '@/lib/devAuth';
 
 interface DashboardSummaryParams {
   adm4?: string;
+  accessToken?: string | null;
+  enabled?: boolean;
   locationLabel?: string;
 }
 
@@ -27,12 +29,11 @@ export function buildDashboardSummaryUrl(params: DashboardSummaryParams) {
   return `/api/dashboard/summary${query ? `?${query}` : ''}`;
 }
 
-async function buildAuthHeaders(): Promise<Record<string, string>> {
-  const { supabase } = await import('@/lib/supabase');
-  const { data: { session } } = await supabase.auth.getSession();
+export function buildDashboardSummaryHeaders(accessToken?: string | null): Record<string, string> {
+  const token = accessToken?.trim();
 
-  if (session?.access_token) {
-    return { Authorization: `Bearer ${session.access_token}` };
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
   }
 
   if (process.env.NODE_ENV === 'development') {
@@ -46,18 +47,23 @@ export function useDashboardSummary(params: DashboardSummaryParams) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { adm4, locationLabel } = params;
+  const { accessToken, adm4, enabled = true, locationLabel } = params;
   const requestUrl = useMemo(
     () => buildDashboardSummaryUrl({ adm4, locationLabel }),
     [adm4, locationLabel]
   );
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
+    if (!enabled) {
+      setLoading(true);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const headers = await buildAuthHeaders();
+      const headers = buildDashboardSummaryHeaders(accessToken);
       const response = await fetch(requestUrl, {
         headers,
         cache: 'no-store',
@@ -81,19 +87,27 @@ export function useDashboardSummary(params: DashboardSummaryParams) {
         setLoading(false);
       }
     }
-  }, [requestUrl]);
+  }, [accessToken, enabled, requestUrl]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => {
-      void loadData(controller.signal);
-    }, 0);
+    let active = true;
+
+    void Promise.resolve().then(() => {
+      if (active && !controller.signal.aborted) {
+        void loadData(controller.signal);
+      }
+    });
 
     return () => {
+      active = false;
       controller.abort();
-      window.clearTimeout(timeoutId);
     };
-  }, [loadData]);
+  }, [enabled, loadData]);
 
   return {
     summary,

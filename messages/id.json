@@ -253,8 +253,7 @@
       }
     },
     "weatherBanner": {
-      "title": "Peringatan Cuaca",
-      "defaultMessage": "⛈️ Hujan lebat 2 hari ke depan. Tunda pemupukan dan penyemprotan pestisida."
+      "title": "Peringatan Cuaca"
     },
     "recentTransactions": {
       "title": "Transaksi Terkini",
@@ -907,6 +906,8 @@
       "noAccount": "Belum punya akun?",
       "registerNow": "Daftar Sekarang",
       "processing": "Memproses...",
+      "preparingDashboard": "Menyiapkan dashboard...",
+      "formLabel": "Form login",
       "error": {
         "invalid": "Email atau password salah. Silakan coba lagi.",
         "failed": "Gagal masuk. Periksa email dan password Anda."

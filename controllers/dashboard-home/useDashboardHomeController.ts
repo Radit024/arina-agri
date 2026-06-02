@@ -30,14 +30,16 @@ function getFormattedToday(locale: string) {
 export function useDashboardHomeController() {
   const t = useTranslations('Dashboard.home');
   const locale = t('locale');
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
 
   const { activeAdm4, activeLocationLabel } = useWeatherLocation();
   const { summary, loading: summaryLoading, reload: reloadSummary } = useDashboardSummary({
+    accessToken: session?.access_token,
     adm4: activeAdm4,
+    enabled: Boolean(session?.access_token),
     locationLabel: activeLocationLabel,
   });
 
@@ -72,7 +74,7 @@ export function useDashboardHomeController() {
     locale,
     newsArticles: summary?.news.articles ?? [],
     pullDistance: pullToRefresh.pullDistance,
-    showSkeleton: summaryLoading && !pullToRefresh.isRefreshing,
+    showSkeleton: (authLoading || summaryLoading) && !pullToRefresh.isRefreshing,
     t,
     touchHandlers: pullToRefresh.touchHandlers,
     trendData: summary?.trend ?? [],

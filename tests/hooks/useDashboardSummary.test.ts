@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDashboardSummaryUrl } from '@/hooks/useDashboardSummary';
+import { buildDashboardSummaryHeaders, buildDashboardSummaryUrl } from '@/hooks/useDashboardSummary';
 
 describe('buildDashboardSummaryUrl', () => {
   it('adds encoded location params when present', () => {
@@ -11,5 +11,13 @@ describe('buildDashboardSummaryUrl', () => {
 
   it('omits empty params', () => {
     expect(buildDashboardSummaryUrl({ adm4: '', locationLabel: undefined })).toBe('/api/dashboard/summary');
+  });
+});
+
+describe('buildDashboardSummaryHeaders', () => {
+  it('uses the provided session token without requiring another auth lookup', () => {
+    expect(buildDashboardSummaryHeaders('session-token')).toEqual({
+      Authorization: 'Bearer session-token',
+    });
   });
 });

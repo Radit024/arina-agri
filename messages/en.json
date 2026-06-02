@@ -253,8 +253,7 @@
       }
     },
     "weatherBanner": {
-      "title": "Weather Alert",
-      "defaultMessage": "⛈️ Heavy rain for 2 days ahead. Delay fertilizing and pesticide spraying."
+      "title": "Weather Alert"
     },
     "recentTransactions": {
       "title": "Recent Transactions",
@@ -907,6 +906,8 @@
       "noAccount": "Don't have an account?",
       "registerNow": "Register Now",
       "processing": "Processing...",
+      "preparingDashboard": "Preparing dashboard...",
+      "formLabel": "Login form",
       "error": {
         "invalid": "Invalid email or password. Please try again.",
         "failed": "Login failed. Check your email and password."

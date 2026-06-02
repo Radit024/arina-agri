@@ -115,4 +115,87 @@ describe('location search route', () => {
       name: 'Tunjungsekar',
     });
   });
+
+  it('falls back to the nearest BMKG village when GPS reverse geocoding misses the village name', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+      const url = String(input);
+
+      if (url.includes('nominatim.openstreetmap.org/reverse')) {
+        return jsonResponse({
+          place_id: 3,
+          lat: '-7.93690',
+          lon: '112.65020',
+          display_name: 'Jalan Simpang Candi Panggung, Perumahan Dinoyo, Lowokwaru, Kota Malang, Jawa Timur, Indonesia',
+          address: {
+            road: 'Jalan Simpang Candi Panggung',
+            neighbourhood: 'Perumahan Dinoyo',
+            city: 'Kota Malang',
+            district: 'Lowokwaru',
+            state: 'Jawa Timur',
+          },
+        });
+      }
+
+      if (url.endsWith('/api/provinces.json')) {
+        return jsonResponse({ data: [{ code: '35', name: 'Jawa Timur' }] });
+      }
+
+      if (url.endsWith('/api/regencies/35.json')) {
+        return jsonResponse({
+          data: [
+            { code: '35.07', name: 'Kabupaten Malang' },
+            { code: '35.73', name: 'Kota Malang' },
+          ],
+        });
+      }
+
+      if (url.endsWith('/api/districts/35.73.json')) {
+        return jsonResponse({ data: [{ code: '35.73.05', name: 'Lowokwaru' }] });
+      }
+
+      if (url.endsWith('/api/villages/35.73.05.json')) {
+        return jsonResponse({
+          data: [
+            { code: '35.73.05.1008', name: 'Tunjungsekar' },
+            { code: '35.73.05.1009', name: 'Mojolangu' },
+          ],
+        });
+      }
+
+      if (url.includes('api.bmkg.go.id/publik/prakiraan-cuaca') && url.includes('adm4=35.73.05.1008')) {
+        return jsonResponse({
+          lokasi: {
+            adm4: '35.73.05.1008',
+            desa: 'Tunjungsekar',
+            lat: -7.92912,
+            lon: 112.63313,
+          },
+        });
+      }
+
+      if (url.includes('api.bmkg.go.id/publik/prakiraan-cuaca') && url.includes('adm4=35.73.05.1009')) {
+        return jsonResponse({
+          lokasi: {
+            adm4: '35.73.05.1009',
+            desa: 'Mojolangu',
+            lat: -7.937,
+            lon: 112.65,
+          },
+        });
+      }
+
+      throw new Error(`Unexpected URL ${url}`);
+    }));
+
+    const response = await reverseLocation(new Request('http://localhost/api/location/reverse?lat=-7.93690&lon=112.65020'));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.data).toMatchObject({
+      adm4: '35.73.05.1009',
+      label: 'Mojolangu, Kec. Lowokwaru, Kota Malang, Jawa Timur',
+      name: 'Mojolangu',
+    });
+  });
 });

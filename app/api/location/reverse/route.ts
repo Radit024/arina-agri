@@ -21,7 +21,21 @@ interface ResolvedBmkgLocation {
   detail: string;
 }
 
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+interface BmkgLocationMetadata extends Coordinates {
+  adm4: string;
+  name: string;
+}
+
 const WILAYAH_API_BASE_URL = 'https://wilayah.id/api';
+const BMKG_FORECAST_API_URL = 'https://api.bmkg.go.id/publik/prakiraan-cuaca';
+const NEAREST_BMKG_LOOKUP_CONCURRENCY = 6;
+const bmkgLocationMetadataCache = new Map<string, BmkgLocationMetadata>();
+const bmkgLocationMetadataRequests = new Map<string, Promise<BmkgLocationMetadata | null>>();
 
 function uniqueParts(parts: Array<string | undefined>) {
   const seen = new Set<string>();
@@ -81,6 +95,19 @@ function matchWilayahItem(items: WilayahItem[], candidates: Array<string | undef
   return items.find((item) => normalizedCandidates.has(normalizeName(item.name))) || null;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+}
+
+function asText(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function asNumber(value: unknown) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 async function fetchWilayah(path: string) {
   const response = await fetch(`${WILAYAH_API_BASE_URL}/${path}`, {
     cache: 'no-store',
@@ -107,7 +134,130 @@ function toTitleCase(str: string) {
     .join(' ');
 }
 
-async function resolveBmkgLocation(item: NominatimSearchResult, query: string): Promise<ResolvedBmkgLocation | null> {
+function getBmkgRawLocation(raw: unknown) {
+  const root = asRecord(raw);
+  if (!root) return null;
+
+  const directLocation = asRecord(root.lokasi);
+  if (directLocation) return directLocation;
+
+  if (!Array.isArray(root.data)) return null;
+  const firstDataItem = asRecord(root.data[0]);
+  return asRecord(firstDataItem?.lokasi);
+}
+
+async function fetchBmkgLocationMetadata(village: WilayahItem): Promise<BmkgLocationMetadata | null> {
+  try {
+    const response = await fetch(`${BMKG_FORECAST_API_URL}?adm4=${encodeURIComponent(village.code)}`, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    });
+    if (!response.ok) return null;
+
+    const raw = await response.json();
+    const location = getBmkgRawLocation(raw);
+    if (!location) return null;
+
+    const latitude = asNumber(location.lat);
+    const longitude = asNumber(location.lon);
+    if (latitude === null || longitude === null) return null;
+
+    return {
+      adm4: asText(location.adm4) || village.code,
+      name: asText(location.desa) || village.name,
+      latitude,
+      longitude,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getBmkgLocationMetadata(village: WilayahItem) {
+  const cached = bmkgLocationMetadataCache.get(village.code);
+  if (cached) return cached;
+
+  const pending = bmkgLocationMetadataRequests.get(village.code);
+  if (pending) return pending;
+
+  const request = fetchBmkgLocationMetadata(village)
+    .then((metadata) => {
+      if (metadata) bmkgLocationMetadataCache.set(village.code, metadata);
+      return metadata;
+    })
+    .finally(() => {
+      bmkgLocationMetadataRequests.delete(village.code);
+    });
+
+  bmkgLocationMetadataRequests.set(village.code, request);
+  return request;
+}
+
+function toRadians(value: number) {
+  return value * Math.PI / 180;
+}
+
+function distanceKm(from: Coordinates, to: Coordinates) {
+  const radiusKm = 6371;
+  const deltaLat = toRadians(to.latitude - from.latitude);
+  const deltaLon = toRadians(to.longitude - from.longitude);
+  const lat1 = toRadians(from.latitude);
+  const lat2 = toRadians(to.latitude);
+
+  const haversine =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+
+  return 2 * radiusKm * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  mapper: (item: T) => Promise<R>,
+) {
+  const results: R[] = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    for (;;) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= items.length) return;
+      results[index] = await mapper(items[index]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker())
+  );
+
+  return results;
+}
+
+async function findNearestBmkgVillage(villages: WilayahItem[], coordinates: Coordinates) {
+  const candidates = await mapWithConcurrency(villages, NEAREST_BMKG_LOOKUP_CONCURRENCY, async (village) => {
+    const metadata = await getBmkgLocationMetadata(village);
+    if (!metadata) return null;
+
+    return {
+      village,
+      distance: distanceKm(coordinates, metadata),
+    };
+  });
+
+  const nearest = candidates
+    .filter((candidate): candidate is { village: WilayahItem; distance: number } => Boolean(candidate))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  return nearest?.village || null;
+}
+
+async function resolveBmkgLocation(
+  item: NominatimSearchResult,
+  query: string,
+  coordinates?: Coordinates,
+): Promise<ResolvedBmkgLocation | null> {
   const address = item.address || {};
   const displayParts = getDisplayParts(item);
 
@@ -147,7 +297,7 @@ async function resolveBmkgLocation(item: NominatimSearchResult, query: string): 
     address.suburb,
     displayParts[0],
     query,
-  ]);
+  ]) || (coordinates ? await findNearestBmkgVillage(villages, coordinates) : null);
   if (!village) return null;
 
   const districtName = district.name.toUpperCase().startsWith('KECAMATAN')
@@ -173,7 +323,7 @@ async function normalizeLocationResult(item: NominatimSearchResult, query: strin
   const longitude = Number(item.lon);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
 
-  const bmkgLocation = await resolveBmkgLocation(item, query);
+  const bmkgLocation = await resolveBmkgLocation(item, query, { latitude, longitude });
   if (!bmkgLocation) return null;
 
   return {

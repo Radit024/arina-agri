@@ -669,6 +669,7 @@
     "sendMessage": "Kirim pesan",
     "sendingMessage": "Arina AI sedang menjawab",
     "retryLastPrompt": "Coba lagi",
+    "newChat": "New Chat",
     "composerHelper": "Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.",
     "currentChatClear": "Hapus chat saat ini",
     "historyTitle": "Riwayat Chat",

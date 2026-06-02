@@ -1,6 +1,7 @@
 'use client';
 
 import type { UseEnsiklopediaControllerResult } from '@/controllers/ensiklopedia/useEnsiklopediaController';
+import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import CloseIcon from '@mui/icons-material/Close';
@@ -49,6 +50,7 @@ export default function EnsiklopediaView({
   historyDrawerOpen,
   setHistoryDrawerOpen,
   historyList,
+  handleNewChat,
   handleClearChat,
   handleDeleteHistorySession,
   handleClearHistory,
@@ -123,6 +125,45 @@ export default function EnsiklopediaView({
 
         {/* Right Side: Actions */}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Button
+            aria-label={t('newChat')}
+            data-touch-target="44"
+            variant="contained"
+            startIcon={<AddCommentOutlinedIcon />}
+            onClick={handleNewChat}
+            size="small"
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 700,
+              minHeight: 44,
+              px: 2,
+              boxShadow: 'none',
+              '&:hover': { boxShadow: 'none' },
+            }}
+          >
+            {t('newChat')}
+          </Button>
+          <Tooltip title={t('newChat')}>
+            <IconButton
+              aria-label={t('newChat')}
+              data-touch-target="44"
+              onClick={handleNewChat}
+              size="small"
+              sx={{
+                display: { xs: 'flex', sm: 'none' },
+                minHeight: 44,
+                minWidth: 44,
+                color: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+              }}
+            >
+              <AddCommentOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Button
             data-guide-target="ai-quick-reference"
             data-touch-target="44"

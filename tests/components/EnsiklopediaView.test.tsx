@@ -18,6 +18,7 @@ const translations: Record<string, string> = {
   inputPlaceholder: 'Tanyakan masalah cabai Anda...',
   inputLabel: 'Pesan untuk Arina AI',
   retryLastPrompt: 'Coba lagi',
+  newChat: 'New Chat',
   sendMessage: 'Kirim pesan',
   sendingMessage: 'Arina AI sedang menjawab',
   composerHelper: 'Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.',
@@ -91,6 +92,7 @@ function renderView(overrides: Partial<EnsiklopediaViewTargetProps> = {}) {
     historyDrawerOpen: false,
     setHistoryDrawerOpen: vi.fn(),
     historyList: [],
+    handleNewChat: vi.fn(),
     handleClearChat: vi.fn(),
     handleDeleteHistorySession: vi.fn(),
     handleClearHistory: vi.fn(),
@@ -133,10 +135,22 @@ describe('EnsiklopediaView', () => {
     expect(sendButton).toBeEnabled();
     expect(sendButton).toHaveAttribute('data-touch-target', '44');
     screen
+      .getAllByRole('button', { name: 'New Chat' })
+      .forEach((button) => expect(button).toHaveAttribute('data-touch-target', '44'));
+    screen
       .getAllByRole('button', { name: 'Referensi Penyakit' })
       .forEach((button) => expect(button).toHaveAttribute('data-touch-target', '44'));
     expect(screen.getByRole('button', { name: 'Hapus chat saat ini' })).toHaveAttribute('data-touch-target', '44');
     expect(screen.getByText(/Tekan Enter untuk mengirim/)).toHaveAttribute('data-mobile-helper', 'desktop-only');
+  });
+
+  it('starts a new chat from the header action', () => {
+    const handleNewChat = vi.fn();
+    renderView({ handleNewChat });
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'New Chat' })[0]);
+
+    expect(handleNewChat).toHaveBeenCalled();
   });
 
   it('shows retry action when a failed prompt can be retried', () => {

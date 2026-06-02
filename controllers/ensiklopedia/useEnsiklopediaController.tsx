@@ -192,6 +192,12 @@ export function useEnsiklopediaController() {
     setLastFailedPrompt(null);
   };
 
+  const handleNewChat = () => {
+    handleClearChat();
+    setInputValue('');
+    setHistoryDrawerOpen(false);
+  };
+
   const handleDeleteHistorySession = (sessionId: string) => {
     const updated = historyList.filter((session) => session.id !== sessionId);
     setHistoryList(updated);
@@ -237,6 +243,7 @@ export function useEnsiklopediaController() {
     historyDrawerOpen,
     setHistoryDrawerOpen,
     historyList,
+    handleNewChat,
     handleClearChat,
     handleDeleteHistorySession,
     handleClearHistory,

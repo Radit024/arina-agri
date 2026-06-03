@@ -45,6 +45,7 @@ interface FeedbackItem {
   message: string;
   created_at: string;
   user_name?: string;
+  device_type?: string;
 }
 
 interface TabPanelProps {
@@ -283,7 +284,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
                               variant="outlined" 
                             />
                             <Typography variant="caption" color="text.secondary">
-                              {fb.user_name ? `${fb.user_name} • ` : ''}{formatDate(fb.created_at)}
+                              {fb.user_name ? `${fb.user_name} • ` : ''}{formatDate(fb.created_at)}{fb.device_type ? ` • ${fb.device_type}` : ''}
                             </Typography>
                           </Box>
                         }

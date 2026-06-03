@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('user_feedbacks')
-      .select('id, category, message, created_at')
+      .select('id, category, message, created_at, user_name, device_type')
       .order('created_at', { ascending: false })
       .limit(50);
 

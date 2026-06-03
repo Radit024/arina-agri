@@ -20,12 +20,16 @@ export async function POST(request: Request) {
     const validatedData = feedbackSchema.parse(body);
     const supabase = getSupabaseAdmin();
 
+    const { data: { user } } = await supabase.auth.admin.getUserById(userId);
+    const userName = user?.user_metadata?.full_name || user?.email || 'Pengguna Anonim';
+
     const { error: insertError } = await supabase
       .from('user_feedbacks')
       .insert({
         user_id: userId,
         category: validatedData.category,
         message: validatedData.message,
+        user_name: userName,
         device_type: validatedData.device_type || 'unknown',
       });
 

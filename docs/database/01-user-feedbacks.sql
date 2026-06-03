@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.user_feedbacks (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     category TEXT NOT NULL,
     message TEXT NOT NULL,
+    user_name TEXT,
     device_type TEXT,
     status TEXT DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

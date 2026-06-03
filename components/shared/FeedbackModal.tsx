@@ -44,6 +44,7 @@ interface FeedbackItem {
   category: string;
   message: string;
   created_at: string;
+  user_name?: string;
 }
 
 interface TabPanelProps {
@@ -282,7 +283,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
                               variant="outlined" 
                             />
                             <Typography variant="caption" color="text.secondary">
-                              {formatDate(fb.created_at)}
+                              {fb.user_name ? `${fb.user_name} • ` : ''}{formatDate(fb.created_at)}
                             </Typography>
                           </Box>
                         }

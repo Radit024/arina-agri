@@ -12,6 +12,16 @@ vi.mock('@/lib/server/dashboard/summary', () => ({
   }),
 }));
 
+vi.mock('@/lib/server/auth/requestUser', () => ({
+  resolveRequestUserId: vi.fn().mockImplementation(async (request: Request) => {
+    const authHeader = request.headers.get('authorization') || '';
+    if (authHeader === 'Bearer mock-token') {
+      return '00000000-0000-4000-8000-000000000001';
+    }
+    return null;
+  }),
+}));
+
 describe('dashboard summary route', () => {
   it('returns 401 when authorization is missing', async () => {
     const { GET } = await import('@/app/api/dashboard/summary/route');

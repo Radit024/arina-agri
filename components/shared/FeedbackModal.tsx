@@ -271,38 +271,41 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
               </Box>
             ) : (
               <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-                {feedbacks.map((fb, index) => (
-                  <div key={fb.id}>
-                    <ListItem alignItems="flex-start" sx={{ px: 0, py: 2 }}>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
-                            <Chip 
-                              label={t(`categories.${fb.category}` as any)} 
-                              size="small" 
-                              color={getCategoryColor(fb.category) as any} 
-                              variant="outlined" 
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                              {fb.user_name ? `${fb.user_name} • ` : ''}{formatDate(fb.created_at)}{fb.device_type ? ` • ${fb.device_type}` : ''}
+                {feedbacks.map((fb, index) => {
+                  const categoryKey = `categories.${fb.category}`;
+                  return (
+                    <div key={fb.id}>
+                      <ListItem alignItems="flex-start" sx={{ px: 0, py: 2 }}>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, alignItems: 'center' }}>
+                              <Chip 
+                                label={t(categoryKey as any)} 
+                                size="small" 
+                                color={getCategoryColor(fb.category) as any} 
+                                variant="outlined" 
+                              />
+                              <Typography variant="caption" color="text.secondary">
+                                {fb.user_name ? `${fb.user_name} • ` : ''}{formatDate(fb.created_at)}{fb.device_type ? ` • ${fb.device_type}` : ''}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.primary"
+                              sx={{ display: 'block', mt: 1, wordBreak: 'break-word' }}
+                            >
+                              {fb.message}
                             </Typography>
-                          </Box>
-                        }
-                        secondary={
-                          <Typography
-                            component="span"
-                            variant="body2"
-                            color="text.primary"
-                            sx={{ display: 'block', mt: 1, wordBreak: 'break-word' }}
-                          >
-                            {fb.message}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                    {index < feedbacks.length - 1 && <Divider component="li" />}
-                  </div>
-                ))}
+                          }
+                        />
+                      </ListItem>
+                      {index < feedbacks.length - 1 && <Divider component="li" />}
+                    </div>
+                  );
+                })}
               </List>
             )}
           </CustomTabPanel>

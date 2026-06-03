@@ -94,7 +94,7 @@ Dashboard home shows:
   - Input nomor HP
   - Toggle aktifkan notifikasi
   - shadcn Switch component
-  - Note: "Notifikasi dikirim otomatis via WhatsApp menggunakan n8n workflow"
+  - Note: "Notifikasi dikirim otomatis via WhatsApp menggunakan backend channel"
 
 ### 4. Ensiklopedia AI Cabai `/dashboard/ensiklopedia`
 

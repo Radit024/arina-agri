@@ -26,7 +26,8 @@
     "guide": "Guide",
     "pengaturan": "Settings",
     "logout": "Log Out",
-    "farmer": "Farmer"
+    "farmer": "Farmer",
+    "beriMasukan": "Give Feedback"
   },
   "MobileNav": {
     "dashboard": "Dashboard",
@@ -44,7 +45,8 @@
     "stok": "Stock",
     "kabarPasar": "Market News",
     "pengaturan": "Settings",
-    "guide": "Guide"
+    "guide": "Guide",
+    "beriMasukan": "Give Feedback"
   },
   "Guide": {
     "stepProgress": "Step {current} of {total}",
@@ -383,7 +385,7 @@
     },
     "whatsapp": {
       "title": "Weather Notifications",
-      "note": "Choose your notification platform first, then save the corresponding contact. WhatsApp uses a phone number, while Telegram uses a Chat ID or username as per your n8n workflow.",
+      "note": "Choose your notification platform first, then save the corresponding contact. WhatsApp uses a phone number, while Telegram uses your bot chat ID or username.",
       "enable": "Enable notifications",
       "phoneLabel": "WhatsApp Number",
       "telegramLabel": "Telegram Chat ID",
@@ -1048,5 +1050,29 @@
         "ai": "Agricultural Dataset ID"
       }
     }
+  },
+  "FeedbackModal": {
+    "title": "Give Feedback",
+    "subtitle": "Help us improve the Arina Agri app with your feedback.",
+    "fields": {
+      "category": "Category",
+      "message": "Message / Feedback",
+      "messagePlaceholder": "Tell us the details of your feedback..."
+    },
+    "categories": {
+      "bug": "Report Bug / Error",
+      "feature": "Feature Request",
+      "question": "Question"
+    },
+    "cancel": "Cancel",
+    "submit": "Submit Feedback",
+    "submitting": "Submitting...",
+    "success": "Thank you! Your feedback has been sent successfully.",
+    "error": "Failed to send feedback. Please try again.",
+    "tabForm": "Write Feedback",
+    "tabList": "Feedback List",
+    "emptyList": "No feedback yet. Be the first!",
+    "errorFetch": "Failed to fetch feedback list.",
+    "locale": "en"
   }
 }

@@ -18,7 +18,7 @@ export interface MobileFeatureItem {
   key: string;
   icon: ReactNode;
   path: string | null;
-  action?: 'guide' | 'settings';
+  action?: 'guide' | 'settings' | 'feedback';
 }
 
 export interface MobileFeatureGroup {

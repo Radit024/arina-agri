@@ -9,17 +9,14 @@ import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
-const registerSchema = z.object({
+const registerSchemaBase = z.object({
   fullName: z.string().min(3, 'name'),
   email: z.string().email('email'),
   password: z.string().min(6, 'password'),
   confirmPassword: z.string().min(6, 'confirm'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'mismatch',
-  path: ['confirmPassword'],
 });
 
-export type RegisterForm = z.infer<typeof registerSchema>;
+export type RegisterForm = z.infer<typeof registerSchemaBase>;
 
 export function useRegisterController() {
   const router = useRouter();
@@ -38,7 +35,7 @@ export function useRegisterController() {
   }, [authLoading, user, router]);
 
   const form = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema.extend({
+    resolver: zodResolver(registerSchemaBase.extend({
       fullName: z.string().min(3, t('validation.name')),
       email: z.string().email(t('validation.email')),
       password: z.string().min(6, t('validation.password')),

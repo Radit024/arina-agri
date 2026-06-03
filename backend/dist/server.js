@@ -8,7 +8,6 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const ai_1 = __importDefault(require("./routes/ai"));
 const notification_1 = __importDefault(require("./routes/notification"));
-const webhook_1 = __importDefault(require("./routes/webhook"));
 const news_1 = __importDefault(require("./routes/news"));
 const notificationScheduler_1 = require("./services/notificationScheduler");
 const newsScheduler_1 = require("./services/newsScheduler");
@@ -43,7 +42,6 @@ app.get('/api/health', (_req, res) => {
 // ─── Routes ───────────────────────────────────────────────────────
 app.use('/api/ai', ai_1.default);
 app.use('/api/notification', notification_1.default);
-app.use('/api/webhook', webhook_1.default);
 app.use('/api/news', news_1.default);
 (0, notificationScheduler_1.startScheduler)();
 (0, newsScheduler_1.startNewsScheduler)();

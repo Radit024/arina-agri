@@ -25,7 +25,7 @@ Configure these values in the Vercel project for Preview and Production environm
 - `BMKG_FORECAST_CACHE_MINUTES`
 - `BMKG_FETCH_TIMEOUT_MS`
 
-Add Firebase, WhatsApp, Telegram, and n8n variables when those integrations are enabled in the target environment.
+Add WhatsApp, and Telegram variables when those integrations are enabled in the target environment.
 
 ## Pull Request Flow
 

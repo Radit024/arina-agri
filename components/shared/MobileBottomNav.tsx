@@ -18,6 +18,8 @@ import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
 import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import FeedbackModal from '@/components/shared/FeedbackModal';
 import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@mui/material/styles';
@@ -64,6 +66,7 @@ const mobileFeatureGroups: MobileFeatureGroup[] = [
     items: [
       { key: 'guide', icon: <HelpOutlineOutlinedIcon />, path: null, action: 'guide' },
       { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: null, action: 'settings' },
+      { key: 'beriMasukan', icon: <ChatBubbleOutlineOutlinedIcon />, path: null, action: 'feedback' },
     ],
   },
 ];
@@ -87,6 +90,7 @@ export default function MobileBottomNav() {
   const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showUnavailableToast, setShowUnavailableToast] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const lainnyaButtonRef = useRef<HTMLButtonElement | null>(null);
   const reduceMotion = useReducedMotion();
   const { openGuide } = useGuide();
@@ -130,6 +134,16 @@ export default function MobileBottomNav() {
 
     if (item.action === 'settings') {
       router.push(pathname + '?settings=true&tab=general');
+      return;
+    }
+
+    if (item.action === 'feedback') {
+      setIsFeedbackOpen(true);
+      return;
+    }
+
+    if (item.action === 'feedback') {
+      setIsFeedbackOpen(true);
       return;
     }
 
@@ -272,6 +286,7 @@ export default function MobileBottomNav() {
           {t('featureUnavailable')}
         </Alert>
       </Snackbar>
+      <FeedbackModal open={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </>
   );
 }

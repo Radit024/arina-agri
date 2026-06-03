@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
 
 interface AuthBrandPanelProps {
   subtitle: string;
@@ -8,34 +9,101 @@ interface AuthBrandPanelProps {
 
 export default function AuthBrandPanel({ subtitle }: AuthBrandPanelProps) {
   return (
-    <Grid
-      size={{ xs: 12, md: 6 }}
+    <Box
       sx={{
-        bgcolor: 'primary.main',
-        color: 'primary.contrastText',
         display: { xs: 'none', md: 'flex' },
         flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
-        p: 4,
+        alignSelf: 'stretch',
+        minHeight: { md: 560 },
+        p: { md: 4, lg: 5 },
         position: 'relative',
         overflow: 'hidden',
+        borderRadius: '32px',
+        border: '1px solid',
+        borderColor: (theme) => alpha(theme.palette.divider, 0.74),
+        bgcolor: (theme) => alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.26 : 0.54),
+        boxShadow: (theme) => `0 22px 64px ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.18 : 0.08)}`,
       }}
     >
-      <Box sx={{ position: 'absolute', top: -100, left: -100, width: 400, height: 400, borderRadius: '50%', bgcolor: 'primary.light', opacity: 0.1 }} />
-      <Box sx={{ position: 'absolute', bottom: -150, right: -100, width: 500, height: 500, borderRadius: '50%', bgcolor: 'primary.dark', opacity: 0.2 }} />
       <Box
-        component="img"
-        src="/logo%20arina.svg"
-        alt="Arina Agri Logo"
-        sx={{ width: 80, height: 80, mb: 2, zIndex: 1, filter: 'brightness(0) invert(1)' }}
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.72,
+          backgroundImage: (theme) => `repeating-linear-gradient(0deg, transparent 0px, transparent 30px, ${alpha(theme.palette.primary.main, 0.1)} 31px, transparent 32px), repeating-linear-gradient(90deg, transparent 0px, transparent 44px, ${alpha(theme.palette.success.main, 0.08)} 45px, transparent 46px)`,
+        }}
       />
-      <Typography variant="h3" sx={{ fontFamily: 'var(--font-sora)', zIndex: 1, textAlign: 'center', fontWeight: 800 }}>
-        Arina Agri
-      </Typography>
-      <Typography variant="h6" sx={{ mt: 2, opacity: 0.9, textAlign: 'center', maxWidth: 400, zIndex: 1 }}>
-        {subtitle}
-      </Typography>
-    </Grid>
+      <Stack spacing={2.5} sx={{ position: 'relative', zIndex: 1, maxWidth: 480 }}>
+        <Box
+          sx={{
+            width: 74,
+            height: 74,
+            borderRadius: '22px',
+            display: 'grid',
+            placeItems: 'center',
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: (theme) => alpha(theme.palette.primary.main, 0.22),
+            boxShadow: (theme) => `0 16px 34px ${alpha(theme.palette.primary.dark, 0.1)}`,
+          }}
+        >
+          <Box component="img" src="/logo%20arina.svg" alt="Arina Agri Logo" sx={{ width: 46, height: 46 }} />
+        </Box>
+        <Box>
+          <Typography
+            variant="h2"
+            sx={{
+              fontFamily: 'var(--font-sora)',
+              color: 'text.primary',
+              fontWeight: 800,
+              letterSpacing: 0,
+              lineHeight: 1.04,
+            }}
+          >
+            Arina Agri
+          </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              mt: 2,
+              color: 'text.secondary',
+              maxWidth: 420,
+              lineHeight: 1.55,
+              fontWeight: 500,
+            }}
+          >
+            {subtitle}
+          </Typography>
+        </Box>
+      </Stack>
+      <Stack
+        aria-hidden
+        spacing={1.5}
+        sx={{
+          position: 'absolute',
+          right: { md: 34, lg: 46 },
+          bottom: { md: 34, lg: 46 },
+          width: { md: 220, lg: 260 },
+          opacity: 0.72,
+        }}
+      >
+        {[0, 1, 2].map((item) => (
+          <Box
+            key={item}
+            sx={{
+              height: 12,
+              width: `${100 - item * 16}%`,
+              borderRadius: '999px',
+              bgcolor: item === 1 ? 'warning.light' : 'primary.light',
+              border: '1px solid',
+              borderColor: (theme) => alpha(item === 1 ? theme.palette.warning.dark : theme.palette.primary.main, 0.18),
+              alignSelf: item === 2 ? 'flex-end' : 'flex-start',
+            }}
+          />
+        ))}
+      </Stack>
+    </Box>
   );
 }

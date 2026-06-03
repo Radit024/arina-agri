@@ -26,7 +26,8 @@
     "guide": "Panduan",
     "pengaturan": "Pengaturan",
     "logout": "Keluar",
-    "farmer": "Petani"
+    "farmer": "Petani",
+    "beriMasukan": "Feedback"
   },
   "MobileNav": {
     "dashboard": "Dashboard",
@@ -44,7 +45,8 @@
     "stok": "Stok",
     "kabarPasar": "Berita",
     "pengaturan": "Pengaturan",
-    "guide": "Panduan"
+    "guide": "Panduan",
+    "beriMasukan": "Feedback"
   },
   "Guide": {
     "stepProgress": "Langkah {current} dari {total}",
@@ -1048,5 +1050,29 @@
         "ai": "ID Dataset Pertanian"
       }
     }
+  },
+  "FeedbackModal": {
+    "title": "Beri Masukan",
+    "subtitle": "Bantu kami meningkatkan aplikasi Arina Agri dengan masukan Anda.",
+    "fields": {
+      "category": "Kategori",
+      "message": "Pesan / Masukan",
+      "messagePlaceholder": "Ceritakan detail masukan Anda..."
+    },
+    "categories": {
+      "bug": "Lapor Bug / Error",
+      "feature": "Usulan Fitur Baru",
+      "question": "Pertanyaan"
+    },
+    "cancel": "Batal",
+    "submit": "Kirim Masukan",
+    "submitting": "Mengirim...",
+    "success": "Terima kasih! Masukan Anda telah berhasil dikirim.",
+    "error": "Gagal mengirim masukan. Silakan coba lagi.",
+    "tabForm": "Tulis Masukan",
+    "tabList": "Daftar Masukan",
+    "emptyList": "Belum ada masukan. Jadilah yang pertama!",
+    "errorFetch": "Gagal mengambil daftar masukan.",
+    "locale": "id"
   }
 }

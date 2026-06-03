@@ -90,7 +90,7 @@ router.post('/send', async (req, res) => {
         });
     }
 
-    // Panggil service channel langsung (tanpa n8n)
+    // Panggil service channel langsung dari backend.
     const result = await sendDirectNotification({ platform, to, message, metadata });
 
     if (!result.success) {
@@ -154,7 +154,7 @@ router.post('/schedule', async (req, res) => {
 });
 
 // Endpoint: POST /api/notification/decide
-// Menjalankan hybrid AI decision system (rule-based + Gemini) tanpa mengirim ke n8n.
+// Menjalankan hybrid AI decision system (rule-based + Gemini) tanpa mengirim pesan.
 router.post('/decide', async (req, res) => {
   try {
     const validation = validateDecisionPayload(req.body);
@@ -177,7 +177,7 @@ router.post('/decide', async (req, res) => {
 });
 
 // Endpoint: POST /api/notification/decide-send
-// Menjalankan decision system, lalu mengirim ke n8n jika shouldSend = true.
+// Menjalankan decision system, lalu mengirim ke channel tujuan jika shouldSend = true.
 router.post('/decide-send', async (req, res) => {
   try {
     const validation = validateDecisionPayload(req.body);

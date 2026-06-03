@@ -68,7 +68,7 @@ router.post('/send', async (req, res) => {
                 message: 'Invalid platform. Must be "whatsapp" atau "telegram"'
             });
         }
-        // Panggil service channel langsung (tanpa n8n)
+        // Panggil service channel langsung dari backend.
         const result = await (0, notificationChannels_1.sendDirectNotification)({ platform, to, message, metadata });
         if (!result.success) {
             return res.status(500).json({ success: false, message: result.error });
@@ -126,7 +126,7 @@ router.post('/schedule', async (req, res) => {
     }
 });
 // Endpoint: POST /api/notification/decide
-// Menjalankan hybrid AI decision system (rule-based + Gemini) tanpa mengirim ke n8n.
+// Menjalankan hybrid AI decision system (rule-based + Gemini) tanpa mengirim pesan.
 router.post('/decide', async (req, res) => {
     try {
         const validation = validateDecisionPayload(req.body);
@@ -147,7 +147,7 @@ router.post('/decide', async (req, res) => {
     }
 });
 // Endpoint: POST /api/notification/decide-send
-// Menjalankan decision system, lalu mengirim ke n8n jika shouldSend = true.
+// Menjalankan decision system, lalu mengirim ke channel tujuan jika shouldSend = true.
 router.post('/decide-send', async (req, res) => {
     try {
         const validation = validateDecisionPayload(req.body);

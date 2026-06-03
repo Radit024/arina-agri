@@ -189,7 +189,8 @@ Endpoint API utama:
 | `/api/notification/decide` | POST | Hitung keputusan notifikasi tanpa kirim |
 | `/api/notification/decide-send` | POST | Hitung keputusan dan kirim jika layak |
 | `/api/notification/schedule` | GET/POST | Baca/simpan jadwal notifikasi |
-| `/api/webhook/n8n` | POST | Webhook n8n untuk input transaksi/stok |
+| `/api/webhook/telegram` | POST | Webhook Telegram Bot API untuk input transaksi/stok |
+| `/api/webhook/whatsapp` | GET/POST | Verifikasi dan webhook WhatsApp Cloud API untuk input transaksi/stok |
 | `/api/cron/news` | GET | Cron fetch berita |
 | `/api/cron/prices` | GET | Cron fetch harga Siskaperbapo |
 | `/api/cron/notifications` | GET | Cron notifikasi terjadwal |
@@ -221,8 +222,7 @@ Integrasi eksternal:
 - **wilayah.id** untuk pencarian dan reverse lookup wilayah.
 - **Siskaperbapo Jawa Timur** untuk harga Cabai Rawit Merah.
 - **Google News RSS** untuk berita pertanian dan komoditas.
-- **WhatsApp Cloud API / Telegram Bot API** untuk notifikasi.
-- **n8n** untuk webhook input otomatis, misalnya dari workflow Telegram.
+- **WhatsApp Cloud API / Telegram Bot API** untuk notifikasi dan input pencatatan via chat.
 
 ## Teknologi Yang Digunakan
 
@@ -322,7 +322,6 @@ Variabel utama:
 | `BMKG_FORECAST_CACHE_MINUTES` | TTL cache forecast BMKG |
 | `BMKG_FETCH_TIMEOUT_MS` | Timeout fetch BMKG |
 | `CRON_SECRET` | Bearer token untuk endpoint `/api/cron/**` di production |
-| `N8N_WEBHOOK_SECRET` | Secret validasi webhook n8n |
 
 Variabel notifikasi opsional:
 
@@ -331,8 +330,11 @@ Variabel notifikasi opsional:
 | `WHATSAPP_CLOUD_TOKEN` | Token WhatsApp Cloud API |
 | `WHATSAPP_PHONE_NUMBER_ID` | Phone number ID WhatsApp Cloud |
 | `WHATSAPP_CLOUD_API_VERSION` | Versi API, default `v19.0` |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` | Token verifikasi webhook WhatsApp Cloud API |
+| `WHATSAPP_APP_SECRET` | App secret untuk validasi signature webhook WhatsApp |
 | `TELEGRAM_BOT_TOKEN` | Token bot Telegram |
 | `TELEGRAM_API_URL` | Override base URL Telegram API |
+| `TELEGRAM_WEBHOOK_SECRET` | Secret token Telegram webhook |
 | `ALERT_HEAVY_RAIN_MM` | Ambang hujan lebat, default `20` |
 | `ALERT_STRONG_WIND_KMH` | Ambang angin kuat, default `12` |
 | `ALERT_EXTREME_TEMP_C` | Ambang suhu ekstrem, default `32` |

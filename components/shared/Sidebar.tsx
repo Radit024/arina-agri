@@ -34,6 +34,8 @@ import { useAuth } from '@/context/AuthContext';
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 import { useGuide } from '@/components/shared/guide/GuideProvider';
+import FeedbackModal from '@/components/shared/FeedbackModal';
+import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
@@ -55,6 +57,7 @@ export default function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
   const { openGuide } = useGuide();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -132,6 +135,49 @@ export default function Sidebar() {
       />
     </ListItemButton>
   );
+  const feedbackButton = (
+    <ListItemButton
+      onClick={() => setIsFeedbackOpen(true)}
+      sx={{
+        borderRadius: 3,
+        py: 1.1,
+        mb: 1,
+        minHeight: 44,
+        justifyContent: isOpen ? 'initial' : 'center',
+        color: 'text.secondary',
+        '&:hover': { bgcolor: 'action.hover', color: 'primary.main' },
+      }}
+    >
+      <ListItemIcon
+        sx={{
+          minWidth: 0,
+          mr: isOpen ? 1.5 : 'auto',
+          justifyContent: 'center',
+          color: 'inherit',
+        }}
+      >
+        <ChatBubbleOutlineOutlinedIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText
+        primary={t('beriMasukan')}
+        sx={{
+          display: isOpen ? 'block' : 'none',
+          opacity: isOpen ? 1 : 0,
+          m: 0,
+        }}
+        slotProps={{
+          primary: {
+            sx: {
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              color: 'inherit',
+            },
+          },
+        }}
+      />
+    </ListItemButton>
+  );
+
 
   return (
     <Drawer
@@ -264,11 +310,18 @@ export default function Sidebar() {
         {isOpen && <Divider sx={{ mb: 2, mx: 1 }} />}
 
         {(!isOpen || !isProfileDropdownOpen) && (
-          isOpen ? guideButton : (
-            <Tooltip title={t('guide')} placement="right" arrow>
-              {guideButton}
-            </Tooltip>
-          )
+          <>
+            {isOpen ? feedbackButton : (
+              <Tooltip title={t('beriMasukan')} placement="right" arrow>
+                {feedbackButton}
+              </Tooltip>
+            )}
+            {isOpen ? guideButton : (
+              <Tooltip title={t('guide')} placement="right" arrow>
+                {guideButton}
+              </Tooltip>
+            )}
+          </>
         )}
 
         {isOpen && (
@@ -360,6 +413,8 @@ export default function Sidebar() {
           )}
         </ListItemButton>
       </Box>
+          {/* Feedback Modal */}
+      <FeedbackModal open={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </Drawer>
   );
 }

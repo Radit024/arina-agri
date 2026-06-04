@@ -36,13 +36,9 @@ import type { SettingsTabId } from '@/controllers/pengaturan/usePengaturanContro
 interface PengaturanViewProps {
   activeTab: SettingsTabId | null;
   currentContentTab: SettingsTabId;
-  farmerProfile: {
-    lokasi: string;
-    komoditas: string;
-    luasLahan: string;
-  };
   mode: 'light' | 'dark';
   phoneSaveSuccess: boolean;
+  profileSaveError: string;
   profileSaving: boolean;
   profileWhatsappPhone: string;
   profileTelegramUsername: string;
@@ -52,7 +48,6 @@ interface PengaturanViewProps {
   profileLuasLahan: string;
   userAvatar?: string;
   userInitials: string;
-  userName: string;
   onBackToMenu: () => void;
   onProfileWhatsappPhoneChange: (value: string) => void;
   onProfileTelegramUsernameChange: (value: string) => void;
@@ -68,9 +63,9 @@ interface PengaturanViewProps {
 export default function PengaturanView({
   activeTab,
   currentContentTab,
-  farmerProfile,
   mode,
   phoneSaveSuccess,
+  profileSaveError,
   profileSaving,
   profileWhatsappPhone,
   profileTelegramUsername,
@@ -80,7 +75,6 @@ export default function PengaturanView({
   profileLuasLahan,
   userAvatar,
   userInitials,
-  userName,
   onBackToMenu,
   onProfileWhatsappPhoneChange,
   onProfileTelegramUsernameChange,
@@ -249,22 +243,19 @@ export default function PengaturanView({
                <Grid size={{ xs: 12, md: 6 }}>
                  <TextField
                    fullWidth
-                   label="Username Telegram"
-                   placeholder="contoh: petanimaju (tanpa @)"
+                   label="ID / Username Telegram"
+                   placeholder="123456789 atau @username"
                    value={profileTelegramUsername}
                    onChange={(e) => onProfileTelegramUsernameChange(e.target.value)}
-                   helperText="Masukkan username Telegram Anda. Tekan START pada bot Arina Agri agar bot dapat mengenali akun Anda."
+                   helperText="Masukkan chat ID numeric atau username Telegram. Tekan START pada bot Arina Agri agar bot dapat mengenali akun Anda."
                    variant="standard"
-                   slotProps={{
-                     input: { startAdornment: <span style={{ color: 'var(--mui-palette-text-secondary)', marginRight: 2 }}>@</span> },
-                   }}
                  />
                </Grid>
              </Grid>
              
              <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
-               <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                 {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
+               <Typography variant="body2" color={profileSaveError ? 'error.main' : phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                 {profileSaveError || (phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint'))}
                </Typography>
                 <Button
                   data-guide-target="settings-profile-save"

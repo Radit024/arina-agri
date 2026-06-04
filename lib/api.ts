@@ -152,6 +152,27 @@ export interface NotificationScheduleConfig {
   userId?: string;
 }
 
+export interface ApiUserProfile {
+  id: string;
+  fullName: string;
+  lokasi: string;
+  komoditas: string;
+  luasLahan: string;
+  whatsappPhone: string;
+  telegramUsername: string;
+  telegramChatId: string;
+  telegramContact: string;
+}
+
+export interface ApiUserProfileUpdate {
+  fullName?: string;
+  lokasi?: string;
+  komoditas?: string;
+  luasLahan?: string;
+  whatsappPhone?: string;
+  telegramContact?: string;
+}
+
 interface ApiEnvelope<T = unknown> {
   success?: boolean;
   message?: string;
@@ -272,6 +293,37 @@ async function calendarEventRequest<T>(endpoint: string, init: { method: string;
 }
 
 // ─── Transaction API ──────────────────────────────────────────────
+async function authenticatedJsonRequest<T>(endpoint: string, init: { method: string; body?: object }): Promise<T> {
+  const headers: Record<string, string> = {
+    ...(await buildCurrentAuthHeaders()),
+  };
+
+  if (init.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const response = await fetch(endpoint, {
+    method: init.method,
+    headers,
+    body: init.body ? JSON.stringify(init.body) : undefined,
+    cache: 'no-store',
+  });
+  const rawText = await response.text();
+  let json: ApiEnvelope<T> | null = null;
+
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    json = null;
+  }
+
+  if (!response.ok || !json?.success) {
+    throw new Error(json?.message || rawText || `HTTP error ${response.status}`);
+  }
+
+  return json.data as T;
+}
+
 export const transactionApi = {
   getAll: async (): Promise<ApiTransaction[]> => {
     const { data, error } = await supabase
@@ -358,6 +410,16 @@ export const eventApi = {
 };
 
 // ─── Stok Panen API ───────────────────────────────────────────────
+export const profileApi = {
+  get: async (): Promise<ApiUserProfile> => {
+    return authenticatedJsonRequest<ApiUserProfile>('/api/profile', { method: 'GET' });
+  },
+
+  save: async (payload: ApiUserProfileUpdate): Promise<ApiUserProfile> => {
+    return authenticatedJsonRequest<ApiUserProfile>('/api/profile', { method: 'PATCH', body: payload });
+  },
+};
+
 export const stokApi = {
   getAll: async (): Promise<ApiHarvestBatch[]> => {
     const { data, error } = await supabase

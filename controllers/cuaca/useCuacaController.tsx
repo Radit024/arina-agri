@@ -10,6 +10,7 @@ import {
   locationApi,
   notificationApi,
   notificationScheduleApi,
+  profileApi,
   weatherApi,
   type BmkgForecastResponse,
   type BmkgWarningsResponse,
@@ -45,8 +46,8 @@ export function useCuacaController() {
 
   const weatherWhatsappKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
   const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
-  const [storedWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
-  const [storedTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
+  const [storedWhatsapp, setStoredWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
+  const [storedTelegram, setStoredTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
   const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('whatsapp');
   const contactStorageKey = notificationPlatform === 'whatsapp' ? weatherWhatsappKey : weatherTelegramKey;
   const [savedContact, setSavedContact] = useLocalStorage<string>(contactStorageKey, '');
@@ -55,6 +56,9 @@ export function useCuacaController() {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error' | 'skipped'>('idle');
   const [testFeedback, setTestFeedback] = useState('');
+  const [contactSaving, setContactSaving] = useState(false);
+  const [contactSaveStatus, setContactSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [contactSaveFeedback, setContactSaveFeedback] = useState('');
   const isCurrentContactSaved = contactValue.trim().length > 0 && contactValue.trim() === savedContact.trim();
 
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
@@ -81,7 +85,44 @@ export function useCuacaController() {
 
   useEffect(() => {
     setContactValue(savedContact);
+    setContactSaveStatus('idle');
+    setContactSaveFeedback('');
   }, [savedContact]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    let active = true;
+
+    profileApi
+      .get()
+      .then((profile) => {
+        if (!active) return;
+
+        if (profile.whatsappPhone) {
+          setStoredWhatsapp(profile.whatsappPhone);
+        }
+        if (profile.telegramContact) {
+          setStoredTelegram(profile.telegramContact);
+        }
+
+        const currentProfileContact = notificationPlatform === 'telegram'
+          ? profile.telegramContact
+          : profile.whatsappPhone;
+
+        if (currentProfileContact) {
+          setSavedContact(currentProfileContact);
+          setContactValue(currentProfileContact);
+        }
+      })
+      .catch(() => {
+        // Local storage remains a fallback when profile sync is unavailable.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [notificationPlatform, setSavedContact, setStoredTelegram, setStoredWhatsapp, user?.id]);
 
   useEffect(() => {
     notificationScheduleApi
@@ -284,6 +325,12 @@ export function useCuacaController() {
     ? t('whatsapp.phoneHelper')
     : t('whatsapp.telegramHelper');
 
+  const handleContactValueChange = (value: string) => {
+    setContactValue(isWhatsappPlatform ? value.replace(/\D/g, '') : value);
+    setContactSaveStatus('idle');
+    setContactSaveFeedback('');
+  };
+
   const getConditionLabel = (condition: string) => {
     const key = condition.toLowerCase();
     if (key === 'gerimis') return t('current.conditions.drizzle');
@@ -297,6 +344,45 @@ export function useCuacaController() {
   const handlePlatformChange = (_event: MouseEvent<HTMLElement>, value: 'whatsapp' | 'telegram' | null) => {
     if (value) {
       setNotificationPlatform(value);
+      setContactSaveStatus('idle');
+      setContactSaveFeedback('');
+    }
+  };
+
+  const handleSaveNotificationContact = async () => {
+    const nextContact = contactValue.trim();
+    if (!nextContact) return;
+
+    setContactSaving(true);
+    setContactSaveStatus('idle');
+    setContactSaveFeedback('');
+
+    try {
+      const savedProfile = await profileApi.save({
+        fullName: recipientName,
+        ...(isWhatsappPlatform
+          ? { whatsappPhone: nextContact }
+          : { telegramContact: nextContact }),
+      });
+
+      const savedValue = isWhatsappPlatform
+        ? savedProfile.whatsappPhone
+        : savedProfile.telegramContact;
+
+      setSavedContact(savedValue);
+      setContactValue(savedValue);
+      if (isWhatsappPlatform) {
+        setStoredWhatsapp(savedValue);
+      } else {
+        setStoredTelegram(savedValue);
+      }
+      setContactSaveStatus('success');
+      setContactSaveFeedback(t('whatsapp.saved'));
+    } catch (error: unknown) {
+      setContactSaveStatus('error');
+      setContactSaveFeedback(error instanceof Error ? error.message : 'Gagal menyimpan kontak notifikasi');
+    } finally {
+      setContactSaving(false);
     }
   };
 
@@ -505,14 +591,15 @@ export function useCuacaController() {
     gpsLocation,
     notificationPlatform,
     savedContact,
-    setSavedContact,
     contactValue,
-    setContactValue,
     notifAktif,
     setNotifAktif,
     isSendingTest,
     testStatus,
     testFeedback,
+    contactSaving,
+    contactSaveStatus,
+    contactSaveFeedback,
     isCurrentContactSaved,
     scheduleEnabled,
     setScheduleEnabled,
@@ -544,7 +631,9 @@ export function useCuacaController() {
     contactPlaceholder,
     contactHelper,
     getConditionLabel,
+    handleContactValueChange,
     handlePlatformChange,
+    handleSaveNotificationContact,
     handleUseGpsLocation,
     handleTestNotification,
     handleSaveSchedule,

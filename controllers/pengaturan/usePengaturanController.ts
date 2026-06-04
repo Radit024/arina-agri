@@ -5,9 +5,10 @@ import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
-import { supabase } from '@/lib/supabase';
+import { profileApi } from '@/lib/api';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
+const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 
 export type SettingsTabId = 'general' | 'profil' | 'notifikasi' | 'info';
 
@@ -16,12 +17,13 @@ export function usePengaturanController() {
   const { mode, setThemeMode } = useThemeMode();
   const { user } = useAuth();
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userAvatar = user?.user_metadata?.avatar_url;
 
   // ─── WhatsApp phone ────────────────────────────────────────────────────────
   const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
+  const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
+  const [, setWeatherTelegramContact] = useLocalStorage<string>(weatherTelegramKey, '');
   const [profileWhatsappPhoneDraft, setProfileWhatsappPhoneDraft] = useState<string | null>(null);
   const profileWhatsappPhone = profileWhatsappPhoneDraft ?? weatherWhatsappPhone;
 
@@ -33,48 +35,58 @@ export function usePengaturanController() {
   const [profileLuasLahan, setProfileLuasLahan] = useState<string>(farmerProfile.luasLahan);
 
   // ─── Telegram username ─────────────────────────────────────────────────────
-  const [profileTelegramUsernameDraft, setProfileTelegramUsernameDraft] = useState<string | null>(null);
-  const [telegramUsernameSaved, setTelegramUsernameSaved] = useState<string>('');
-  const profileTelegramUsername = profileTelegramUsernameDraft ?? telegramUsernameSaved;
+  const [profileTelegramContactDraft, setProfileTelegramContactDraft] = useState<string | null>(null);
+  const [telegramContactSaved, setTelegramContactSaved] = useState<string>('');
+  const profileTelegramUsername = profileTelegramContactDraft ?? telegramContactSaved;
 
   // ─── Shared save state ─────────────────────────────────────────────────────
   const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState('');
 
   // ─── Fetch existing profile on mount ───────────────────────────────────────
   useEffect(() => {
-    if (user?.id) {
-      supabase
-        .from('profiles')
-        .select('whatsapp_phone, telegram_username, full_name, lokasi, komoditas, luas_lahan')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
-          if (!error && data) {
-            if (data.whatsapp_phone) {
-              setWeatherWhatsappPhone(data.whatsapp_phone);
-            }
-            if (data.telegram_username) {
-              setTelegramUsernameSaved(data.telegram_username);
-            }
-            if (data.full_name) setProfileFullName(data.full_name);
-            if (data.lokasi) setProfileLokasi(data.lokasi);
-            if (data.komoditas) setProfileKomoditas(data.komoditas);
-            if (data.luas_lahan) setProfileLuasLahan(data.luas_lahan);
-          }
-        });
-    }
-  }, [user?.id, setWeatherWhatsappPhone]);
+    if (!user?.id) return;
+
+    let active = true;
+
+    profileApi
+      .get()
+      .then((profile) => {
+        if (!active) return;
+
+        if (profile.whatsappPhone) {
+          setWeatherWhatsappPhone(profile.whatsappPhone);
+        }
+        if (profile.telegramContact) {
+          setWeatherTelegramContact(profile.telegramContact);
+          setTelegramContactSaved(profile.telegramContact);
+        }
+        if (profile.fullName) setProfileFullName(profile.fullName);
+        if (profile.lokasi) setProfileLokasi(profile.lokasi);
+        if (profile.komoditas) setProfileKomoditas(profile.komoditas);
+        if (profile.luasLahan) setProfileLuasLahan(profile.luasLahan);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setProfileSaveError(error instanceof Error ? error.message : 'Gagal memuat profil');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.id, setWeatherTelegramContact, setWeatherWhatsappPhone]);
 
   const handleProfileWhatsappPhoneChange = (value: string) => {
     setProfileWhatsappPhoneDraft(value.replace(/\D/g, ''));
     setPhoneSaveSuccess(false);
+    setProfileSaveError('');
   };
 
   const handleProfileTelegramUsernameChange = (value: string) => {
-    // Strip leading "@" so storage is consistent regardless of what user types.
-    setProfileTelegramUsernameDraft(value.replace(/^@+/, '').trim());
+    setProfileTelegramContactDraft(value.trim());
     setPhoneSaveSuccess(false);
+    setProfileSaveError('');
   };
 
   /**
@@ -84,32 +96,29 @@ export function usePengaturanController() {
    */
   const handleSaveProfile = async () => {
     const nextPhone = profileWhatsappPhone.trim();
-    const nextUsername = profileTelegramUsername.trim().replace(/^@+/, '');
+    const nextTelegramContact = profileTelegramUsername.trim();
 
     setProfileSaving(true);
+    setProfileSaveError('');
     try {
-      // Persist to localStorage for weather notification compatibility.
-      setWeatherWhatsappPhone(nextPhone);
+      const savedProfile = await profileApi.save({
+        fullName: profileFullName,
+        lokasi: profileLokasi,
+        komoditas: profileKomoditas,
+        luasLahan: profileLuasLahan,
+        whatsappPhone: nextPhone,
+        telegramContact: nextTelegramContact,
+      });
 
-      // Persist to Supabase for inbound chat identity resolution (requires auth).
-      if (user?.id) {
-        await supabase
-          .from('profiles')
-          .update({
-            full_name: profileFullName.trim() || null,
-            lokasi: profileLokasi.trim() || null,
-            komoditas: profileKomoditas.trim() || null,
-            luas_lahan: profileLuasLahan.trim() || null,
-            whatsapp_phone: nextPhone || null,
-            telegram_username: nextUsername || null,
-          })
-          .eq('id', user.id);
-      }
-
+      setWeatherWhatsappPhone(savedProfile.whatsappPhone);
+      setWeatherTelegramContact(savedProfile.telegramContact);
       setProfileWhatsappPhoneDraft(null);
-      setTelegramUsernameSaved(nextUsername);
-      setProfileTelegramUsernameDraft(null);
+      setTelegramContactSaved(savedProfile.telegramContact);
+      setProfileTelegramContactDraft(null);
       setPhoneSaveSuccess(true);
+    } catch (error: unknown) {
+      setPhoneSaveSuccess(false);
+      setProfileSaveError(error instanceof Error ? error.message : 'Gagal menyimpan profil');
     } finally {
       setProfileSaving(false);
     }
@@ -118,9 +127,9 @@ export function usePengaturanController() {
   return {
     activeTab,
     currentContentTab: activeTab || 'general',
-    farmerProfile,
     mode,
     phoneSaveSuccess,
+    profileSaveError,
     profileSaving,
     profileWhatsappPhone,
     profileTelegramUsername,
@@ -130,14 +139,13 @@ export function usePengaturanController() {
     profileLuasLahan,
     userAvatar,
     userInitials: profileFullName.substring(0, 2).toUpperCase(),
-    userName: profileFullName,
     onBackToMenu: () => setActiveTab(null),
     onProfileWhatsappPhoneChange: handleProfileWhatsappPhoneChange,
     onProfileTelegramUsernameChange: handleProfileTelegramUsernameChange,
-    onProfileFullNameChange: (v: string) => { setProfileFullName(v); setPhoneSaveSuccess(false); },
-    onProfileLokasiChange: (v: string) => { setProfileLokasi(v); setPhoneSaveSuccess(false); },
-    onProfileKomoditasChange: (v: string) => { setProfileKomoditas(v); setPhoneSaveSuccess(false); },
-    onProfileLuasLahanChange: (v: string) => { setProfileLuasLahan(v); setPhoneSaveSuccess(false); },
+    onProfileFullNameChange: (v: string) => { setProfileFullName(v); setPhoneSaveSuccess(false); setProfileSaveError(''); },
+    onProfileLokasiChange: (v: string) => { setProfileLokasi(v); setPhoneSaveSuccess(false); setProfileSaveError(''); },
+    onProfileKomoditasChange: (v: string) => { setProfileKomoditas(v); setPhoneSaveSuccess(false); setProfileSaveError(''); },
+    onProfileLuasLahanChange: (v: string) => { setProfileLuasLahan(v); setPhoneSaveSuccess(false); setProfileSaveError(''); },
     onSaveProfile: handleSaveProfile,
     onTabChange: setActiveTab,
     onThemeModeChange: setThemeMode,

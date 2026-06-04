@@ -37,8 +37,10 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { accentText, softBg, softHoverBg, softText } from '@/lib/themeColors';
+import { profileApi } from '@/lib/api';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
+const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 
 const SETTINGS_TABS = [
   { id: 'profil', key: 'profile.tab', icon: <PersonOutlineIcon /> },
@@ -71,10 +73,14 @@ export default function SettingsModal() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
   const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
+  const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
+  const [, setWeatherTelegramContact] = useLocalStorage<string>(weatherTelegramKey, '');
   const [profileWhatsappPhone, setProfileWhatsappPhone] = useState(weatherWhatsappPhone);
   const [telegramId, setTelegramId] = useState('');
   const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -85,6 +91,31 @@ export default function SettingsModal() {
   useEffect(() => {
     setProfileWhatsappPhone(weatherWhatsappPhone);
   }, [weatherWhatsappPhone]);
+
+  useEffect(() => {
+    if (!isOpen || !user?.id) return;
+
+    let active = true;
+
+    profileApi
+      .get()
+      .then((profile) => {
+        if (!active) return;
+
+        setProfileWhatsappPhone(profile.whatsappPhone || weatherWhatsappPhone);
+        setTelegramId(profile.telegramContact);
+        if (profile.whatsappPhone) setWeatherWhatsappPhone(profile.whatsappPhone);
+        if (profile.telegramContact) setWeatherTelegramContact(profile.telegramContact);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setProfileSaveError(error instanceof Error ? error.message : 'Gagal memuat profil');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isOpen, user?.id, weatherWhatsappPhone, setWeatherTelegramContact, setWeatherWhatsappPhone]);
 
   const handleClose = () => {
     router.push(pathname, { scroll: false });
@@ -103,9 +134,28 @@ export default function SettingsModal() {
     router.refresh();
   };
 
-  const handleSaveProfile = () => {
-    setWeatherWhatsappPhone(profileWhatsappPhone.trim());
-    setProfileSaveSuccess(true);
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    setProfileSaveError('');
+    setProfileSaveSuccess(false);
+
+    try {
+      const savedProfile = await profileApi.save({
+        fullName: userName,
+        whatsappPhone: profileWhatsappPhone,
+        telegramContact: telegramId,
+      });
+
+      setProfileWhatsappPhone(savedProfile.whatsappPhone);
+      setTelegramId(savedProfile.telegramContact);
+      setWeatherWhatsappPhone(savedProfile.whatsappPhone);
+      setWeatherTelegramContact(savedProfile.telegramContact);
+      setProfileSaveSuccess(true);
+    } catch (error: unknown) {
+      setProfileSaveError(error instanceof Error ? error.message : 'Gagal menyimpan profil');
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const theme = useTheme();
@@ -329,6 +379,7 @@ export default function SettingsModal() {
                       onChange={(event) => {
                         setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
                         setProfileSaveSuccess(false);
+                        setProfileSaveError('');
                       }}
                       helperText={t('profile.phoneHelper')}
                       slotProps={{
@@ -347,6 +398,7 @@ export default function SettingsModal() {
                       onChange={(event) => {
                         setTelegramId(event.target.value);
                         setProfileSaveSuccess(false);
+                        setProfileSaveError('');
                       }}
                       helperText="Opsional untuk notifikasi"
                       slotProps={{ inputLabel: { shrink: true } }}
@@ -367,12 +419,18 @@ export default function SettingsModal() {
                     mt: 1,
                   }}
                 >
-                  <Typography variant="caption" align="center" color={profileSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ fontWeight: profileSaveSuccess ? 600 : 400 }}>
-                    {profileSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
+                  <Typography
+                    variant="caption"
+                    align="center"
+                    color={profileSaveError ? 'error.main' : profileSaveSuccess ? 'success.main' : 'text.secondary'}
+                    sx={{ fontWeight: profileSaveSuccess || profileSaveError ? 600 : 400 }}
+                  >
+                    {profileSaveError || (profileSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint'))}
                   </Typography>
                   <Button
                     variant="contained"
                     onClick={handleSaveProfile}
+                    disabled={profileSaving}
                     sx={(theme) => ({
                       width: '100%',
                       height: 40,
@@ -384,7 +442,7 @@ export default function SettingsModal() {
                       fontWeight: 700,
                     })}
                   >
-                    {t('profile.saveChanges')}
+                    {profileSaving ? 'Menyimpan...' : t('profile.saveChanges')}
                   </Button>
                 </Box>
               </Box>
@@ -652,6 +710,7 @@ export default function SettingsModal() {
                         onChange={(event) => {
                           setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
                           setProfileSaveSuccess(false);
+                          setProfileSaveError('');
                         }}
                         helperText={t('profile.phoneHelper')}
                         slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
@@ -667,6 +726,7 @@ export default function SettingsModal() {
                         onChange={(event) => {
                           setTelegramId(event.target.value);
                           setProfileSaveSuccess(false);
+                          setProfileSaveError('');
                         }}
                         helperText="Opsional untuk notifikasi"
                         variant="standard"
@@ -686,12 +746,13 @@ export default function SettingsModal() {
                       gap: 1.5,
                     }}
                   >
-                    <Typography variant="body2" color={profileSaveSuccess ? 'success.main' : 'text.secondary'}>
-                      {profileSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
+                    <Typography variant="body2" color={profileSaveError ? 'error.main' : profileSaveSuccess ? 'success.main' : 'text.secondary'}>
+                      {profileSaveError || (profileSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint'))}
                     </Typography>
                     <Button
                       variant="contained"
                       onClick={handleSaveProfile}
+                      disabled={profileSaving}
                       sx={(theme) => ({
                         width: 160,
                         height: 44,
@@ -705,7 +766,7 @@ export default function SettingsModal() {
                         flexShrink: 0,
                       })}
                     >
-                      {t('profile.saveChanges')}
+                      {profileSaving ? 'Menyimpan...' : t('profile.saveChanges')}
                     </Button>
                   </Box>
                 </Box>

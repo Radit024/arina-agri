@@ -100,6 +100,20 @@ vi.mock('@/lib/api', () => ({
     })),
     set: vi.fn(),
   },
+  profileApi: {
+    get: vi.fn(async () => ({
+      id: 'u1',
+      fullName: 'Test Farmer',
+      lokasi: '',
+      komoditas: '',
+      luasLahan: '',
+      whatsappPhone: '',
+      telegramUsername: '',
+      telegramChatId: '',
+      telegramContact: '',
+    })),
+    save: vi.fn(),
+  },
   weatherApi: {
     getWarnings: vi.fn(async () => ({
       warnings: [

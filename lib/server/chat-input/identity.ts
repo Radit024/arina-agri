@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChatInputChannel, ResolvedChatUser } from './types';
+import {
+  normalizeTelegramUsername as normalizeStoredTelegramUsername,
+  normalizeWhatsAppPhone as normalizeStoredWhatsAppPhone,
+} from '@/lib/profileContact';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -8,9 +12,7 @@ import type { ChatInputChannel, ResolvedChatUser } from './types';
  * "08123456789" → "628123456789"
  */
 function normalizeWhatsAppPhone(input: string): string {
-  const digits = input.replace(/\D/g, '');
-  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
-  return digits;
+  return normalizeStoredWhatsAppPhone(input);
 }
 
 /**
@@ -18,7 +20,7 @@ function normalizeWhatsAppPhone(input: string): string {
  * "@petanimaju" → "petanimaju"
  */
 function normalizeTelegramUsername(input: string): string {
-  return input.replace(/^@/, '').toLowerCase().trim();
+  return normalizeStoredTelegramUsername(input);
 }
 
 // ─── Identity Resolution ──────────────────────────────────────────────────────

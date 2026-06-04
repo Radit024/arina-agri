@@ -57,14 +57,15 @@ export default function CuacaView({
   gpsLocation,
   notificationPlatform,
   savedContact,
-  setSavedContact,
   contactValue,
-  setContactValue,
   notifAktif,
   setNotifAktif,
   isSendingTest,
   testStatus,
   testFeedback,
+  contactSaving,
+  contactSaveStatus,
+  contactSaveFeedback,
   isCurrentContactSaved,
   scheduleEnabled,
   setScheduleEnabled,
@@ -96,7 +97,9 @@ export default function CuacaView({
   contactPlaceholder,
   contactHelper,
   getConditionLabel,
+  handleContactValueChange,
   handlePlatformChange,
+  handleSaveNotificationContact,
   handleUseGpsLocation,
   handleTestNotification,
   handleSaveSchedule,
@@ -555,7 +558,7 @@ export default function CuacaView({
                   label={contactLabel}
                   placeholder={contactPlaceholder}
                   value={contactValue}
-                  onChange={(e) => setContactValue(isWhatsappPlatform ? e.target.value.replace(/\D/g, '') : e.target.value)}
+                  onChange={(e) => handleContactValueChange(e.target.value)}
                   helperText={contactHelper}
                   slotProps={{ htmlInput: isWhatsappPlatform ? { inputMode: 'numeric', pattern: '[0-9]*' } : undefined }}
                   disabled={!notifAktif}
@@ -566,14 +569,26 @@ export default function CuacaView({
                   fullWidth
                   variant={isCurrentContactSaved ? 'outlined' : 'contained'}
                   color={isCurrentContactSaved ? 'success' : 'primary'}
-                  disabled={!notifAktif || !contactValue.trim()}
-                  onClick={() => setSavedContact(contactValue.trim())}
+                  disabled={!notifAktif || !contactValue.trim() || contactSaving}
+                  onClick={handleSaveNotificationContact}
                   startIcon={isWhatsappPlatform ? <WhatsAppIcon /> : <TelegramIcon />}
                   data-touch-target="44"
                   sx={{ minHeight: 44 }}
                 >
-                  {isCurrentContactSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
+                  {contactSaving ? <CircularProgress size={20} /> : isCurrentContactSaved ? t('whatsapp.saved') : t('whatsapp.saveAndEnable')}
                 </Button>
+
+                {contactSaveStatus === 'success' && (
+                  <Alert severity="success" sx={{ mt: 1.5 }}>
+                    {contactSaveFeedback || t('whatsapp.saved')}
+                  </Alert>
+                )}
+
+                {contactSaveStatus === 'error' && (
+                  <Alert severity="error" sx={{ mt: 1.5 }}>
+                    {contactSaveFeedback}
+                  </Alert>
+                )}
 
                 <Button
                   fullWidth

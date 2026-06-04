@@ -15,9 +15,6 @@ const userId = '00000000-0000-4000-8000-000000000001';
 const profileRow = {
   id: userId,
   full_name: 'Arina Developer',
-  lokasi: 'Malang',
-  komoditas: 'Cabai',
-  luas_lahan: '1 ha',
   whatsapp_phone: '6281234567890',
   telegram_username: null,
   telegram_chat_id: '123456789',
@@ -70,6 +67,7 @@ describe('profile route', () => {
     const json = await response.json();
 
     expect(response.status).toBe(200);
+    expect(updateSelect).toHaveBeenCalledWith('id,full_name,whatsapp_phone,telegram_username,telegram_chat_id');
     expect(update).toHaveBeenCalledWith({
       full_name: 'Arina Developer',
       whatsapp_phone: '6281234567890',

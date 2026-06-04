@@ -166,9 +166,6 @@ export interface ApiUserProfile {
 
 export interface ApiUserProfileUpdate {
   fullName?: string;
-  lokasi?: string;
-  komoditas?: string;
-  luasLahan?: string;
   whatsappPhone?: string;
   telegramContact?: string;
 }

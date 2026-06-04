@@ -7,9 +7,6 @@ import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 const PROFILE_SELECT = [
   'id',
   'full_name',
-  'lokasi',
-  'komoditas',
-  'luas_lahan',
   'whatsapp_phone',
   'telegram_username',
   'telegram_chat_id',
@@ -18,9 +15,6 @@ const PROFILE_SELECT = [
 interface ProfileRow {
   id: string;
   full_name?: string | null;
-  lokasi?: string | null;
-  komoditas?: string | null;
-  luas_lahan?: string | null;
   whatsapp_phone?: string | null;
   telegram_username?: string | null;
   telegram_chat_id?: string | null;
@@ -57,9 +51,9 @@ function mapProfile(row: ProfileRow) {
   return {
     id: row.id,
     fullName: row.full_name ?? '',
-    lokasi: row.lokasi ?? '',
-    komoditas: row.komoditas ?? '',
-    luasLahan: row.luas_lahan ?? '',
+    lokasi: '',
+    komoditas: '',
+    luasLahan: '',
     whatsappPhone: row.whatsapp_phone ?? '',
     telegramUsername: row.telegram_username ?? '',
     telegramChatId: row.telegram_chat_id ?? '',
@@ -83,9 +77,6 @@ function buildProfileUpdate(payload: ProfilePayload) {
   const update: Record<string, string | null> = {};
 
   if (hasOwn(payload, 'fullName')) update.full_name = cleanNullable(payload.fullName);
-  if (hasOwn(payload, 'lokasi')) update.lokasi = cleanNullable(payload.lokasi);
-  if (hasOwn(payload, 'komoditas')) update.komoditas = cleanNullable(payload.komoditas);
-  if (hasOwn(payload, 'luasLahan')) update.luas_lahan = cleanNullable(payload.luasLahan);
   if (hasOwn(payload, 'whatsappPhone')) {
     const phone = normalizeWhatsAppPhone(readString(payload.whatsappPhone));
     update.whatsapp_phone = phone || null;

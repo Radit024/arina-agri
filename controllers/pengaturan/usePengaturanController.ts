@@ -103,9 +103,6 @@ export function usePengaturanController() {
     try {
       const savedProfile = await profileApi.save({
         fullName: profileFullName,
-        lokasi: profileLokasi,
-        komoditas: profileKomoditas,
-        luasLahan: profileLuasLahan,
         whatsappPhone: nextPhone,
         telegramContact: nextTelegramContact,
       });

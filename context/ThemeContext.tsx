@@ -1,14 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { lightTheme, darkTheme } from '@/lib/theme';
 import type { Theme } from '@mui/material/styles';
 
+type ThemeMode = 'light' | 'dark';
+
 interface ThemeContextValue {
-  mode: 'light' | 'dark';
+  mode: ThemeMode;
   theme: Theme;
   toggleTheme: () => void;
-  setThemeMode: (mode: 'light' | 'dark') => void;
+  setThemeMode: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
@@ -18,31 +20,53 @@ const ThemeContext = createContext<ThemeContextValue>({
   setThemeMode: () => {},
 });
 
-export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
+const THEME_STORAGE_KEY = 'arina_theme_mode';
 
-  // Persist & sync with system preference on first load
+function isThemeMode(value: string | null | undefined): value is ThemeMode {
+  return value === 'light' || value === 'dark';
+}
+
+function getInitialThemeMode(): ThemeMode {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const rootTheme = document.documentElement.dataset.theme;
+  if (isThemeMode(rootTheme)) {
+    return rootTheme;
+  }
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (isThemeMode(storedTheme)) {
+    return storedTheme;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
+  const [mode, setMode] = useState<ThemeMode>('light');
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    const stored = localStorage.getItem('arina_theme_mode') as 'light' | 'dark' | null;
-    if (stored) {
-      setMode(stored);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setMode('dark');
-    }
+    setMode(getInitialThemeMode());
+    setMounted(true);
   }, []);
 
-  const toggleTheme = () => {
-    setMode((prev) => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      localStorage.setItem('arina_theme_mode', next);
-      return next;
-    });
-  };
+  useEffect(() => {
+    if (!mounted) return;
+    document.documentElement.dataset.theme = mode;
+    document.documentElement.style.colorScheme = mode;
+    window.localStorage.setItem(THEME_STORAGE_KEY, mode);
+  }, [mode, mounted]);
 
-  const setThemeMode = (newMode: 'light' | 'dark') => {
+  const toggleTheme = useCallback(() => {
+    setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  const setThemeMode = useCallback((newMode: ThemeMode) => {
     setMode(newMode);
-    localStorage.setItem('arina_theme_mode', newMode);
-  };
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ 

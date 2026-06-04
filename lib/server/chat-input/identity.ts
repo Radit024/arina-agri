@@ -1,0 +1,90 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { ChatInputChannel, ResolvedChatUser } from './types';
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+/**
+ * Normalises a WhatsApp phone number to E.164 format (Indonesian prefix).
+ * "08123456789" → "628123456789"
+ */
+function normalizeWhatsAppPhone(input: string): string {
+  const digits = input.replace(/\D/g, '');
+  if (digits.startsWith('0')) return `62${digits.slice(1)}`;
+  return digits;
+}
+
+/**
+ * Strips leading "@" from Telegram usernames for consistent storage.
+ * "@petanimaju" → "petanimaju"
+ */
+function normalizeTelegramUsername(input: string): string {
+  return input.replace(/^@/, '').toLowerCase().trim();
+}
+
+// ─── Identity Resolution ──────────────────────────────────────────────────────
+
+/**
+ * Resolves a Telegram or WhatsApp sender to an Arina Agri user profile.
+ *
+ * For Telegram: tries to match by `telegram_chat_id` (numeric ID) first.
+ * If not found, falls back to `telegram_username` (username the user stored
+ * in their settings). When a username match succeeds, the Chat ID is written
+ * back to the profile so future lookups are instant.
+ *
+ * For WhatsApp: matches by normalised E.164 phone number stored in `whatsapp_phone`.
+ *
+ * Returns `null` when no matching profile is found.
+ */
+export async function resolveChatUser(
+  supabase: SupabaseClient,
+  channel: ChatInputChannel,
+  senderId: string,
+  senderUsername?: string,
+): Promise<ResolvedChatUser | null> {
+  if (channel === 'whatsapp') {
+    const phone = normalizeWhatsAppPhone(senderId);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id,full_name,email')
+      .eq('whatsapp_phone', phone)
+      .single();
+
+    if (error || !data) return null;
+    return { id: data.id, displayName: data.full_name || data.email || 'Petani' };
+  }
+
+  // ── Telegram: try Chat ID first (numeric) ─────────────────────────────────
+  const chatIdStr = senderId.trim();
+  const { data: byId, error: idError } = await supabase
+    .from('profiles')
+    .select('id,full_name,email')
+    .eq('telegram_chat_id', chatIdStr)
+    .single();
+
+  if (!idError && byId) {
+    return { id: byId.id, displayName: byId.full_name || byId.email || 'Petani' };
+  }
+
+  // ── Telegram: fall back to username ──────────────────────────────────────
+  if (!senderUsername) return null;
+
+  const username = normalizeTelegramUsername(senderUsername);
+  const { data: byUsername, error: usernameError } = await supabase
+    .from('profiles')
+    .select('id,full_name,email')
+    .eq('telegram_username', username)
+    .single();
+
+  if (usernameError || !byUsername) return null;
+
+  // Auto-save the numeric Chat ID to avoid username lookups in future messages.
+  await supabase
+    .from('profiles')
+    .update({ telegram_chat_id: chatIdStr })
+    .eq('id', byUsername.id);
+
+  return {
+    id: byUsername.id,
+    displayName: byUsername.full_name || byUsername.email || 'Petani',
+  };
+}

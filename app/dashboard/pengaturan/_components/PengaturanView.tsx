@@ -43,12 +43,15 @@ interface PengaturanViewProps {
   };
   mode: 'light' | 'dark';
   phoneSaveSuccess: boolean;
+  profileSaving: boolean;
   profileWhatsappPhone: string;
+  profileTelegramUsername: string;
   userAvatar?: string;
   userInitials: string;
   userName: string;
   onBackToMenu: () => void;
   onProfileWhatsappPhoneChange: (value: string) => void;
+  onProfileTelegramUsernameChange: (value: string) => void;
   onSaveProfile: () => void;
   onTabChange: (tab: SettingsTabId) => void;
   onThemeModeChange: (mode: 'light' | 'dark') => void;
@@ -60,12 +63,15 @@ export default function PengaturanView({
   farmerProfile,
   mode,
   phoneSaveSuccess,
+  profileSaving,
   profileWhatsappPhone,
+  profileTelegramUsername,
   userAvatar,
   userInitials,
   userName,
   onBackToMenu,
   onProfileWhatsappPhoneChange,
+  onProfileTelegramUsernameChange,
   onSaveProfile,
   onTabChange,
   onThemeModeChange,
@@ -224,14 +230,34 @@ export default function PengaturanView({
                    variant="standard"
                  />
                </Grid>
+               <Grid size={{ xs: 12, md: 6 }}>
+                 <TextField
+                   fullWidth
+                   label="Username Telegram"
+                   placeholder="contoh: petanimaju (tanpa @)"
+                   value={profileTelegramUsername}
+                   onChange={(e) => onProfileTelegramUsernameChange(e.target.value)}
+                   helperText="Masukkan username Telegram Anda. Tekan START pada bot Arina Agri agar bot dapat mengenali akun Anda."
+                   variant="standard"
+                   slotProps={{
+                     input: { startAdornment: <span style={{ color: 'var(--mui-palette-text-secondary)', marginRight: 2 }}>@</span> },
+                   }}
+                 />
+               </Grid>
              </Grid>
              
              <Box sx={{ mt: 5, pt: 3, borderTop: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
                <Typography variant="body2" color={phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                  {phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint')}
                </Typography>
-                <Button data-guide-target="settings-profile-save" variant="contained" sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' }, width: { xs: '100%', sm: 'auto' } }} onClick={onSaveProfile}>
-                  {t('profile.saveChanges')}
+                <Button
+                  data-guide-target="settings-profile-save"
+                  variant="contained"
+                  disabled={profileSaving}
+                  sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' }, width: { xs: '100%', sm: 'auto' } }}
+                  onClick={onSaveProfile}
+                >
+                  {profileSaving ? 'Menyimpan...' : t('profile.saveChanges')}
                 </Button>
              </Box>
            </Box>

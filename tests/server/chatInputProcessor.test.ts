@@ -17,18 +17,37 @@ vi.mock('@/lib/server/notifications/channels', () => ({
 
 // ─── Mock Builders ────────────────────────────────────────────────────────────
 
-function makeProfileSupabase(profile: unknown | null) {
-  const single = vi.fn(async () =>
+/**
+ * Builds a minimal Supabase mock for the profiles table.
+ * identity.ts now calls .select().or().single() so we mock that chain.
+ * If profile is null, the mock simulates a "not found" response.
+ */
+function makeProfileSingle(profile: unknown | null) {
+  return vi.fn(async () =>
     profile
       ? { data: profile, error: null }
       : { data: null, error: { message: 'No rows found' } },
   );
+}
 
+function makeProfileMock(profile: unknown | null) {
+  const single = makeProfileSingle(profile);
+  // Chain: .from('profiles').select(...).or(...).single()
+  // Also supports the auto-migrate .update().eq() call when a match is found.
+  return {
+    select: vi.fn(() => ({
+      or: vi.fn(() => ({ single })),
+      // username fallback chain: .select().eq('telegram_username', ...).single()
+      eq: vi.fn(() => ({ single })),
+    })),
+    update: vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) })),
+  };
+}
+
+function makeProfileSupabase(profile: unknown | null) {
   return {
     from: vi.fn((table: string) => {
-      if (table === 'profiles') {
-        return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single })) })) };
-      }
+      if (table === 'profiles') return makeProfileMock(profile);
       throw new Error(`Unexpected table in profile mock: ${table}`);
     }),
   };
@@ -68,16 +87,10 @@ describe('processInboundChatMessage', () => {
     const logInsertSingle = vi.fn(async () => ({ data: { id: 'log-1' }, error: null }));
     const logUpdate = vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) }));
     const txInsertSingle = vi.fn(async () => ({ data: { id: 'tx-1' }, error: null }));
-    const profileSingle = vi.fn(async () => ({
-      data: { id: 'user-1', full_name: 'Budi' },
-      error: null,
-    }));
 
     const supabase = {
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: profileSingle })) })) };
-        }
+        if (table === 'profiles') return makeProfileMock({ id: 'user-1', full_name: 'Budi' });
         if (table === 'inbound_message_logs') {
           return {
             insert: vi.fn(() => ({ select: vi.fn(() => ({ single: logInsertSingle })) })),
@@ -116,16 +129,10 @@ describe('processInboundChatMessage', () => {
   it('replies with help text when message format is invalid', async () => {
     const logInsertSingle = vi.fn(async () => ({ data: { id: 'log-2' }, error: null }));
     const logUpdate = vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) }));
-    const profileSingle = vi.fn(async () => ({
-      data: { id: 'user-1', full_name: 'Budi' },
-      error: null,
-    }));
 
     const supabase = {
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: profileSingle })) })) };
-        }
+        if (table === 'profiles') return makeProfileMock({ id: 'user-1', full_name: 'Budi' });
         if (table === 'inbound_message_logs') {
           return {
             insert: vi.fn(() => ({ select: vi.fn(() => ({ single: logInsertSingle })) })),
@@ -154,16 +161,9 @@ describe('processInboundChatMessage', () => {
   });
 
   it('handles duplicate messages via idempotency log', async () => {
-    const profileSingle = vi.fn(async () => ({
-      data: { id: 'user-1', full_name: 'Budi' },
-      error: null,
-    }));
-
     const supabase = {
       from: vi.fn((table: string) => {
-        if (table === 'profiles') {
-          return { select: vi.fn(() => ({ eq: vi.fn(() => ({ single: profileSingle })) })) };
-        }
+        if (table === 'profiles') return makeProfileMock({ id: 'user-1', full_name: 'Budi' });
         if (table === 'inbound_message_logs') {
           return {
             insert: vi.fn(() => ({

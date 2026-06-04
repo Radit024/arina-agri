@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { farmerProfile } from '@/lib/mockData';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useAuth } from '@/context/AuthContext';
@@ -33,6 +33,27 @@ export function usePengaturanController() {
   // ─── Shared save state ─────────────────────────────────────────────────────
   const [phoneSaveSuccess, setPhoneSaveSuccess] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+
+  // ─── Fetch existing profile on mount ───────────────────────────────────────
+  useEffect(() => {
+    if (user?.id) {
+      supabase
+        .from('profiles')
+        .select('whatsapp_phone, telegram_username')
+        .eq('id', user.id)
+        .single()
+        .then(({ data, error }) => {
+          if (!error && data) {
+            if (data.whatsapp_phone) {
+              setWeatherWhatsappPhone(data.whatsapp_phone);
+            }
+            if (data.telegram_username) {
+              setTelegramUsernameSaved(data.telegram_username);
+            }
+          }
+        });
+    }
+  }, [user?.id, setWeatherWhatsappPhone]);
 
   const handleProfileWhatsappPhoneChange = (value: string) => {
     setProfileWhatsappPhoneDraft(value.replace(/\D/g, ''));

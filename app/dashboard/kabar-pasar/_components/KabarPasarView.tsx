@@ -14,6 +14,7 @@ import CardContent from '@mui/material/CardContent';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { PriceTrendChart } from '@/components/dashboard/PriceCharts';
 import type { NewsArticle } from '@/lib/types/news';
+import { accentText, softBg, softHoverBg, softText } from '@/lib/themeColors';
 
 type KabarPasarTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -59,15 +60,15 @@ export default function KabarPasarView({
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box
-              sx={{
+              sx={(theme) => ({
                 width: 40,
                 height: 40,
                 borderRadius: 2.5,
-                bgcolor: 'success.light',
+                bgcolor: softBg(theme, 'success', 0.16),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-              }}
+              })}
             >
               <NewspaperIcon sx={{ color: 'primary.main', fontSize: 22 }} />
             </Box>
@@ -95,7 +96,10 @@ export default function KabarPasarView({
               onClick={onRefetch}
               size="small"
               aria-label={t('refetch')}
-              sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'success.light', color: 'primary.main' } }}
+              sx={(theme) => ({
+                color: 'text.secondary',
+                '&:hover': { bgcolor: softBg(theme, 'success', 0.16), color: softText(theme, 'success') },
+              })}
             >
               <RefreshIcon />
             </IconButton>
@@ -107,12 +111,12 @@ export default function KabarPasarView({
             <Chip
               label={t('stats', { total })}
               size="small"
-              sx={{
-                bgcolor: 'success.light',
-                color: 'primary.dark',
+              sx={(theme) => ({
+                bgcolor: softBg(theme, 'success', 0.16),
+                color: softText(theme, 'success'),
                 fontWeight: 600,
                 fontSize: '0.75rem',
-              }}
+              })}
             />
             <Typography variant="caption" color="text.disabled">
               {t('updateInterval')}
@@ -147,21 +151,21 @@ export default function KabarPasarView({
               onClick={() => onCategoryChange(cat.value)}
               variant={activeCategory === cat.value ? 'filled' : 'outlined'}
               size="small"
-              sx={{
+              sx={(theme) => ({
                 fontWeight: 600,
                 fontSize: '0.8125rem',
                 height: 32,
                 cursor: 'pointer',
                 borderColor: activeCategory === cat.value ? 'primary.main' : 'divider',
                 bgcolor: activeCategory === cat.value ? 'primary.main' : 'transparent',
-                color: activeCategory === cat.value ? 'white' : 'text.secondary',
+                color: activeCategory === cat.value ? accentText(theme, 'primary') : theme.palette.text.secondary,
                 transition: 'all 0.18s ease-out',
                 '&:hover': {
-                  bgcolor: activeCategory === cat.value ? 'primary.dark' : 'success.light',
+                  bgcolor: activeCategory === cat.value ? 'primary.dark' : softHoverBg(theme, 'success'),
                   borderColor: 'primary.main',
-                  color: activeCategory === cat.value ? 'white' : 'primary.dark',
+                  color: activeCategory === cat.value ? accentText(theme, 'primary') : softText(theme, 'success'),
                 },
-              }}
+              })}
             />
           ))}
         </Stack>
@@ -170,10 +174,16 @@ export default function KabarPasarView({
       {error ? (
         <Card
           elevation={0}
-          sx={{ border: '1px solid', borderColor: 'error.light', borderRadius: 3, mb: 3, bgcolor: 'error.lighter' }}
+          sx={(theme) => ({
+            border: '1px solid',
+            borderColor: softText(theme, 'error'),
+            borderRadius: 3,
+            mb: 3,
+            bgcolor: softBg(theme, 'error', 0.14),
+          })}
         >
           <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-            <Typography variant="body2" color="error.dark" sx={{ fontWeight: 600 }}>
+            <Typography variant="body2" sx={(theme) => ({ color: softText(theme, 'error'), fontWeight: 600 })}>
               {t('error', { error })}
             </Typography>
           </CardContent>

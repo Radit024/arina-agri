@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 import type { ApiCalendarEvent } from '@/lib/api';
+import { softBg, softText } from '@/lib/themeColors';
 
 interface CalendarEventColor {
   bg: string;
@@ -35,16 +36,16 @@ export default function CalendarDayCell({
   return (
     <Box
       data-testid="calendar-day-cell"
-      sx={{
+      sx={(theme) => ({
         minHeight: { xs: 44, sm: 64, md: 80 },
         borderRadius: 1.5,
         border: '1px solid',
         borderColor: isToday ? 'primary.main' : 'transparent',
-        backgroundColor: isToday ? 'primary.light' : 'transparent',
+        backgroundColor: isToday ? softBg(theme, 'primary', 0.14) : 'transparent',
         transition: 'background-color 140ms ease, border-color 140ms ease',
         touchAction: 'manipulation',
         '&:hover': { backgroundColor: 'action.hover' },
-      }}
+      })}
       onClick={onAdd}
     >
       <Box sx={{ width: '100%', p: 0.75 }}>
@@ -71,7 +72,7 @@ export default function CalendarDayCell({
           <Typography
             variant="caption"
             sx={{
-              color: isToday ? 'primary.main' : 'text.primary',
+              color: (theme) => isToday ? softText(theme, 'primary') : theme.palette.text.primary,
               display: 'block',
               fontWeight: isToday ? 700 : 500,
             }}

@@ -30,6 +30,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ReactMarkdown from 'react-markdown';
+import { accentText, softBg, softText } from '@/lib/themeColors';
 
 interface QuickReferenceDisease {
   id: string;
@@ -281,11 +282,11 @@ export default function EnsiklopediaView({
               {/* Icon */}
               <Box sx={{
                 width: 80, height: 80, borderRadius: '50%',
-                background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
+                background: `linear-gradient(135deg, ${theme.palette.mode === 'dark' ? theme.palette.success.dark : theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3,
                 boxShadow: `0 12px 36px ${alpha(theme.palette.success.main, 0.35)}`
               }}>
-                <AutoAwesomeIcon sx={{ fontSize: 40, color: '#fff' }} />
+                <AutoAwesomeIcon sx={{ fontSize: 40, color: accentText(theme, 'success') }} />
               </Box>
 
               {/* Title */}
@@ -395,7 +396,7 @@ export default function EnsiklopediaView({
                       width: { xs: 32, sm: 36 },
                       height: { xs: 32, sm: 36 },
                       borderRadius: '40%', // Squircle shape
-                      background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
+                      background: `linear-gradient(135deg, ${theme.palette.mode === 'dark' ? theme.palette.success.dark : theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -404,7 +405,7 @@ export default function EnsiklopediaView({
                       boxShadow: `0 4px 10px ${alpha(theme.palette.success.main, 0.2)}`
                     }}
                   >
-                    <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#fff' }} />
+                    <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: accentText(theme, 'success') }} />
                   </Box>
                 )}
 
@@ -417,7 +418,7 @@ export default function EnsiklopediaView({
                   {isUser ? (
                     <Box
                       sx={{
-                        bgcolor: theme.palette.mode === 'dark' ? 'grey.800' : '#ffffff',
+                        bgcolor: theme.palette.mode === 'dark' ? 'background.paper' : '#ffffff',
                         p: { xs: 1.5, sm: 2 },
                         borderRadius: '24px 24px 4px 24px',
                         color: 'text.primary',
@@ -432,7 +433,7 @@ export default function EnsiklopediaView({
                   ) : (
                     <Box
                       sx={{
-                        bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.success.main, 0.1) : '#F4F9F4',
+                        bgcolor: softBg(theme, 'success', 0.12),
                         p: { xs: 2, sm: 2.5 },
                         borderRadius: '4px 24px 24px 24px',
                         fontSize: { xs: '0.9rem', sm: '0.95rem' },
@@ -444,7 +445,7 @@ export default function EnsiklopediaView({
                         '& p': { m: 0, mb: 2.5, '&:last-of-type': { mb: 0 } },
                         '& ul, & ol': { m: 0, pl: 3, mb: 2.5 },
                         '& li': { mb: 1.5, pl: 0.5 },
-                        '& strong': { fontWeight: 800, color: theme.palette.success.dark },
+                        '& strong': { fontWeight: 800, color: softText(theme, 'success') },
                         '& code': {
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
                           px: 1, py: 0.25, borderRadius: 1, fontFamily: 'monospace', fontSize: '0.85em'
@@ -456,7 +457,7 @@ export default function EnsiklopediaView({
                           color: 'text.secondary'
                         },
                         '& a': {
-                          color: 'success.dark',
+                          color: softText(theme, 'success'),
                           textDecoration: 'underline',
                           overflowWrap: 'anywhere',
                         },
@@ -493,7 +494,7 @@ export default function EnsiklopediaView({
                   width: { xs: 32, sm: 36 },
                   height: { xs: 32, sm: 36 },
                   borderRadius: '40%',
-                  background: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
+                  background: `linear-gradient(135deg, ${theme.palette.mode === 'dark' ? theme.palette.success.dark : theme.palette.success.light} 0%, ${theme.palette.success.main} 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -502,10 +503,10 @@ export default function EnsiklopediaView({
                   boxShadow: `0 4px 10px ${alpha(theme.palette.success.main, 0.2)}`
                 }}
               >
-                <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#fff' }} />
+                <AutoAwesomeIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: accentText(theme, 'success') }} />
               </Box>
               <Box sx={{ pt: 1.5 }}>
-                <Box sx={{ display: 'flex', gap: '6px', alignItems: 'center', bgcolor: '#F4F9F4', px: 2, py: 1.5, borderRadius: '4px 24px 24px 24px' }}>
+                <Box sx={{ display: 'flex', gap: '6px', alignItems: 'center', bgcolor: softBg(theme, 'success', 0.12), px: 2, py: 1.5, borderRadius: '4px 24px 24px 24px' }}>
                   {[0, 150, 300].map((delay) => (
                     <Box key={delay} sx={{
                       width: 8, height: 8, borderRadius: '50%',
@@ -644,7 +645,7 @@ export default function EnsiklopediaView({
               disabled={!inputValue.trim() || isTyping}
               sx={{
                 bgcolor: inputValue.trim() && !isTyping ? 'success.main' : alpha(theme.palette.text.disabled, 0.1),
-                color: inputValue.trim() && !isTyping ? '#fff' : 'text.disabled',
+                color: inputValue.trim() && !isTyping ? accentText(theme, 'success') : 'text.disabled',
                 width: 44,
                 height: 44,
                 borderRadius: '50%',
@@ -734,7 +735,7 @@ export default function EnsiklopediaView({
                       size="small"
                       sx={{
                         backgroundColor: disease.severity === 'tinggi' ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
-                        color: disease.severity === 'tinggi' ? (theme.palette.mode === 'dark' ? theme.palette.error.light : theme.palette.error.dark) : (theme.palette.mode === 'dark' ? theme.palette.warning.light : theme.palette.warning.dark),
+                        color: disease.severity === 'tinggi' ? softText(theme, 'error') : softText(theme, 'warning'),
                         fontWeight: 700,
                         fontSize: '0.7rem',
                         height: 24,
@@ -750,7 +751,7 @@ export default function EnsiklopediaView({
                     </Typography>
                   </Box>
                   <Box sx={{ backgroundColor: alpha(theme.palette.success.main, 0.05), borderRadius: 2, p: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
-                    <Typography variant="body2" sx={{ color: theme.palette.mode === 'dark' ? theme.palette.success.light : theme.palette.success.dark, fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Typography variant="body2" sx={{ color: softText(theme, 'success'), fontWeight: 600, fontSize: '0.9rem' }}>
                       ✓ {disease.treatment}
                     </Typography>
                   </Box>

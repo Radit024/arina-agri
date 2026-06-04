@@ -15,6 +15,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useLocale, useTranslations } from 'next-intl';
 import { alpha } from '@mui/material/styles';
 import type { NewsArticle } from '@/lib/types/news';
+import { elevatedShadow, softBg, softText } from '@/lib/themeColors';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 type KabarPasarTranslator = ReturnType<typeof useTranslations>;
@@ -47,7 +48,7 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
         aspectRatio: size === 'widget' ? undefined : '16/9',
         height: size === 'widget' ? 72 : undefined,
         flexShrink: 0,
-        bgcolor: (theme) => theme.palette.success.light,
+        bgcolor: (theme) => softBg(theme, 'success', 0.16),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -71,7 +72,7 @@ function WidgetCard({ article }: { article: NewsArticle }) {
       elevation={0}
       sx={{
         border: 'none',
-        boxShadow: '0 4px 12px rgba(44, 42, 41, 0.04)',
+        boxShadow: (theme) => elevatedShadow(theme, '0 4px 12px rgba(44, 42, 41, 0.04)', 0.28),
         borderRadius: 4,
         display: 'flex',
         flexDirection: 'row',
@@ -80,7 +81,7 @@ function WidgetCard({ article }: { article: NewsArticle }) {
         transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
           transform: 'translateY(-2px)',
-          boxShadow: '0 8px 24px rgba(44, 42, 41, 0.08)',
+          boxShadow: (theme) => elevatedShadow(theme, '0 8px 24px rgba(44, 42, 41, 0.08)', 0.4),
         },
       }}
     >
@@ -136,8 +137,8 @@ function WidgetCard({ article }: { article: NewsArticle }) {
                 height: 20,
                 fontSize: '0.75rem',
                 fontWeight: 600,
-                bgcolor: 'success.light',
-                color: 'primary.dark',
+                bgcolor: (theme) => softBg(theme, 'success', 0.16),
+                color: (theme) => softText(theme, 'success'),
                 '& .MuiChip-label': { px: 1 },
               }}
             />
@@ -197,7 +198,7 @@ function FullCard({ article }: { article: NewsArticle }) {
         cursor: 'pointer',
         transition: 'transform 0.22s ease-out, box-shadow 0.22s ease-out',
         '&:hover': {
-          boxShadow: '0 8px 28px rgba(44, 42, 41, 0.1)',
+          boxShadow: (theme) => elevatedShadow(theme, '0 8px 28px rgba(44, 42, 41, 0.1)', 0.38),
           transform: 'translateY(-3px)',
         },
       }}
@@ -233,7 +234,7 @@ function FullCard({ article }: { article: NewsArticle }) {
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 bgcolor: (theme) => alpha(theme.palette.success.main, 0.1),
-                color: 'success.dark',
+                color: (theme) => softText(theme, 'success'),
                 borderRadius: 1.5,
                 '& .MuiChip-label': { px: 1 },
               }}

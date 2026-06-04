@@ -37,6 +37,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 
 import { formatDateShort } from '@/lib/formatters';
+import { accentText } from '@/lib/themeColors';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const theme = useTheme();
@@ -125,17 +126,17 @@ export default function CuacaView({
                 textTransform: 'none',
                 fontWeight: 700,
                 width: { xs: '100%', sm: 'auto' },
-                color: '#fff',
-                border: '1px solid rgba(22,101,52,0.18)',
-                background: 'linear-gradient(135deg, #16a34a 0%, #047857 100%)',
-                boxShadow: '0 10px 22px rgba(4,120,87,0.22)',
+                color: accentText(theme, 'primary'),
+                border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.18)}`,
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                boxShadow: `0 10px 22px ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.32 : 0.22)}`,
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #22c55e 0%, #047857 100%)',
-                  boxShadow: '0 12px 26px rgba(4,120,87,0.28)',
+                  background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
+                  boxShadow: `0 12px 26px ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.38 : 0.28)}`,
                 },
                 '&.Mui-disabled': {
-                  color: 'rgba(255,255,255,0.78)',
-                  background: 'linear-gradient(135deg, #86efac 0%, #6ee7b7 100%)',
+                  color: theme.palette.action.disabled,
+                  background: theme.palette.action.disabledBackground,
                   boxShadow: 'none',
                 },
               }}

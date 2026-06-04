@@ -22,11 +22,11 @@ const lightBase = createTheme({
   palette: {
     mode: 'light',
     primary:    { main: '#2D6A4F', dark: '#1B4332', light: '#D8F3DC', contrastText: '#ffffff' },
-    secondary:  { main: '#E07A5F', contrastText: '#ffffff' },
-    success:    { main: '#52B788', light: '#D8F3DC', dark: '#2D6A4F' },
+    secondary:  { main: '#E07A5F', contrastText: '#2C2A29' },
+    success:    { main: '#52B788', light: '#D8F3DC', dark: '#2D6A4F', contrastText: '#ffffff' },
     warning:    { main: '#F4E285', light: '#FFF7D6', dark: '#B08C2C', contrastText: '#2C2A29' },
-    error:      { main: '#E07A5F', light: '#FCDACF', dark: '#C85A3F' },
-    info:       { main: '#74A57F', light: '#E1EFE4', dark: '#4B7A56' },
+    error:      { main: '#E07A5F', light: '#FCDACF', dark: '#C85A3F', contrastText: '#2C2A29' },
+    info:       { main: '#74A57F', light: '#E1EFE4', dark: '#4B7A56', contrastText: '#2C2A29' },
     action:     { hover: 'rgba(44, 42, 41, 0.04)', selected: 'rgba(45, 106, 79, 0.08)' },
     background: { default: '#FAFAF8', paper: '#FFFFFF' },
     text:       { primary: '#2C2A29', secondary: '#6B6866' },
@@ -70,10 +70,10 @@ const darkBase = createTheme({
     mode: 'dark',
     primary:    { main: '#52B788', dark: '#3A9A70', light: '#68C99A', contrastText: '#1E2620' },
     secondary:  { main: '#D4836A', contrastText: '#1E2620' },
-    success:    { main: '#68C99A', light: '#2A3E2F', dark: '#52B788' },
+    success:    { main: '#68C99A', light: '#2A3E2F', dark: '#52B788', contrastText: '#1E2620' },
     warning:    { main: '#D4C060', light: '#35300A', dark: '#A89030', contrastText: '#1A1A10' },
-    error:      { main: '#D4836A', light: '#3A2018', dark: '#B05A42' },
-    info:       { main: '#7DB88A', light: '#1E2E22', dark: '#5A9068' },
+    error:      { main: '#D4836A', light: '#3A2018', dark: '#B05A42', contrastText: '#1E2620' },
+    info:       { main: '#7DB88A', light: '#1E2E22', dark: '#5A9068', contrastText: '#1E2620' },
     action:     { hover: 'rgba(82, 183, 136, 0.08)', selected: 'rgba(82, 183, 136, 0.12)' },
     background: { default: '#1E2620', paper: '#262D28' },
     text:       { primary: '#DDE8DF', secondary: '#8BA08E' },
@@ -91,6 +91,14 @@ export const darkTheme = createTheme(darkBase, {
   components: {
     MuiButton: {
       styleOverrides: { root: { textTransform: 'none', borderRadius: 8, fontWeight: 600 } },
+    },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundColor: darkBase.palette.background.default,
+          color: darkBase.palette.text.primary,
+        },
+      },
     },
     MuiCard: {
       styleOverrides: {

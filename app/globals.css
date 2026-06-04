@@ -21,6 +21,39 @@
   --weather-rainy-start: #1e3a5f;
   --weather-rainy-mid: #1d4ed8;
   --weather-rainy-end: #2563eb;
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --color-primary: #52b788;
+  --color-primary-dark: #68c99a;
+  --color-primary-light: #2a3e2f;
+  --color-surface: #1e2620;
+  --color-card: #262d28;
+  --color-text-primary: #dde8df;
+  --color-text-muted: #8ba08e;
+  --color-border: #2e3830;
+  --color-accent: #d4c060;
+  --weather-sunny-start: #78350f;
+  --weather-sunny-mid: #b45309;
+  --weather-sunny-end: #d97706;
+  --weather-cloudy-start: #1f2937;
+  --weather-cloudy-mid: #334155;
+  --weather-cloudy-end: #64748b;
+  --weather-rainy-start: #0f2538;
+  --weather-rainy-mid: #1e3a8a;
+  --weather-rainy-end: #1d4ed8;
+  --scrollbar-track: #1e2620;
+  --scrollbar-thumb: #3b4a40;
+  --scrollbar-thumb-hover: #5a6b5e;
+  color-scheme: dark;
+}
+
+html {
+  background-color: var(--color-surface);
 }
 
 body {
@@ -39,14 +72,14 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--scrollbar-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--scrollbar-thumb);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* News card stagger animation */

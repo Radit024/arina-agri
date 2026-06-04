@@ -36,6 +36,7 @@ import { useTranslations } from 'next-intl';
 import { useGuide } from '@/components/shared/guide/GuideProvider';
 import FeedbackModal from '@/components/shared/FeedbackModal';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
+import { softBg, softHoverBg, softText } from '@/lib/themeColors';
 
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
@@ -251,22 +252,22 @@ export default function Sidebar() {
                       router.push(item.path);
                     }
                   }}
-                  sx={{
+                  sx={(theme) => ({
                     borderRadius: 3,
                     py: 1.2,
                     minHeight: 48,
                     justifyContent: isOpen ? 'initial' : 'center',
-                    bgcolor: active ? 'success.light' : 'transparent',
-                    '&:hover': { bgcolor: active ? 'success.light' : 'action.hover' },
-                  }}
+                    bgcolor: active ? softBg(theme, 'success', 0.18) : 'transparent',
+                    '&:hover': { bgcolor: active ? softHoverBg(theme, 'success') : 'action.hover' },
+                  })}
                 >
                   <ListItemIcon
-                    sx={{
+                    sx={(theme) => ({
                       minWidth: 0,
                       mr: isOpen ? 2 : 'auto',
                       justifyContent: 'center',
-                      color: active ? 'primary.dark' : 'text.secondary',
-                    }}
+                      color: active ? softText(theme, 'success') : theme.palette.text.secondary,
+                    })}
                   >
                     {item.icon}
                   </ListItemIcon>
@@ -280,11 +281,11 @@ export default function Sidebar() {
                     }}
                     slotProps={{
                       primary: {
-                        sx: {
+                        sx: (theme) => ({
                           fontSize: '0.875rem',
                           fontWeight: active ? 600 : 500,
-                          color: active ? 'primary.main' : 'text.secondary',
-                        },
+                          color: active ? softText(theme, 'success') : theme.palette.text.secondary,
+                        }),
                       },
                     }}
                   />
@@ -348,7 +349,11 @@ export default function Sidebar() {
                     await supabase.auth.signOut();
                     router.push('/');
                   }}
-                  sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: 'error.light' } }}
+                  sx={(theme) => ({
+                    borderRadius: 3,
+                    py: 1,
+                    '&:hover': { bgcolor: softBg(theme, 'error', 0.16) },
+                  })}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: 'error.main' }}>
                     <LogoutOutlinedIcon fontSize="small" />
@@ -370,17 +375,17 @@ export default function Sidebar() {
               setIsProfileDropdownOpen((prev) => !prev);
             }
           }}
-          sx={{
+          sx={(theme) => ({
             display: 'flex',
             alignItems: 'center',
             p: isOpen ? 1.5 : 1,
             mb: 1,
             borderRadius: 4,
-            bgcolor: 'success.light',
+            bgcolor: softBg(theme, 'success', 0.18),
             justifyContent: isOpen ? 'space-between' : 'center',
             transition: 'all 0.2s',
-            '&:hover': { bgcolor: 'success.main' },
-          }}
+            '&:hover': { bgcolor: softHoverBg(theme, 'success') },
+          })}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar

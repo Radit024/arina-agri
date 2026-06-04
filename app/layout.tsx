@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import MuiProvider from '@/components/shared/MuiProvider';
 import { NextIntlClientProvider } from 'next-intl';
@@ -36,6 +37,22 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+const themeInitScript = `
+(() => {
+  try {
+    const stored = window.localStorage.getItem('arina_theme_mode');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const mode = stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
+    const root = document.documentElement;
+    root.dataset.theme = mode;
+    root.style.colorScheme = mode;
+  } catch {
+    document.documentElement.dataset.theme = 'light';
+    document.documentElement.style.colorScheme = 'light';
+  }
+})();
+`;
+
 export default async function RootLayout({
   children,
 }: {
@@ -45,8 +62,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${plusJakartaSans.variable} ${sora.variable}`}>
+    <html lang={locale} className={`${plusJakartaSans.variable} ${sora.variable}`} suppressHydrationWarning>
       <body className="antialiased">
+        <Script id="arina-theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <AuthProvider>
           <NextIntlClientProvider messages={messages}>
             <MuiProvider>{children}</MuiProvider>

@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
+import { softBg } from '@/lib/themeColors';
 
 interface AuthBrandPanelProps {
   subtitle: string;
@@ -96,7 +97,7 @@ export default function AuthBrandPanel({ subtitle }: AuthBrandPanelProps) {
               height: 12,
               width: `${100 - item * 16}%`,
               borderRadius: '999px',
-              bgcolor: item === 1 ? 'warning.light' : 'primary.light',
+              bgcolor: (theme) => item === 1 ? softBg(theme, 'warning', 0.18) : softBg(theme, 'primary', 0.18),
               border: '1px solid',
               borderColor: (theme) => alpha(item === 1 ? theme.palette.warning.dark : theme.palette.primary.main, 0.18),
               alignSelf: item === 2 ? 'flex-end' : 'flex-start',

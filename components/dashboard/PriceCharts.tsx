@@ -18,6 +18,7 @@ import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { formatRupiah } from '@/lib/formatters';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
+import { softBg, softText } from '@/lib/themeColors';
 
 
 
@@ -102,17 +103,7 @@ export function PriceKpiWidget() {
       ? TrendingUpIcon
       : TrendingDownIcon;
 
-  const deltaColor = isTrendingUp === null
-    ? 'text.secondary'
-    : isTrendingUp
-      ? 'success.main'
-      : 'error.main';
-
-  const deltaBg = isTrendingUp === null
-    ? 'action.hover'
-    : isTrendingUp
-      ? 'success.light'
-      : 'error.light';
+  const deltaIntent = isTrendingUp ? 'success' : 'error';
 
   return (
     <Card sx={{ borderRadius: 4, border: 'none', boxShadow: 'none', height: '100%' }}>
@@ -131,15 +122,15 @@ export function PriceKpiWidget() {
             {t('kpiTitle')}
           </Typography>
           <Box
-            sx={{
+            sx={(theme) => ({
               width: 32,
               height: 32,
               borderRadius: 2,
-              bgcolor: 'success.light',
+              bgcolor: softBg(theme, 'success', 0.16),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-            }}
+            })}
           >
             <StorefrontIcon sx={{ color: 'primary.main', fontSize: 18 }} />
           </Box>
@@ -163,18 +154,18 @@ export function PriceKpiWidget() {
 
         {priceDelta !== null ? (
           <Box
-            sx={{
+            sx={(theme) => ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 0.5,
               px: 1,
               py: 0.25,
               borderRadius: 1.5,
-              bgcolor: deltaBg,
-            }}
+              bgcolor: isTrendingUp === null ? theme.palette.action.hover : softBg(theme, deltaIntent, 0.16),
+            })}
           >
-            <DeltaIcon sx={{ fontSize: 14, color: deltaColor }} />
-            <Typography variant="caption" sx={{ color: deltaColor, fontWeight: 700, fontSize: '0.72rem' }}>
+            <DeltaIcon sx={(theme) => ({ fontSize: 14, color: isTrendingUp === null ? theme.palette.text.secondary : softText(theme, deltaIntent) })} />
+            <Typography variant="caption" sx={(theme) => ({ color: isTrendingUp === null ? theme.palette.text.secondary : softText(theme, deltaIntent), fontWeight: 700, fontSize: '0.72rem' })}>
               {priceDelta > 0 ? '+' : ''}{formatRupiah(Math.abs(priceDelta))} ({priceDeltaPct}%)
             </Typography>
           </Box>

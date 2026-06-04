@@ -19,6 +19,7 @@ import type { ApiTransaction } from '@/lib/api';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 import { memo } from 'react';
+import { softBg, softText } from '@/lib/themeColors';
 
 export default memo(function RecentTransactionsTable({ transactions }: { transactions: ApiTransaction[] }) {
   const t = useTranslations('Dashboard.recentTransactions');
@@ -79,12 +80,12 @@ export default memo(function RecentTransactionsTable({ transactions }: { transac
                       <Chip
                         label={tx.jenis === 'pendapatan' ? t('type.income') : t('type.expense')}
                         size="small"
-                        sx={{
-                          backgroundColor: tx.jenis === 'pendapatan' ? 'success.light' : 'error.light',
-                          color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                        sx={(theme) => ({
+                          backgroundColor: tx.jenis === 'pendapatan' ? softBg(theme, 'success', 0.16) : softBg(theme, 'error', 0.16),
+                          color: tx.jenis === 'pendapatan' ? softText(theme, 'success') : softText(theme, 'error'),
                           fontWeight: 600,
                           fontSize: '0.7rem',
-                        }}
+                        })}
                       />
                     </TableCell>
                     <TableCell

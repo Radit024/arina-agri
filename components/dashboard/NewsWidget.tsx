@@ -13,6 +13,8 @@ import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { useNews } from '@/hooks/useNews';
 import { useTranslations } from 'next-intl';
 import type { NewsArticle } from '@/lib/types/news';
+import { alpha } from '@mui/material/styles';
+import { softBg } from '@/lib/themeColors';
 
 interface NewsWidgetProps {
   layout?: 'horizontal' | 'vertical';
@@ -65,28 +67,33 @@ export default function NewsWidget({ layout = 'vertical', initialArticles }: New
           size="small"
           endIcon={<ArrowForwardIcon fontSize="small" />}
           onClick={() => router.push('/dashboard/kabar-pasar')}
-          sx={{
+          sx={(theme) => ({
             textTransform: 'none',
             fontWeight: 600,
             color: 'primary.main',
             fontSize: '0.8rem',
-            '&:hover': { bgcolor: 'success.light' },
-          }}
+            '&:hover': { bgcolor: softBg(theme, 'success', 0.16) },
+          })}
         >
           {t('viewAll')}
         </Button>
       </Box>
 
       {/* Cards Grid */}
-      <Box sx={layout === 'vertical' ? { 
+      <Box sx={(theme) => layout === 'vertical' ? { 
         maxHeight: 380, 
         overflowY: 'auto', 
         pr: 1, 
         pb: 1,
         '&::-webkit-scrollbar': { width: '4px' },
         '&::-webkit-scrollbar-track': { background: 'transparent' },
-        '&::-webkit-scrollbar-thumb': { background: 'rgba(0,0,0,0.1)', borderRadius: '4px' },
-        '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(0,0,0,0.2)' }
+        '&::-webkit-scrollbar-thumb': {
+          background: theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.16) : alpha(theme.palette.common.black, 0.12),
+          borderRadius: '4px',
+        },
+        '&::-webkit-scrollbar-thumb:hover': {
+          background: theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.26) : alpha(theme.palette.common.black, 0.22),
+        }
       } : {}}>
         {isLoading ? (
           <Grid container spacing={1.5}>

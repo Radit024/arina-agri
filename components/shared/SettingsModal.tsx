@@ -36,6 +36,7 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
+import { accentText, softBg, softHoverBg, softText } from '@/lib/themeColors';
 
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 
@@ -175,7 +176,7 @@ export default function SettingsModal() {
               <Box
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                sx={{
+                sx={(theme) => ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.75,
@@ -184,11 +185,11 @@ export default function SettingsModal() {
                   borderRadius: 2,
                   cursor: 'pointer',
                   flexShrink: 0,
-                  bgcolor: activeTab === tab.id ? 'success.light' : 'action.hover',
-                  color: activeTab === tab.id ? 'success.dark' : 'text.secondary',
+                  bgcolor: activeTab === tab.id ? softBg(theme, 'success', 0.18) : theme.palette.action.hover,
+                  color: activeTab === tab.id ? softText(theme, 'success') : theme.palette.text.secondary,
                   transition: 'all 0.18s ease',
                   '& .MuiSvgIcon-root': { fontSize: 16 },
-                }}
+                })}
               >
                 {tab.icon}
                 <Typography sx={{ fontSize: '0.78rem', fontWeight: activeTab === tab.id ? 700 : 500, whiteSpace: 'nowrap' }}>
@@ -210,7 +211,7 @@ export default function SettingsModal() {
                     exclusive
                     onChange={handleAppearanceChange}
                     size="small"
-                    sx={{
+                    sx={(theme) => ({
                       '& .MuiToggleButton-root': {
                         textTransform: 'none',
                         px: 1.4,
@@ -220,11 +221,11 @@ export default function SettingsModal() {
                         color: 'text.secondary',
                       },
                       '& .Mui-selected': {
-                        bgcolor: 'success.light',
-                        color: 'primary.main',
+                        bgcolor: softBg(theme, 'success', 0.18),
+                        color: softText(theme, 'success'),
                         fontWeight: 600,
                       },
-                    }}
+                    })}
                   >
                     <ToggleButton value="light">{t('general.modeLight')}</ToggleButton>
                     <ToggleButton value="dark">{t('general.modeDark')}</ToggleButton>
@@ -372,16 +373,16 @@ export default function SettingsModal() {
                   <Button
                     variant="contained"
                     onClick={handleSaveProfile}
-                    sx={{
+                    sx={(theme) => ({
                       width: '100%',
                       height: 40,
                       borderRadius: 2,
                       textTransform: 'none',
                       bgcolor: 'success.main',
                       '&:hover': { bgcolor: 'success.dark' },
-                      color: 'common.white',
+                      color: accentText(theme, 'success'),
                       fontWeight: 700,
-                    }}
+                    })}
                   >
                     {t('profile.saveChanges')}
                   </Button>
@@ -476,13 +477,13 @@ export default function SettingsModal() {
                <ListItem key={tab.id} disablePadding sx={{ mb: 0.5 }}>
                  <ListItemButton
                    onClick={() => setActiveTab(tab.id)}
-                   sx={{
+                   sx={(theme) => ({
                      borderRadius: 2,
-                     bgcolor: activeTab === tab.id ? 'success.light' : 'transparent',
-                     color: activeTab === tab.id ? 'success.dark' : 'text.secondary',
-                     '&:hover': { bgcolor: activeTab === tab.id ? 'success.light' : 'action.hover' },
+                     bgcolor: activeTab === tab.id ? softBg(theme, 'success', 0.18) : 'transparent',
+                     color: activeTab === tab.id ? softText(theme, 'success') : theme.palette.text.secondary,
+                     '&:hover': { bgcolor: activeTab === tab.id ? softHoverBg(theme, 'success') : theme.palette.action.hover },
                      py: 1
-                   }}
+                   })}
                  >
                    <ListItemIcon sx={{ minWidth: 36, color: 'inherit' }}>
                      {tab.icon}
@@ -529,7 +530,7 @@ export default function SettingsModal() {
                         exclusive
                         onChange={handleAppearanceChange}
                         size="small"
-                        sx={{
+                        sx={(theme) => ({
                           '& .MuiToggleButton-root': {
                             textTransform: 'none',
                             px: 1.4,
@@ -539,11 +540,11 @@ export default function SettingsModal() {
                             color: 'text.secondary',
                           },
                           '& .Mui-selected': {
-                            bgcolor: 'success.light',
-                            color: 'primary.main',
+                            bgcolor: softBg(theme, 'success', 0.18),
+                            color: softText(theme, 'success'),
                             fontWeight: 600,
                           },
-                        }}
+                        })}
                       >
                         <ToggleButton value="light">{t('general.modeLight')}</ToggleButton>
                         <ToggleButton value="dark">{t('general.modeDark')}</ToggleButton>
@@ -691,18 +692,18 @@ export default function SettingsModal() {
                     <Button
                       variant="contained"
                       onClick={handleSaveProfile}
-                      sx={{
+                      sx={(theme) => ({
                         width: 160,
                         height: 44,
                         borderRadius: 3,
                         textTransform: 'none',
                         bgcolor: 'success.main',
                         '&:hover': { bgcolor: 'success.dark' },
-                        color: 'common.white',
+                        color: accentText(theme, 'success'),
                         fontWeight: 700,
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
-                      }}
+                      })}
                     >
                       {t('profile.saveChanges')}
                     </Button>
@@ -751,7 +752,17 @@ export default function SettingsModal() {
                     { label: t('system.backendLabel'), value: t('system.backendValue') },
                     { label: t('system.layoutLabel'), value: t('system.layoutValue') },
                   ].map((item) => (
-                    <Box key={item.label} className="flex justify-between items-center py-3 border-b border-gray-100">
+                    <Box
+                      key={item.label}
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        py: 1.5,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
                       <Typography variant="body2" color="text.secondary">{item.label}</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>{item.value}</Typography>
                     </Box>

@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { Box, Typography, Tooltip, Divider } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { formatRupiah } from '@/lib/formatters';
 import { useLocale, useTranslations } from 'next-intl';
 import { normalizeRegionName } from '@/lib/commodityPriceRegions';
@@ -15,6 +16,7 @@ interface EastJavaMapProps {
 const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
   const t = useTranslations('KabarPasar.priceChart.map');
   const locale = useLocale();
+  const theme = useTheme();
   const [hoveredRegion, setHoveredRegion] = useState<{ name: string; price: number | null } | null>(null);
   const currentDate = useMemo(() => {
     return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'id-ID', {
@@ -77,7 +79,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
         sx={{
           flex: { xs: 'none', md: '0 0 65%' },
           width: { xs: '100%', md: '65%' },
-          bgcolor: '#dde8f5',
+          bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.info.main, 0.12) : '#dde8f5',
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
@@ -117,7 +119,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
                     <Geography
                       geography={geo}
                       fill={getColor(geoData?.price)}
-                      stroke="#ffffff"
+                      stroke={theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.92) : '#ffffff'}
                       strokeWidth={0.6}
                       style={{
                         default: { outline: 'none', transition: 'opacity 0.15s' },
@@ -148,7 +150,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
               left: '50%',
               transform: 'translateX(-50%)',
               bgcolor: 'rgba(0,0,0,0.75)',
-              color: 'white',
+              color: theme.palette.common.white,
               px: 1.5,
               py: 0.5,
               borderRadius: 2,

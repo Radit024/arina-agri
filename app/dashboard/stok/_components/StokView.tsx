@@ -49,15 +49,16 @@ import type {
   StockOutFormInput,
   StockOutFormOutput,
 } from '../_lib/stockSchemas';
+import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 
 // ─── Status badge ─────────────────────────────────────────────────
 type StockTranslator = ReturnType<typeof useTranslations>;
 
 const StatusChip = ({ status, theme, t }: { status: ApiHarvestBatch['status']; theme: Theme; t: StockTranslator }) => {
   const map = {
-    aman: { label: t('status.safe'), color: alpha(theme.palette.success.main, 0.12), text: theme.palette.success.main },
-    menipis: { label: t('status.low'), color: alpha(theme.palette.warning.main, 0.12), text: theme.palette.warning.dark },
-    hampir_kadaluarsa: { label: t('status.expiring'), color: alpha(theme.palette.error.main, 0.12), text: theme.palette.error.main },
+    aman: { label: t('status.safe'), color: softBg(theme, 'success', 0.14), text: softText(theme, 'success') },
+    menipis: { label: t('status.low'), color: softBg(theme, 'warning', 0.14), text: softText(theme, 'warning') },
+    hampir_kadaluarsa: { label: t('status.expiring'), color: softBg(theme, 'error', 0.14), text: softText(theme, 'error') },
     habis: { label: t('status.empty'), color: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary },
   };
   const s = map[status];
@@ -72,12 +73,16 @@ const StatusChip = ({ status, theme, t }: { status: ApiHarvestBatch['status']; t
 
 // ─── Grade badge ──────────────────────────────────────────────────
 const GradeChip = ({ grade, theme, t }: { grade: 'A' | 'B' | 'C'; theme: Theme; t: StockTranslator }) => {
-  const map = { A: theme.palette.success.main, B: theme.palette.info.main, C: theme.palette.warning.main };
+  const map = {
+    A: { bg: theme.palette.success.main, text: accentText(theme, 'success') },
+    B: { bg: theme.palette.info.main, text: accentText(theme, 'info') },
+    C: { bg: theme.palette.warning.main, text: accentText(theme, 'warning') },
+  };
   return (
     <Chip
       label={`${t('table.grade')} ${grade}`}
       size="small"
-      sx={{ bgcolor: map[grade], color: 'white', fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
+      sx={{ bgcolor: map[grade].bg, color: map[grade].text, fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
     />
   );
 };
@@ -326,12 +331,12 @@ export default function StokView({
                       </TableRow>
                     ) : (
                       activeBatches.map((b) => (
-                        <TableRow key={b._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
+                        <TableRow key={b._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
                           <TableCell><GradeChip grade={b.grade} theme={theme} t={t} /></TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
-                          <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? '#dc2626' : '#16a34a' }}>
+                          <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? softText(theme, 'error') : softText(theme, 'success') }}>
                             {b.stokTersisa} kg
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
@@ -341,11 +346,11 @@ export default function StokView({
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                               <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
-                                sx={{ color: theme.palette.info.main, bgcolor: alpha(theme.palette.info.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: 'white' } }}>
+                                sx={{ color: softText(theme, 'info'), bgcolor: softBg(theme, 'info', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: accentText(theme, 'info') } }}>
                                 <LocalShippingIcon fontSize="small" />
                               </IconButton>
                               <IconButton size="small" aria-label="Delete batch" onClick={() => deleteBatch(b._id)}
-                                sx={{ color: theme.palette.error.main, bgcolor: alpha(theme.palette.error.main, 0.12), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: 'white' } }}>
+                                sx={{ color: softText(theme, 'error'), bgcolor: softBg(theme, 'error', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: accentText(theme, 'error') } }}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Box>
@@ -393,8 +398,8 @@ export default function StokView({
                             label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
                             size="small"
                             sx={{
-                              bgcolor: m.tipe === 'masuk' ? '#dcfce7' : '#fee2e2',
-                              color: m.tipe === 'masuk' ? '#16a34a' : '#dc2626',
+                              bgcolor: m.tipe === 'masuk' ? softBg(theme, 'success', 0.14) : softBg(theme, 'error', 0.14),
+                              color: m.tipe === 'masuk' ? softText(theme, 'success') : softText(theme, 'error'),
                               fontWeight: 700,
                               borderRadius: 1.5,
                               fontSize: '0.72rem'
@@ -440,14 +445,14 @@ export default function StokView({
                   </TableHead>
                   <TableBody>
                     {filteredMutations.map((m) => (
-                      <TableRow key={m._id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
+                      <TableRow key={m._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
                         <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(m.tanggal)}</TableCell>
                         <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 600 }}>{m.batchCode}</TableCell>
                         <TableCell>
                           <Chip
                             label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
                             size="small"
-                            sx={{ bgcolor: m.tipe === 'masuk' ? '#dcfce7' : '#fee2e2', color: m.tipe === 'masuk' ? '#16a34a' : '#dc2626', fontWeight: 700, borderRadius: 1.5 }}
+                            sx={{ bgcolor: m.tipe === 'masuk' ? softBg(theme, 'success', 0.14) : softBg(theme, 'error', 0.14), color: m.tipe === 'masuk' ? softText(theme, 'success') : softText(theme, 'error'), fontWeight: 700, borderRadius: 1.5 }}
                           />
                         </TableCell>
                         <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.berat} kg</TableCell>

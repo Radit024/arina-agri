@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import HomeIcon from '@mui/icons-material/Home';
+import { softBg, softText } from '@/lib/themeColors';
 
 export default function NotFound() {
   const theme = useTheme();
@@ -18,7 +19,7 @@ export default function NotFound() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 50%, #ffffff 100%)`,
+        background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.16 : 0.1)} 0%, ${alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.08 : 0.05)} 50%, ${theme.palette.background.default} 100%)`,
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -36,8 +37,8 @@ export default function NotFound() {
               width: 120,
               height: 120,
               borderRadius: '50%',
-              bgcolor: 'white',
-              boxShadow: '0 20px 40px rgba(22,163,74,0.15)',
+              bgcolor: 'background.paper',
+              boxShadow: `0 20px 40px ${alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.22 : 0.15)}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -45,10 +46,10 @@ export default function NotFound() {
           >
             <svg width="68" height="68" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path opacity="0.2" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill={theme.palette.success.main}/>
-              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill={theme.palette.success.dark}/>
+              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill={softText(theme, 'success')}/>
               {/* Plant leaf accents simulating agriculture theme */}
-              <path d="M19 5C19 5 21 8 20 10C19 12 16 11 16 11C16 11 15 8 16 6C17 4 19 5 19 5Z" fill={theme.palette.success.light} opacity="0.8"/>
-              <path d="M5 5C5 5 3 8 4 10C5 12 8 11 8 11C8 11 9 8 8 6C7 4 5 5 5 5Z" fill={theme.palette.success.light} opacity="0.8"/>
+              <path d="M19 5C19 5 21 8 20 10C19 12 16 11 16 11C16 11 15 8 16 6C17 4 19 5 19 5Z" fill={softBg(theme, 'success', 0.7)} opacity="0.8"/>
+              <path d="M5 5C5 5 3 8 4 10C5 12 8 11 8 11C8 11 9 8 8 6C7 4 5 5 5 5Z" fill={softBg(theme, 'success', 0.7)} opacity="0.8"/>
             </svg>
           </Box>
         </Box>
@@ -68,7 +69,7 @@ export default function NotFound() {
           404
         </Typography>
 
-        <Typography variant="h5" sx={{ mt: 2, mb: 1.5, color: theme.palette.success.dark, fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+        <Typography variant="h5" sx={{ mt: 2, mb: 1.5, color: softText(theme, 'success'), fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
           Halaman Tidak Ditemukan!
         </Typography>
 

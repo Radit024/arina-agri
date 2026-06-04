@@ -16,6 +16,7 @@ import Divider from '@mui/material/Divider';
 import WeatherBanner from './WeatherBanner';
 import { formatRupiah } from '@/lib/formatters';
 import Skeleton from '@mui/material/Skeleton';
+import { softBg, softText } from '@/lib/themeColors';
 
 interface DashboardKPIProps {
   totalPengeluaran: string;
@@ -197,7 +198,7 @@ export default memo(function DashboardKPI({
                   </>
                 )}
               </Box>
-              <Box sx={{ color: 'primary.main', opacity: 0.8, bgcolor: 'success.light', p: 1, borderRadius: 2 }}>
+              <Box sx={{ color: softText(theme, 'success'), opacity: 0.9, bgcolor: softBg(theme, 'success', 0.16), p: 1, borderRadius: 2 }}>
                 <StorefrontIcon fontSize="small" />
               </Box>
             </Box>

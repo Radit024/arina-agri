@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import { alpha, ThemeProvider } from '@mui/material/styles';
-import { lightTheme } from '@/lib/theme';
+import { alpha } from '@mui/material/styles';
 import AuthBrandPanel from './AuthBrandPanel';
 
 interface AuthShellProps {
@@ -13,8 +12,7 @@ interface AuthShellProps {
 
 export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh' }: AuthShellProps) {
   return (
-    <ThemeProvider theme={lightTheme}>
-      <Box
+    <Box
         component="main"
         aria-label="Autentikasi Arina Agri"
         sx={{
@@ -28,7 +26,9 @@ export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh
           px: { xs: 2, sm: 3, lg: 4 },
           py: { xs: 3, sm: 5, md: 4 },
           bgcolor: 'background.default',
-          background: (theme) => `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.74)} 0%, ${theme.palette.background.default} 48%, ${alpha(theme.palette.success.light, 0.58)} 100%)`,
+          background: (theme) => theme.palette.mode === 'dark'
+            ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.18)} 0%, ${theme.palette.background.default} 52%, ${alpha(theme.palette.success.main, 0.14)} 100%)`
+            : `linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.74)} 0%, ${theme.palette.background.default} 48%, ${alpha(theme.palette.success.light, 0.58)} 100%)`,
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -108,7 +108,7 @@ export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh
             bgcolor: (theme) => alpha(theme.palette.background.paper, 0.68),
             '&:hover': {
               borderColor: 'primary.main',
-              bgcolor: (theme) => alpha(theme.palette.primary.light, 0.48),
+              bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.1),
             },
           },
         }}
@@ -142,7 +142,9 @@ export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh
               border: '1px solid',
               borderColor: (theme) => alpha(theme.palette.divider, 0.9),
               bgcolor: 'background.paper',
-              boxShadow: (theme) => `0 24px 70px ${alpha(theme.palette.primary.dark, 0.14)}, 0 4px 18px ${alpha(theme.palette.primary.dark, 0.06)}`,
+              boxShadow: (theme) => theme.palette.mode === 'dark'
+                ? `0 24px 70px ${alpha(theme.palette.common.black, 0.44)}, 0 4px 18px ${alpha(theme.palette.common.black, 0.28)}`
+                : `0 24px 70px ${alpha(theme.palette.primary.dark, 0.14)}, 0 4px 18px ${alpha(theme.palette.primary.dark, 0.06)}`,
             }}
           >
             <Box
@@ -162,7 +164,7 @@ export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh
                   borderRadius: '18px',
                   display: 'grid',
                   placeItems: 'center',
-                  bgcolor: 'primary.light',
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.12),
                   border: '1px solid',
                   borderColor: (theme) => alpha(theme.palette.primary.main, 0.22),
                 }}
@@ -176,6 +178,5 @@ export default function AuthShell({ brandSubtitle, children, minHeight = '100dvh
           </Paper>
         </Box>
       </Box>
-    </ThemeProvider>
   );
 }

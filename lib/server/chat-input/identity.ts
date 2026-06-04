@@ -55,13 +55,21 @@ export async function resolveChatUser(
 
   // ── Telegram: try Chat ID first (numeric) ─────────────────────────────────
   const chatIdStr = senderId.trim();
+  
+  // We check if the chat ID is stored in either `telegram_chat_id` OR mistakenly saved in `telegram_username`
   const { data: byId, error: idError } = await supabase
     .from('profiles')
     .select('id,full_name,email')
-    .eq('telegram_chat_id', chatIdStr)
+    .or(`telegram_chat_id.eq.${chatIdStr},telegram_username.eq.${chatIdStr}`)
     .single();
 
   if (!idError && byId) {
+    // If it was mistakenly saved in username, auto-migrate it to the correct column
+    await supabase
+      .from('profiles')
+      .update({ telegram_chat_id: chatIdStr })
+      .eq('id', byId.id);
+
     return { id: byId.id, displayName: byId.full_name || byId.email || 'Petani' };
   }
 

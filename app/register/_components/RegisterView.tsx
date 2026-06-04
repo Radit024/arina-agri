@@ -77,7 +77,9 @@ export default function RegisterView({
               label={t('fullName')}
               variant="outlined"
               fullWidth
+              required
               autoComplete="name"
+              disabled={loading || googleLoading}
               error={!!errors.fullName}
               helperText={errors.fullName?.message}
               slotProps={{
@@ -100,10 +102,12 @@ export default function RegisterView({
             <TextField
               {...field}
               label={t('email')}
+              type="email"
               variant="outlined"
               fullWidth
+              required
               autoComplete="email"
-              inputMode="email"
+              disabled={loading || googleLoading}
               error={!!errors.email}
               helperText={errors.email?.message}
               slotProps={{
@@ -129,7 +133,9 @@ export default function RegisterView({
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
               fullWidth
+              required
               autoComplete="new-password"
+              disabled={loading || googleLoading}
               error={!!errors.password}
               helperText={errors.password?.message}
               slotProps={{
@@ -141,7 +147,7 @@ export default function RegisterView({
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={togglePassword} edge="end" size="small">
+                      <IconButton onClick={togglePassword} edge="end" size="small" disabled={loading || googleLoading}>
                         {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>
@@ -162,7 +168,9 @@ export default function RegisterView({
               type={showConfirmPassword ? 'text' : 'password'}
               variant="outlined"
               fullWidth
+              required
               autoComplete="new-password"
+              disabled={loading || googleLoading}
               error={!!errors.confirmPassword}
               helperText={errors.confirmPassword?.message}
               slotProps={{
@@ -174,7 +182,7 @@ export default function RegisterView({
                   ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={toggleConfirmPassword} edge="end" size="small">
+                      <IconButton onClick={toggleConfirmPassword} edge="end" size="small" disabled={loading || googleLoading}>
                         {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
                     </InputAdornment>

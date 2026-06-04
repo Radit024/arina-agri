@@ -57,6 +57,7 @@ describe('RegisterController', () => {
     render(<RegisterController />);
 
     expect(screen.getByRole('heading', { name: 'Buat Akun Baru' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Alamat Email')).toBeInTheDocument();
+    // Use regex to match label text even when MUI appends " *" for required fields
+    expect(screen.getByLabelText(/Alamat Email/)).toBeInTheDocument();
   });
 });

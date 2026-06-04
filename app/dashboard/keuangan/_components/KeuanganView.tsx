@@ -14,6 +14,7 @@ import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -92,6 +93,7 @@ export default function KeuanganView({
   openAddDialog,
   handleEdit,
   onSubmit,
+  txSubmitting,
   handleDelete,
   handleConfirmDelete,
   handleNominalChange,
@@ -617,7 +619,7 @@ export default function KeuanganView({
                   name="jenis"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.jenis}>
+                    <FormControl fullWidth error={!!errors.jenis} required>
                       <InputLabel>{t('transactionDialog.fields.type')}</InputLabel>
                       <Select {...field} label={t('transactionDialog.fields.type')}>
                         <MenuItem value="pendapatan">{t('transactionDialog.options.income')}</MenuItem>
@@ -638,6 +640,7 @@ export default function KeuanganView({
                       type="date"
                       label={t('transactionDialog.fields.date')}
                       fullWidth
+                      required
                       error={!!errors.tanggal}
                       helperText={errors.tanggal?.message}
                       slotProps={{ inputLabel: { shrink: true } }}
@@ -652,7 +655,7 @@ export default function KeuanganView({
               name="kategori"
               control={control}
               render={({ field }) => (
-                <FormControl fullWidth error={!!errors.kategori}>
+                <FormControl fullWidth error={!!errors.kategori} required>
                   <InputLabel>{t('transactionDialog.fields.category')}</InputLabel>
                   <Select {...field} label={t('transactionDialog.fields.category')}>
                     {kategoriFiltered.map((k) => (
@@ -675,6 +678,7 @@ export default function KeuanganView({
                   onChange={(e) => handleNominalChange(e.target.value, onChange)}
                   label={t('transactionDialog.fields.amount')}
                   placeholder="250.000"
+                  required
                   error={!!errors.nominal}
                   helperText={errors.nominal?.message}
                   fullWidth
@@ -724,6 +728,7 @@ export default function KeuanganView({
               <Button
                 type="submit"
                 variant="contained"
+                disabled={txSubmitting}
                 sx={{
                   flex: 2,
                   borderRadius: 8,
@@ -731,7 +736,9 @@ export default function KeuanganView({
                   '&:hover': { bgcolor: 'success.dark' },
                 }}
               >
-                {editingId ? t('transactionDialog.update') : t('transactionDialog.save')}
+                {txSubmitting
+                  ? <CircularProgress size={20} color="inherit" />
+                  : (editingId ? t('transactionDialog.update') : t('transactionDialog.save'))}
               </Button>
             </Box>
           </Box>

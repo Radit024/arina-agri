@@ -16,6 +16,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import GoogleIcon from '@mui/icons-material/Google';
 import AuthShell from '@/components/auth/AuthShell';
 import type { LoginForm } from '@/controllers/login/useLoginController';
+import { softBg, softText } from '@/lib/themeColors';
 
 type AuthTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -72,14 +73,14 @@ export default function LoginView({
         <Box
           role="status"
           aria-live="polite"
-          sx={{
+          sx={(theme) => ({
             mb: 3,
             p: 2,
             borderRadius: 2,
             border: '1px solid',
-            borderColor: 'success.light',
-            bgcolor: 'rgba(46, 125, 50, 0.08)',
-            color: 'success.dark',
+            borderColor: softText(theme, 'success'),
+            bgcolor: softBg(theme, 'success', 0.14),
+            color: softText(theme, 'success'),
             animation: 'loginLoadingPulse 1.4s ease-in-out infinite',
             '@keyframes loginLoadingPulse': {
               '0%, 100%': { opacity: 0.82, transform: 'translateY(0)' },
@@ -88,7 +89,7 @@ export default function LoginView({
             '@media (prefers-reduced-motion: reduce)': {
               animation: 'none',
             },
-          }}
+          })}
         >
           <LinearProgress color="success" aria-hidden sx={{ mb: 1.5, borderRadius: 999 }} />
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -111,10 +112,11 @@ export default function LoginView({
             <TextField
               {...field}
               label={t('email')}
+              type="email"
               variant="outlined"
               fullWidth
+              required
               autoComplete="email"
-              inputMode="email"
               disabled={busy}
               error={!!errors.email}
               helperText={errors.email?.message}
@@ -141,6 +143,7 @@ export default function LoginView({
               type={showPassword ? 'text' : 'password'}
               variant="outlined"
               fullWidth
+              required
               autoComplete="current-password"
               disabled={busy}
               error={!!errors.password}

@@ -46,12 +46,20 @@ interface PengaturanViewProps {
   profileSaving: boolean;
   profileWhatsappPhone: string;
   profileTelegramUsername: string;
+  profileFullName: string;
+  profileLokasi: string;
+  profileKomoditas: string;
+  profileLuasLahan: string;
   userAvatar?: string;
   userInitials: string;
   userName: string;
   onBackToMenu: () => void;
   onProfileWhatsappPhoneChange: (value: string) => void;
   onProfileTelegramUsernameChange: (value: string) => void;
+  onProfileFullNameChange: (value: string) => void;
+  onProfileLokasiChange: (value: string) => void;
+  onProfileKomoditasChange: (value: string) => void;
+  onProfileLuasLahanChange: (value: string) => void;
   onSaveProfile: () => void;
   onTabChange: (tab: SettingsTabId) => void;
   onThemeModeChange: (mode: 'light' | 'dark') => void;
@@ -66,12 +74,20 @@ export default function PengaturanView({
   profileSaving,
   profileWhatsappPhone,
   profileTelegramUsername,
+  profileFullName,
+  profileLokasi,
+  profileKomoditas,
+  profileLuasLahan,
   userAvatar,
   userInitials,
   userName,
   onBackToMenu,
   onProfileWhatsappPhoneChange,
   onProfileTelegramUsernameChange,
+  onProfileFullNameChange,
+  onProfileLokasiChange,
+  onProfileKomoditasChange,
+  onProfileLuasLahanChange,
   onSaveProfile,
   onTabChange,
   onThemeModeChange,
@@ -205,16 +221,16 @@ export default function PengaturanView({
              
              <Grid container spacing={4}>
                <Grid size={{ xs: 12, md: 6 }}>
-                 <TextField fullWidth label={t('profile.fullName')} defaultValue={userName} variant="standard" />
+                 <TextField fullWidth label={t('profile.fullName')} value={profileFullName} onChange={(e) => onProfileFullNameChange(e.target.value)} variant="standard" />
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
-                 <TextField fullWidth label={t('profile.location')} defaultValue={farmerProfile.lokasi} variant="standard" />
+                 <TextField fullWidth label={t('profile.location')} value={profileLokasi} onChange={(e) => onProfileLokasiChange(e.target.value)} variant="standard" />
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
-                 <TextField fullWidth label={t('profile.mainCommodity')} defaultValue={farmerProfile.komoditas} variant="standard" />
+                 <TextField fullWidth label={t('profile.mainCommodity')} value={profileKomoditas} onChange={(e) => onProfileKomoditasChange(e.target.value)} variant="standard" />
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
-                 <TextField fullWidth label={t('profile.landArea')} defaultValue={farmerProfile.luasLahan} variant="standard" />
+                 <TextField fullWidth label={t('profile.landArea')} value={profileLuasLahan} onChange={(e) => onProfileLuasLahanChange(e.target.value)} variant="standard" />
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
                  <TextField

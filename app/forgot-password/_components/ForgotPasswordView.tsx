@@ -77,8 +77,12 @@ export default function ForgotPasswordView({
                 <TextField
                   {...field}
                   label={t('email')}
+                  type="email"
                   variant="outlined"
                   fullWidth
+                  required
+                  autoComplete="email"
+                  disabled={loading}
                   error={!!errors.email}
                   helperText={errors.email?.message}
                   slotProps={{

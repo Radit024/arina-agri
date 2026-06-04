@@ -77,6 +77,7 @@ export function useKeuanganController() {
   const [txDialogOpen, setTxDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [txSubmitting, setTxSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -149,16 +150,22 @@ export function useKeuanganController() {
       keterangan: data.keterangan || '',
     };
 
-    if (editingId) {
-      await updateTransaction(editingId, txData);
-      setSnackbar({ open: true, message: 'Transaksi berhasil diperbarui', severity: 'success' });
-    } else {
-      await addTransaction(txData);
-      setSnackbar({ open: true, message: 'Transaksi berhasil dicatat', severity: 'success' });
+    setTxSubmitting(true);
+    try {
+      if (editingId) {
+        await updateTransaction(editingId, txData);
+        setSnackbar({ open: true, message: 'Transaksi berhasil diperbarui', severity: 'success' });
+      } else {
+        await addTransaction(txData);
+        setSnackbar({ open: true, message: 'Transaksi berhasil dicatat', severity: 'success' });
+      }
+      setTxDialogOpen(false);
+      setEditingId(null);
+    } catch {
+      setSnackbar({ open: true, message: 'Gagal menyimpan transaksi', severity: 'error' });
+    } finally {
+      setTxSubmitting(false);
     }
-
-    setTxDialogOpen(false);
-    setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -472,6 +479,7 @@ export function useKeuanganController() {
     openAddDialog,
     handleEdit,
     onSubmit,
+    txSubmitting,
     handleDelete,
     handleConfirmDelete,
     handleNominalChange,

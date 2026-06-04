@@ -25,6 +25,13 @@ export function usePengaturanController() {
   const [profileWhatsappPhoneDraft, setProfileWhatsappPhoneDraft] = useState<string | null>(null);
   const profileWhatsappPhone = profileWhatsappPhoneDraft ?? weatherWhatsappPhone;
 
+  // ─── Profile text fields ─────────────────────────────────────────────────
+  const initialName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
+  const [profileFullName, setProfileFullName] = useState<string>(initialName);
+  const [profileLokasi, setProfileLokasi] = useState<string>(farmerProfile.lokasi);
+  const [profileKomoditas, setProfileKomoditas] = useState<string>(farmerProfile.komoditas);
+  const [profileLuasLahan, setProfileLuasLahan] = useState<string>(farmerProfile.luasLahan);
+
   // ─── Telegram username ─────────────────────────────────────────────────────
   const [profileTelegramUsernameDraft, setProfileTelegramUsernameDraft] = useState<string | null>(null);
   const [telegramUsernameSaved, setTelegramUsernameSaved] = useState<string>('');
@@ -39,7 +46,7 @@ export function usePengaturanController() {
     if (user?.id) {
       supabase
         .from('profiles')
-        .select('whatsapp_phone, telegram_username')
+        .select('whatsapp_phone, telegram_username, full_name, lokasi, komoditas, luas_lahan')
         .eq('id', user.id)
         .single()
         .then(({ data, error }) => {
@@ -50,6 +57,10 @@ export function usePengaturanController() {
             if (data.telegram_username) {
               setTelegramUsernameSaved(data.telegram_username);
             }
+            if (data.full_name) setProfileFullName(data.full_name);
+            if (data.lokasi) setProfileLokasi(data.lokasi);
+            if (data.komoditas) setProfileKomoditas(data.komoditas);
+            if (data.luas_lahan) setProfileLuasLahan(data.luas_lahan);
           }
         });
     }
@@ -85,6 +96,10 @@ export function usePengaturanController() {
         await supabase
           .from('profiles')
           .update({
+            full_name: profileFullName.trim() || null,
+            lokasi: profileLokasi.trim() || null,
+            komoditas: profileKomoditas.trim() || null,
+            luas_lahan: profileLuasLahan.trim() || null,
             whatsapp_phone: nextPhone || null,
             telegram_username: nextUsername || null,
           })
@@ -109,12 +124,20 @@ export function usePengaturanController() {
     profileSaving,
     profileWhatsappPhone,
     profileTelegramUsername,
+    profileFullName,
+    profileLokasi,
+    profileKomoditas,
+    profileLuasLahan,
     userAvatar,
-    userInitials: userName.substring(0, 2).toUpperCase(),
-    userName,
+    userInitials: profileFullName.substring(0, 2).toUpperCase(),
+    userName: profileFullName,
     onBackToMenu: () => setActiveTab(null),
     onProfileWhatsappPhoneChange: handleProfileWhatsappPhoneChange,
     onProfileTelegramUsernameChange: handleProfileTelegramUsernameChange,
+    onProfileFullNameChange: (v: string) => { setProfileFullName(v); setPhoneSaveSuccess(false); },
+    onProfileLokasiChange: (v: string) => { setProfileLokasi(v); setPhoneSaveSuccess(false); },
+    onProfileKomoditasChange: (v: string) => { setProfileKomoditas(v); setPhoneSaveSuccess(false); },
+    onProfileLuasLahanChange: (v: string) => { setProfileLuasLahan(v); setPhoneSaveSuccess(false); },
     onSaveProfile: handleSaveProfile,
     onTabChange: setActiveTab,
     onThemeModeChange: setThemeMode,

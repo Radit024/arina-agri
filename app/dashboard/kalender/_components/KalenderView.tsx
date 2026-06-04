@@ -20,6 +20,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Chip from '@mui/material/Chip';
 import FormHelperText from '@mui/material/FormHelperText';
 import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import LinearProgress from '@mui/material/LinearProgress';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -348,11 +349,11 @@ export default function KalenderView({
         <DialogContent dividers>
           <Box component="form" id="event-form" onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             <Controller name="judul" control={control} render={({ field }) => (
-              <TextField {...field} label={t('dialog.fields.title')} placeholder={t('dialog.fields.titlePlaceholder')} error={!!errors.judul} helperText={errors.judul?.message} fullWidth />
+              <TextField {...field} label={t('dialog.fields.title')} placeholder={t('dialog.fields.titlePlaceholder')} error={!!errors.judul} helperText={errors.judul?.message} fullWidth required />
             )} />
 
             <Controller name="jenis" control={control} render={({ field }) => (
-              <FormControl fullWidth error={!!errors.jenis}>
+              <FormControl fullWidth error={!!errors.jenis} required>
                 <InputLabel>{t('dialog.fields.type')}</InputLabel>
                 <Select {...field} label={t('dialog.fields.type')}>
                   <MenuItem value="pemupukan">
@@ -400,7 +401,7 @@ export default function KalenderView({
               }}
             >
               <Controller name="tanggal" control={control} render={({ field }) => (
-                <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
               )} />
               <Controller name="waktu" control={control} render={({ field }) => (
                 <TextField {...field} type="time" label={t('dialog.fields.timeOptional')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
@@ -429,7 +430,9 @@ export default function KalenderView({
           </Box>
           <Box className="flex gap-2">
             <Button data-touch-target="44" onClick={() => setDialogOpen(false)} color="inherit" sx={{ minHeight: 44 }}>{t('cancel')}</Button>
-            <Button data-touch-target="44" type="submit" form="event-form" variant="contained" sx={{ minHeight: 44 }}>{t('saveSchedule')}</Button>
+            <Button data-touch-target="44" type="submit" form="event-form" variant="contained" disabled={loading} sx={{ minHeight: 44 }}>
+              {loading ? <CircularProgress size={18} color="inherit" /> : t('saveSchedule')}
+            </Button>
           </Box>
         </DialogActions>
       </Dialog>

@@ -203,7 +203,13 @@ export default function KalenderView({
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: { xs: 0.5, sm: 1 } }}>
                 {dayNames.map((d: string) => (
                   <Box key={d} sx={{ textAlign: 'center', py: { xs: 0.5, sm: 1 } }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{d}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontSize: { xs: '0.78rem', sm: '0.82rem' }, fontWeight: 700, lineHeight: 1.2 }}
+                    >
+                      {d}
+                    </Typography>
                   </Box>
                 ))}
               </Box>
@@ -211,7 +217,7 @@ export default function KalenderView({
               {/* Calendar grid */}
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
                 {calendarCells.map((day, idx) => {
-                  if (!day) return <Box key={`empty-${idx}`} sx={{ minHeight: { xs: 44, sm: 64, md: 80 } }} />;
+                  if (!day) return <Box key={`empty-${idx}`} sx={{ minHeight: { xs: 58, sm: 72, md: 92 } }} />;
                   const dateStr = getDateStr(day);
                   const dayEvents = getEventsForDate(day);
                   const isToday = dateStr === todayStr;

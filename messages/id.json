@@ -385,7 +385,7 @@
     },
     "whatsapp": {
       "title": "Notifikasi Cuaca",
-      "note": "Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai workflow n8n Anda.",
+      "note": "Pilih platform notifikasi terlebih dahulu, lalu simpan kontak tujuan yang sesuai. WhatsApp memakai nomor HP, sedangkan Telegram memakai Chat ID atau username sesuai bot Arina Agri Anda.",
       "enable": "Aktifkan notifikasi",
       "phoneLabel": "Nomor WhatsApp",
       "telegramLabel": "Telegram Chat ID",
@@ -672,7 +672,7 @@
     "sendingMessage": "Arina AI sedang menjawab",
     "retryLastPrompt": "Coba lagi",
     "newChat": "New Chat",
-    "composerHelper": "Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.",
+    "composerHelper": "Tekan Enter untuk baris baru, Ctrl/Cmd + Enter untuk mengirim. AI ini dilatih khusus untuk cabai rawit.",
     "currentChatClear": "Hapus chat saat ini",
     "historyTitle": "Riwayat Chat",
     "historyOpen": "Buka riwayat chat",

@@ -46,7 +46,12 @@ export interface StockOutCommand {
   catatan: string;
 }
 
-export type ParsedChatCommand = FinanceCommand | StockInCommand | StockOutCommand;
+export interface UtilityCommand {
+  type: 'utility';
+  name: 'start' | 'help' | 'hubungkan' | 'profil' | 'ringkasan' | 'batch' | 'batal';
+}
+
+export type ParsedChatCommand = FinanceCommand | StockInCommand | StockOutCommand | UtilityCommand;
 
 export type ParseResult =
   | { ok: true; command: ParsedChatCommand }

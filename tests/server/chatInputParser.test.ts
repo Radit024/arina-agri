@@ -17,8 +17,34 @@ describe('parseChatInput', () => {
     });
   });
 
+  it('parses slash finance expense commands', () => {
+    expect(parseChatInput('/pengeluaran 50000 pupuk beli npk')).toEqual({
+      ok: true,
+      command: {
+        type: 'finance',
+        jenis: 'pengeluaran',
+        nominal: 50000,
+        kategori: 'pupuk',
+        keterangan: 'beli npk',
+      },
+    });
+  });
+
   it('parses finance income (pemasukan) commands', () => {
     expect(parseChatInput('pemasukan 750000 penjualan cabai')).toEqual({
+      ok: true,
+      command: {
+        type: 'finance',
+        jenis: 'pendapatan',
+        nominal: 750000,
+        kategori: 'penjualan',
+        keterangan: 'cabai',
+      },
+    });
+  });
+
+  it('parses slash finance income commands', () => {
+    expect(parseChatInput('/pemasukan 750000 penjualan cabai')).toEqual({
       ok: true,
       command: {
         type: 'finance',
@@ -74,6 +100,22 @@ describe('parseChatInput', () => {
     });
   });
 
+  it('parses slash stock-in commands with compact grade syntax', () => {
+    expect(parseChatInput('/stok_masuk 50kg A modal 18000 jual 25000 gudang utama exp 2026-06-20')).toEqual({
+      ok: true,
+      command: {
+        type: 'stock_in',
+        berat: 50,
+        grade: 'A',
+        hargaModal: 18000,
+        hargaJual: 25000,
+        lokasiPenyimpanan: 'Gudang Utama',
+        estimasiKadaluarsa: '2026-06-20',
+        catatan: '',
+      },
+    });
+  });
+
   it('parses stock-in with gudang cadangan', () => {
     const result = parseChatInput(
       'stok masuk 30kg grade B modal 12000 jual 20000 gudang cadangan exp 2026-07-01',
@@ -98,6 +140,19 @@ describe('parseChatInput', () => {
 
   it('parses stock-out commands', () => {
     expect(parseChatInput('stok keluar BATCH-001-A 20kg pasar lokal kirim pagi')).toEqual({
+      ok: true,
+      command: {
+        type: 'stock_out',
+        batchCode: 'BATCH-001-A',
+        berat: 20,
+        tujuan: 'Pasar Lokal',
+        catatan: 'pagi',
+      },
+    });
+  });
+
+  it('parses slash stock-out commands', () => {
+    expect(parseChatInput('/stok_keluar BATCH-001-A 20kg pasar lokal kirim pagi')).toEqual({
       ok: true,
       command: {
         type: 'stock_out',
@@ -149,13 +204,16 @@ describe('parseChatInput', () => {
     if (result.ok) expect(result.command).toMatchObject({ nominal: 50000 });
   });
 
-  it('returns welcome text for start and help commands', () => {
+  it('returns utility commands for bot command menu actions', () => {
     const startResult = parseChatInput('/start');
-    expect(startResult.ok).toBe(false);
-    expect((startResult as any).message).toContain('Selamat datang');
+    expect(startResult).toEqual({ ok: true, command: { type: 'utility', name: 'start' } });
 
     const helpResult = parseChatInput('help');
-    expect(helpResult.ok).toBe(false);
-    expect((helpResult as any).message).toContain('Selamat datang');
+    expect(helpResult).toEqual({ ok: true, command: { type: 'utility', name: 'help' } });
+
+    expect(parseChatInput('/hubungkan')).toEqual({ ok: true, command: { type: 'utility', name: 'hubungkan' } });
+    expect(parseChatInput('/profil')).toEqual({ ok: true, command: { type: 'utility', name: 'profil' } });
+    expect(parseChatInput('/ringkasan')).toEqual({ ok: true, command: { type: 'utility', name: 'ringkasan' } });
+    expect(parseChatInput('/batch')).toEqual({ ok: true, command: { type: 'utility', name: 'batch' } });
   });
 });

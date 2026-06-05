@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -50,6 +50,14 @@ interface TargetState {
   targetKey: string;
   target: string;
   rect: SpotlightRect | null;
+}
+
+interface PopoverPosition {
+  left: number;
+  top: number;
+  translateY?: '-100%';
+  width: number;
+  zone: 'bottom' | 'center' | 'side' | 'top';
 }
 
 interface RefreshTargetOptions {
@@ -103,7 +111,7 @@ function isVisibleGuideTarget(element: HTMLElement) {
 function resolveGuideTarget(targets: string[]): ResolvedTarget | null {
   for (const target of targets) {
     const elements = Array.from(document.querySelectorAll<HTMLElement>(getGuideTargetSelector(target)));
-    const visibleElement = elements.find(isVisibleGuideTarget);
+    const visibleElement = elements.find((element) => element.getAttribute('data-testid') !== 'guide-spotlight' && isVisibleGuideTarget(element));
 
     if (visibleElement) {
       return { element: visibleElement, target };
@@ -142,51 +150,104 @@ function getFallbackSpotlightRect(): SpotlightRect {
   };
 }
 
-function getPopoverPosition(rect: SpotlightRect | null, placement: GuidePlacement = 'bottom') {
+function getMobilePopoverPosition(rect: SpotlightRect | null, cardWidth: number, cardHeight: number): PopoverPosition {
+  const viewport = getViewportSize();
+  const resolvedCardHeight = Math.min(cardHeight, viewport.height - VIEWPORT_MARGIN * 2);
+  const left = clamp((viewport.width - cardWidth) / 2, VIEWPORT_MARGIN, viewport.width - cardWidth - VIEWPORT_MARGIN);
+
+  if (!rect) {
+    return {
+      left,
+      top: clamp((viewport.height - resolvedCardHeight) / 2, VIEWPORT_MARGIN, viewport.height - resolvedCardHeight - VIEWPORT_MARGIN),
+      width: cardWidth,
+      zone: 'center',
+    };
+  }
+
+  const spaceAbove = rect.top - VIEWPORT_MARGIN - CARD_GAP;
+  const spaceBelow = viewport.height - (rect.top + rect.height) - VIEWPORT_MARGIN - CARD_GAP;
+  const shouldPlaceBelow = spaceBelow >= resolvedCardHeight || spaceBelow >= spaceAbove;
+  if (shouldPlaceBelow) {
+    return {
+      left,
+      top: clamp(rect.top + rect.height + CARD_GAP, VIEWPORT_MARGIN, viewport.height - resolvedCardHeight - VIEWPORT_MARGIN),
+      width: cardWidth,
+      zone: 'bottom',
+    };
+  }
+
+  return {
+    left,
+    top: clamp(rect.top - CARD_GAP, VIEWPORT_MARGIN + resolvedCardHeight, viewport.height - VIEWPORT_MARGIN),
+    translateY: '-100%',
+    width: cardWidth,
+    zone: 'top',
+  };
+}
+
+function getPopoverPosition(
+  rect: SpotlightRect | null,
+  placement: GuidePlacement = 'bottom',
+  cardHeight = ESTIMATED_CARD_HEIGHT,
+): PopoverPosition {
   const viewport = getViewportSize();
   const cardWidth = Math.min(MAX_CARD_WIDTH, viewport.width - VIEWPORT_MARGIN * 2);
+  const resolvedCardHeight = Math.min(cardHeight, viewport.height - VIEWPORT_MARGIN * 2);
+
+  if (isMobileGuideViewport()) {
+    return getMobilePopoverPosition(rect, cardWidth, resolvedCardHeight);
+  }
+
   const center = {
     left: (viewport.width - cardWidth) / 2,
-    top: (viewport.height - ESTIMATED_CARD_HEIGHT) / 2,
+    top: (viewport.height - resolvedCardHeight) / 2,
   };
 
   if (!rect || placement === 'center') {
     return {
       left: clamp(center.left, VIEWPORT_MARGIN, viewport.width - cardWidth - VIEWPORT_MARGIN),
-      top: clamp(center.top, VIEWPORT_MARGIN, viewport.height - ESTIMATED_CARD_HEIGHT - VIEWPORT_MARGIN),
+      top: clamp(center.top, VIEWPORT_MARGIN, viewport.height - resolvedCardHeight - VIEWPORT_MARGIN),
       width: cardWidth,
+      zone: 'center',
     };
   }
 
   let left = rect.left + rect.width / 2 - cardWidth / 2;
   let top = rect.top + rect.height + CARD_GAP;
+  let zone: PopoverPosition['zone'] = 'bottom';
 
   if (placement === 'top') {
-    top = rect.top - ESTIMATED_CARD_HEIGHT - CARD_GAP;
+    top = rect.top - resolvedCardHeight - CARD_GAP;
+    zone = 'top';
   }
 
   if (placement === 'left') {
     left = rect.left - cardWidth - CARD_GAP;
-    top = rect.top + rect.height / 2 - ESTIMATED_CARD_HEIGHT / 2;
+    top = rect.top + rect.height / 2 - resolvedCardHeight / 2;
+    zone = 'side';
   }
 
   if (placement === 'right') {
     left = rect.left + rect.width + CARD_GAP;
-    top = rect.top + rect.height / 2 - ESTIMATED_CARD_HEIGHT / 2;
+    top = rect.top + rect.height / 2 - resolvedCardHeight / 2;
+    zone = 'side';
   }
 
-  if (top + ESTIMATED_CARD_HEIGHT > viewport.height - VIEWPORT_MARGIN) {
-    top = rect.top - ESTIMATED_CARD_HEIGHT - CARD_GAP;
+  if (top + resolvedCardHeight > viewport.height - VIEWPORT_MARGIN) {
+    top = rect.top - resolvedCardHeight - CARD_GAP;
+    zone = 'top';
   }
 
   if (top < VIEWPORT_MARGIN) {
     top = rect.top + rect.height + CARD_GAP;
+    zone = 'bottom';
   }
 
   return {
     left: clamp(left, VIEWPORT_MARGIN, viewport.width - cardWidth - VIEWPORT_MARGIN),
-    top: clamp(top, VIEWPORT_MARGIN, viewport.height - ESTIMATED_CARD_HEIGHT - VIEWPORT_MARGIN),
+    top: clamp(top, VIEWPORT_MARGIN, viewport.height - resolvedCardHeight - VIEWPORT_MARGIN),
     width: cardWidth,
+    zone,
   };
 }
 
@@ -209,6 +270,9 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   const t = useTranslations('Guide');
   const [activeStep, setActiveStep] = useState(0);
   const [targetState, setTargetState] = useState<TargetState | null>(null);
+  const [popoverHeight, setPopoverHeight] = useState(ESTIMATED_CARD_HEIGHT);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const rafFallbackRefreshRef = useRef<number | null>(null);
   const rafRefreshRef = useRef<number | null>(null);
 
   const currentStep = guide?.steps[activeStep] ?? guide?.steps[0] ?? null;
@@ -249,21 +313,41 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
 
   const scheduleRefreshTarget = useCallback(
     (options: RefreshTargetOptions = {}) => {
-      if (rafRefreshRef.current !== null) return;
+      if (rafRefreshRef.current !== null || rafFallbackRefreshRef.current !== null) return;
 
-      rafRefreshRef.current = window.requestAnimationFrame(() => {
-        rafRefreshRef.current = null;
+      const runRefresh = () => {
+        if (rafRefreshRef.current !== null) {
+          window.cancelAnimationFrame(rafRefreshRef.current);
+          rafRefreshRef.current = null;
+        }
+        if (rafFallbackRefreshRef.current !== null) {
+          window.clearTimeout(rafFallbackRefreshRef.current);
+          rafFallbackRefreshRef.current = null;
+        }
         refreshTarget(options);
-      });
+      };
+
+      rafRefreshRef.current = window.requestAnimationFrame(runRefresh);
+      rafFallbackRefreshRef.current = window.setTimeout(runRefresh, 80);
     },
     [refreshTarget]
   );
 
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Measure the target before first paint so mobile guide cards do not cover the highlight.
+    refreshTarget({ scroll: true });
+  }, [open, refreshTarget]);
+
   useEffect(() => {
     if (!open) return;
 
-    const isMobileViewport = isMobileGuideViewport();
-    const timeoutId = window.setTimeout(() => scheduleRefreshTarget(), 180);
+    const timeoutIds = [
+      window.setTimeout(() => scheduleRefreshTarget({ scroll: true }), 180),
+      window.setTimeout(() => scheduleRefreshTarget({ scroll: true }), 420),
+      window.setTimeout(() => scheduleRefreshTarget(), 760),
+    ];
     const resizeHandler = () => scheduleRefreshTarget();
 
     scheduleRefreshTarget({ scroll: true });
@@ -272,7 +356,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
     window.addEventListener('scroll', resizeHandler, { capture: true, passive: true });
 
     const observer =
-      !isMobileViewport && typeof MutationObserver !== 'undefined'
+      typeof MutationObserver !== 'undefined'
         ? new MutationObserver(() => scheduleRefreshTarget())
         : null;
 
@@ -288,12 +372,45 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
         window.cancelAnimationFrame(rafRefreshRef.current);
         rafRefreshRef.current = null;
       }
-      window.clearTimeout(timeoutId);
+      if (rafFallbackRefreshRef.current !== null) {
+        window.clearTimeout(rafFallbackRefreshRef.current);
+        rafFallbackRefreshRef.current = null;
+      }
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('scroll', resizeHandler, true);
       observer?.disconnect();
     };
   }, [open, scheduleRefreshTarget]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const popover = popoverRef.current;
+    if (!popover) return;
+
+    const updatePopoverHeight = () => {
+      const nextHeight = popover.getBoundingClientRect().height;
+      if (!Number.isFinite(nextHeight) || nextHeight <= 0) return;
+
+      setPopoverHeight((currentHeight) => {
+        if (Math.abs(currentHeight - nextHeight) < 1) return currentHeight;
+        return nextHeight;
+      });
+      scheduleRefreshTarget();
+    };
+
+    updatePopoverHeight();
+
+    const observer =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(updatePopoverHeight)
+        : null;
+
+    observer?.observe(popover);
+
+    return () => observer?.disconnect();
+  }, [activeStep, open, scheduleRefreshTarget]);
 
   useEffect(() => {
     if (!open) return;
@@ -320,7 +437,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   const targetRect = activeTargetState?.rect ?? null;
   const spotlightRect = targetRect ?? getFallbackSpotlightRect();
   const spotlightTarget = activeTargetState?.target ?? primaryTarget;
-  const popoverPosition = getPopoverPosition(targetRect, currentStep.placement);
+  const popoverPosition = getPopoverPosition(targetRect, currentStep.placement, popoverHeight);
   const spotlightRight = spotlightRect.left + spotlightRect.width;
   const spotlightBottom = spotlightRect.top + spotlightRect.height;
   const backdropColor = 'rgba(15, 23, 42, 0.54)';
@@ -378,15 +495,17 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
         />
 
         <Paper
+          ref={popoverRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="guide-dialog-title"
+          data-guide-placement-zone={popoverPosition.zone}
           elevation={18}
           sx={{
             position: 'fixed',
             left: 0,
             top: 0,
-            transform: `translate3d(${popoverPosition.left}px, ${popoverPosition.top}px, 0)`,
+            transform: `translate3d(${popoverPosition.left}px, ${popoverPosition.top}px, 0)${popoverPosition.translateY ? ` translateY(${popoverPosition.translateY})` : ''}`,
             width: popoverPosition.width,
             maxWidth: 'calc(100vw - 32px)',
             borderRadius: 2,
@@ -398,7 +517,9 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
               sm: '0 20px 54px rgba(15, 23, 42, 0.26)',
             },
             contain: 'layout paint style',
-            overflow: 'hidden',
+            maxHeight: { xs: 'min(52dvh, 340px)', sm: 'none' },
+            overflowX: 'hidden',
+            overflowY: { xs: 'auto', sm: 'hidden' },
             pointerEvents: 'auto',
             transition: 'transform 180ms ease',
             willChange: 'transform',

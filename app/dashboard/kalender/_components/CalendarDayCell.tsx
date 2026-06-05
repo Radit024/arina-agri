@@ -37,7 +37,7 @@ export default function CalendarDayCell({
     <Box
       data-testid="calendar-day-cell"
       sx={(theme) => ({
-        minHeight: { xs: 44, sm: 64, md: 80 },
+        minHeight: { xs: 58, sm: 72, md: 92 },
         borderRadius: 1.5,
         border: '1px solid',
         borderColor: isToday ? 'primary.main' : 'transparent',
@@ -48,7 +48,7 @@ export default function CalendarDayCell({
       })}
       onClick={onAdd}
     >
-      <Box sx={{ width: '100%', p: 0.75 }}>
+      <Box sx={{ width: '100%', p: { xs: 0.8, sm: 1 } }}>
         <ButtonBase
           aria-label={`Tambah jadwal ${dateLabel}`}
           onClick={(event) => {
@@ -59,7 +59,7 @@ export default function CalendarDayCell({
             alignItems: 'flex-start',
             borderRadius: 1,
             justifyContent: 'flex-start',
-            minHeight: 24,
+            minHeight: { xs: 28, sm: 30 },
             textAlign: 'left',
             width: '100%',
             '&.Mui-focusVisible': {
@@ -70,18 +70,21 @@ export default function CalendarDayCell({
           }}
         >
           <Typography
-            variant="caption"
+            variant="body2"
             sx={{
               color: (theme) => isToday ? softText(theme, 'primary') : theme.palette.text.primary,
               display: 'block',
+              fontFamily: 'var(--font-sora)',
+              fontSize: { xs: '1rem', sm: '1.05rem', md: '1.125rem' },
               fontWeight: isToday ? 700 : 500,
+              lineHeight: 1.15,
             }}
           >
             {day}
           </Typography>
         </ButtonBase>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, mt: 0.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.35, mt: { xs: 0.45, sm: 0.6 } }}>
           {events.slice(0, 3).map((event) => {
             const colors = getEventColor(event.jenis);
 
@@ -99,10 +102,10 @@ export default function CalendarDayCell({
                   borderLeftColor: colors.dot,
                   borderRadius: 1,
                   justifyContent: 'flex-start',
-                  minHeight: 24,
+                  minHeight: { xs: 26, sm: 28 },
                   overflow: 'hidden',
-                  px: 0.5,
-                  py: 0.25,
+                  px: { xs: 0.55, sm: 0.7 },
+                  py: 0.3,
                   textAlign: 'left',
                   width: '100%',
                   '&:hover': { filter: 'brightness(0.95)' },
@@ -113,7 +116,7 @@ export default function CalendarDayCell({
                   },
                 }}
               >
-                <Typography noWrap variant="caption" sx={{ color: colors.text, fontSize: '0.65rem', fontWeight: 600 }}>
+                <Typography noWrap variant="caption" sx={{ color: colors.text, fontSize: { xs: '0.68rem', sm: '0.72rem' }, fontWeight: 650 }}>
                   {event.judul}
                 </Typography>
               </ButtonBase>
@@ -121,7 +124,7 @@ export default function CalendarDayCell({
           })}
 
           {events.length > 3 && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', pl: 0.5 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: { xs: '0.66rem', sm: '0.7rem' }, pl: 0.5 }}>
               +{events.length - 3} {moreLabel}
             </Typography>
           )}

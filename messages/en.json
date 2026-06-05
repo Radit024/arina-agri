@@ -672,7 +672,7 @@
     "sendingMessage": "Arina AI is replying",
     "retryLastPrompt": "Try again",
     "newChat": "New Chat",
-    "composerHelper": "Press Enter to send, Shift + Enter for a new line. This AI is tuned for bird's eye chili.",
+    "composerHelper": "Press Enter for a new line, Ctrl/Cmd + Enter to send. This AI is tuned for bird's eye chili.",
     "currentChatClear": "Clear current chat",
     "historyTitle": "Chat History",
     "historyOpen": "Open chat history",

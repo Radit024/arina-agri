@@ -83,6 +83,47 @@ describe('processInboundChatMessage', () => {
     );
   });
 
+  it('replies to hubungkan without requiring a linked Telegram profile', async () => {
+    mocks.getSupabaseAdmin.mockReturnValue(makeProfileSupabase(null));
+
+    const { processInboundChatMessage } = await import('@/lib/server/chat-input/processor');
+
+    const result = await processInboundChatMessage({
+      channel: 'telegram',
+      externalMessageId: 'tg-link-1',
+      senderId: '999999',
+      text: '/hubungkan',
+      receivedAt: '2026-06-03T00:00:00.000Z',
+      replyTo: '999999',
+    });
+
+    expect(result.status).toBe('ignored');
+    expect(result.replyText).toContain('Chat ID Telegram Anda: 999999');
+    expect(result.replyText).toContain('Pengaturan');
+    expect(mocks.sendDirectNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ platform: 'telegram', to: '999999' }),
+    );
+  });
+
+  it('replies with profile status for linked users', async () => {
+    mocks.getSupabaseAdmin.mockReturnValue(makeProfileSupabase({ id: 'user-1', full_name: 'Budi' }));
+
+    const { processInboundChatMessage } = await import('@/lib/server/chat-input/processor');
+
+    const result = await processInboundChatMessage({
+      channel: 'telegram',
+      externalMessageId: 'tg-profile-1',
+      senderId: '123456',
+      text: '/profil',
+      receivedAt: '2026-06-03T00:00:00.000Z',
+      replyTo: '123456',
+    });
+
+    expect(result.status).toBe('ignored');
+    expect(result.replyText).toContain('Akun terhubung');
+    expect(result.replyText).toContain('Budi');
+  });
+
   it('records valid finance input and sends a confirmation reply', async () => {
     const logInsertSingle = vi.fn(async () => ({ data: { id: 'log-1' }, error: null }));
     const logUpdate = vi.fn(() => ({ eq: vi.fn(async () => ({ data: null, error: null })) }));

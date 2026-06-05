@@ -1,29 +1,53 @@
-import type { ParseResult, StockOutCommand } from './types';
+import type { ParseResult, StockOutCommand, UtilityCommand } from './types';
 
-const HELP_TEXT = [
-  'Format belum dikenali. Contoh perintah yang bisa digunakan:',
+export const HELP_TEXT = [
+  'Panduan Arina Agri Bot',
   '',
-  '📤 Pengeluaran:',
-  '  pengeluaran 50000 pupuk beli npk',
+  'Keuangan:',
+  '/pengeluaran 50000 pupuk beli npk',
+  '/pemasukan 750000 penjualan cabai',
   '',
-  '📥 Pemasukan:',
-  '  pemasukan 750000 penjualan cabai',
+  'Stok:',
+  '/stok_masuk 50kg A modal 18000 jual 25000 gudang utama exp 2026-06-20',
+  '/stok_keluar BATCH-001-A 20kg pasar lokal kirim pagi',
   '',
-  '📦 Stok Masuk:',
-  '  stok masuk 50kg grade A modal 18000 jual 25000 gudang utama exp 2026-06-20',
+  'Akun:',
+  '/hubungkan',
+  '/profil',
   '',
-  '📤 Stok Keluar:',
-  '  stok keluar BATCH-001-A 20kg pasar lokal kirim pagi',
+  'Ringkasan:',
+  '/ringkasan',
+  '/batch',
 ].join('\n');
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+export const WELCOME_TEXT = [
+  'Halo! Selamat datang di Arina Agri Bot.',
+  'Saya membantu mencatat keuangan dan stok panen langsung dari Telegram atau WhatsApp.',
+  '',
+  HELP_TEXT,
+].join('\n');
+
+const UNKNOWN_TEXT = ['Format belum dikenali.', '', HELP_TEXT].join('\n');
+
+const UTILITY_COMMANDS = new Set<UtilityCommand['name']>([
+  'start',
+  'help',
+  'hubungkan',
+  'profil',
+  'ringkasan',
+  'batch',
+  'batal',
+]);
 
 function normalizeText(input: string): string {
   return input.trim().replace(/\s+/g, ' ');
 }
 
+function commandName(token: string): string {
+  return token.replace(/^\//, '').split('@')[0].toLowerCase();
+}
+
 function parseAmount(value: string): number | null {
-  // Strip thousand-separator dots and any other non-digit chars except digits.
   const cleaned = value.replace(/\./g, '').replace(/[^\d]/g, '');
   const amount = Number(cleaned);
   return Number.isFinite(amount) && amount > 0 ? amount : null;
@@ -44,10 +68,22 @@ function normalizeDestination(input: string): StockOutCommand['tujuan'] {
   return 'Lainnya';
 }
 
-// ─── Parsers ──────────────────────────────────────────────────────────────────
+function parseUtility(text: string): ParseResult | null {
+  const firstToken = text.split(' ')[0];
+  const name = commandName(firstToken);
+
+  if (UTILITY_COMMANDS.has(name as UtilityCommand['name']) && text.split(' ').length === 1) {
+    return {
+      ok: true,
+      command: { type: 'utility', name: name as UtilityCommand['name'] },
+    };
+  }
+
+  return null;
+}
 
 function parseFinance(text: string): ParseResult | null {
-  const match = text.match(/^(pengeluaran|pemasukan)\s+(\S+)\s+(\S+)(?:\s+(.*))?$/i);
+  const match = text.match(/^\/?(pengeluaran|pemasukan)(?:@\w+)?\s+(\S+)\s+(\S+)(?:\s+(.*))?$/i);
   if (!match) return null;
 
   const nominal = parseAmount(match[2]);
@@ -66,9 +102,15 @@ function parseFinance(text: string): ParseResult | null {
 }
 
 function parseStockIn(text: string): ParseResult | null {
-  const match = text.match(
+  const naturalMatch = text.match(
     /^stok\s+masuk\s+(\S+)\s+grade\s+([abc])\s+modal\s+(\S+)\s+jual\s+(\S+)\s+(.+?)\s+exp\s+(\d{4}-\d{2}-\d{2})(?:\s+(.*))?$/i,
   );
+
+  const slashMatch = text.match(
+    /^\/stok_masuk(?:@\w+)?\s+(\S+)\s+(?:grade\s+)?([abc])\s+modal\s+(\S+)\s+jual\s+(\S+)\s+(.+?)\s+exp\s+(\d{4}-\d{2}-\d{2})(?:\s+(.*))?$/i,
+  );
+
+  const match = naturalMatch ?? slashMatch;
   if (!match) return null;
 
   const berat = parseWeightKg(match[1]);
@@ -98,18 +140,21 @@ function parseStockIn(text: string): ParseResult | null {
 }
 
 function parseStockOut(text: string): ParseResult | null {
-  // Pattern: stok keluar <BATCH_CODE> <weight>kg <destination...> [kirim|catatan <note>]
-  const match = text.match(
+  const naturalMatch = text.match(
     /^stok\s+keluar\s+(\S+)\s+(\S+)\s+(.+?)(?:\s+(?:kirim|catatan)\s+(.+))?$/i,
   );
+
+  const slashMatch = text.match(
+    /^\/stok_keluar(?:@\w+)?\s+(\S+)\s+(\S+)\s+(.+?)(?:\s+(?:kirim|catatan)\s+(.+))?$/i,
+  );
+
+  const match = naturalMatch ?? slashMatch;
   if (!match) return null;
 
   const berat = parseWeightKg(match[2]);
   if (!berat) return { ok: false, message: 'Berat stok keluar harus lebih dari 0 kg.' };
 
-  // Remove trailing kirim/catatan suffix from destination string
   const destinationRaw = match[3].replace(/\s+(?:kirim|catatan)\s+.*$/i, '').trim();
-  const tujuan = normalizeDestination(destinationRaw);
 
   return {
     ok: true,
@@ -117,43 +162,38 @@ function parseStockOut(text: string): ParseResult | null {
       type: 'stock_out',
       batchCode: match[1].toUpperCase(),
       berat,
-      tujuan,
+      tujuan: normalizeDestination(destinationRaw),
       catatan: (match[4] ?? '').trim(),
     },
   };
 }
 
-const WELCOME_TEXT = [
-  '👋 Halo! Selamat datang di Arina Agri Bot.',
-  'Saya asisten pencatatan pintar Anda. Kirimkan perintah berikut untuk melakukan pencatatan cepat:',
-  '',
-  '📤 Catat Pengeluaran:',
-  '  pengeluaran 50000 pupuk beli npk',
-  '',
-  '📥 Catat Pemasukan:',
-  '  pemasukan 750000 penjualan cabai',
-  '',
-  '📦 Catat Stok Masuk:',
-  '  stok masuk 50kg grade A modal 18000 jual 25000 gudang utama exp 2026-06-20',
-  '',
-  '📤 Catat Stok Keluar:',
-  '  stok keluar BATCH-001-A 20kg pasar lokal kirim pagi',
-].join('\n');
+function commandSpecificHelp(text: string): ParseResult | null {
+  const name = commandName(text.split(' ')[0]);
+  const messages: Partial<Record<string, string>> = {
+    pengeluaran: 'Format: /pengeluaran 50000 pupuk beli npk',
+    pemasukan: 'Format: /pemasukan 750000 penjualan cabai',
+    stok_masuk: 'Format: /stok_masuk 50kg A modal 18000 jual 25000 gudang utama exp 2026-06-20',
+    stok_keluar: 'Format: /stok_keluar BATCH-001-A 20kg pasar lokal kirim pagi',
+  };
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
+  if (messages[name]) {
+    return { ok: false, message: messages[name] };
+  }
+
+  return null;
+}
 
 export function parseChatInput(input: string): ParseResult {
   const text = normalizeText(input);
   if (!text) return { ok: false, message: HELP_TEXT };
 
-  const lowerText = text.toLowerCase();
-  if (lowerText === '/start' || lowerText === 'start' || lowerText === '/help' || lowerText === 'help') {
-    return { ok: false, message: WELCOME_TEXT };
-  }
-
   return (
+    parseUtility(text) ??
     parseFinance(text) ??
     parseStockIn(text) ??
-    parseStockOut(text) ?? { ok: false, message: HELP_TEXT }
+    parseStockOut(text) ??
+    commandSpecificHelp(text) ??
+    { ok: false, message: UNKNOWN_TEXT }
   );
 }

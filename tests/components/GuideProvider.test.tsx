@@ -111,7 +111,7 @@ describe('GuideProvider', () => {
     expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'nav-keuangan');
   });
 
-  it('skips the global mutation observer on mobile viewports', async () => {
+  it('watches mobile layout changes so the spotlight can follow late-rendered targets', async () => {
     const originalMatchMedia = window.matchMedia;
     const OriginalMutationObserver = window.MutationObserver;
     const observe = vi.fn();
@@ -154,7 +154,7 @@ describe('GuideProvider', () => {
 
       expect(screen.getByRole('dialog')).toHaveTextContent('global.title');
       expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'nav-dashboard');
-      expect(observe).not.toHaveBeenCalled();
+      expect(observe).toHaveBeenCalled();
     } finally {
       Object.defineProperty(window, 'matchMedia', {
         writable: true,
@@ -164,6 +164,63 @@ describe('GuideProvider', () => {
         configurable: true,
         writable: true,
         value: OriginalMutationObserver,
+      });
+    }
+  });
+
+  it('keeps the mobile guide card away from a bottom-aligned highlighted target', async () => {
+    const originalMatchMedia = window.matchMedia;
+    const bottomTargetRect: DOMRect = {
+      bottom: 676,
+      height: 56,
+      left: 24,
+      right: 344,
+      top: 620,
+      width: 320,
+      x: 24,
+      y: 620,
+      toJSON: () => ({}),
+    };
+
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query.includes('max-width: 899.95px'),
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    try {
+      mockPathname = '/dashboard/kalender';
+      markGuideSeen(window.localStorage, 'global');
+      markGuideSeen(window.localStorage, 'calendar');
+
+      render(
+        <GuideProvider>
+          <button data-guide-target="calendar-grid">Calendar target</button>
+          <ManualLauncher />
+        </GuideProvider>
+      );
+
+      const target = screen.getByRole('button', { name: 'Calendar target' });
+      vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(bottomTargetRect);
+
+      fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
+
+      await findGuideDialog();
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toHaveAttribute('data-guide-placement-zone', 'top');
+      });
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: originalMatchMedia,
       });
     }
   });

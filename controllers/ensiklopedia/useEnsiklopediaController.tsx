@@ -16,6 +16,10 @@ import {
   type HistorySession,
 } from './chatHistory';
 
+export function shouldSubmitChatShortcut(event: Pick<React.KeyboardEvent, 'ctrlKey' | 'key' | 'metaKey'>) {
+  return event.key === 'Enter' && (event.ctrlKey || event.metaKey);
+}
+
 export function useEnsiklopediaController() {
 
   const theme = useTheme();
@@ -228,7 +232,7 @@ export function useEnsiklopediaController() {
   const hasUserMessages = messages.some((message) => message.role === 'user');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (shouldSubmitChatShortcut(e)) {
       e.preventDefault();
       handleSend();
     }

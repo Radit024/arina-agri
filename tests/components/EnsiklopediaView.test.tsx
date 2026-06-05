@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import EnsiklopediaView from '@/app/dashboard/ensiklopedia/_components/EnsiklopediaView';
+import { shouldSubmitChatShortcut } from '@/controllers/ensiklopedia/useEnsiklopediaController';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 
@@ -21,7 +22,7 @@ const translations: Record<string, string> = {
   newChat: 'New Chat',
   sendMessage: 'Kirim pesan',
   sendingMessage: 'Arina AI sedang menjawab',
-  composerHelper: 'Tekan Enter untuk mengirim, Shift + Enter untuk baris baru. AI ini dilatih khusus untuk cabai rawit.',
+  composerHelper: 'Tekan Enter untuk baris baru, Ctrl/Cmd + Enter untuk mengirim. AI ini dilatih khusus untuk cabai rawit.',
   currentChatClear: 'Hapus chat saat ini',
   historyTitle: 'Riwayat Chat',
   historyOpen: 'Buka riwayat chat',
@@ -141,7 +142,14 @@ describe('EnsiklopediaView', () => {
       .getAllByRole('button', { name: 'Referensi Penyakit' })
       .forEach((button) => expect(button).toHaveAttribute('data-touch-target', '44'));
     expect(screen.getByRole('button', { name: 'Hapus chat saat ini' })).toHaveAttribute('data-touch-target', '44');
-    expect(screen.getByText(/Tekan Enter untuk mengirim/)).toHaveAttribute('data-mobile-helper', 'desktop-only');
+    expect(screen.getByText(/Ctrl\/Cmd \+ Enter untuk mengirim/)).toHaveAttribute('data-mobile-helper', 'desktop-only');
+  });
+
+  it('keeps Enter as a multiline key and sends only through Ctrl/Cmd+Enter shortcuts', () => {
+    expect(shouldSubmitChatShortcut({ key: 'Enter', ctrlKey: false, metaKey: false })).toBe(false);
+    expect(shouldSubmitChatShortcut({ key: 'Enter', ctrlKey: true, metaKey: false })).toBe(true);
+    expect(shouldSubmitChatShortcut({ key: 'Enter', ctrlKey: false, metaKey: true })).toBe(true);
+    expect(shouldSubmitChatShortcut({ key: 'a', ctrlKey: true, metaKey: false })).toBe(false);
   });
 
   it('starts a new chat from the header action', () => {

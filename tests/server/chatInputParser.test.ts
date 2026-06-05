@@ -148,4 +148,14 @@ describe('parseChatInput', () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.command).toMatchObject({ nominal: 50000 });
   });
+
+  it('returns welcome text for start and help commands', () => {
+    const startResult = parseChatInput('/start');
+    expect(startResult.ok).toBe(false);
+    expect((startResult as any).message).toContain('Selamat datang');
+
+    const helpResult = parseChatInput('help');
+    expect(helpResult.ok).toBe(false);
+    expect((helpResult as any).message).toContain('Selamat datang');
+  });
 });

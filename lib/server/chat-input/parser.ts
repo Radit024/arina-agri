@@ -123,11 +123,33 @@ function parseStockOut(text: string): ParseResult | null {
   };
 }
 
+const WELCOME_TEXT = [
+  '👋 Halo! Selamat datang di Arina Agri Bot.',
+  'Saya asisten pencatatan pintar Anda. Kirimkan perintah berikut untuk melakukan pencatatan cepat:',
+  '',
+  '📤 Catat Pengeluaran:',
+  '  pengeluaran 50000 pupuk beli npk',
+  '',
+  '📥 Catat Pemasukan:',
+  '  pemasukan 750000 penjualan cabai',
+  '',
+  '📦 Catat Stok Masuk:',
+  '  stok masuk 50kg grade A modal 18000 jual 25000 gudang utama exp 2026-06-20',
+  '',
+  '📤 Catat Stok Keluar:',
+  '  stok keluar BATCH-001-A 20kg pasar lokal kirim pagi',
+].join('\n');
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function parseChatInput(input: string): ParseResult {
   const text = normalizeText(input);
   if (!text) return { ok: false, message: HELP_TEXT };
+
+  const lowerText = text.toLowerCase();
+  if (lowerText === '/start' || lowerText === 'start' || lowerText === '/help' || lowerText === 'help') {
+    return { ok: false, message: WELCOME_TEXT };
+  }
 
   return (
     parseFinance(text) ??

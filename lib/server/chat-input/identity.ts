@@ -47,12 +47,17 @@ export async function resolveChatUser(
     const phone = normalizeWhatsAppPhone(senderId);
     const { data, error } = await supabase
       .from('profiles')
-      .select('id,full_name,email')
+      .select('id,full_name')
       .eq('whatsapp_phone', phone)
       .single();
 
-    if (error || !data) return null;
-    return { id: data.id, displayName: data.full_name || data.email || 'Petani' };
+    if (error || !data) {
+      if (error && error.code !== 'PGRST116' && error.message !== 'No rows found') {
+        console.error('[resolveChatUser] WhatsApp query error:', error);
+      }
+      return null;
+    }
+    return { id: data.id, displayName: data.full_name || 'Petani' };
   }
 
   // ── Telegram: try Chat ID first (numeric) ─────────────────────────────────
@@ -61,18 +66,26 @@ export async function resolveChatUser(
   // We check if the chat ID is stored in either `telegram_chat_id` OR mistakenly saved in `telegram_username`
   const { data: byId, error: idError } = await supabase
     .from('profiles')
-    .select('id,full_name,email')
+    .select('id,full_name')
     .or(`telegram_chat_id.eq.${chatIdStr},telegram_username.eq.${chatIdStr}`)
     .single();
 
+  if (idError && idError.code !== 'PGRST116' && idError.message !== 'No rows found') {
+    console.error('[resolveChatUser] Telegram ID query error:', idError);
+  }
+
   if (!idError && byId) {
     // If it was mistakenly saved in username, auto-migrate it to the correct column
-    await supabase
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({ telegram_chat_id: chatIdStr })
       .eq('id', byId.id);
 
-    return { id: byId.id, displayName: byId.full_name || byId.email || 'Petani' };
+    if (updateError) {
+      console.error('[resolveChatUser] Telegram auto-migrate update error:', updateError);
+    }
+
+    return { id: byId.id, displayName: byId.full_name || 'Petani' };
   }
 
   // ── Telegram: fall back to username ──────────────────────────────────────
@@ -81,20 +94,31 @@ export async function resolveChatUser(
   const username = normalizeTelegramUsername(senderUsername);
   const { data: byUsername, error: usernameError } = await supabase
     .from('profiles')
-    .select('id,full_name,email')
+    .select('id,full_name')
     .eq('telegram_username', username)
     .single();
 
-  if (usernameError || !byUsername) return null;
+  if (usernameError) {
+    if (usernameError.code !== 'PGRST116' && usernameError.message !== 'No rows found') {
+      console.error('[resolveChatUser] Telegram username query error:', usernameError);
+    }
+    return null;
+  }
+
+  if (!byUsername) return null;
 
   // Auto-save the numeric Chat ID to avoid username lookups in future messages.
-  await supabase
+  const { error: updateError } = await supabase
     .from('profiles')
     .update({ telegram_chat_id: chatIdStr })
     .eq('id', byUsername.id);
 
+  if (updateError) {
+    console.error('[resolveChatUser] Telegram auto-save update error:', updateError);
+  }
+
   return {
     id: byUsername.id,
-    displayName: byUsername.full_name || byUsername.email || 'Petani',
+    displayName: byUsername.full_name || 'Petani',
   };
 }

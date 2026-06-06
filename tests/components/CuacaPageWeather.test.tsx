@@ -98,7 +98,7 @@ vi.mock('@/lib/api', () => ({
       timezone: 'Asia/Jakarta',
       platform: 'whatsapp',
     })),
-    set: vi.fn(),
+    set: vi.fn(async () => ({ success: true })),
   },
   profileApi: {
     get: vi.fn(async () => ({

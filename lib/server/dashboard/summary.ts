@@ -146,6 +146,61 @@ export async function getDashboardSummary({
   }
 
   const supabase = getSupabaseAdmin();
+
+  // Auto-sync weather location if it is set in the client request
+  if (adm4) {
+    supabase
+      .from('notification_schedules')
+      .select('weather_adm4, weather_location_label')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(async ({ data: existing, error: fetchError }) => {
+        if (fetchError) {
+          console.error('[getDashboardSummary] Error fetching existing schedule for location sync:', fetchError);
+          return;
+        }
+
+        if (!existing) {
+          // Insert a new default schedule row (disabled) with this location
+          const { error: insertError } = await supabase
+            .from('notification_schedules')
+            .insert({
+              user_id: userId,
+              enabled: false,
+              time: '07:00',
+              timezone: 'Asia/Jakarta',
+              platform: 'telegram',
+              weather_adm4: adm4,
+              weather_location_label: locationLabel || null,
+              updated_at: new Date().toISOString(),
+            });
+          if (insertError) {
+            console.error('[getDashboardSummary] Error inserting default schedule:', insertError);
+          } else {
+            console.log('[getDashboardSummary] Synced new weather location to DB:', locationLabel);
+          }
+        } else if (existing.weather_adm4 !== adm4 || existing.weather_location_label !== locationLabel) {
+          // Update the existing schedule location
+          const { error: updateError } = await supabase
+            .from('notification_schedules')
+            .update({
+              weather_adm4: adm4,
+              weather_location_label: locationLabel || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', userId);
+          if (updateError) {
+            console.error('[getDashboardSummary] Error updating weather location:', updateError);
+          } else {
+            console.log('[getDashboardSummary] Updated weather location in DB:', locationLabel);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('[getDashboardSummary] Unexpected location sync error:', err);
+      });
+  }
+
   const dateWindow = getDashboardDateWindow(now);
 
   const transactionsPromise = supabase

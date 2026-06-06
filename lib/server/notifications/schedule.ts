@@ -93,23 +93,24 @@ export function validateSchedulePayload(body: any): { valid: boolean; message?: 
     return { valid: false, message: 'platform harus "whatsapp" atau "telegram".' };
   }
 
-  if (!body.to || typeof body.to !== 'string') {
-    return { valid: false, message: 'Field "to" wajib diisi.' };
+  const enabled = Boolean(body.enabled);
+  if (enabled && (!body.to || typeof body.to !== 'string')) {
+    return { valid: false, message: 'Field "to" wajib diisi saat jadwal notifikasi aktif.' };
   }
 
   const weatherAdm4 = typeof body.weatherAdm4 === 'string' ? body.weatherAdm4.trim() : '';
-  if (Boolean(body.enabled) && !weatherAdm4) {
+  if (enabled && !weatherAdm4) {
     return { valid: false, message: 'Field weatherAdm4 wajib diisi saat jadwal notifikasi aktif.' };
   }
 
   return {
     valid: true,
     payload: {
-      enabled: Boolean(body.enabled),
+      enabled,
       time: body.time,
       timezone: body.timezone || 'Asia/Jakarta',
       platform: body.platform,
-      to: body.to,
+      to: body.to || '',
       recipientName: body.recipientName || 'Petani',
       customMessage: body.customMessage,
       weatherAdm4: weatherAdm4 || undefined,

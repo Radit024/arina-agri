@@ -86,22 +86,36 @@ export async function buildBriefingText(
     ? events.map(e => `- ${e.date} ${e.waktu || ''}: ${e.title} ${e.description ? `(${e.description})` : ''}`).join('\n')
     : 'Tidak ada agenda terjadwal.';
 
+function markdownToHtml(text: string): string {
+  let html = text;
+  // Bold
+  html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<b>$1</b>');
+  // Italic (single asterisk)
+  html = html.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+  // Underline
+  html = html.replace(/__([\s\S]*?)__/g, '<u>$1</u>');
+  // Italic (single underscore, avoid matching links or inside words if possible, but basic is fine)
+  html = html.replace(/(?:^|\s)_([^_]+)_(?:\s|$)/g, ' <i>$1</i> ');
+  
+  return html;
+}
+
   // 3. Ask Gemini to summarize
   const prompt = `Tolong berikan briefing cerdas untuk ${range} berdasarkan data berikut:
 Cuaca: ${weatherContextSummary}
 Agenda:
 ${agendaSummary}
 
-Buatlah laporan padat yang mengaitkan kondisi cuaca dengan agenda, serta berikan saran ringkas.`;
+Buatlah laporan padat yang mengaitkan kondisi cuaca dengan agenda, serta berikan saran ringkas. Gunakan formatting teks tebal untuk hal-hal penting.`;
 
   try {
     const aiReply = await generateGeminiReply({
       prompt,
       userName,
     });
-    return `🌤️ *Briefing ${range === 'hari ini' ? 'Hari Ini' : 'Minggu Ini'}*\n\n${aiReply}`;
+    return `🌤️ <b>Briefing ${range === 'hari ini' ? 'Hari Ini' : 'Minggu Ini'}</b>\n\n${markdownToHtml(aiReply)}`;
   } catch (err) {
     console.error('[buildBriefingText] AI error:', err);
-    return `🌤️ *Briefing ${range === 'hari ini' ? 'Hari Ini' : 'Minggu Ini'}*\n\nCuaca: ${weatherContextSummary}\n\nAgenda:\n${agendaSummary}`;
+    return `🌤️ <b>Briefing ${range === 'hari ini' ? 'Hari Ini' : 'Minggu Ini'}</b>\n\nCuaca: ${weatherContextSummary}\n\nAgenda:\n${agendaSummary}`;
   }
 }

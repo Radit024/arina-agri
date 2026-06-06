@@ -61,6 +61,7 @@ export function useCuacaController() {
   const [contactSaveFeedback, setContactSaveFeedback] = useState('');
   const isCurrentContactSaved = contactValue.trim().length > 0 && contactValue.trim() === savedContact.trim();
 
+
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTime, setScheduleTime] = useState('07:00');
   const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Jakarta');
@@ -70,6 +71,7 @@ export function useCuacaController() {
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleReady, setScheduleReady] = useState(false);
+  const [dbSchedule, setDbSchedule] = useState<any>(null);
 
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsMessage, setGpsMessage] = useState('');
@@ -137,6 +139,7 @@ export function useCuacaController() {
         if (schedule.customMessage) {
           setScheduleMessage(schedule.customMessage);
         }
+        setDbSchedule(schedule);
         setScheduleReady(true);
       })
       .catch(() => {
@@ -145,6 +148,7 @@ export function useCuacaController() {
         setScheduleReady(true);
       });
   }, [storedWhatsapp, storedTelegram]);
+
 
   useEffect(() => {
     if (!scheduleReady) return;
@@ -583,6 +587,64 @@ export function useCuacaController() {
       setScheduleError(t('whatsapp.scheduleError', { error: error instanceof Error ? error.message : '' }));
     }
   };
+
+  // Auto-sync weather location to database when resolved/changed
+  useEffect(() => {
+    if (!scheduleReady || !activeAdm4 || !user?.id) return;
+
+    const needsSync = !dbSchedule ||
+      dbSchedule.weatherAdm4 !== activeAdm4 ||
+      dbSchedule.weatherLocationLabel !== activeLocationLabel;
+
+    if (needsSync) {
+      const targetContact = scheduleTo || scheduleContactFallback || '';
+      
+      const doSync = async () => {
+        try {
+          const res = await notificationScheduleApi.set({
+            enabled: scheduleEnabled,
+            time: scheduleTime,
+            timezone: scheduleTimezone,
+            platform: schedulePlatform,
+            to: targetContact,
+            recipientName,
+            customMessage: scheduleMessage.trim(),
+            weatherAdm4: activeAdm4,
+            weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
+            userId: user.id,
+          });
+
+          if (res && res.success) {
+            console.log('[useCuacaController] Synced weather location to database:', activeLocationLabel);
+            setDbSchedule((prev: any) => ({
+              ...prev,
+              weatherAdm4: activeAdm4,
+              weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
+            }));
+          }
+        } catch (err) {
+          console.error('[useCuacaController] Auto-sync location failed:', err);
+        }
+      };
+
+      void doSync();
+    }
+  }, [
+    scheduleReady,
+    activeAdm4,
+    activeLocationLabel,
+    dbSchedule,
+    user?.id,
+    scheduleEnabled,
+    scheduleTime,
+    scheduleTimezone,
+    schedulePlatform,
+    scheduleTo,
+    scheduleContactFallback,
+    recipientName,
+    scheduleMessage,
+    displayedCurrentWeather.lokasi,
+  ]);
 
   return {
     theme,

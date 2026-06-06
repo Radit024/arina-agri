@@ -310,19 +310,15 @@ export default function Sidebar() {
       <Box sx={{ p: 2 }}>
         {isOpen && <Divider sx={{ mb: 2, mx: 1 }} />}
 
-        {(!isOpen || !isProfileDropdownOpen) && (
-          <>
-            {isOpen ? feedbackButton : (
-              <Tooltip title={t('beriMasukan')} placement="right" arrow>
-                {feedbackButton}
-              </Tooltip>
-            )}
-            {isOpen ? guideButton : (
-              <Tooltip title={t('guide')} placement="right" arrow>
-                {guideButton}
-              </Tooltip>
-            )}
-          </>
+        {isOpen ? feedbackButton : (
+          <Tooltip title={t('beriMasukan')} placement="right" arrow>
+            {feedbackButton}
+          </Tooltip>
+        )}
+        {isOpen ? guideButton : (
+          <Tooltip title={t('guide')} placement="right" arrow>
+            {guideButton}
+          </Tooltip>
         )}
 
         {isOpen && (

@@ -84,7 +84,6 @@ export default function KeuanganView({
   filterJenis,
   setFilterJenis,
   theme,
-  isMobile,
   control,
   handleSubmit,
   errors,
@@ -209,24 +208,21 @@ export default function KeuanganView({
                 >
                   {t('buttons.hppBep')}
                 </Button>
-                {!isMobile && (
-                  <Button
-                    data-guide-target="finance-add-transaction"
-                    id="btn-catat-transaksi"
-                    variant="contained"
-                    startIcon={<AddCircleIcon />}
-                    onClick={openAddDialog}
-                    sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
-                  >
-                    {t('buttons.addTransaction')}
-                  </Button>
-                )}
+                <Button
+                  data-guide-target="finance-add-transaction"
+                  id="btn-catat-transaksi"
+                  variant="contained"
+                  startIcon={<AddCircleIcon />}
+                  onClick={openAddDialog}
+                  sx={{ display: { xs: 'none', md: 'inline-flex' }, borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
+                >
+                  {t('buttons.addTransaction')}
+                </Button>
               </Box>
             </Box>
 
             <CardContent sx={{ pt: 0, flex: 1, px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
-              {isMobile ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto', pb: 10 }}>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto', pb: 10 }}>
                   {displayedTransactions.length === 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
                       <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
@@ -238,21 +234,22 @@ export default function KeuanganView({
                     displayedTransactions.map((tx) => (
                       <Card key={tx._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider' }}>
                         <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.25 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0, flex: 1, pr: 0.5 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
                                 {tx.kategori}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
                                 {formatDateShort(tx.tanggal)}
                               </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, gap: 0.75 }}>
                               <Typography
                                 variant="subtitle2"
                                 sx={{
                                   fontWeight: 800,
                                   color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                  whiteSpace: 'nowrap',
                                 }}
                               >
                                 {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
@@ -268,6 +265,40 @@ export default function KeuanganView({
                                   height: 20,
                                 }}
                               />
+                              <Box sx={{ display: 'flex', gap: 0.75, pt: 0.25 }}>
+                                <IconButton
+                                  data-touch-target="44"
+                                  size="small"
+                                  aria-label={`Edit transaksi ${tx.kategori}`}
+                                  onClick={() => handleEdit(tx)}
+                                  sx={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 2,
+                                    color: 'primary.main',
+                                    bgcolor: 'primary.light',
+                                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
+                                  }}
+                                >
+                                  <EditOutlinedIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  data-touch-target="44"
+                                  size="small"
+                                  aria-label={`Hapus transaksi ${tx.kategori}`}
+                                  onClick={() => handleDelete(tx._id)}
+                                  sx={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 2,
+                                    color: 'error.main',
+                                    bgcolor: alpha(theme.palette.error.main, 0.1),
+                                    '&:hover': { bgcolor: 'error.main', color: 'white' },
+                                  }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
                             </Box>
                           </Box>
                           
@@ -276,25 +307,6 @@ export default function KeuanganView({
                               &quot;{tx.keterangan}&quot;
                             </Typography>
                           )}
-                          
-                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 0.5 }}>
-                            <Button
-                              size="small"
-                              startIcon={<EditOutlinedIcon />}
-                              onClick={() => handleEdit(tx)}
-                              sx={{ color: 'primary.main', bgcolor: 'primary.light', borderRadius: 2, px: 2, py: 0.5, textTransform: 'none', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="small"
-                              startIcon={<DeleteIcon />}
-                              onClick={() => handleDelete(tx._id)}
-                              sx={{ color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1), borderRadius: 2, px: 2, py: 0.5, textTransform: 'none', '&:hover': { bgcolor: 'error.main', color: 'white' } }}
-                            >
-                              Hapus
-                            </Button>
-                          </Box>
                         </CardContent>
                       </Card>
                     ))
@@ -308,9 +320,9 @@ export default function KeuanganView({
                   >
                     <AddCircleIcon />
                   </Fab>
-                </Box>
-              ) : (
-                <TableContainer sx={{ maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
+              </Box>
+
+              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
                   <Table size="medium" stickyHeader>
                     <TableHead>
                       <TableRow>
@@ -418,8 +430,7 @@ export default function KeuanganView({
                       )}
                     </TableBody>
                   </Table>
-                </TableContainer>
-              )}
+              </TableContainer>
             </CardContent>
           </Card>
         </Grid>

@@ -32,10 +32,18 @@ export async function buildBriefingText(
       const weather = weatherSnapshotFromBmkgForecast(forecast, locationLabel);
       
       const isToday = range === 'hari ini';
-      // BMKG returns 3 days. If 'minggu ini', we just summarize the whole 3 days.
+      const day1 = forecast.days[0] || forecast.current;
+      const day3 = forecast.days[2] || day1;
+      
+      const tMin1 = (day1 as any).minTemperatureC ?? (day1 as any).temperatureC ?? '-';
+      const tMax1 = (day1 as any).maxTemperatureC ?? (day1 as any).temperatureC ?? '-';
+      const cond1 = (day1 as any).dominantCondition ?? (day1 as any).condition ?? '-';
+      
+      const tMax3 = (day3 as any).maxTemperatureC ?? (day3 as any).temperatureC ?? '-';
+      
       weatherContextSummary = isToday 
-        ? `Hari ini: Suhu ${weather.today.tempMin}-${weather.today.tempMax}C, Kondisi dominan: ${weather.today.weatherDesc}.`
-        : `Prakiraan 3 hari ke depan: Suhu berkisar ${weather.today.tempMin}-${weather.today.tempMax}C, Kondisi awal: ${weather.today.weatherDesc}.`;
+        ? `Hari ini: Suhu ${tMin1}-${tMax1}C, Kondisi dominan: ${cond1}.`
+        : `Prakiraan 3 hari ke depan: Suhu berkisar ${tMin1}-${tMax3}C, Kondisi awal: ${cond1}.`;
         
       if (warnings.warnings.length > 0) {
         weatherContextSummary += ` PERINGATAN BMKG: ${warnings.warnings.map(w => w.headline || w.event).join(', ')}.`;

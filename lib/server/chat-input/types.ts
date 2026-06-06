@@ -51,7 +51,28 @@ export interface UtilityCommand {
   name: 'start' | 'help' | 'hubungkan' | 'profil' | 'ringkasan' | 'batch' | 'batal';
 }
 
-export type ParsedChatCommand = FinanceCommand | StockInCommand | StockOutCommand | UtilityCommand;
+export interface CategoryListCommand {
+  type: 'category_list';
+  jenis?: FinanceCommand['jenis'];
+}
+
+export interface CategoryCreateCommand {
+  type: 'category_create';
+  jenis: FinanceCommand['jenis'];
+  name: string;
+  aliases: string[];
+}
+
+export interface CategoryAliasCommand {
+  type: 'category_alias';
+  jenis: FinanceCommand['jenis'];
+  name: string;
+  aliases: string[];
+}
+
+export type CategoryCommand = CategoryListCommand | CategoryCreateCommand | CategoryAliasCommand;
+
+export type ParsedChatCommand = FinanceCommand | StockInCommand | StockOutCommand | UtilityCommand | CategoryCommand;
 
 export type ParseResult =
   | { ok: true; command: ParsedChatCommand }

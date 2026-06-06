@@ -1,4 +1,4 @@
-import type { ParseResult, StockOutCommand, UtilityCommand } from './types';
+import type { FinanceCommand, ParseResult, StockOutCommand, UtilityCommand } from './types';
 
 export const HELP_TEXT = [
   'Panduan Arina Agri Bot',
@@ -18,6 +18,11 @@ export const HELP_TEXT = [
   'Ringkasan:',
   '/ringkasan',
   '/batch',
+  '',
+  'Kategori:',
+  '/kategori pengeluaran',
+  '/kategori_tambah pengeluaran Transport alias bensin,ongkir,kirim',
+  '/kategori_alias pengeluaran Pupuk alias npk,urea',
 ].join('\n');
 
 export const WELCOME_TEXT = [
@@ -45,6 +50,17 @@ function normalizeText(input: string): string {
 
 function commandName(token: string): string {
   return token.replace(/^\//, '').split('@')[0].toLowerCase();
+}
+
+function parseFinanceJenis(value: string): FinanceCommand['jenis'] {
+  return value.toLowerCase() === 'pengeluaran' ? 'pengeluaran' : 'pendapatan';
+}
+
+function splitAliases(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function parseAmount(value: string): number | null {
@@ -80,6 +96,54 @@ function parseUtility(text: string): ParseResult | null {
   }
 
   return null;
+}
+
+function parseCategoryList(text: string): ParseResult | null {
+  const match = text.match(/^\/?kategori(?:@\w+)?(?:\s+(pengeluaran|pemasukan|pendapatan))?$/i);
+  if (!match) return null;
+
+  return {
+    ok: true,
+    command: {
+      type: 'category_list',
+      jenis: match[1] ? parseFinanceJenis(match[1]) : undefined,
+    },
+  };
+}
+
+function parseCategoryCreate(text: string): ParseResult | null {
+  const match = text.match(
+    /^\/?kategori_tambah(?:@\w+)?\s+(pengeluaran|pemasukan|pendapatan)\s+(.+?)(?:\s+alias\s+(.+))?$/i,
+  );
+  if (!match) return null;
+
+  const aliases = splitAliases(match[3] ?? '');
+  return {
+    ok: true,
+    command: {
+      type: 'category_create',
+      jenis: parseFinanceJenis(match[1]),
+      name: match[2].trim(),
+      aliases,
+    },
+  };
+}
+
+function parseCategoryAlias(text: string): ParseResult | null {
+  const match = text.match(
+    /^\/?kategori_alias(?:@\w+)?\s+(pengeluaran|pemasukan|pendapatan)\s+(.+?)\s+alias\s+(.+)$/i,
+  );
+  if (!match) return null;
+
+  return {
+    ok: true,
+    command: {
+      type: 'category_alias',
+      jenis: parseFinanceJenis(match[1]),
+      name: match[2].trim(),
+      aliases: splitAliases(match[3]),
+    },
+  };
 }
 
 function parseFinance(text: string): ParseResult | null {
@@ -175,6 +239,9 @@ function commandSpecificHelp(text: string): ParseResult | null {
     pemasukan: 'Format: /pemasukan 750000 penjualan cabai',
     stok_masuk: 'Format: /stok_masuk 50kg A modal 18000 jual 25000 gudang utama exp 2026-06-20',
     stok_keluar: 'Format: /stok_keluar BATCH-001-A 20kg pasar lokal kirim pagi',
+    kategori: 'Format: /kategori pengeluaran',
+    kategori_tambah: 'Format: /kategori_tambah pengeluaran Transport alias bensin,ongkir,kirim',
+    kategori_alias: 'Format: /kategori_alias pengeluaran Pupuk alias npk,urea',
   };
 
   if (messages[name]) {
@@ -190,6 +257,9 @@ export function parseChatInput(input: string): ParseResult {
 
   return (
     parseUtility(text) ??
+    parseCategoryList(text) ??
+    parseCategoryCreate(text) ??
+    parseCategoryAlias(text) ??
     parseFinance(text) ??
     parseStockIn(text) ??
     parseStockOut(text) ??

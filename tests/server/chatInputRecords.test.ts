@@ -13,6 +13,17 @@ function makeInsertBuilder(result: unknown) {
   };
 }
 
+function makeMissingCategoryBuilder() {
+  return {
+    select: vi.fn(() => ({
+      or: vi.fn(async () => ({
+        data: null,
+        error: { message: 'relation finance_categories does not exist' },
+      })),
+    })),
+  };
+}
+
 // ─── Finance ──────────────────────────────────────────────────────────────────
 
 describe('recordFinanceCommand', () => {
@@ -20,8 +31,9 @@ describe('recordFinanceCommand', () => {
     const transactions = makeInsertBuilder({ id: 'tx-1' });
     const supabase = {
       from: vi.fn((table: string) => {
-        expect(table).toBe('transactions');
-        return transactions;
+        if (table === 'finance_categories') return makeMissingCategoryBuilder();
+        if (table === 'transactions') return transactions;
+        throw new Error(`Unexpected table: ${table}`);
       }),
     } as any;
 
@@ -39,7 +51,8 @@ describe('recordFinanceCommand', () => {
       expect.objectContaining({
         user_id: 'user-1',
         jenis: 'pengeluaran',
-        kategori: 'pupuk',
+        kategori: 'Pupuk',
+        kategori_snapshot: 'Pupuk',
         nominal: 50000,
         keterangan: 'beli npk',
       }),
@@ -48,7 +61,11 @@ describe('recordFinanceCommand', () => {
 
   it('labels pemasukan correctly', async () => {
     const supabase = {
-      from: vi.fn(() => makeInsertBuilder({ id: 'tx-2' })),
+      from: vi.fn((table: string) => {
+        if (table === 'finance_categories') return makeMissingCategoryBuilder();
+        if (table === 'transactions') return makeInsertBuilder({ id: 'tx-2' });
+        throw new Error(`Unexpected table: ${table}`);
+      }),
     } as any;
 
     const result = await recordFinanceCommand(
@@ -62,15 +79,70 @@ describe('recordFinanceCommand', () => {
     expect(result.summary).toMatch(/Rp\s?750\.000/);
   });
 
+  it('stores master category metadata when a matching category alias exists', async () => {
+    const transactions = makeInsertBuilder({ id: 'tx-3' });
+    const categoryOr = vi.fn(async () => ({
+      data: [
+        {
+          id: 'cat-pupuk',
+          user_id: null,
+          jenis: 'pengeluaran',
+          name: 'Pupuk',
+          aliases: ['pupuk', 'pembelian pupuk'],
+          color: '#16a34a',
+          is_default: true,
+        },
+      ],
+      error: null,
+    }));
+
+    const supabase = {
+      from: vi.fn((table: string) => {
+        if (table === 'finance_categories') {
+          return {
+            select: vi.fn(() => ({
+              or: categoryOr,
+            })),
+          };
+        }
+
+        if (table === 'transactions') return transactions;
+        throw new Error(`Unexpected table: ${table}`);
+      }),
+    } as any;
+
+    await recordFinanceCommand(
+      supabase,
+      'user-1',
+      { type: 'finance', jenis: 'pengeluaran', kategori: 'pembelian', nominal: 50000, keterangan: 'pupuk' },
+      new Date('2026-06-03T00:00:00.000Z'),
+    );
+
+    expect(transactions.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category_id: 'cat-pupuk',
+        kategori: 'Pupuk',
+        kategori_snapshot: 'Pupuk',
+        keterangan: 'pupuk',
+      }),
+    );
+  });
+
   it('throws when Supabase returns an error', async () => {
     const supabase = {
-      from: vi.fn(() => ({
-        insert: vi.fn(() => ({
-          select: vi.fn(() => ({
-            single: vi.fn(async () => ({ data: null, error: { message: 'DB error' } })),
-          })),
-        })),
-      })),
+      from: vi.fn((table: string) => {
+        if (table === 'finance_categories') return makeMissingCategoryBuilder();
+        if (table === 'transactions') {
+          return {
+            insert: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(async () => ({ data: null, error: { message: 'DB error' } })),
+              })),
+            })),
+          };
+        }
+        throw new Error(`Unexpected table: ${table}`);
+      }),
     } as any;
 
     await expect(

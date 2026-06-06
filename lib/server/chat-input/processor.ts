@@ -1,10 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { sendDirectNotification } from '@/lib/server/notifications/channels';
+import {
+  addFinanceCategoryAliases,
+  createFinanceCategory,
+  formatFinanceCategoryList,
+  listFinanceCategoriesForUser,
+} from '@/lib/server/finance/categories';
 import { resolveChatUser } from './identity';
 import { HELP_TEXT, WELCOME_TEXT, parseChatInput } from './parser';
 import { recordFinanceCommand, recordStockInCommand, recordStockOutCommand } from './records';
-import type { InboundChatMessage, ProcessChatInputResult, ResolvedChatUser, UtilityCommand } from './types';
+import type { CategoryCommand, InboundChatMessage, ProcessChatInputResult, ResolvedChatUser, UtilityCommand } from './types';
 
 async function sendReply(message: InboundChatMessage, text: string): Promise<void> {
   await sendDirectNotification({
@@ -194,6 +200,34 @@ async function handleUtilityCommand(
   return { success: true, status: 'ignored', replyText };
 }
 
+async function handleCategoryCommand(
+  supabase: SupabaseClient,
+  userId: string,
+  command: CategoryCommand,
+): Promise<{ data: unknown; summary: string }> {
+  if (command.type === 'category_list') {
+    const categories = await listFinanceCategoriesForUser(supabase, userId, command.jenis);
+    return {
+      data: categories,
+      summary: formatFinanceCategoryList(categories, command.jenis),
+    };
+  }
+
+  if (command.type === 'category_create') {
+    const category = await createFinanceCategory(supabase, userId, command);
+    return {
+      data: category,
+      summary: `Kategori ${category.label} berhasil ditambahkan. Alias: ${category.aliases.join(', ') || '-'}`,
+    };
+  }
+
+  const category = await addFinanceCategoryAliases(supabase, userId, command);
+  return {
+    data: category,
+    summary: `Alias kategori ${category.label} berhasil diperbarui: ${category.aliases.join(', ') || '-'}`,
+  };
+}
+
 export async function processInboundChatMessage(
   message: InboundChatMessage,
 ): Promise<ProcessChatInputResult> {
@@ -257,6 +291,12 @@ export async function processInboundChatMessage(
       result = await recordStockInCommand(supabase, user.id, command, now);
     } else if (command.type === 'stock_out') {
       result = await recordStockOutCommand(supabase, user.id, command, now);
+    } else if (
+      command.type === 'category_list' ||
+      command.type === 'category_create' ||
+      command.type === 'category_alias'
+    ) {
+      result = await handleCategoryCommand(supabase, user.id, command);
     } else {
       throw new Error('Command utilitas tidak bisa dicatat sebagai transaksi.');
     }

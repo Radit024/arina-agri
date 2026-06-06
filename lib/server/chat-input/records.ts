@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { resolveFinanceCategoryForCommand } from '@/lib/server/finance/categories';
 import type { FinanceCommand, StockInCommand, StockOutCommand } from './types';
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -30,6 +31,11 @@ function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+function isFinanceCategorySchemaError(error: unknown) {
+  const message = error instanceof Error ? error.message : String((error as { message?: string })?.message ?? error);
+  return /category_id|kategori_snapshot|schema cache|column/i.test(message);
+}
+
 // ─── Finance ──────────────────────────────────────────────────────────────────
 
 export async function recordFinanceCommand(
@@ -38,23 +44,41 @@ export async function recordFinanceCommand(
   command: FinanceCommand,
   now: Date,
 ): Promise<{ data: unknown; summary: string }> {
-  const { data, error } = await supabase
+  const category = await resolveFinanceCategoryForCommand(supabase, userId, command);
+  const legacyPayload = {
+    user_id: userId,
+    jenis: command.jenis,
+    kategori: category.name,
+    nominal: command.nominal,
+    tanggal: toDateString(now),
+    keterangan: command.keterangan,
+  };
+  const categoryPayload = {
+    ...legacyPayload,
+    kategori_snapshot: category.name,
+    ...(category.categoryId ? { category_id: category.categoryId } : {}),
+  };
+
+  let { data, error } = await supabase
     .from('transactions')
-    .insert({
-      user_id: userId,
-      jenis: command.jenis,
-      kategori: command.kategori,
-      nominal: command.nominal,
-      tanggal: toDateString(now),
-      keterangan: command.keterangan,
-    })
+    .insert(categoryPayload)
     .select()
     .single();
+
+  if (error && isFinanceCategorySchemaError(error)) {
+    const fallbackResult = await supabase
+      .from('transactions')
+      .insert(legacyPayload)
+      .select()
+      .single();
+    data = fallbackResult.data;
+    error = fallbackResult.error;
+  }
 
   if (error) throw new Error(error.message);
 
   const label = command.jenis === 'pendapatan' ? 'Pemasukan' : 'Pengeluaran';
-  const kategoriLabel = command.kategori.charAt(0).toUpperCase() + command.kategori.slice(1);
+  const kategoriLabel = category.name;
   const keteranganPart = command.keterangan ? ` (${command.keterangan})` : '';
 
   return {

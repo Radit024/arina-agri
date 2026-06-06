@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { useTransactions } from '@/hooks/useTransactions';
 import type { ApiTransaction } from '@/lib/api';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { buildFinanceExpensePieData } from './financeCategoryChart';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
@@ -380,45 +381,73 @@ export function useKeuanganController() {
   const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
 
   // Pie chart data
-  const normalizeCategory = (value: string) => value.trim().toLowerCase();
-  const expenseStats = useMemo(
+  const expenseCategoryDefinitions = useMemo(
+    () => [
+      {
+        id: 'pesticide',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.pesticide'),
+        aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide', 'obat tanaman'],
+        color: theme.palette.error.main,
+      },
+      {
+        id: 'fertilizer',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.fertilizer'),
+        aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer', 'npk', 'urea', 'pembelian pupuk'],
+        color: theme.palette.success.main,
+      },
+      {
+        id: 'labor',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.labor'),
+        aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor', 'gaji', 'upah'],
+        color: theme.palette.info.main,
+      },
+      {
+        id: 'irrigation',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.irrigation'),
+        aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water', 'air', 'pompa air'],
+        color: theme.palette.primary.main,
+      },
+      {
+        id: 'tools',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.tools'),
+        aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools', 'alat', 'peralatan'],
+        color: theme.palette.warning.main,
+      },
+      {
+        id: 'other',
+        jenis: 'pengeluaran' as const,
+        label: t('categories.other'),
+        aliases: [t('categories.other'), 'Lainnya', 'Other'],
+        color: theme.palette.text.secondary,
+      },
+    ],
+    [t, theme]
+  );
+
+  const expensePie = useMemo(
     () =>
-      [
-        { id: 'pesticide', label: t('categories.pesticide'), aliases: [t('categories.pesticide'), 'Pestisida', 'Pesticide'], color: theme.palette.error.main },
-        { id: 'fertilizer', label: t('categories.fertilizer'), aliases: [t('categories.fertilizer'), 'Pupuk', 'Fertilizer'], color: theme.palette.success.main },
-        { id: 'labor', label: t('categories.labor'), aliases: [t('categories.labor'), 'Tenaga Kerja', 'Labor'], color: theme.palette.info.main },
-        { id: 'irrigation', label: t('categories.irrigation'), aliases: [t('categories.irrigation'), 'Irigasi & Air', 'Irrigation & Water'], color: theme.palette.primary.main },
-        { id: 'tools', label: t('categories.tools'), aliases: [t('categories.tools'), 'Alat Tani', 'Farm Tools'], color: theme.palette.warning.main },
-        { id: 'other', label: t('categories.other'), aliases: [t('categories.other'), 'Lainnya', 'Other'], color: theme.palette.text.secondary },
-      ]
-        .map((category) => {
-          const aliases = category.aliases.map(normalizeCategory);
-          let value = 0;
-          monthFilteredTransactions.forEach((tx) => {
-            if (tx.jenis === 'pengeluaran' && aliases.includes(normalizeCategory(tx.kategori))) {
-              value += tx.nominal;
-            }
-          });
-
-          return {
-            id: category.id,
-            value,
-            label: category.label,
-            color: category.color,
-          };
-        })
-        .filter((item) => item.value > 0),
-    [t, monthFilteredTransactions, theme]
+      buildFinanceExpensePieData({
+        transactions: monthFilteredTransactions,
+        categories: expenseCategoryDefinitions,
+        customColors: [
+          theme.palette.secondary.main,
+          theme.palette.success.dark,
+          theme.palette.info.dark,
+          theme.palette.warning.dark,
+          theme.palette.error.dark,
+        ],
+        emptyLabel: t('distribution.empty'),
+      }),
+    [expenseCategoryDefinitions, monthFilteredTransactions, t, theme]
   );
 
-  const finalPieData = useMemo(
-    () => (expenseStats.length > 0 ? expenseStats : [{ id: 'Kosong', value: 1, label: t('distribution.empty'), color: '#e2e8f0' }]),
-    [expenseStats, t]
-  );
-  const finalPieColors = useMemo(
-    () => (expenseStats.length > 0 ? expenseStats.map((e) => e.color) : ['#e2e8f0']),
-    [expenseStats]
-  );
+  const finalPieData = expensePie.data;
+  const finalPieColors = expensePie.colors;
 
   const bulanOptions = useMemo(
     () =>
@@ -504,7 +533,6 @@ export function useKeuanganController() {
     formatAngka,
     biayaTetapDisplayValue,
     hargaJualDisplayValue,
-    expenseStats,
     finalPieData,
     finalPieColors,
     bulanOptions,

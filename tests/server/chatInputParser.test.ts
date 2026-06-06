@@ -216,4 +216,31 @@ describe('parseChatInput', () => {
     expect(parseChatInput('/ringkasan')).toEqual({ ok: true, command: { type: 'utility', name: 'ringkasan' } });
     expect(parseChatInput('/batch')).toEqual({ ok: true, command: { type: 'utility', name: 'batch' } });
   });
+
+  it('parses finance category management commands', () => {
+    expect(parseChatInput('/kategori pengeluaran')).toEqual({
+      ok: true,
+      command: { type: 'category_list', jenis: 'pengeluaran' },
+    });
+
+    expect(parseChatInput('/kategori_tambah pengeluaran Transport alias bensin,ongkir,kirim')).toEqual({
+      ok: true,
+      command: {
+        type: 'category_create',
+        jenis: 'pengeluaran',
+        name: 'Transport',
+        aliases: ['bensin', 'ongkir', 'kirim'],
+      },
+    });
+
+    expect(parseChatInput('/kategori_alias pengeluaran Pupuk alias npk,urea')).toEqual({
+      ok: true,
+      command: {
+        type: 'category_alias',
+        jenis: 'pengeluaran',
+        name: 'Pupuk',
+        aliases: ['npk', 'urea'],
+      },
+    });
+  });
 });

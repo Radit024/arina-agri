@@ -132,6 +132,16 @@ describe('processInboundChatMessage', () => {
     const supabase = {
       from: vi.fn((table: string) => {
         if (table === 'profiles') return makeProfileMock({ id: 'user-1', full_name: 'Budi' });
+        if (table === 'finance_categories') {
+          return {
+            select: vi.fn(() => ({
+              or: vi.fn(async () => ({
+                data: null,
+                error: { message: 'relation finance_categories does not exist' },
+              })),
+            })),
+          };
+        }
         if (table === 'inbound_message_logs') {
           return {
             insert: vi.fn(() => ({ select: vi.fn(() => ({ single: logInsertSingle })) })),

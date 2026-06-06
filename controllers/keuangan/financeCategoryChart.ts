@@ -1,0 +1,78 @@
+import {
+  formatCustomFinanceCategoryLabel,
+  resolveFinanceCategory,
+  type FinanceCategoryDefinition,
+} from '@/lib/finance/categories';
+
+interface FinanceChartTransaction {
+  jenis: 'pengeluaran' | 'pendapatan';
+  kategori: string;
+  keterangan?: string;
+  nominal: number;
+}
+
+interface FinanceChartCategory extends FinanceCategoryDefinition {
+  color: string;
+}
+
+interface BuildFinanceExpensePieDataInput {
+  transactions: FinanceChartTransaction[];
+  categories: FinanceChartCategory[];
+  customColors: string[];
+  emptyLabel?: string;
+}
+
+export interface FinanceExpensePiePoint {
+  id: string;
+  value: number;
+  label: string;
+  color: string;
+}
+
+export function buildFinanceExpensePieData({
+  transactions,
+  categories,
+  customColors,
+  emptyLabel = 'Kosong',
+}: BuildFinanceExpensePieDataInput): { data: FinanceExpensePiePoint[]; colors: string[] } {
+  const totals = new Map<string, FinanceExpensePiePoint>();
+  let customColorIndex = 0;
+
+  for (const transaction of transactions) {
+    if (transaction.jenis !== 'pengeluaran') continue;
+
+    const matched = resolveFinanceCategory({
+      jenis: 'pengeluaran',
+      kategori: transaction.kategori,
+      keterangan: transaction.keterangan,
+      categories,
+    });
+    const label = matched?.label ?? formatCustomFinanceCategoryLabel(transaction.kategori);
+    const color = matched?.color ?? customColors[customColorIndex % customColors.length] ?? '#0f766e';
+
+    if (!matched && !totals.has(label)) {
+      customColorIndex += 1;
+    }
+
+    const existing = totals.get(label);
+    totals.set(label, {
+      id: label,
+      value: (existing?.value ?? 0) + transaction.nominal,
+      label,
+      color: existing?.color ?? color,
+    });
+  }
+
+  const data = Array.from(totals.values()).filter((item) => item.value > 0);
+  if (data.length === 0) {
+    return {
+      data: [{ id: emptyLabel, value: 1, label: emptyLabel, color: '#e2e8f0' }],
+      colors: ['#e2e8f0'],
+    };
+  }
+
+  return {
+    data,
+    colors: data.map((item) => item.color),
+  };
+}

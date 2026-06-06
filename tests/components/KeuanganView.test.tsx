@@ -190,7 +190,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     formatAngka: (value) => String(value),
     biayaTetapDisplayValue: '',
     hargaJualDisplayValue: '',
-    expenseStats: [],
     finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }],
     finalPieColors: ['#e2e8f0'],
     bulanOptions: ['2026-06'],

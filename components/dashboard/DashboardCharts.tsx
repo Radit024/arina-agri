@@ -126,7 +126,7 @@ export function KategoriChart({ data }: KategoriChartProps) {
     if (c.includes('tenaga') || c.includes('labor')) return theme.palette.info.main;
     if (c.includes('irigasi') || c.includes('irrigation')) return theme.palette.primary.main;
     if (c.includes('alat') || c.includes('tools')) return theme.palette.warning.main;
-    return theme.palette.text.secondary;
+    return theme.palette.grey[400];
   };
 
   const totalPengeluaran = pieDataTotal(data);

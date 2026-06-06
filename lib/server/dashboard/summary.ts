@@ -149,12 +149,14 @@ export async function getDashboardSummary({
 
   // Auto-sync weather location if it is set in the client request
   if (adm4) {
-    supabase
-      .from('notification_schedules')
-      .select('weather_adm4, weather_location_label')
-      .eq('user_id', userId)
-      .maybeSingle()
-      .then(async ({ data: existing, error: fetchError }) => {
+    const syncLocation = async () => {
+      try {
+        const { data: existing, error: fetchError } = await supabase
+          .from('notification_schedules')
+          .select('weather_adm4, weather_location_label')
+          .eq('user_id', userId)
+          .maybeSingle();
+
         if (fetchError) {
           console.error('[getDashboardSummary] Error fetching existing schedule for location sync:', fetchError);
           return;
@@ -195,10 +197,12 @@ export async function getDashboardSummary({
             console.log('[getDashboardSummary] Updated weather location in DB:', locationLabel);
           }
         }
-      })
-      .catch((err) => {
+      } catch (err: unknown) {
         console.error('[getDashboardSummary] Unexpected location sync error:', err);
-      });
+      }
+    };
+
+    void syncLocation();
   }
 
   const dateWindow = getDashboardDateWindow(now);

@@ -205,8 +205,8 @@ async function handleUtilityCommand(
       replyText = [
         'Silakan pilih rentang waktu laporan cerdas Anda:',
         '',
-        '👉 /briefing hari ini',
-        '👉 /briefing minggu ini',
+        '/briefing hari ini',
+        '/briefing minggu ini',
       ].join('\n');
     } else {
       const range = command.args as 'hari ini' | 'minggu ini';

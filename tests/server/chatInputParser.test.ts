@@ -215,6 +215,20 @@ describe('parseChatInput', () => {
     expect(parseChatInput('/profil')).toEqual({ ok: true, command: { type: 'utility', name: 'profil' } });
     expect(parseChatInput('/ringkasan')).toEqual({ ok: true, command: { type: 'utility', name: 'ringkasan' } });
     expect(parseChatInput('/batch')).toEqual({ ok: true, command: { type: 'utility', name: 'batch' } });
+    expect(parseChatInput('/briefing')).toEqual({ ok: true, command: { type: 'utility', name: 'briefing', args: '' } });
+  });
+
+  it('parses briefing with arguments', () => {
+    expect(parseChatInput('/briefing hari ini')).toEqual({ ok: true, command: { type: 'utility', name: 'briefing', args: 'hari ini' } });
+    expect(parseChatInput('/briefing MINGGU inI')).toEqual({ ok: true, command: { type: 'utility', name: 'briefing', args: 'minggu ini' } });
+  });
+
+  it('rejects briefing with invalid arguments', () => {
+    const result = parseChatInput('/briefing besok');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('Format briefing tidak dikenali');
+    }
   });
 
   it('parses finance category management commands', () => {

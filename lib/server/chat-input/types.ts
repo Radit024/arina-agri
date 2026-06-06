@@ -48,7 +48,8 @@ export interface StockOutCommand {
 
 export interface UtilityCommand {
   type: 'utility';
-  name: 'start' | 'help' | 'hubungkan' | 'profil' | 'ringkasan' | 'batch' | 'batal';
+  name: 'start' | 'help' | 'hubungkan' | 'profil' | 'ringkasan' | 'batch' | 'batal' | 'briefing';
+  args?: string;
 }
 
 export interface CategoryListCommand {

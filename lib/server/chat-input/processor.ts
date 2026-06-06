@@ -10,6 +10,7 @@ import {
 import { resolveChatUser } from './identity';
 import { HELP_TEXT, WELCOME_TEXT, parseChatInput } from './parser';
 import { recordFinanceCommand, recordStockInCommand, recordStockOutCommand } from './records';
+import { buildBriefingText } from './briefing';
 import type { CategoryCommand, InboundChatMessage, ProcessChatInputResult, ResolvedChatUser, UtilityCommand } from './types';
 
 async function sendReply(message: InboundChatMessage, text: string): Promise<void> {
@@ -192,6 +193,27 @@ async function handleUtilityCommand(
         replyText = await buildBatchText(supabase, user.id);
       } catch (error) {
         replyText = `Gagal memuat batch: ${error instanceof Error ? error.message : 'terjadi kesalahan.'}`;
+      }
+    }
+  }
+
+  if (command.name === 'briefing') {
+    const user = await resolveUtilityUser(supabase, message);
+    if (!user) {
+      replyText = buildConnectionText(message);
+    } else if (!command.args) {
+      replyText = [
+        'Silakan pilih rentang waktu laporan cerdas Anda:',
+        '',
+        '👉 /briefing hari ini',
+        '👉 /briefing minggu ini',
+      ].join('\n');
+    } else {
+      const range = command.args as 'hari ini' | 'minggu ini';
+      try {
+        replyText = await buildBriefingText(supabase, user.id, user.displayName, range, now);
+      } catch (error) {
+        replyText = `Gagal memuat briefing: ${error instanceof Error ? error.message : 'terjadi kesalahan.'}`;
       }
     }
   }

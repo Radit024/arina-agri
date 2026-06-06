@@ -23,6 +23,9 @@ export const HELP_TEXT = [
   '/kategori pengeluaran',
   '/kategori_tambah pengeluaran Transport alias bensin,ongkir,kirim',
   '/kategori_alias pengeluaran Pupuk alias npk,urea',
+  '',
+  'Laporan AI:',
+  '/briefing',
 ].join('\n');
 
 export const WELCOME_TEXT = [
@@ -42,6 +45,7 @@ const UTILITY_COMMANDS = new Set<UtilityCommand['name']>([
   'ringkasan',
   'batch',
   'batal',
+  'briefing',
 ]);
 
 function normalizeText(input: string): string {
@@ -85,14 +89,29 @@ function normalizeDestination(input: string): StockOutCommand['tujuan'] {
 }
 
 function parseUtility(text: string): ParseResult | null {
-  const firstToken = text.split(' ')[0];
+  const tokens = text.split(' ');
+  const firstToken = tokens[0];
   const name = commandName(firstToken);
 
-  if (UTILITY_COMMANDS.has(name as UtilityCommand['name']) && text.split(' ').length === 1) {
-    return {
-      ok: true,
-      command: { type: 'utility', name: name as UtilityCommand['name'] },
-    };
+  if (UTILITY_COMMANDS.has(name as UtilityCommand['name'])) {
+    if (name === 'briefing') {
+      const args = tokens.slice(1).join(' ').toLowerCase();
+      if (!args || args === 'hari ini' || args === 'minggu ini') {
+        return {
+          ok: true,
+          command: { type: 'utility', name: name as UtilityCommand['name'], args },
+        };
+      }
+      return {
+        ok: false,
+        message: 'Format briefing tidak dikenali. Silakan gunakan /briefing hari ini atau /briefing minggu ini',
+      };
+    } else if (tokens.length === 1) {
+      return {
+        ok: true,
+        command: { type: 'utility', name: name as UtilityCommand['name'] },
+      };
+    }
   }
 
   return null;

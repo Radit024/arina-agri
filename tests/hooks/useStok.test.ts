@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLocalSummary } from '@/hooks/useStok';
+import { computeLocalSummary, computeExpiryDate, computeStockOutTotal } from '@/hooks/useStok';
 import type { ApiHarvestBatch } from '@/lib/api';
 
 const mockBatch = (overrides: Partial<ApiHarvestBatch>): ApiHarvestBatch => ({
@@ -65,5 +65,36 @@ describe('computeLocalSummary', () => {
     expect(result.totalStokSiapJual).toBe(0);
     expect(result.estimasiNilaiStok).toBe(0);
     expect(result.batchHampirKadaluarsa).toBe(0);
+  });
+});
+
+describe('computeExpiryDate', () => {
+  it('mengembalikan tanggal +14 hari dari tanggal panen', () => {
+    const result = computeExpiryDate('2026-06-09');
+    expect(result).toBe('2026-06-23');
+  });
+
+  it('menangani akhir bulan dengan benar', () => {
+    const result = computeExpiryDate('2026-06-20');
+    expect(result).toBe('2026-07-04');
+  });
+
+  it('menangani akhir tahun dengan benar', () => {
+    const result = computeExpiryDate('2026-12-25');
+    expect(result).toBe('2027-01-08');
+  });
+});
+
+describe('computeStockOutTotal', () => {
+  it('menghitung total transaksi dengan benar', () => {
+    expect(computeStockOutTotal(350, 42000)).toBe(14_700_000);
+  });
+
+  it('mengembalikan 0 jika berat 0', () => {
+    expect(computeStockOutTotal(0, 45000)).toBe(0);
+  });
+
+  it('mengembalikan 0 jika harga 0', () => {
+    expect(computeStockOutTotal(100, 0)).toBe(0);
   });
 });

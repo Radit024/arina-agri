@@ -17,6 +17,8 @@ export const stockOutSchema = z.object({
   tujuan: z.enum(['Pasar Lokal', 'Distributor', 'Restoran', 'Lainnya']),
   tanggal: z.string(),
   catatan: z.string().optional(),
+  namaPembeli: z.string().optional(),
+  hargaRealisasi: z.coerce.number().min(0).optional(),
 });
 
 export type BatchFormInput = z.input<typeof batchSchema>;

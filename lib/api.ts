@@ -518,7 +518,7 @@ export const stokApi = {
       tipe: 'masuk',
       berat: payload.beratMasuk,
       tanggal: payload.tanggalPanen,
-      catatan: 'Panen awal masuk gudang',
+      catatan: 'Stok awal masuk gudang',
     });
 
     return mapBatch(data);

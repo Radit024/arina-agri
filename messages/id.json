@@ -21,7 +21,7 @@
     "cuaca": "Cuaca",
     "ensiklopedia": "AI Chat",
     "kalender": "Smart Kalender",
-    "stok": "Manajemen Stok Panen",
+    "stok": "Manajemen Stok",
     "kabarPasar": "Berita",
     "guide": "Panduan",
     "pengaturan": "Pengaturan",
@@ -72,7 +72,7 @@
         },
         "operations": {
           "title": "Kelola stok dan jadwal kerja",
-          "body": "Stok membantu memantau batch panen dan mutasi keluar masuk. Kalender membantu menyusun jadwal pemupukan, penyemprotan, irigasi, dan panen."
+          "body": "Stok membantu memantau batch stok dan mutasi keluar masuk. Kalender membantu menyusun jadwal pemupukan, penyemprotan, irigasi, dan kegiatan lapangan."
         },
         "insights": {
           "title": "Ambil keputusan dengan informasi",
@@ -107,15 +107,15 @@
       "stock": {
         "eyebrow": "Panduan fitur",
         "title": "Mulai memakai Stok",
-        "intro": "Halaman Stok membantu melacak hasil panen dari batch masuk sampai barang keluar.",
+        "intro": "Halaman Stok membantu melacak stok dari batch masuk sampai barang keluar.",
         "steps": {
           "overview": {
             "title": "Lihat stok siap jual",
             "body": "Kartu ringkasan menunjukkan stok tersedia, stok terjual, estimasi nilai, dan batch yang perlu diprioritaskan."
           },
           "batch": {
-            "title": "Input batch panen",
-            "body": "Tambahkan batch setiap kali ada panen baru dengan tanggal, grade, berat, lokasi simpan, dan estimasi kadaluarsa."
+            "title": "Tambah batch baru",
+            "body": "Tambahkan batch baru dengan tanggal, grade, berat, lokasi simpan, dan estimasi kadaluarsa."
           },
           "mutation": {
             "title": "Catat barang keluar",
@@ -226,8 +226,8 @@
       "welcome": "Selamat datang, {name} ",
       "profile": "{commodity} · {area}",
       "quickActions": {
-        "title": "Manajemen Stok Panen",
-        "description": "Pantau stok dan batch panen terbaru.",
+        "title": "Manajemen Stok",
+        "description": "Pantau stok dan batch terbaru.",
         "action": "Buka Stok"
       },
       "kpi": {
@@ -802,14 +802,14 @@
     }
   },
   "Stock": {
-    "title": "Manajemen Stok Panen",
-    "subtitle": "{commodity} — {location}",
-    "commodity": "Cabai Rawit",
+    "title": "Manajemen Stok",
+    "subtitle": "{location}",
+    "commodity": "",
     "location": "Lokasi belum dipilih",
     "offlineMode": "Mode Offline",
     "buttons": {
       "stockOut": "Catat Keluar",
-      "addBatch": "Input Panen"
+      "addBatch": "Tambah Batch"
     },
     "kpi": {
       "ready": "Total Stok Siap Jual",
@@ -826,7 +826,7 @@
     },
     "table": {
       "batchId": "ID Batch",
-      "harvestDate": "Tgl Panen",
+      "harvestDate": "Tgl Masuk",
       "grade": "Grade",
       "initialWeight": "Berat Awal",
       "remainingWeight": "Stok Tersisa",
@@ -836,8 +836,8 @@
       "status": "Status",
       "action": "Aksi",
       "loading": "Memuat data...",
-      "empty": "Belum ada data batch panen.",
-      "addFirst": "Input Panen Pertama"
+      "empty": "Belum ada data batch stok.",
+      "addFirst": "Tambah Batch Pertama"
     },
     "mutationTable": {
       "date": "Tanggal",
@@ -858,11 +858,11 @@
       "empty": "Habis"
     },
     "dialogs": {
-      "addTitle": "Input Batch Panen Baru",
+      "addTitle": "Tambah Batch Baru",
       "outTitle": "Catat Keluar Stok",
       "fields": {
-        "date": "Tanggal Panen",
-        "grade": "Grade Cabai",
+        "date": "Tanggal Masuk",
+        "grade": "Grade",
         "weight": "Berat Masuk (kg)",
         "location": "Lokasi Penyimpanan",
         "cost": "Harga Modal/kg (Rp)",

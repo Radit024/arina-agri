@@ -16,7 +16,7 @@ vi.mock('next-intl', () => ({
     const labels: Record<string, string> = {
       dashboard: 'Dashboard',
       keuangan: 'Pencatatan Keuangan',
-      stok: 'Manajemen Stok Panen',
+      stok: 'Manajemen Stok',
       cuaca: 'Cuaca',
       kabarPasar: 'Berita',
       ensiklopedia: 'AI Chat',

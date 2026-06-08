@@ -556,7 +556,7 @@ export default function StokView({
         )}
       </Card>
 
-      {/* ─── Dialog / Bottom Sheet: Input Batch Panen ─── */}
+      {/* ─── Dialog / Bottom Sheet: Tambah Batch ─── */}
       {isMobile ? (
         <SwipeableDrawer
           anchor="bottom"
@@ -654,7 +654,7 @@ export default function StokView({
                   )}
                   <Grid size={{ xs: 12 }}>
                     <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal panen" slotProps={{ inputLabel: { shrink: true } }} />
+                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal masuk" slotProps={{ inputLabel: { shrink: true } }} />
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
@@ -737,7 +737,7 @@ export default function StokView({
                 )}
                 <Grid size={{ xs: 12 }}>
                   <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal panen" slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal masuk" slotProps={{ inputLabel: { shrink: true } }} />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12 }}>

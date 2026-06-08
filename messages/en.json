@@ -21,7 +21,7 @@
     "cuaca": "Weather",
     "ensiklopedia": "AI Chat",
     "kalender": "Smart Calendar",
-    "stok": "Harvest Stock",
+    "stok": "Stock",
     "kabarPasar": "Market News",
     "guide": "Guide",
     "pengaturan": "Settings",
@@ -72,7 +72,7 @@
         },
         "operations": {
           "title": "Manage stock and work schedules",
-          "body": "Stock tracks harvest batches and movements. Calendar helps plan fertilizing, spraying, irrigation, and harvest work."
+          "body": "Stock tracks batches and movements. Calendar helps plan fertilizing, spraying, irrigation, and field work."
         },
         "insights": {
           "title": "Make decisions with information",
@@ -107,15 +107,15 @@
       "stock": {
         "eyebrow": "Feature guide",
         "title": "Start using Stock",
-        "intro": "Stock helps track harvest from inbound batch to outbound movement.",
+        "intro": "Stock helps track items from inbound batch to outbound movement.",
         "steps": {
           "overview": {
             "title": "Review ready stock",
             "body": "Summary cards show available stock, sold stock, estimated value, and batches that need priority."
           },
           "batch": {
-            "title": "Input harvest batches",
-            "body": "Add a batch for every harvest with date, grade, weight, storage location, and expiry estimate."
+            "title": "Add new batch",
+            "body": "Add a new batch with date, grade, weight, storage location, and expiry estimate."
           },
           "mutation": {
             "title": "Record stock out",
@@ -226,8 +226,8 @@
       "welcome": "Welcome, Mr. {name} 👋",
       "profile": "{commodity} · {area}",
       "quickActions": {
-        "title": "Harvest Stock Management",
-        "description": "Track stock and the latest harvest batches.",
+        "title": "Stock Management",
+        "description": "Track stock and the latest batches.",
         "action": "Open Stock"
       },
       "kpi": {
@@ -802,14 +802,14 @@
     }
   },
   "Stock": {
-    "title": "Harvest Stock Management",
-    "subtitle": "{commodity} — {location}",
-    "commodity": "Cayenne Pepper",
+    "title": "Stock Management",
+    "subtitle": "{location}",
+    "commodity": "",
     "location": "Location not selected",
     "offlineMode": "Offline Mode",
     "buttons": {
       "stockOut": "Record Out",
-      "addBatch": "Input Harvest"
+      "addBatch": "Add Batch"
     },
     "kpi": {
       "ready": "Total Ready Stock",
@@ -826,7 +826,7 @@
     },
     "table": {
       "batchId": "Batch ID",
-      "harvestDate": "Harvest Date",
+      "harvestDate": "Date In",
       "grade": "Grade",
       "initialWeight": "Initial Weight",
       "remainingWeight": "Remaining Stock",
@@ -836,8 +836,8 @@
       "status": "Status",
       "action": "Action",
       "loading": "Loading data...",
-      "empty": "No harvest batch data yet.",
-      "addFirst": "Input First Harvest"
+      "empty": "No batch data yet.",
+      "addFirst": "Add First Batch"
     },
     "mutationTable": {
       "date": "Date",
@@ -858,11 +858,11 @@
       "empty": "Empty"
     },
     "dialogs": {
-      "addTitle": "Input New Harvest Batch",
+      "addTitle": "Add New Batch",
       "outTitle": "Record Stock Out",
       "fields": {
-        "date": "Harvest Date",
-        "grade": "Chili Grade",
+        "date": "Date In",
+        "grade": "Grade",
         "weight": "Inbound Weight (kg)",
         "location": "Storage Location",
         "cost": "Cost Price/kg (Rp)",

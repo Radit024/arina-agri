@@ -23,9 +23,9 @@ const MOCK_BATCHES: ApiHarvestBatch[] = [
 ];
 
 const MOCK_MUTATIONS: ApiStockMutation[] = [
-  { _id: 'm1', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'masuk', berat: 400, tanggal: '2026-04-12', catatan: 'Panen awal masuk gudang', createdAt: '2026-04-12T06:00:00Z' },
+  { _id: 'm1', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'masuk', berat: 400, tanggal: '2026-04-12', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-12T06:00:00Z' },
   { _id: 'm2', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'keluar', berat: 80, tujuan: 'Pasar Lokal', tanggal: '2026-04-14', catatan: 'Jual ke pasar pagi', createdAt: '2026-04-14T08:00:00Z' },
-  { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Panen awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
+  { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
 ];
 
 export function computeExpiryDate(tanggalPanen: string): string {

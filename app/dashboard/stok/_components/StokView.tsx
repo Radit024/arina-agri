@@ -30,6 +30,7 @@ import Tab from '@mui/material/Tab';
 import InputAdornment from '@mui/material/InputAdornment';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import Autocomplete from '@mui/material/Autocomplete';
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -41,7 +42,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
-import type { ApiHarvestBatch, ApiStockMutation, StokSummary } from '@/lib/api';
+import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import type {
   BatchFormInput,
@@ -87,6 +88,37 @@ const GradeChip = ({ grade, theme, t }: { grade: 'A' | 'B' | 'C'; theme: Theme; 
   );
 };
 
+// ─── Batch Info Card (Stock Out form) ────────────────────────────
+const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: Theme; t: StockTranslator }) => (
+  <Box sx={{
+    p: 1.5,
+    borderRadius: 2,
+    bgcolor: softBg(theme, 'info', 0.08),
+    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 1,
+    alignItems: 'center',
+  }}>
+    <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 800, color: 'text.primary' }}>
+      {batch.batchCode}
+    </Typography>
+    <GradeChip grade={batch.grade} theme={theme} t={t} />
+    <StatusChip status={batch.status} theme={theme} t={t} />
+    <Box sx={{ width: '100%', display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
+      <Typography variant="caption" color="text.secondary">
+        Sisa: <strong>{batch.stokTersisa} kg</strong>
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        Expired: <strong>{formatDateShort(batch.estimasiKadaluarsa)}</strong>
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        Harga Rencana: <strong>{formatRupiah(batch.hargaJual)}/kg</strong>
+      </Typography>
+    </Box>
+  </Box>
+);
+
 interface StokViewProps {
   activeBatches: ApiHarvestBatch[];
   alertBatches: ApiHarvestBatch[];
@@ -118,6 +150,11 @@ interface StokViewProps {
   summary: StokSummary;
   tab: number;
   weatherRiskNote: string;
+  buyers: ApiBuyer[];
+  stockOutSelectedBatch: ApiHarvestBatch | null;
+  batchEstimatedValue: number;
+  stockOutTotal: number;
+  stockOutHargaDiff: number | null;
 }
 
 export default function StokView({
@@ -151,6 +188,11 @@ export default function StokView({
   summary,
   tab,
   weatherRiskNote,
+  buyers,
+  stockOutSelectedBatch,
+  batchEstimatedValue,
+  stockOutTotal,
+  stockOutHargaDiff,
 }: StokViewProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -601,9 +643,18 @@ export default function StokView({
                       <TextField {...field} type="number" label={t('dialogs.fields.price')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> }, htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
                     )} />
                   </Grid>
+                  {batchEstimatedValue > 0 && (
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ px: 1.5, py: 1, bgcolor: softBg(theme, 'success', 0.08), borderRadius: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
+                        <Typography variant="caption" color="text.secondary">
+                          📦 Estimasi Nilai: <strong style={{ color: softText(theme, 'success') }}>{formatRupiah(batchEstimatedValue)}</strong>
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  )}
                   <Grid size={{ xs: 12 }}>
                     <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} slotProps={{ inputLabel: { shrink: true } }} />
+                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal panen" slotProps={{ inputLabel: { shrink: true } }} />
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
@@ -675,9 +726,18 @@ export default function StokView({
                     <TextField {...field} type="number" label={t('dialogs.fields.price')} fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> } }} />
                   )} />
                 </Grid>
+                {batchEstimatedValue > 0 && (
+                  <Grid size={{ xs: 12 }}>
+                    <Box sx={{ px: 1.5, py: 1, bgcolor: softBg(theme, 'success', 0.08), borderRadius: 2, border: `1px solid ${alpha(theme.palette.success.main, 0.2)}` }}>
+                      <Typography variant="caption" color="text.secondary">
+                        📦 Estimasi Nilai: <strong style={{ color: softText(theme, 'success') }}>{formatRupiah(batchEstimatedValue)}</strong>
+                      </Typography>
+                    </Box>
+                  </Grid>
+                )}
                 <Grid size={{ xs: 12 }}>
                   <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal panen" slotProps={{ inputLabel: { shrink: true } }} />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -749,8 +809,31 @@ export default function StokView({
                     </Select>
                   </FormControl>
                 )} />
+                {stockOutSelectedBatch && (
+                  <BatchInfoCard batch={stockOutSelectedBatch} theme={theme} t={t} />
+                )}
                 <Controller name="berat" control={stockOutForm.control} render={({ field }) => (
                   <TextField {...field} type="number" label={t('dialogs.fields.outWeight')} fullWidth error={!!stockOutForm.formState.errors.berat} helperText={stockOutForm.formState.errors.berat?.message} slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }} />
+                )} />
+                <Controller name="hargaRealisasi" control={stockOutForm.control} render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Harga Realisasi (opsional)"
+                    fullWidth
+                    slotProps={{
+                      input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> },
+                      htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' },
+                      formHelperText: { sx: { color: stockOutHargaDiff === null || stockOutHargaDiff === 0 ? 'text.secondary' : stockOutHargaDiff < 0 ? softText(theme, 'warning') : softText(theme, 'success') } },
+                    }}
+                    helperText={
+                      stockOutHargaDiff !== null && stockOutHargaDiff !== 0
+                        ? stockOutHargaDiff < 0
+                          ? `↓ ${formatRupiah(Math.abs(stockOutHargaDiff))}/kg di bawah harga rencana`
+                          : `↑ ${formatRupiah(stockOutHargaDiff)}/kg di atas harga rencana`
+                        : 'Terisi otomatis dari harga rencana batch'
+                    }
+                  />
                 )} />
                 <Controller name="tujuan" control={stockOutForm.control} render={({ field }) => (
                   <FormControl fullWidth>
@@ -763,12 +846,31 @@ export default function StokView({
                     </Select>
                   </FormControl>
                 )} />
+                <Controller name="namaPembeli" control={stockOutForm.control} render={({ field }) => (
+                  <Autocomplete
+                    freeSolo
+                    options={buyers.map((b) => b.nama)}
+                    value={field.value ?? ''}
+                    onChange={(_, newValue) => field.onChange(typeof newValue === 'string' ? newValue : (newValue ?? ''))}
+                    onInputChange={(_, newValue) => field.onChange(newValue)}
+                    renderInput={(params) => (
+                      <TextField {...params} label="Nama Pembeli (opsional)" helperText="Pilih dari daftar atau ketik nama baru" />
+                    )}
+                  />
+                )} />
                 <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
                   <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
                 )} />
                 <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
                   <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
                 )} />
+                {stockOutTotal > 0 && (
+                  <Box sx={{ px: 1.5, py: 1, bgcolor: softBg(theme, 'warning', 0.08), borderRadius: 2, border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}` }}>
+                    <Typography variant="caption" color="text.secondary">
+                      💰 Total Transaksi: <strong style={{ color: softText(theme, 'warning') }}>{formatRupiah(stockOutTotal)}</strong>
+                    </Typography>
+                  </Box>
+                )}
                 <Box sx={{ display: 'flex', gap: 2, pb: 2, mt: 1 }}>
                   <Button variant="outlined" color="inherit" onClick={() => setStockOutDialogOpen(false)} sx={{ flex: 1, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 600 }}>{t('dialogs.buttons.cancel')}</Button>
                   <Button type="submit" variant="contained" color="error" sx={{ flex: 2, borderRadius: 2, height: 44, textTransform: 'none', fontWeight: 700 }}>{t('dialogs.buttons.submit')}</Button>
@@ -797,8 +899,30 @@ export default function StokView({
                   </Select>
                 </FormControl>
               )} />
+              {stockOutSelectedBatch && (
+                <BatchInfoCard batch={stockOutSelectedBatch} theme={theme} t={t} />
+              )}
               <Controller name="berat" control={stockOutForm.control} render={({ field }) => (
                 <TextField {...field} type="number" label={t('dialogs.fields.outWeight')} fullWidth error={!!stockOutForm.formState.errors.berat} helperText={stockOutForm.formState.errors.berat?.message} />
+              )} />
+              <Controller name="hargaRealisasi" control={stockOutForm.control} render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Harga Realisasi (opsional)"
+                  fullWidth
+                  slotProps={{
+                    input: { startAdornment: <InputAdornment position="start">Rp</InputAdornment> },
+                    formHelperText: { sx: { color: stockOutHargaDiff === null || stockOutHargaDiff === 0 ? 'text.secondary' : stockOutHargaDiff < 0 ? softText(theme, 'warning') : softText(theme, 'success') } },
+                  }}
+                  helperText={
+                    stockOutHargaDiff !== null && stockOutHargaDiff !== 0
+                      ? stockOutHargaDiff < 0
+                        ? `↓ ${formatRupiah(Math.abs(stockOutHargaDiff))}/kg di bawah harga rencana`
+                        : `↑ ${formatRupiah(stockOutHargaDiff)}/kg di atas harga rencana`
+                      : 'Terisi otomatis dari harga rencana batch'
+                  }
+                />
               )} />
               <Controller name="tujuan" control={stockOutForm.control} render={({ field }) => (
                 <FormControl fullWidth>
@@ -811,12 +935,31 @@ export default function StokView({
                   </Select>
                 </FormControl>
               )} />
+              <Controller name="namaPembeli" control={stockOutForm.control} render={({ field }) => (
+                <Autocomplete
+                  freeSolo
+                  options={buyers.map((b) => b.nama)}
+                  value={field.value ?? ''}
+                  onChange={(_, newValue) => field.onChange(typeof newValue === 'string' ? newValue : (newValue ?? ''))}
+                  onInputChange={(_, newValue) => field.onChange(newValue)}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Nama Pembeli (opsional)" helperText="Pilih dari daftar atau ketik nama baru" />
+                  )}
+                />
+              )} />
               <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
                 <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
               )} />
               <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
                 <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
               )} />
+              {stockOutTotal > 0 && (
+                <Box sx={{ px: 1.5, py: 1, bgcolor: softBg(theme, 'warning', 0.08), borderRadius: 2, border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}` }}>
+                  <Typography variant="caption" color="text.secondary">
+                    💰 Total Transaksi: <strong style={{ color: softText(theme, 'warning') }}>{formatRupiah(stockOutTotal)}</strong>
+                  </Typography>
+                </Box>
+              )}
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button variant="outlined" color="inherit" onClick={() => setStockOutDialogOpen(false)} sx={{ flex: 1, borderRadius: 8 }}>{t('dialogs.buttons.cancel')}</Button>
                 <Button type="submit" variant="contained" color="error" sx={{ flex: 2, borderRadius: 8 }}>{t('dialogs.buttons.submit')}</Button>

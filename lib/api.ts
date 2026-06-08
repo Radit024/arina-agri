@@ -65,6 +65,8 @@ export interface ApiStockMutation {
   tanggal: string;
   catatan: string;
   createdAt: string;
+  namaPembeli?: string;
+  hargaRealisasi?: number;
 }
 
 export interface StokSummary {
@@ -72,6 +74,13 @@ export interface StokSummary {
   stokTerjualMingguIni: number;
   estimasiNilaiStok: number;
   batchHampirKadaluarsa: number;
+}
+
+export interface ApiBuyer {
+  id: string;
+  nama: string;
+  userId: string;
+  createdAt: string;
 }
 
 export interface GeminiChatMessage {
@@ -220,6 +229,8 @@ function mapMutation(row: any): ApiStockMutation {
     tanggal: row.tanggal,
     catatan: row.catatan ?? '',
     createdAt: row.created_at,
+    namaPembeli: row.nama_pembeli ?? undefined,
+    hargaRealisasi: row.harga_realisasi ?? undefined,
   };
 }
 
@@ -548,7 +559,7 @@ export const stokApi = {
     return mapBatch(data);
   },
 
-  stockOut: async (batchId: string, payload: { berat: number; tujuan: string; tanggal: string; catatan: string }): Promise<{ batch: ApiHarvestBatch; mutation: ApiStockMutation }> => {
+  stockOut: async (batchId: string, payload: { berat: number; tujuan: string; tanggal: string; catatan: string; namaPembeli?: string; hargaRealisasi?: number }): Promise<{ batch: ApiHarvestBatch; mutation: ApiStockMutation }> => {
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
 
@@ -583,12 +594,42 @@ export const stokApi = {
         tujuan: payload.tujuan,
         tanggal: payload.tanggal,
         catatan: payload.catatan,
+        nama_pembeli: payload.namaPembeli ?? null,
+        harga_realisasi: payload.hargaRealisasi ?? null,
       })
       .select()
       .single();
     if (mutErr) throw new Error(mutErr.message);
 
     return { batch: mapBatch(updatedBatch), mutation: mapMutation(mutationRow) };
+  },
+};
+
+export const buyersApi = {
+  getAll: async (): Promise<ApiBuyer[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('buyers')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('nama', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      nama: row.nama,
+      userId: row.user_id,
+      createdAt: row.created_at,
+    }));
+  },
+
+  upsert: async (nama: string): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) return;
+    const { error } = await supabase
+      .from('buyers')
+      .upsert({ user_id: user.id, nama }, { onConflict: 'user_id,nama', ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
   },
 };
 

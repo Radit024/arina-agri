@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
-import { useStok } from '@/hooks/useStok';
+import { useStok, computeExpiryDate } from '@/hooks/useStok';
 import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import StokView from '@/app/dashboard/stok/_components/StokView';
 import {
@@ -20,7 +20,7 @@ import {
 export default function StokController() {
   const t = useTranslations('Stock');
   const {
-    batches, mutations, summary, loading, backendOnline,
+    batches, mutations, summary, loading, backendOnline, buyers,
     addBatch, closeBatch, stockOut, refreshMutations,
   } = useStok();
   const { riskNote: weatherRiskNote } = useWeatherRiskSignal('stock');
@@ -68,6 +68,64 @@ export default function StokController() {
     },
   });
 
+  // ── Auto-fill estimasiKadaluarsa = tanggalPanen + 14 hari ───────
+  const watchedTanggalPanen = batchForm.watch('tanggalPanen');
+  useEffect(() => {
+    if (!watchedTanggalPanen) return;
+    const current = batchForm.getValues('estimasiKadaluarsa');
+    if (!current) {
+      batchForm.setValue('estimasiKadaluarsa', computeExpiryDate(watchedTanggalPanen));
+    }
+  }, [watchedTanggalPanen, batchForm]);
+
+  // ── Auto-fill hargaRealisasi + validasi berat real-time ─────────
+  const watchedBatchId = stockOutForm.watch('batchId');
+  const watchedBerat = stockOutForm.watch('berat');
+  const watchedHargaRealisasi = stockOutForm.watch('hargaRealisasi');
+
+  useEffect(() => {
+    if (!watchedBatchId) return;
+    const batch = batches.find((b) => b._id === watchedBatchId);
+    if (!batch) return;
+    const currentHarga = stockOutForm.getValues('hargaRealisasi');
+    if (!currentHarga) {
+      stockOutForm.setValue('hargaRealisasi', batch.hargaJual);
+    }
+  }, [watchedBatchId, batches, stockOutForm]);
+
+  useEffect(() => {
+    const beratNum = Number(watchedBerat) || 0;
+    if (!watchedBatchId || !beratNum) return;
+    const batch = batches.find((b) => b._id === watchedBatchId);
+    if (!batch) return;
+    if (beratNum > batch.stokTersisa) {
+      stockOutForm.setError('berat', {
+        type: 'manual',
+        message: `Melebihi stok tersisa (${batch.stokTersisa} kg). Maksimal ${batch.stokTersisa} kg.`,
+      });
+    } else {
+      stockOutForm.clearErrors('berat');
+    }
+  }, [watchedBerat, watchedBatchId, batches, stockOutForm]);
+
+  // ── Computed props untuk StokView ────────────────────────────────
+  const stockOutSelectedBatch = batches.find((b) => b._id === watchedBatchId) ?? null;
+
+  const beratMasukNum = Number(batchForm.watch('beratMasuk')) || 0;
+  const hargaJualNum = Number(batchForm.watch('hargaJual')) || 0;
+  const batchEstimatedValue =
+    beratMasukNum > 0 && hargaJualNum > 0 ? beratMasukNum * hargaJualNum : 0;
+
+  const beratNum = Number(watchedBerat) || 0;
+  const hargaRealisasiNum = Number(watchedHargaRealisasi) || 0;
+  const stockOutTotal =
+    beratNum > 0 && hargaRealisasiNum > 0 ? beratNum * hargaRealisasiNum : 0;
+
+  const stockOutHargaDiff: number | null =
+    stockOutSelectedBatch && hargaRealisasiNum > 0
+      ? hargaRealisasiNum - stockOutSelectedBatch.hargaJual
+      : null;
+
   const openAddBatch = () => {
     batchForm.reset({
       tanggalPanen: new Date().toISOString().split('T')[0],
@@ -93,6 +151,8 @@ export default function StokController() {
       tujuan: data.tujuan,
       tanggal: data.tanggal,
       catatan: data.catatan || '',
+      namaPembeli: data.namaPembeli?.trim() || undefined,
+      hargaRealisasi: data.hargaRealisasi || undefined,
     });
     setStockOutDialogOpen(false);
     stockOutForm.reset();
@@ -162,6 +222,11 @@ export default function StokController() {
       summary={summary}
       tab={tab}
       weatherRiskNote={weatherRiskNote}
+      buyers={buyers}
+      stockOutSelectedBatch={stockOutSelectedBatch}
+      batchEstimatedValue={batchEstimatedValue}
+      stockOutTotal={stockOutTotal}
+      stockOutHargaDiff={stockOutHargaDiff}
     />
   );
 }

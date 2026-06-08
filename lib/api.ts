@@ -428,22 +428,44 @@ export const stokApi = {
   },
 
   getSummary: async (): Promise<StokSummary> => {
-    const { data, error } = await supabase.from('harvest_batches').select('*');
-    if (error) throw new Error(error.message);
-    const batches = (data ?? []).map(mapBatch);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const fromDate = oneWeekAgo.toISOString().split('T')[0];
+
+    const [batchResult, mutResult] = await Promise.all([
+      supabase.from('harvest_batches').select('*'),
+      supabase
+        .from('stock_mutations')
+        .select('berat')
+        .eq('tipe', 'keluar')
+        .gte('tanggal', fromDate),
+    ]);
+
+    if (batchResult.error) throw new Error(batchResult.error.message);
+    if (mutResult.error) throw new Error(mutResult.error.message);
+
+    const batches = (batchResult.data ?? []).map(mapBatch);
     const active = batches.filter(b => b.status !== 'habis');
+    const stokTerjualMingguIni = (mutResult.data ?? []).reduce((sum, m) => sum + (m.berat ?? 0), 0);
+
     return {
       totalStokSiapJual: active.reduce((s, b) => s + b.stokTersisa, 0),
-      stokTerjualMingguIni: 0,
+      stokTerjualMingguIni,
       estimasiNilaiStok: active.reduce((s, b) => s + b.stokTersisa * b.hargaJual, 0),
       batchHampirKadaluarsa: batches.filter(b => b.status === 'hampir_kadaluarsa').length,
     };
   },
 
   getMutations: async (params?: { grade?: string; from?: string; to?: string }): Promise<ApiStockMutation[]> => {
-    let query = supabase.from('stock_mutations').select('*').order('tanggal', { ascending: false });
+    let query = supabase
+      .from('stock_mutations')
+      .select('*, harvest_batches!inner(grade)')
+      .order('tanggal', { ascending: false });
     if (params?.from) query = query.gte('tanggal', params.from);
     if (params?.to) query = query.lte('tanggal', params.to);
+    if (params?.grade && params.grade !== 'semua') {
+      query = query.eq('harvest_batches.grade', params.grade);
+    }
     const { data, error } = await query;
     if (error) throw new Error(error.message);
     return (data ?? []).map(mapMutation);
@@ -515,10 +537,15 @@ export const stokApi = {
     return mapBatch(data);
   },
 
-  delete: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('harvest_batches').delete().eq('id', id);
+  closeBatch: async (id: string): Promise<ApiHarvestBatch> => {
+    const { data, error } = await supabase
+      .from('harvest_batches')
+      .update({ status: 'habis', updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
     if (error) throw new Error(error.message);
-    return null;
+    return mapBatch(data);
   },
 
   stockOut: async (batchId: string, payload: { berat: number; tujuan: string; tanggal: string; catatan: string }): Promise<{ batch: ApiHarvestBatch; mutation: ApiStockMutation }> => {

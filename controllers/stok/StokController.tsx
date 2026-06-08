@@ -19,12 +19,19 @@ import {
 
 export default function StokController() {
   const t = useTranslations('Stock');
-  const { batches, mutations, summary, loading, backendOnline, addBatch, deleteBatch, stockOut } = useStok();
+  const {
+    batches, mutations, summary, loading, backendOnline,
+    addBatch, closeBatch, stockOut, refreshMutations,
+  } = useStok();
   const { riskNote: weatherRiskNote } = useWeatherRiskSignal('stock');
+
   const [tab, setTab] = useState(0);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [stockOutDialogOpen, setStockOutDialogOpen] = useState(false);
   const [mutFilter, setMutFilter] = useState('semua');
+  const [mutFromDate, setMutFromDate] = useState('');
+  const [mutToDate, setMutToDate] = useState('');
+  const [closeConfirmId, setCloseConfirmId] = useState<string | null>(null);
 
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     resolver: zodResolver(batchSchema.extend({
@@ -76,10 +83,7 @@ export default function StokController() {
   };
 
   const onBatchSubmit = async (data: BatchFormOutput) => {
-    await addBatch({
-      ...data,
-      catatan: data.catatan ?? '',
-    });
+    await addBatch({ ...data, catatan: data.catatan ?? '' });
     setBatchDialogOpen(false);
   };
 
@@ -94,11 +98,37 @@ export default function StokController() {
     stockOutForm.reset();
   };
 
-  const alertBatches = batches.filter((batch) => batch.status === 'hampir_kadaluarsa');
-  const activeBatches = batches.filter((batch) => batch.status !== 'habis');
+  const handleCloseBatch = (id: string) => {
+    setCloseConfirmId(id);
+  };
+
+  const handleConfirmClose = async () => {
+    if (!closeConfirmId) return;
+    await closeBatch(closeConfirmId);
+    setCloseConfirmId(null);
+  };
+
+  const handleApplyDateFilter = () => {
+    refreshMutations({
+      grade: mutFilter !== 'semua' ? mutFilter : undefined,
+      from: mutFromDate || undefined,
+      to: mutToDate || undefined,
+    });
+  };
+
+  const handleResetDateFilter = () => {
+    setMutFromDate('');
+    setMutToDate('');
+    refreshMutations({
+      grade: mutFilter !== 'semua' ? mutFilter : undefined,
+    });
+  };
+
+  const alertBatches = batches.filter((b) => b.status === 'hampir_kadaluarsa');
+  const activeBatches = batches.filter((b) => b.status !== 'habis');
   const filteredMutations = mutFilter === 'semua'
     ? mutations
-    : mutations.filter((mutation) => mutation.batchCode.includes(`-${mutFilter}`));
+    : mutations.filter((m) => m.batchCode.includes(`-${mutFilter}`));
 
   return (
     <StokView
@@ -107,15 +137,24 @@ export default function StokController() {
       backendOnline={backendOnline}
       batchDialogOpen={batchDialogOpen}
       batchForm={batchForm}
-      deleteBatch={deleteBatch}
+      closeConfirmId={closeConfirmId}
       filteredMutations={filteredMutations}
       loading={loading}
       mutFilter={mutFilter}
+      mutFromDate={mutFromDate}
+      mutToDate={mutToDate}
       onBatchSubmit={onBatchSubmit}
       onStockOutSubmit={onStockOutSubmit}
       openAddBatch={openAddBatch}
+      onCloseBatch={handleCloseBatch}
+      onConfirmClose={handleConfirmClose}
+      onCancelClose={() => setCloseConfirmId(null)}
+      onApplyDateFilter={handleApplyDateFilter}
+      onResetDateFilter={handleResetDateFilter}
       setBatchDialogOpen={setBatchDialogOpen}
       setMutFilter={setMutFilter}
+      setMutFromDate={setMutFromDate}
+      setMutToDate={setMutToDate}
       setStockOutDialogOpen={setStockOutDialogOpen}
       setTab={setTab}
       stockOutDialogOpen={stockOutDialogOpen}

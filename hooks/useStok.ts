@@ -28,7 +28,7 @@ const MOCK_MUTATIONS: ApiStockMutation[] = [
   { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Panen awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
 ];
 
-function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
+export function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
   const active = batches.filter(b => b.status !== 'habis');
   return {
     totalStokSiapJual: active.reduce((s, b) => s + b.stokTersisa, 0),
@@ -93,10 +93,14 @@ export function useStok() {
     setBatches((prev) => prev.map((b) => (b._id === id ? updated : b)));
   };
 
-  const deleteBatch = async (id: string) => {
-    await stokApi.delete(id);
-    setBatches((prev) => prev.filter((b) => b._id !== id));
-    setMutations((prev) => prev.filter((m) => m.batchId !== id));
+  const closeBatch = async (id: string) => {
+    if (!user) {
+      setBatches((prev) => prev.map((b) => b._id === id ? { ...b, status: 'habis' as const } : b));
+      return;
+    }
+    const updated = await stokApi.closeBatch(id);
+    setBatches((prev) => prev.map((b) => (b._id === id ? updated : b)));
+    await loadData();
   };
 
   const stockOut = async (batchId: string, outData: Parameters<typeof stokApi.stockOut>[1]) => {
@@ -113,6 +117,6 @@ export function useStok() {
 
   return {
     batches, mutations, summary, loading, backendOnline: true, error,
-    addBatch, updateBatch, deleteBatch, stockOut, refreshMutations, reload: loadData,
+    addBatch, updateBatch, closeBatch, stockOut, refreshMutations, reload: loadData,
   };
 }

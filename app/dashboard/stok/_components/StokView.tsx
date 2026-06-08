@@ -93,15 +93,24 @@ interface StokViewProps {
   backendOnline: boolean;
   batchDialogOpen: boolean;
   batchForm: UseFormReturn<BatchFormInput, unknown, BatchFormOutput>;
-  deleteBatch: (id: string) => Promise<void>;
+  closeConfirmId: string | null;
   filteredMutations: ApiStockMutation[];
   loading: boolean;
   mutFilter: string;
+  mutFromDate: string;
+  mutToDate: string;
   onBatchSubmit: SubmitHandler<BatchFormOutput>;
   onStockOutSubmit: SubmitHandler<StockOutFormOutput>;
   openAddBatch: () => void;
+  onCloseBatch: (id: string) => void;
+  onConfirmClose: () => void;
+  onCancelClose: () => void;
+  onApplyDateFilter: () => void;
+  onResetDateFilter: () => void;
   setBatchDialogOpen: (open: boolean) => void;
   setMutFilter: (value: string) => void;
+  setMutFromDate: (value: string) => void;
+  setMutToDate: (value: string) => void;
   setStockOutDialogOpen: (open: boolean) => void;
   setTab: (tab: number) => void;
   stockOutDialogOpen: boolean;
@@ -117,15 +126,24 @@ export default function StokView({
   backendOnline,
   batchDialogOpen,
   batchForm,
-  deleteBatch,
+  closeConfirmId,
   filteredMutations,
   loading,
   mutFilter,
+  mutFromDate,
+  mutToDate,
   onBatchSubmit,
   onStockOutSubmit,
   openAddBatch,
+  onCloseBatch,
+  onConfirmClose,
+  onCancelClose,
+  onApplyDateFilter,
+  onResetDateFilter,
   setBatchDialogOpen,
   setMutFilter,
+  setMutFromDate,
+  setMutToDate,
   setStockOutDialogOpen,
   setTab,
   stockOutDialogOpen,
@@ -292,14 +310,14 @@ export default function StokView({
                             {t('buttons.stockOut')}
                           </Button>
                           <Button
-                            color="error"
+                            color="warning"
                             variant="outlined"
                             size="small"
-                            onClick={() => deleteBatch(b._id)}
+                            onClick={() => onCloseBatch(b._id)}
                             sx={{ borderRadius: 2, minWidth: 44, width: 44, height: 40 }}
-                            aria-label="Delete batch"
+                            aria-label="Tutup batch"
                           >
-                            <DeleteIcon fontSize="small" />
+                            <InventoryIcon fontSize="small" />
                           </Button>
                         </Box>
                       </CardContent>
@@ -349,9 +367,9 @@ export default function StokView({
                                 sx={{ color: softText(theme, 'info'), bgcolor: softBg(theme, 'info', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: accentText(theme, 'info') } }}>
                                 <LocalShippingIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" aria-label="Delete batch" onClick={() => deleteBatch(b._id)}
-                                sx={{ color: softText(theme, 'error'), bgcolor: softBg(theme, 'error', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.error.main, color: accentText(theme, 'error') } }}>
-                                <DeleteIcon fontSize="small" />
+                              <IconButton size="small" aria-label="Tutup batch" onClick={() => onCloseBatch(b._id)}
+                                sx={{ color: softText(theme, 'warning'), bgcolor: softBg(theme, 'warning', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.warning.main, color: accentText(theme, 'warning') } }}>
+                                <InventoryIcon fontSize="small" />
                               </IconButton>
                             </Box>
                           </TableCell>
@@ -368,8 +386,8 @@ export default function StokView({
         {/* Tab 2: Mutasi */}
         {tab === 1 && (
           <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-              <FormControl size="small" sx={{ minWidth: 150 }}>
+            <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+              <FormControl size="small" sx={{ minWidth: 140 }}>
                 <InputLabel>{t('mutationTable.filterGrade')}</InputLabel>
                 <Select value={mutFilter} label={t('mutationTable.filterGrade')} onChange={(e) => setMutFilter(e.target.value)}>
                   <MenuItem value="semua">{t('mutationTable.allGrades')}</MenuItem>
@@ -378,6 +396,32 @@ export default function StokView({
                   <MenuItem value="C">Grade C</MenuItem>
                 </Select>
               </FormControl>
+              <TextField
+                type="date"
+                label="Dari Tanggal"
+                size="small"
+                value={mutFromDate}
+                onChange={(e) => setMutFromDate(e.target.value)}
+                sx={{ minWidth: 150 }}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <TextField
+                type="date"
+                label="Sampai Tanggal"
+                size="small"
+                value={mutToDate}
+                onChange={(e) => setMutToDate(e.target.value)}
+                sx={{ minWidth: 150 }}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <Button variant="contained" size="small" onClick={onApplyDateFilter} sx={{ height: 40, borderRadius: 2, px: 2 }}>
+                Terapkan
+              </Button>
+              {(mutFromDate || mutToDate) && (
+                <Button variant="text" size="small" onClick={onResetDateFilter} sx={{ height: 40, borderRadius: 2, color: 'text.secondary' }}>
+                  Reset
+                </Button>
+              )}
             </Box>
 
             {isMobile ? (
@@ -781,6 +825,50 @@ export default function StokView({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* ─── Dialog Konfirmasi Tutup Batch ─── */}
+      <Dialog
+        open={closeConfirmId !== null}
+        onClose={onCancelClose}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 4 } } }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+              Tutup Batch?
+            </Typography>
+            <IconButton size="small" onClick={onCancelClose}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: '8px !important' }}>
+          <Typography variant="body2" color="text.secondary">
+            Batch akan ditandai sebagai <strong>Habis</strong> dan tidak dapat diaktifkan kembali.
+            Seluruh riwayat mutasi tetap tersimpan untuk keperluan traceability.
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={onCancelClose}
+              sx={{ flex: 1, borderRadius: 8 }}
+            >
+              Batal
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={onConfirmClose}
+              sx={{ flex: 1, borderRadius: 8 }}
+            >
+              Ya, Tutup Batch
+            </Button>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

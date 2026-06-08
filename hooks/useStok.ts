@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { stokApi, type ApiHarvestBatch, type ApiStockMutation, type StokSummary } from '@/lib/api';
+import { stokApi, buyersApi, type ApiHarvestBatch, type ApiStockMutation, type StokSummary, type ApiBuyer } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Mock data for unauthenticated users ──────────────────────────
@@ -28,6 +28,16 @@ const MOCK_MUTATIONS: ApiStockMutation[] = [
   { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Panen awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
 ];
 
+export function computeExpiryDate(tanggalPanen: string): string {
+  const date = new Date(tanggalPanen);
+  date.setDate(date.getDate() + 14);
+  return date.toISOString().split('T')[0];
+}
+
+export function computeStockOutTotal(berat: number, hargaRealisasi: number): number {
+  return berat * hargaRealisasi;
+}
+
 export function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
   const active = batches.filter(b => b.status !== 'habis');
   return {
@@ -51,6 +61,7 @@ export function useStok() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [buyers, setBuyers] = useState<ApiBuyer[]>([]);
 
   const loadData = useCallback(async () => {
     if (authLoading) return;
@@ -81,6 +92,18 @@ export function useStok() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const loadBuyers = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await buyersApi.getAll();
+      setBuyers(data);
+    } catch {
+      // buyers non-critical, jangan crash
+    }
+  }, [user]);
+
+  useEffect(() => { loadBuyers(); }, [loadBuyers]);
+
   // ── CRUD actions ──────────────────────────────────────────────
   const addBatch = async (data: Parameters<typeof stokApi.create>[0]) => {
     const created = await stokApi.create(data);
@@ -108,6 +131,16 @@ export function useStok() {
     setBatches((prev) => prev.map((b) => (b._id === batchId ? result.batch : b)));
     setMutations((prev) => [result.mutation, ...prev]);
     setSummary(computeLocalSummary(batches.map(b => b._id === batchId ? result.batch : b)));
+
+    // Simpan nama pembeli baru ke master data
+    if (outData.namaPembeli?.trim()) {
+      try {
+        await buyersApi.upsert(outData.namaPembeli.trim());
+        await loadBuyers();
+      } catch {
+        // non-critical
+      }
+    }
   };
 
   const refreshMutations = async (params?: { grade?: string; from?: string; to?: string }) => {
@@ -116,7 +149,7 @@ export function useStok() {
   };
 
   return {
-    batches, mutations, summary, loading, backendOnline: true, error,
+    batches, mutations, summary, loading, backendOnline: true, error, buyers,
     addBatch, updateBatch, closeBatch, stockOut, refreshMutations, reload: loadData,
   };
 }

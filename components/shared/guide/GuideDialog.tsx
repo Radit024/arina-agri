@@ -428,8 +428,10 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   if (!guide || !currentStep || !open) return null;
 
   const totalSteps = guide.steps.length;
-  const guideCopy = t.raw(guide.messageKey) as GuideCopy;
-  const currentStepCopy = guideCopy.steps[currentStep.key];
+  const eyebrow = t(`${guide.messageKey}.eyebrow`);
+  const title = t(`${guide.messageKey}.title`);
+  const stepTitle = t(`${guide.messageKey}.steps.${currentStep.key}.title`);
+  const stepBody = t(`${guide.messageKey}.steps.${currentStep.key}.body`);
   const isFirstStep = activeStep === 0;
   const isLastStep = activeStep === totalSteps - 1;
   const progress = ((activeStep + 1) / totalSteps) * 100;
@@ -538,7 +540,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
           >
             <Stack spacing={0.45}>
               <Chip
-                label={guideCopy.eyebrow}
+                label={eyebrow}
                 size="small"
                 sx={{
                   alignSelf: 'flex-start',
@@ -559,7 +561,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
                 variant="caption"
                 sx={{ color: 'text.secondary', fontWeight: 800, lineHeight: 1.25 }}
               >
-                {guideCopy.title}
+                {title}
               </Typography>
             </Stack>
 
@@ -620,10 +622,10 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 900, mb: 0.4, lineHeight: 1.25 }}>
-                {currentStepCopy.title}
+                {stepTitle}
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.55, fontSize: '0.84rem' }}>
-                {currentStepCopy.body}
+                {stepBody}
               </Typography>
             </Box>
 

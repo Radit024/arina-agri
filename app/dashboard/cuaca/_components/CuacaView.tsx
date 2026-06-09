@@ -36,6 +36,8 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 
+import { useMessages } from 'next-intl';
+
 import { formatDateShort } from '@/lib/formatters';
 import { accentText } from '@/lib/themeColors';
 
@@ -104,6 +106,8 @@ export default function CuacaView({
   handleTestNotification,
   handleSaveSchedule,
 }: UseCuacaControllerResult) {
+  const intlMessages = useMessages() as any;
+
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
@@ -640,7 +644,7 @@ export default function CuacaView({
                         <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                           {t('whatsapp.tutorialTitle')}
                         </Typography>
-                        {(t.raw('whatsapp.tutorialSteps') as string[]).map((step: string) => (
+                        {((intlMessages?.Weather?.whatsapp?.tutorialSteps || []) as string[]).map((step: string) => (
                           <Box key={step} className="flex items-start gap-2 mt-2">
                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#229ED9', mt: '6px' }} />
                             <Typography variant="caption" color="text.secondary">{step}</Typography>

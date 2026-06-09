@@ -30,6 +30,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ReactMarkdown from 'react-markdown';
+import { useMessages } from 'next-intl';
 import { accentText, softBg, softText } from '@/lib/themeColors';
 
 interface QuickReferenceDisease {
@@ -68,6 +69,7 @@ export default function EnsiklopediaView({
   canRetryLastPrompt,
 }: UseEnsiklopediaControllerResult) {
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const intlMessages = useMessages() as any;
 
   return (
     <Box
@@ -710,7 +712,7 @@ export default function EnsiklopediaView({
         </DialogTitle>
         <DialogContent sx={{ pt: 3, pb: 3 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {(t.raw('quickReference.diseases') as QuickReferenceDisease[]).map((disease) => (
+            {((intlMessages?.Encyclopedia?.quickReference?.diseases || []) as QuickReferenceDisease[]).map((disease) => (
               <Card
                 key={disease.id}
                 elevation={0}

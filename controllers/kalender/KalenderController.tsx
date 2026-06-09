@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useMessages } from 'next-intl';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import type { ApiCalendarEvent } from '@/lib/api';
@@ -12,6 +12,7 @@ import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_li
 
 export default function KalenderController() {
   const t = useTranslations('Calendar');
+  const messages = useMessages() as any;
   const { events, loading, error, addEvent, updateEvent, deleteEvent, reload } = useCalendar();
   const { warningMessage: weatherWarningMessage, planningNote: weatherPlanningNote } = useWeatherRiskSignal('calendar');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -93,7 +94,7 @@ export default function KalenderController() {
       calendarCells={calendarCells}
       control={form.control}
       currentDate={currentDate}
-      dayNames={t.raw('daysShort')}
+      dayNames={messages?.Calendar?.daysShort || []}
       dialogOpen={dialogOpen}
       editingEventId={editingEventId}
       errors={form.formState.errors}
@@ -101,10 +102,10 @@ export default function KalenderController() {
       getEventsForDate={getEventsForDate}
       handleDelete={handleDelete}
       handleSubmit={form.handleSubmit}
-      jenisLabels={t.raw('jenisLabels')}
+      jenisLabels={messages?.Calendar?.jenisLabels || {}}
       loading={loading}
       month={month}
-      monthNames={t.raw('months')}
+      monthNames={messages?.Calendar?.months || []}
       onRetry={reload}
       onSubmit={onSubmit}
       openAddDialog={openAddDialog}

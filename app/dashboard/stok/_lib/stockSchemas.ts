@@ -2,11 +2,11 @@ import { z } from 'zod';
 
 export const batchSchema = z.object({
   tanggalPanen: z.string(),
-  grade: z.enum(['A', 'B', 'C']),
+  grade: z.string().min(1),
   beratMasuk: z.coerce.number(),
   hargaModal: z.coerce.number(),
   hargaJual: z.coerce.number(),
-  lokasiPenyimpanan: z.enum(['Gudang Utama', 'Gudang Cadangan']),
+  lokasiPenyimpanan: z.string().min(1),
   estimasiKadaluarsa: z.string(),
   catatan: z.string().optional(),
 });

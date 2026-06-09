@@ -5,6 +5,10 @@ import { shouldSubmitChatShortcut } from '@/controllers/ensiklopedia/useEnsiklop
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 
+vi.mock('next-intl', () => ({
+  useMessages: () => ({}),
+}));
+
 const theme = createTheme();
 
 type EnsiklopediaViewProps = ComponentProps<typeof EnsiklopediaView>;

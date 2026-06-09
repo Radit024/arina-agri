@@ -39,10 +39,12 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
-import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer } from '@/lib/api';
+import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation } from '@/lib/api';
+import MasterDataDialog from './MasterDataDialog';
 import { useTranslations } from 'next-intl';
 import type {
   BatchFormInput,
@@ -72,18 +74,28 @@ const StatusChip = ({ status, theme, t }: { status: ApiHarvestBatch['status']; t
   );
 };
 
-// ─── Grade badge ──────────────────────────────────────────────────
-const GradeChip = ({ grade, theme, t }: { grade: 'A' | 'B' | 'C'; theme: Theme; t: StockTranslator }) => {
-  const map = {
-    A: { bg: theme.palette.success.main, text: accentText(theme, 'success') },
-    B: { bg: theme.palette.info.main, text: accentText(theme, 'info') },
-    C: { bg: theme.palette.warning.main, text: accentText(theme, 'warning') },
-  };
+// ─── Grade badge (free-form strings) ─────────────────────────────
+const GRADE_PALETTE = [
+  (t: Theme) => ({ bg: t.palette.success.main, text: accentText(t, 'success') }),
+  (t: Theme) => ({ bg: t.palette.info.main, text: accentText(t, 'info') }),
+  (t: Theme) => ({ bg: t.palette.warning.main, text: accentText(t, 'warning') }),
+  (t: Theme) => ({ bg: t.palette.error.main, text: accentText(t, 'error') }),
+  (t: Theme) => ({ bg: t.palette.primary.main, text: '#fff' }),
+];
+
+function gradeColorIndex(grade: string): number {
+  let hash = 0;
+  for (let i = 0; i < grade.length; i++) hash += grade.charCodeAt(i);
+  return hash % GRADE_PALETTE.length;
+}
+
+const GradeChip = ({ grade, theme, t }: { grade: string; theme: Theme; t: StockTranslator }) => {
+  const { bg, text } = GRADE_PALETTE[gradeColorIndex(grade)](theme);
   return (
     <Chip
       label={`${t('table.grade')} ${grade}`}
       size="small"
-      sx={{ bgcolor: map[grade].bg, color: map[grade].text, fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
+      sx={{ bgcolor: bg, color: text, fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
     />
   );
 };
@@ -155,6 +167,22 @@ interface StokViewProps {
   batchEstimatedValue: number;
   stockOutTotal: number;
   stockOutHargaDiff: number | null;
+  grades: ApiGrade[];
+  locations: ApiLocation[];
+  gradeDialogOpen: boolean;
+  locationDialogOpen: boolean;
+  gradeDeleteError: string | null;
+  locationDeleteError: string | null;
+  setGradeDialogOpen: (open: boolean) => void;
+  setLocationDialogOpen: (open: boolean) => void;
+  onAddGrade: (nama: string) => Promise<ApiGrade>;
+  onRenameGrade: (id: string, nama: string) => Promise<void>;
+  onRemoveGrade: (id: string) => Promise<void>;
+  onAddLocation: (nama: string) => Promise<ApiLocation>;
+  onRenameLocation: (id: string, nama: string) => Promise<void>;
+  onRemoveLocation: (id: string) => Promise<void>;
+  onClearGradeDeleteError: () => void;
+  onClearLocationDeleteError: () => void;
 }
 
 export default function StokView({
@@ -193,6 +221,22 @@ export default function StokView({
   batchEstimatedValue,
   stockOutTotal,
   stockOutHargaDiff,
+  grades,
+  locations,
+  gradeDialogOpen,
+  locationDialogOpen,
+  gradeDeleteError,
+  locationDeleteError,
+  setGradeDialogOpen,
+  setLocationDialogOpen,
+  onAddGrade,
+  onRenameGrade,
+  onRemoveGrade,
+  onAddLocation,
+  onRenameLocation,
+  onRemoveLocation,
+  onClearGradeDeleteError,
+  onClearLocationDeleteError,
 }: StokViewProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -433,9 +477,9 @@ export default function StokView({
                 <InputLabel>{t('mutationTable.filterGrade')}</InputLabel>
                 <Select value={mutFilter} label={t('mutationTable.filterGrade')} onChange={(e) => setMutFilter(e.target.value)}>
                   <MenuItem value="semua">{t('mutationTable.allGrades')}</MenuItem>
-                  <MenuItem value="A">Grade A</MenuItem>
-                  <MenuItem value="B">Grade B</MenuItem>
-                  <MenuItem value="C">Grade C</MenuItem>
+                  {grades.map((g) => (
+                    <MenuItem key={g.id} value={g.nama}>{g.nama}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
               <TextField
@@ -606,16 +650,21 @@ export default function StokView({
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
-                    <Controller name="grade" control={batchForm.control} render={({ field }) => (
-                      <FormControl fullWidth>
-                        <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
-                        <Select {...field} label={t('dialogs.fields.grade')}>
-                          <MenuItem value="A">{t('dialogs.options.gradeA')}</MenuItem>
-                          <MenuItem value="B">{t('dialogs.options.gradeB')}</MenuItem>
-                          <MenuItem value="C">{t('dialogs.options.gradeC')}</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )} />
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                      <Controller name="grade" control={batchForm.control} render={({ field }) => (
+                        <FormControl fullWidth>
+                          <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
+                          <Select {...field} label={t('dialogs.fields.grade')}>
+                            {grades.map((g) => (
+                              <MenuItem key={g.id} value={g.nama}>{g.nama}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )} />
+                      <IconButton size="small" onClick={() => setGradeDialogOpen(true)} sx={{ mt: 1, flexShrink: 0 }}>
+                        <SettingsIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Controller name="beratMasuk" control={batchForm.control} render={({ field }) => (
@@ -623,15 +672,21 @@ export default function StokView({
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
-                    <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
-                      <FormControl fullWidth>
-                        <InputLabel>{t('dialogs.fields.location')}</InputLabel>
-                        <Select {...field} label={t('dialogs.fields.location')}>
-                          <MenuItem value="Gudang Utama">{t('dialogs.options.store1')}</MenuItem>
-                          <MenuItem value="Gudang Cadangan">{t('dialogs.options.store2')}</MenuItem>
-                        </Select>
-                      </FormControl>
-                    )} />
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                      <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
+                        <FormControl fullWidth>
+                          <InputLabel>{t('dialogs.fields.location')}</InputLabel>
+                          <Select {...field} label={t('dialogs.fields.location')}>
+                            {locations.map((l) => (
+                              <MenuItem key={l.id} value={l.nama}>{l.nama}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )} />
+                      <IconButton size="small" onClick={() => setLocationDialogOpen(true)} sx={{ mt: 1, flexShrink: 0 }}>
+                        <SettingsIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Controller name="hargaModal" control={batchForm.control} render={({ field }) => (
@@ -689,16 +744,21 @@ export default function StokView({
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Controller name="grade" control={batchForm.control} render={({ field }) => (
-                    <FormControl fullWidth>
-                      <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
-                      <Select {...field} label={t('dialogs.fields.grade')}>
-                        <MenuItem value="A">{t('dialogs.options.gradeA')}</MenuItem>
-                        <MenuItem value="B">{t('dialogs.options.gradeB')}</MenuItem>
-                        <MenuItem value="C">{t('dialogs.options.gradeC')}</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )} />
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                    <Controller name="grade" control={batchForm.control} render={({ field }) => (
+                      <FormControl fullWidth>
+                        <InputLabel>{t('dialogs.fields.grade')}</InputLabel>
+                        <Select {...field} label={t('dialogs.fields.grade')}>
+                          {grades.map((g) => (
+                            <MenuItem key={g.id} value={g.nama}>{g.nama}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )} />
+                    <IconButton size="small" onClick={() => setGradeDialogOpen(true)} sx={{ mt: 1, flexShrink: 0 }}>
+                      <SettingsIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller name="beratMasuk" control={batchForm.control} render={({ field }) => (
@@ -706,15 +766,21 @@ export default function StokView({
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
-                    <FormControl fullWidth>
-                      <InputLabel>{t('dialogs.fields.location')}</InputLabel>
-                      <Select {...field} label={t('dialogs.fields.location')}>
-                        <MenuItem value="Gudang Utama">{t('dialogs.options.store1')}</MenuItem>
-                        <MenuItem value="Gudang Cadangan">{t('dialogs.options.store2')}</MenuItem>
-                      </Select>
-                    </FormControl>
-                  )} />
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                    <Controller name="lokasiPenyimpanan" control={batchForm.control} render={({ field }) => (
+                      <FormControl fullWidth>
+                        <InputLabel>{t('dialogs.fields.location')}</InputLabel>
+                        <Select {...field} label={t('dialogs.fields.location')}>
+                          {locations.map((l) => (
+                            <MenuItem key={l.id} value={l.nama}>{l.nama}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )} />
+                    <IconButton size="small" onClick={() => setLocationDialogOpen(true)} sx={{ mt: 1, flexShrink: 0 }}>
+                      <SettingsIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller name="hargaModal" control={batchForm.control} render={({ field }) => (
@@ -1012,6 +1078,32 @@ export default function StokView({
           </Box>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Grade Master Data Dialog ─── */}
+      <MasterDataDialog
+        open={gradeDialogOpen}
+        onClose={() => setGradeDialogOpen(false)}
+        title="Kelola Grade"
+        items={grades}
+        onAdd={onAddGrade}
+        onRename={onRenameGrade}
+        onDelete={onRemoveGrade}
+        deleteError={gradeDeleteError}
+        onClearDeleteError={onClearGradeDeleteError}
+      />
+
+      {/* ─── Location Master Data Dialog ─── */}
+      <MasterDataDialog
+        open={locationDialogOpen}
+        onClose={() => setLocationDialogOpen(false)}
+        title="Kelola Lokasi Penyimpanan"
+        items={locations}
+        onAdd={onAddLocation}
+        onRename={onRenameLocation}
+        onDelete={onRemoveLocation}
+        deleteError={locationDeleteError}
+        onClearDeleteError={onClearLocationDeleteError}
+      />
     </Box>
   );
 }

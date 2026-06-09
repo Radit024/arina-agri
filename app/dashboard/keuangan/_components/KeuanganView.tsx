@@ -84,6 +84,7 @@ export default function KeuanganView({
   filterJenis,
   setFilterJenis,
   theme,
+  isMobile,
   control,
   handleSubmit,
   errors,
@@ -126,9 +127,9 @@ export default function KeuanganView({
   return (
     <Box sx={{ p: { xs: 2, md: 3 }, minHeight: { md: 'calc(100dvh - 96px)' }, display: 'flex', flexDirection: 'column' }}>
       {/* Page Header */}
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2 }}>
+      <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+          <Typography variant="h5" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
               {t('title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -147,7 +148,7 @@ export default function KeuanganView({
         </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ flex: 1, alignItems: 'stretch' }}>
+      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ flex: 1, alignItems: 'stretch' }}>
         {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
         <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
           <Card data-guide-target="finance-ledger" sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -174,8 +175,8 @@ export default function KeuanganView({
               }}
             >
               {/* Filters row */}
-              <Box sx={{ display: 'flex', gap: 1, flex: 1, flexWrap: 'wrap' }}>
-                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 150 }, flex: { xs: 1, sm: 'none' } }}>
+              <Box sx={{ display: 'flex', gap: 1, flex: 1, flexWrap: 'nowrap' }}>
+                <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 150 }, flex: 1 }}>
                   <InputLabel>{t('filters.month')}</InputLabel>
                   <Select value={filterBulan} label={t('filters.month')} onChange={(e) => setFilterBulan(e.target.value)}>
                     <MenuItem value="semua">{t('filters.allMonths')}</MenuItem>
@@ -185,7 +186,7 @@ export default function KeuanganView({
                   </Select>
                 </FormControl>
 
-                <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 }, flex: { xs: 1, sm: 'none' } }}>
+                <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 140 }, flex: 1 }}>
                   <InputLabel>{t('filters.type')}</InputLabel>
                   <Select value={filterJenis} label={t('filters.type')} onChange={(e) => setFilterJenis(e.target.value as typeof filterJenis)}>
                     <MenuItem value="semua">{t('filters.allTypes')}</MenuItem>
@@ -221,7 +222,7 @@ export default function KeuanganView({
             </Box>
 
             <CardContent sx={{ pt: 0, flex: 1, px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto', pb: 10 }}>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, maxHeight: { xs: 450, md: 500, lg: 700 }, overflowY: 'auto', pr: 0.5, pb: 2 }}>
                   {displayedTransactions.length === 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
                       <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
@@ -231,81 +232,86 @@ export default function KeuanganView({
                     </Box>
                   ) : (
                     displayedTransactions.map((tx) => (
-                      <Card key={tx._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider' }}>
+                      <Card key={tx._id} variant="outlined" sx={{ flexShrink: 0, borderRadius: 3, borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                         <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.25 }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: 0, flex: 1, pr: 0.5 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-                                {tx.kategori}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {formatDateShort(tx.tanggal)}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0, gap: 0.75 }}>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{
-                                  fontWeight: 800,
-                                  color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
-                              </Typography>
-                              <Chip
-                                label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                                size="small"
-                                sx={{
-                                  backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
-                                  color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
-                                  fontWeight: 700,
-                                  fontSize: '0.65rem',
-                                  height: 20,
-                                }}
-                              />
-                              <Box sx={{ display: 'flex', gap: 0.75, pt: 0.25 }}>
-                                <IconButton
-                                  data-touch-target="44"
-                                  size="small"
-                                  aria-label={`Edit transaksi ${tx.kategori}`}
-                                  onClick={() => handleEdit(tx)}
-                                  sx={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 2,
-                                    color: 'primary.main',
-                                    bgcolor: 'primary.light',
-                                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                                  }}
-                                >
-                                  <EditOutlinedIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton
-                                  data-touch-target="44"
-                                  size="small"
-                                  aria-label={`Hapus transaksi ${tx.kategori}`}
-                                  onClick={() => handleDelete(tx._id)}
-                                  sx={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 2,
-                                    color: 'error.main',
-                                    bgcolor: alpha(theme.palette.error.main, 0.1),
-                                    '&:hover': { bgcolor: 'error.main', color: 'white' },
-                                  }}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Box>
-                            </Box>
+                          {/* Row 1: Kategori & Status Badge */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
+                              {tx.kategori}
+                            </Typography>
+                            <Chip
+                              label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
+                              size="small"
+                              sx={{
+                                backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.error.main, 0.12),
+                                color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
+                                fontWeight: 700,
+                                fontSize: '0.65rem',
+                                height: 20,
+                              }}
+                            />
+                          </Box>
+
+                          {/* Row 2: Tanggal & Nominal */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Typography variant="caption" color="text.secondary">
+                              {formatDateShort(tx.tanggal)}
+                            </Typography>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{
+                                fontWeight: 800,
+                                color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                            </Typography>
                           </Box>
                           
+                          {/* Row 3: Keterangan (optional) */}
                           {tx.keterangan && (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1.5 }}>
                               &quot;{tx.keterangan}&quot;
                             </Typography>
                           )}
+
+                          {/* Row 4: Action Footer Buttons */}
+                          <Divider sx={{ my: 0.5 }} />
+                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <IconButton
+                              data-touch-target="44"
+                              size="small"
+                              aria-label={`Edit transaksi ${tx.kategori}`}
+                              onClick={() => handleEdit(tx)}
+                              sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 2,
+                                color: 'primary.main',
+                                bgcolor: 'primary.light',
+                                '&:hover': { bgcolor: 'primary.main', color: 'white' },
+                              }}
+                            >
+                              <EditOutlinedIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              data-touch-target="44"
+                              size="small"
+                              aria-label={`Hapus transaksi ${tx.kategori}`}
+                              onClick={() => handleDelete(tx._id)}
+                              sx={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 2,
+                                color: 'error.main',
+                                bgcolor: alpha(theme.palette.error.main, 0.1),
+                                '&:hover': { bgcolor: 'error.main', color: 'white' },
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </CardContent>
                       </Card>
                     ))
@@ -315,7 +321,7 @@ export default function KeuanganView({
                     color="primary" 
                     aria-label="add" 
                     onClick={openAddDialog}
-                    sx={{ position: 'fixed', bottom: 84, right: 24, zIndex: 1000 }}
+                    sx={{ position: 'fixed', bottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', md: 84 }, right: 24, zIndex: 1000 }}
                   >
                     <AddCircleIcon />
                   </Fab>
@@ -561,12 +567,14 @@ export default function KeuanganView({
                   },
                 ]}
                 colors={finalPieColors}
-                width={300}
-                height={200}
+                width={isMobile ? 290 : 300}
+                height={isMobile ? 240 : 200}
                 slotProps={{
                   legend: {
-                    direction: 'vertical',
-                    position: { vertical: 'middle', horizontal: 'end' },
+                    direction: isMobile ? 'horizontal' : 'vertical',
+                    position: isMobile
+                      ? { vertical: 'bottom', horizontal: 'center' }
+                      : { vertical: 'middle', horizontal: 'end' },
                   },
                 }}
               />
@@ -859,7 +867,7 @@ export default function KeuanganView({
             </Typography>
           </Box>
 
-          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.2 }}>
+          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr' }, gap: 1.2 }}>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostTotal')}</Typography>
               <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatRupiah(biayaVariabelTotal)}</Typography>

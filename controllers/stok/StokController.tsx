@@ -21,7 +21,10 @@ export default function StokController() {
   const t = useTranslations('Stock');
   const {
     batches, mutations, summary, loading, backendOnline, buyers,
+    grades, locations,
     addBatch, closeBatch, stockOut, refreshMutations,
+    addGrade, renameGrade, removeGrade,
+    addLocation, renameLocation, removeLocation,
   } = useStok();
   const { riskNote: weatherRiskNote } = useWeatherRiskSignal('stock');
 
@@ -32,6 +35,10 @@ export default function StokController() {
   const [mutFromDate, setMutFromDate] = useState('');
   const [mutToDate, setMutToDate] = useState('');
   const [closeConfirmId, setCloseConfirmId] = useState<string | null>(null);
+  const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [gradeDeleteError, setGradeDeleteError] = useState<string | null>(null);
+  const [locationDeleteError, setLocationDeleteError] = useState<string | null>(null);
 
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     resolver: zodResolver(batchSchema.extend({
@@ -126,11 +133,29 @@ export default function StokController() {
       ? hargaRealisasiNum - stockOutSelectedBatch.hargaJual
       : null;
 
+  const handleRemoveGrade = async (id: string) => {
+    try {
+      setGradeDeleteError(null);
+      await removeGrade(id);
+    } catch (err: any) {
+      setGradeDeleteError(err.message ?? 'Gagal menghapus grade');
+    }
+  };
+
+  const handleRemoveLocation = async (id: string) => {
+    try {
+      setLocationDeleteError(null);
+      await removeLocation(id);
+    } catch (err: any) {
+      setLocationDeleteError(err.message ?? 'Gagal menghapus lokasi');
+    }
+  };
+
   const openAddBatch = () => {
     batchForm.reset({
       tanggalPanen: new Date().toISOString().split('T')[0],
-      grade: 'A',
-      lokasiPenyimpanan: 'Gudang Utama',
+      grade: grades[0]?.nama ?? 'A',
+      lokasiPenyimpanan: locations[0]?.nama ?? 'Gudang Utama',
       estimasiKadaluarsa: '',
       beratMasuk: 0,
       hargaModal: 0,
@@ -227,6 +252,22 @@ export default function StokController() {
       batchEstimatedValue={batchEstimatedValue}
       stockOutTotal={stockOutTotal}
       stockOutHargaDiff={stockOutHargaDiff}
+      grades={grades}
+      locations={locations}
+      gradeDialogOpen={gradeDialogOpen}
+      locationDialogOpen={locationDialogOpen}
+      gradeDeleteError={gradeDeleteError}
+      locationDeleteError={locationDeleteError}
+      setGradeDialogOpen={setGradeDialogOpen}
+      setLocationDialogOpen={setLocationDialogOpen}
+      onAddGrade={addGrade}
+      onRenameGrade={renameGrade}
+      onRemoveGrade={handleRemoveGrade}
+      onAddLocation={addLocation}
+      onRenameLocation={renameLocation}
+      onRemoveLocation={handleRemoveLocation}
+      onClearGradeDeleteError={() => setGradeDeleteError(null)}
+      onClearLocationDeleteError={() => setLocationDeleteError(null)}
     />
   );
 }

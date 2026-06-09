@@ -528,8 +528,11 @@ export default function CuacaView({
                 </Box>
 
                 <ToggleButtonGroup fullWidth exclusive value={notificationPlatform} onChange={handlePlatformChange} sx={{ mb: 2.5 }}>
-                  <ToggleButton data-touch-target="44" value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
-                    <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
+                  <ToggleButton data-touch-target="44" value="whatsapp" disabled sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44, flexDirection: 'column', gap: 0.5, py: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <WhatsAppIcon sx={{ mr: 1, color: '#25d366', opacity: 0.4 }} /> WhatsApp
+                    </Box>
+                    <Chip label="Segera Hadir" size="small" color="warning" sx={{ height: 18, fontSize: '0.6rem', pointerEvents: 'none' }} />
                   </ToggleButton>
                   <ToggleButton data-touch-target="44" value="telegram" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram
@@ -663,8 +666,11 @@ export default function CuacaView({
                   onChange={(_event, value) => value && setSchedulePlatform(value)}
                   sx={{ mb: 2 }}
                 >
-                  <ToggleButton data-touch-target="44" value="whatsapp" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
-                    <WhatsAppIcon sx={{ mr: 1, color: '#25d366' }} /> WhatsApp
+                  <ToggleButton data-touch-target="44" value="whatsapp" disabled sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44, flexDirection: 'column', gap: 0.5, py: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <WhatsAppIcon sx={{ mr: 1, color: '#25d366', opacity: 0.4 }} /> WhatsApp
+                    </Box>
+                    <Chip label="Segera Hadir" size="small" color="warning" sx={{ height: 18, fontSize: '0.6rem', pointerEvents: 'none' }} />
                   </ToggleButton>
                   <ToggleButton data-touch-target="44" value="telegram" sx={{ textTransform: 'none', fontWeight: 600, minHeight: 44 }}>
                     <TelegramIcon sx={{ mr: 1, color: '#229ED9' }} /> Telegram

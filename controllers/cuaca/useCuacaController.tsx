@@ -48,7 +48,7 @@ export function useCuacaController() {
   const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
   const [storedWhatsapp, setStoredWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
   const [storedTelegram, setStoredTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
-  const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('whatsapp');
+  const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('telegram');
   const contactStorageKey = notificationPlatform === 'whatsapp' ? weatherWhatsappKey : weatherTelegramKey;
   const [savedContact, setSavedContact] = useLocalStorage<string>(contactStorageKey, '');
   const [contactValue, setContactValue] = useState(savedContact);
@@ -65,7 +65,7 @@ export function useCuacaController() {
   const [scheduleEnabled, setScheduleEnabled] = useState(true);
   const [scheduleTime, setScheduleTime] = useState('07:00');
   const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Jakarta');
-  const [schedulePlatform, setSchedulePlatform] = useState<'whatsapp' | 'telegram'>('whatsapp');
+  const [schedulePlatform, setSchedulePlatform] = useState<'whatsapp' | 'telegram'>('telegram');
   const [scheduleTo, setScheduleTo] = useState('');
   const [scheduleMessage, setScheduleMessage] = useState(t('whatsapp.defaultScheduleMessage'));
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');

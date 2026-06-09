@@ -227,18 +227,18 @@ export default function PengaturanView({
                  <TextField fullWidth label={t('profile.landArea')} value={profileLuasLahan} onChange={(e) => onProfileLuasLahanChange(e.target.value)} variant="standard" />
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
-                 <TextField
-                   fullWidth
-                   label={t('profile.phone')}
-                   placeholder={t('profile.phonePlaceholder')}
-                   value={profileWhatsappPhone}
-                   onChange={(e) => {
-                     onProfileWhatsappPhoneChange(e.target.value);
-                   }}
-                   helperText={t('profile.phoneHelper')}
-                   slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
-                   variant="standard"
-                 />
+                 <Box sx={{ position: 'relative' }}>
+                   <TextField
+                     fullWidth
+                     label={t('profile.phone')}
+                     placeholder={t('profile.phonePlaceholder')}
+                     value=""
+                     disabled
+                     helperText="Bot saat ini menggunakan Telegram. WhatsApp segera hadir."
+                     slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
+                     variant="standard"
+                   />
+                 </Box>
                </Grid>
                <Grid size={{ xs: 12, md: 6 }}>
                  <TextField

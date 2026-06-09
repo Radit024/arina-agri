@@ -375,13 +375,9 @@ export default function SettingsModal() {
                       fullWidth
                       label={t('profile.phone')}
                       placeholder={t('profile.phonePlaceholder')}
-                      value={profileWhatsappPhone}
-                      onChange={(event) => {
-                        setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
-                        setProfileSaveSuccess(false);
-                        setProfileSaveError('');
-                      }}
-                      helperText={t('profile.phoneHelper')}
+                      value=""
+                      disabled
+                      helperText="Bot saat ini menggunakan Telegram. WhatsApp segera hadir."
                       slotProps={{
                         htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' },
                         inputLabel: { shrink: true }
@@ -706,13 +702,9 @@ export default function SettingsModal() {
                         fullWidth
                         label={t('profile.phone')}
                         placeholder={t('profile.phonePlaceholder')}
-                        value={profileWhatsappPhone}
-                        onChange={(event) => {
-                          setProfileWhatsappPhone(event.target.value.replace(/\D/g, ''));
-                          setProfileSaveSuccess(false);
-                          setProfileSaveError('');
-                        }}
-                        helperText={t('profile.phoneHelper')}
+                        value=""
+                        disabled
+                        helperText="Bot saat ini menggunakan Telegram. WhatsApp segera hadir."
                         slotProps={{ htmlInput: { inputMode: 'numeric', pattern: '[0-9]*' } }}
                         variant="standard"
                       />

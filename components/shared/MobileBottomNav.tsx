@@ -264,6 +264,7 @@ export default function MobileBottomNav() {
         closeLabel={t('closeFeatureMenu')}
         groups={mobileFeatureGroups}
         getLabel={t}
+        pathname={pathname}
         onClose={handleCloseSheet}
         onSelect={handleFeatureSelect}
       />

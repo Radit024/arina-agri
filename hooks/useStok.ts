@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { stokApi, buyersApi, type ApiHarvestBatch, type ApiStockMutation, type StokSummary, type ApiBuyer } from '@/lib/api';
+import { stokApi, buyersApi, gradesApi, locationsApi, type ApiHarvestBatch, type ApiStockMutation, type StokSummary, type ApiBuyer, type ApiGrade, type ApiLocation } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Mock data for unauthenticated users ──────────────────────────
@@ -26,6 +26,17 @@ const MOCK_MUTATIONS: ApiStockMutation[] = [
   { _id: 'm1', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'masuk', berat: 400, tanggal: '2026-04-12', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-12T06:00:00Z' },
   { _id: 'm2', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'keluar', berat: 80, tujuan: 'Pasar Lokal', tanggal: '2026-04-14', catatan: 'Jual ke pasar pagi', createdAt: '2026-04-14T08:00:00Z' },
   { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
+];
+
+export const DEFAULT_GRADES: ApiGrade[] = [
+  { id: 'default-A', nama: 'A', urutan: 0 },
+  { id: 'default-B', nama: 'B', urutan: 1 },
+  { id: 'default-C', nama: 'C', urutan: 2 },
+];
+
+export const DEFAULT_LOCATIONS: ApiLocation[] = [
+  { id: 'default-gudang-utama', nama: 'Gudang Utama', urutan: 0 },
+  { id: 'default-gudang-cadangan', nama: 'Gudang Cadangan', urutan: 1 },
 ];
 
 export function computeExpiryDate(tanggalPanen: string): string {
@@ -62,6 +73,8 @@ export function useStok() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [buyers, setBuyers] = useState<ApiBuyer[]>([]);
+  const [grades, setGrades] = useState<ApiGrade[]>([]);
+  const [locations, setLocations] = useState<ApiLocation[]>([]);
 
   const loadData = useCallback(async () => {
     if (authLoading) return;
@@ -103,6 +116,29 @@ export function useStok() {
   }, [user]);
 
   useEffect(() => { loadBuyers(); }, [loadBuyers]);
+
+  const loadGrades = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await gradesApi.getAll();
+      setGrades(data);
+    } catch {
+      // non-critical, fallback to DEFAULT_GRADES
+    }
+  }, [user]);
+
+  const loadLocations = useCallback(async () => {
+    if (!user) return;
+    try {
+      const data = await locationsApi.getAll();
+      setLocations(data);
+    } catch {
+      // non-critical, fallback to DEFAULT_LOCATIONS
+    }
+  }, [user]);
+
+  useEffect(() => { loadGrades(); }, [loadGrades]);
+  useEffect(() => { loadLocations(); }, [loadLocations]);
 
   // ── CRUD actions ──────────────────────────────────────────────
   const addBatch = async (data: Parameters<typeof stokApi.create>[0]) => {
@@ -148,8 +184,49 @@ export function useStok() {
     setMutations(data);
   };
 
+  // ── Grade CRUD ────────────────────────────────────────────────
+  const addGrade = async (nama: string): Promise<ApiGrade> => {
+    const created = await gradesApi.create(nama);
+    setGrades((prev) => [...prev, created]);
+    return created;
+  };
+
+  const renameGrade = async (id: string, nama: string): Promise<void> => {
+    const updated = await gradesApi.update(id, nama);
+    setGrades((prev) => prev.map((g) => (g.id === id ? updated : g)));
+  };
+
+  const removeGrade = async (id: string): Promise<void> => {
+    await gradesApi.delete(id); // throws if still in use
+    setGrades((prev) => prev.filter((g) => g.id !== id));
+  };
+
+  // ── Location CRUD ─────────────────────────────────────────────
+  const addLocation = async (nama: string): Promise<ApiLocation> => {
+    const created = await locationsApi.create(nama);
+    setLocations((prev) => [...prev, created]);
+    return created;
+  };
+
+  const renameLocation = async (id: string, nama: string): Promise<void> => {
+    const updated = await locationsApi.update(id, nama);
+    setLocations((prev) => prev.map((l) => (l.id === id ? updated : l)));
+  };
+
+  const removeLocation = async (id: string): Promise<void> => {
+    await locationsApi.delete(id); // throws if still in use
+    setLocations((prev) => prev.filter((l) => l.id !== id));
+  };
+
+  const displayGrades = grades.length > 0 ? grades : DEFAULT_GRADES;
+  const displayLocations = locations.length > 0 ? locations : DEFAULT_LOCATIONS;
+
   return {
     batches, mutations, summary, loading, backendOnline: true, error, buyers,
+    grades: displayGrades,
+    locations: displayLocations,
     addBatch, updateBatch, closeBatch, stockOut, refreshMutations, reload: loadData,
+    addGrade, renameGrade, removeGrade,
+    addLocation, renameLocation, removeLocation,
   };
 }

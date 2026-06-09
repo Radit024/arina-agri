@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLocalSummary, computeExpiryDate, computeStockOutTotal } from '@/hooks/useStok';
+import { computeLocalSummary, computeExpiryDate, computeStockOutTotal, DEFAULT_GRADES, DEFAULT_LOCATIONS } from '@/hooks/useStok';
 import type { ApiHarvestBatch } from '@/lib/api';
 
 const mockBatch = (overrides: Partial<ApiHarvestBatch>): ApiHarvestBatch => ({
@@ -96,5 +96,31 @@ describe('computeStockOutTotal', () => {
 
   it('mengembalikan 0 jika harga 0', () => {
     expect(computeStockOutTotal(100, 0)).toBe(0);
+  });
+});
+
+describe('DEFAULT_GRADES', () => {
+  it('berisi setidaknya satu elemen', () => {
+    expect(DEFAULT_GRADES.length).toBeGreaterThan(0);
+  });
+
+  it('setiap elemen memiliki id dan nama yang tidak kosong', () => {
+    DEFAULT_GRADES.forEach((g) => {
+      expect(g.id).toBeTruthy();
+      expect(g.nama).toBeTruthy();
+    });
+  });
+});
+
+describe('DEFAULT_LOCATIONS', () => {
+  it('berisi setidaknya satu elemen', () => {
+    expect(DEFAULT_LOCATIONS.length).toBeGreaterThan(0);
+  });
+
+  it('setiap elemen memiliki id dan nama yang tidak kosong', () => {
+    DEFAULT_LOCATIONS.forEach((l) => {
+      expect(l.id).toBeTruthy();
+      expect(l.nama).toBeTruthy();
+    });
   });
 });

@@ -199,7 +199,7 @@ export default function StokView({
   const t = useTranslations('Stock');
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       {/* Header */}
       <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
         <Box>
@@ -265,7 +265,7 @@ export default function StokView({
       </Grid>
 
       {/* Tabs */}
-      <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4 }}>
+      <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Tab label={t('tabs.batches')} />
           <Tab label={t('tabs.mutations')} />
@@ -273,7 +273,7 @@ export default function StokView({
 
         {/* Tab 1: Batch List */}
         {tab === 0 && (
-          <CardContent sx={{ p: 0 }}>
+          <CardContent sx={{ p: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
             {isMobile ? (
               <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {loading ? (
@@ -427,7 +427,7 @@ export default function StokView({
 
         {/* Tab 2: Mutasi */}
         {tab === 1 && (
-          <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+          <CardContent sx={{ p: isMobile ? 2 : 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
               <FormControl size="small" sx={{ minWidth: 140 }}>
                 <InputLabel>{t('mutationTable.filterGrade')}</InputLabel>

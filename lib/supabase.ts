@@ -40,7 +40,7 @@ export interface DbHarvestBatch {
   user_id: string;
   batch_code: string;
   tanggal_panen: string;
-  grade: 'A' | 'B' | 'C';
+  grade: string;
   berat_masuk: number;
   stok_tersisa: number;
   harga_modal: number;

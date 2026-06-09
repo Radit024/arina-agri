@@ -42,12 +42,12 @@ export interface ApiHarvestBatch {
   _id: string;
   batchCode: string;
   tanggalPanen: string;
-  grade: 'A' | 'B' | 'C';
+  grade: string;
   beratMasuk: number;
   stokTersisa: number;
   hargaModal: number;
   hargaJual: number;
-  lokasiPenyimpanan: 'Gudang Utama' | 'Gudang Cadangan';
+  lokasiPenyimpanan: string;
   estimasiKadaluarsa: string;
   catatan: string;
   status: 'aman' | 'menipis' | 'hampir_kadaluarsa' | 'habis';
@@ -81,6 +81,18 @@ export interface ApiBuyer {
   nama: string;
   userId: string;
   createdAt: string;
+}
+
+export interface ApiGrade {
+  id: string;
+  nama: string;
+  urutan: number;
+}
+
+export interface ApiLocation {
+  id: string;
+  nama: string;
+  urutan: number;
 }
 
 export interface GeminiChatMessage {
@@ -629,6 +641,142 @@ export const buyersApi = {
     const { error } = await supabase
       .from('buyers')
       .upsert({ user_id: user.id, nama }, { onConflict: 'user_id,nama', ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+  },
+};
+
+export const gradesApi = {
+  getAll: async (): Promise<ApiGrade[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('stock_grades')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('urutan', { ascending: true })
+      .order('nama', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: any) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
+  },
+
+  create: async (nama: string): Promise<ApiGrade> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('stock_grades')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: data.id, nama: data.nama, urutan: data.urutan ?? 0 };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiGrade> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('stock_grades')
+      .update({ nama })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: data.id, nama: data.nama, urutan: data.urutan ?? 0 };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data: gradeRow } = await supabase
+      .from('stock_grades')
+      .select('nama')
+      .eq('id', id)
+      .single();
+    if (gradeRow) {
+      const { count } = await supabase
+        .from('harvest_batches')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('grade', gradeRow.nama)
+        .neq('status', 'habis');
+      if ((count ?? 0) > 0) {
+        throw new Error(`Grade "${gradeRow.nama}" masih dipakai ${count} batch aktif. Tutup batch tersebut sebelum menghapus grade.`);
+      }
+    }
+    const { error } = await supabase
+      .from('stock_grades')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) throw new Error(error.message);
+  },
+};
+
+export const locationsApi = {
+  getAll: async (): Promise<ApiLocation[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('storage_locations')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('urutan', { ascending: true })
+      .order('nama', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: any) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
+  },
+
+  create: async (nama: string): Promise<ApiLocation> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('storage_locations')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: data.id, nama: data.nama, urutan: data.urutan ?? 0 };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiLocation> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('storage_locations')
+      .update({ nama })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: data.id, nama: data.nama, urutan: data.urutan ?? 0 };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data: locRow } = await supabase
+      .from('storage_locations')
+      .select('nama')
+      .eq('id', id)
+      .single();
+    if (locRow) {
+      const { count } = await supabase
+        .from('harvest_batches')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('lokasi_penyimpanan', locRow.nama)
+        .neq('status', 'habis');
+      if ((count ?? 0) > 0) {
+        throw new Error(`Lokasi "${locRow.nama}" masih dipakai ${count} batch aktif. Tutup batch tersebut sebelum menghapus lokasi.`);
+      }
+    }
+    const { error } = await supabase
+      .from('storage_locations')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
     if (error) throw new Error(error.message);
   },
 };

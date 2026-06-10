@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import { useTranslations } from 'next-intl';
+import { useMessages, useTranslations } from 'next-intl';
 import type { GuideDefinition, GuidePlacement } from '@/components/shared/guide/guideConfig';
 
 interface GuideDialogProps {
@@ -262,12 +262,22 @@ function areSpotlightRectsEqual(first: SpotlightRect | null, second: SpotlightRe
   );
 }
 
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce((current: unknown, key) => {
+    if (current !== null && typeof current === 'object') {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, obj as unknown);
+}
+
 function areTargetStatesEqual(first: TargetState | null, second: TargetState) {
   return first?.targetKey === second.targetKey && first.target === second.target && areSpotlightRectsEqual(first.rect, second.rect);
 }
 
 export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) {
   const t = useTranslations('Guide');
+  const allMessages = useMessages();
   const [activeStep, setActiveStep] = useState(0);
   const [targetState, setTargetState] = useState<TargetState | null>(null);
   const [popoverHeight, setPopoverHeight] = useState(ESTIMATED_CARD_HEIGHT);
@@ -428,10 +438,13 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   if (!guide || !currentStep || !open) return null;
 
   const totalSteps = guide.steps.length;
-  const eyebrow = t(`${guide.messageKey}.eyebrow`);
-  const title = t(`${guide.messageKey}.title`);
-  const stepTitle = t(`${guide.messageKey}.steps.${currentStep.key}.title`);
-  const stepBody = t(`${guide.messageKey}.steps.${currentStep.key}.body`);
+  const guideContent = getNestedValue(allMessages as Record<string, unknown>, `Guide.${guide.messageKey}`) as Record<string, unknown> | undefined;
+  const stepsContent = guideContent?.steps as Record<string, Record<string, string>> | undefined;
+  const currentStepContent = stepsContent?.[currentStep.key];
+  const eyebrow = (guideContent?.eyebrow as string) ?? '';
+  const title = (guideContent?.title as string) ?? '';
+  const stepTitle = currentStepContent?.title ?? '';
+  const stepBody = currentStepContent?.body ?? '';
   const isFirstStep = activeStep === 0;
   const isLastStep = activeStep === totalSteps - 1;
   const progress = ((activeStep + 1) / totalSteps) * 100;

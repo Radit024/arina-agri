@@ -1059,6 +1059,18 @@
       "message": "Message / Feedback",
       "messagePlaceholder": "Tell us the details of your feedback..."
     },
+    "formatting": {
+      "label": "Markdown formatting",
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list",
+      "quote": "Quote",
+      "code": "Code",
+      "previewTitle": "Preview",
+      "previewEmpty": "Markdown preview will appear here.",
+      "helper": "Use markdown: **bold**, _italic_, - lists, `code`, or > quotes."
+    },
     "categories": {
       "bug": "Report Bug / Error",
       "feature": "Feature Request",

@@ -1059,6 +1059,18 @@
       "message": "Pesan / Masukan",
       "messagePlaceholder": "Ceritakan detail masukan Anda..."
     },
+    "formatting": {
+      "label": "Format markdown",
+      "bold": "Bold",
+      "italic": "Italic",
+      "bulletList": "Bullet list",
+      "numberedList": "Numbered list",
+      "quote": "Kutipan",
+      "code": "Kode",
+      "previewTitle": "Preview",
+      "previewEmpty": "Preview markdown akan muncul di sini.",
+      "helper": "Gunakan markdown: **tebal**, _miring_, - list, `kode`, atau > kutipan."
+    },
     "categories": {
       "bug": "Lapor Bug / Error",
       "feature": "Usulan Fitur Baru",

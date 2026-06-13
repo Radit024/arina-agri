@@ -33,9 +33,12 @@ export const GLOBAL_GUIDE: GuideDefinition = {
   steps: [
     { key: 'dashboard', target: 'nav-dashboard', placement: 'right' },
     { key: 'finance', target: 'nav-keuangan', placement: 'right' },
-    { key: 'operations', target: ['nav-stok', 'nav-lainnya'], placement: 'right' },
-    { key: 'insights', target: ['nav-cuaca', 'nav-ensiklopedia'], placement: 'right' },
-    { key: 'settings', target: ['guide-launcher', 'mobile-feature-guide'], placement: 'top' },
+    { key: 'operations', target: ['nav-stok', 'mobile-feature-stok', 'nav-lainnya'], placement: 'right' },
+    { key: 'weather', target: ['nav-cuaca', 'mobile-feature-cuaca', 'nav-lainnya'], placement: 'right' },
+    { key: 'market', target: ['nav-kabarPasar', 'mobile-feature-kabarPasar', 'nav-lainnya'], placement: 'right' },
+    { key: 'encyclopedia', target: 'nav-ensiklopedia', placement: 'right' },
+    { key: 'calendar', target: 'nav-kalender', placement: 'right' },
+    { key: 'profile', target: ['profile-menu', 'mobile-profile-settings'], placement: 'top' },
   ],
 };
 
@@ -46,8 +49,9 @@ export const PAGE_GUIDES: GuideDefinition[] = [
     route: '/dashboard/keuangan',
     steps: [
       { key: 'overview', target: 'finance-ledger', placement: 'right' },
-      { key: 'record', target: 'finance-add-transaction', placement: 'bottom' },
-      { key: 'report', target: ['finance-report', 'finance-summary'], placement: 'left' },
+      { key: 'record', target: ['finance-add-transaction', 'finance-add-transaction-mobile', 'finance-add-transaction-empty'], placement: 'bottom' },
+      { key: 'export', target: 'finance-export', placement: 'bottom' },
+      { key: 'report', target: 'finance-report', placement: 'left' },
     ],
   },
   {
@@ -77,7 +81,7 @@ export const PAGE_GUIDES: GuideDefinition[] = [
     steps: [
       { key: 'overview', target: 'market-price-chart', placement: 'left' },
       { key: 'categories', target: 'market-categories', placement: 'bottom' },
-      { key: 'prices', target: ['market-refresh', 'market-news-grid'], placement: 'bottom' },
+      { key: 'prices', target: 'market-refresh', placement: 'bottom' },
     ],
   },
   {

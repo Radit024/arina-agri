@@ -19,7 +19,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -62,6 +62,44 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 
 
 const MAX_AI_REPORTS_PER_MONTH = 3;
+
+type FinanceActionIntent = 'primary' | 'error';
+
+function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
+  const palette = theme.palette[intent];
+  const isDarkMode = theme.palette.mode === 'dark';
+  const foreground = isDarkMode ? palette.light : palette.dark;
+
+  return {
+    borderRadius: 2,
+    color: foreground,
+    bgcolor: alpha(palette.main, isDarkMode ? 0.2 : 0.12),
+    border: '1px solid',
+    borderColor: alpha(foreground, isDarkMode ? 0.35 : 0.24),
+    transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow', 'color'], {
+      duration: theme.transitions.duration.shortest,
+    }),
+    '&:hover': {
+      bgcolor: palette.main,
+      color: palette.contrastText,
+      borderColor: palette.main,
+      boxShadow: `0 0 0 3px ${alpha(palette.main, isDarkMode ? 0.18 : 0.12)}`,
+    },
+  };
+}
+
+function closeIconButtonSx(theme: Theme) {
+  const isDarkMode = theme.palette.mode === 'dark';
+
+  return {
+    color: 'text.secondary',
+    bgcolor: alpha(theme.palette.text.primary, isDarkMode ? 0.08 : 0.06),
+    '&:hover': {
+      color: 'text.primary',
+      bgcolor: alpha(theme.palette.text.primary, isDarkMode ? 0.14 : 0.1),
+    },
+  };
+}
 
 export default function KeuanganView({
   t,
@@ -281,14 +319,11 @@ export default function KeuanganView({
                               size="small"
                               aria-label={`Edit transaksi ${tx.kategori}`}
                               onClick={() => handleEdit(tx)}
-                              sx={{
+                              sx={(theme) => ({
                                 width: 44,
                                 height: 44,
-                                borderRadius: 2,
-                                color: 'primary.main',
-                                bgcolor: 'primary.light',
-                                '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                              }}
+                                ...financeActionIconButtonSx(theme, 'primary'),
+                              })}
                             >
                               <EditOutlinedIcon fontSize="small" />
                             </IconButton>
@@ -297,14 +332,11 @@ export default function KeuanganView({
                               size="small"
                               aria-label={`Hapus transaksi ${tx.kategori}`}
                               onClick={() => handleDelete(tx._id)}
-                              sx={{
+                              sx={(theme) => ({
                                 width: 44,
                                 height: 44,
-                                borderRadius: 2,
-                                color: 'error.main',
-                                bgcolor: alpha(theme.palette.error.main, 0.1),
-                                '&:hover': { bgcolor: 'error.main', color: 'white' },
-                              }}
+                                ...financeActionIconButtonSx(theme, 'error'),
+                              })}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -314,7 +346,7 @@ export default function KeuanganView({
                     ))
                   )}
                   <Fab
-                    data-guide-target="finance-add-transaction"
+                    data-guide-target="finance-add-transaction-mobile"
                     color="primary" 
                     aria-label="add" 
                     onClick={openAddDialog}
@@ -354,7 +386,7 @@ export default function KeuanganView({
                               <Typography variant="body2" color="text.secondary">
                                 {t('ledger.empty')}
                               </Typography>
-                              <Button data-guide-target="finance-add-transaction" size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
+                              <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
                                 {t('ledger.addFirst')}
                               </Button>
                             </Box>
@@ -403,12 +435,7 @@ export default function KeuanganView({
                                   size="small"
                                   aria-label="Edit Transaksi"
                                   onClick={() => handleEdit(tx)}
-                                  sx={{
-                                    borderRadius: 2,
-                                    color: 'primary.main',
-                                    bgcolor: 'primary.light',
-                                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                                  }}
+                                  sx={(theme) => financeActionIconButtonSx(theme, 'primary')}
                                 >
                                   <EditOutlinedIcon fontSize="small" />
                                 </IconButton>
@@ -416,12 +443,7 @@ export default function KeuanganView({
                                   size="small"
                                   aria-label="Hapus Transaksi"
                                   onClick={() => handleDelete(tx._id)}
-                                  sx={{
-                                    borderRadius: 2,
-                                    color: 'error.main',
-                                    bgcolor: alpha(theme.palette.error.main, 0.1),
-                                    '&:hover': { bgcolor: 'error.main', color: 'white' },
-                                  }}
+                                  sx={(theme) => financeActionIconButtonSx(theme, 'error')}
                                 >
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
@@ -450,12 +472,13 @@ export default function KeuanganView({
               action={
                 <IconButton
                   data-guide-target="finance-report"
+                  aria-label={t('reportDialog.title')}
                   onClick={() => setAiDialogOpen(true)}
-                  sx={{
-                    color: 'primary.dark',
-                    bgcolor: 'primary.light',
-                    '&:hover': { bgcolor: 'primary.main', color: 'white' },
-                  }}
+                  sx={(theme) => ({
+                    width: 44,
+                    height: 44,
+                    ...financeActionIconButtonSx(theme, 'primary'),
+                  })}
                 >
                   <AutoFixHighIcon fontSize="small" />
                 </IconButton>
@@ -616,9 +639,10 @@ export default function KeuanganView({
               </Box>
             </Box>
             <IconButton
+              aria-label={t('common.cancel')}
               size="small"
               onClick={() => { setTxDialogOpen(false); setEditingId(null); }}
-              sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}
+              sx={(theme) => closeIconButtonSx(theme)}
             >
               <CloseIcon fontSize="small" />
             </IconButton>
@@ -778,7 +802,7 @@ export default function KeuanganView({
                 {t('hppDialog.subtitle')}
               </Typography>
             </Box>
-            <IconButton size="small" onClick={() => setBepHppDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+            <IconButton aria-label={t('common.cancel')} size="small" onClick={() => setBepHppDialogOpen(false)} sx={(theme) => closeIconButtonSx(theme)}>
               <CloseIcon />
             </IconButton>
           </Box>
@@ -938,7 +962,7 @@ export default function KeuanganView({
               </Box>
             </Box>
             {!reportLoading && (
-              <IconButton size="small" onClick={() => setAiDialogOpen(false)} sx={{ bgcolor: 'rgba(0,0,0,0.05)' }}>
+              <IconButton aria-label={t('common.cancel')} size="small" onClick={() => setAiDialogOpen(false)} sx={(theme) => closeIconButtonSx(theme)}>
                 <CloseIcon />
               </IconButton>
             )}
@@ -1059,7 +1083,18 @@ export default function KeuanganView({
               startIcon={<AutoFixHighIcon />}
               onClick={handleGeneratePdfAI}
               disabled={reportLoading || aiQuotaRemaining <= 0 || monthFilteredTransactions.length === 0}
-              sx={{ borderRadius: 8, bgcolor: 'text.primary', color: 'background.default', '&:hover': { bgcolor: 'text.secondary' } }}
+              sx={(theme) => ({
+                borderRadius: 8,
+                bgcolor: theme.palette.mode === 'dark' ? 'primary.main' : 'text.primary',
+                color: theme.palette.mode === 'dark' ? 'primary.contrastText' : 'background.default',
+                border: '1px solid',
+                borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.primary.light, 0.35) : 'transparent',
+                boxShadow: theme.palette.mode === 'dark' ? `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}` : 'none',
+                '&:hover': {
+                  bgcolor: theme.palette.mode === 'dark' ? 'primary.light' : 'text.secondary',
+                  color: theme.palette.mode === 'dark' ? 'primary.contrastText' : 'background.default',
+                },
+              })}
             >
               {t('reportDialog.ai.button')}
             </Button>

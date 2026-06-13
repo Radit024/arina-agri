@@ -15,6 +15,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTranslations } from 'next-intl';
 import type { GuideDefinition, GuidePlacement } from '@/components/shared/guide/guideConfig';
+import { getGuideStepTargets, resolveGuideTarget } from '@/components/shared/guide/guideTargets';
 
 interface GuideDialogProps {
   guide: GuideDefinition | null;
@@ -22,28 +23,11 @@ interface GuideDialogProps {
   onClose: () => void;
 }
 
-interface GuideStepCopy {
-  title: string;
-  body: string;
-}
-
-interface GuideCopy {
-  eyebrow: string;
-  title: string;
-  intro: string;
-  steps: Record<string, GuideStepCopy>;
-}
-
 interface SpotlightRect {
   left: number;
   top: number;
   width: number;
   height: number;
-}
-
-interface ResolvedTarget {
-  element: HTMLElement;
-  target: string;
 }
 
 interface TargetState {
@@ -92,48 +76,19 @@ function isMobileGuideViewport() {
   return window.matchMedia?.('(max-width: 899.95px)').matches ?? window.innerWidth < 900;
 }
 
-function getGuideTargetSelector(target: string) {
-  return `[data-guide-target="${target.replace(/"/g, '\\"')}"]`;
-}
-
-function isVisibleGuideTarget(element: HTMLElement) {
-  const styles = window.getComputedStyle(element);
-  if (styles.display === 'none' || styles.visibility === 'hidden') return false;
-
-  const rect = element.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0 && process.env.NODE_ENV !== 'test') {
-    return false;
-  }
-
-  return true;
-}
-
-function resolveGuideTarget(targets: string[]): ResolvedTarget | null {
-  for (const target of targets) {
-    const elements = Array.from(document.querySelectorAll<HTMLElement>(getGuideTargetSelector(target)));
-    const visibleElement = elements.find((element) => element.getAttribute('data-testid') !== 'guide-spotlight' && isVisibleGuideTarget(element));
-
-    if (visibleElement) {
-      return { element: visibleElement, target };
-    }
-  }
-
-  return null;
-}
-
 function getSpotlightRect(element: HTMLElement): SpotlightRect {
   const rect = element.getBoundingClientRect();
   const viewport = getViewportSize();
-  const width = Math.max(rect.width, 56);
-  const height = Math.max(rect.height, 44);
+  const width = Math.min(Math.max(rect.width, 56) + SPOTLIGHT_PADDING * 2, Math.max(56, viewport.width - VIEWPORT_MARGIN));
+  const height = Math.min(Math.max(rect.height, 44) + SPOTLIGHT_PADDING * 2, Math.max(44, viewport.height - VIEWPORT_MARGIN));
   const left = clamp(rect.left - SPOTLIGHT_PADDING, VIEWPORT_MARGIN / 2, viewport.width - width - VIEWPORT_MARGIN / 2);
   const top = clamp(rect.top - SPOTLIGHT_PADDING, VIEWPORT_MARGIN / 2, viewport.height - height - VIEWPORT_MARGIN / 2);
 
   return {
     left,
     top,
-    width: width + SPOTLIGHT_PADDING * 2,
-    height: height + SPOTLIGHT_PADDING * 2,
+    width,
+    height,
   };
 }
 
@@ -277,8 +232,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
 
   const currentStep = guide?.steps[activeStep] ?? guide?.steps[0] ?? null;
   const stepTargets = useMemo(() => {
-    if (!currentStep) return [];
-    return Array.isArray(currentStep.target) ? currentStep.target : [currentStep.target];
+    return getGuideStepTargets(currentStep);
   }, [currentStep]);
   const primaryTarget = stepTargets[0] ?? guide?.id ?? 'guide';
   const stepTargetKey = stepTargets.join('|');
@@ -383,6 +337,18 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
     };
   }, [open, scheduleRefreshTarget]);
 
+  useEffect(() => {
+    if (!open || !targetState?.rect || targetState.targetKey !== stepTargetKey || typeof ResizeObserver === 'undefined') return;
+
+    const target = resolveGuideTarget(stepTargets);
+    if (!target) return;
+
+    const observer = new ResizeObserver(() => scheduleRefreshTarget());
+    observer.observe(target.element);
+
+    return () => observer.disconnect();
+  }, [open, scheduleRefreshTarget, stepTargetKey, stepTargets, targetState]);
+
   useLayoutEffect(() => {
     if (!open) return;
 
@@ -480,6 +446,10 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
           aria-hidden
           data-testid="guide-spotlight"
           data-guide-target={spotlightTarget}
+          data-guide-spotlight-left={Math.round(spotlightRect.left)}
+          data-guide-spotlight-top={Math.round(spotlightRect.top)}
+          data-guide-spotlight-width={Math.round(spotlightRect.width)}
+          data-guide-spotlight-height={Math.round(spotlightRect.height)}
           sx={{
             position: 'fixed',
             left: 0,

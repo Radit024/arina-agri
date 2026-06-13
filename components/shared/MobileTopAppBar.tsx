@@ -65,6 +65,7 @@ export default function MobileTopAppBar() {
 
         <IconButton
           aria-label={t('pengaturan')}
+          data-guide-target="mobile-profile-settings"
           size="small"
           onClick={() => router.push(pathname + '?settings=true&tab=general')}
           sx={{

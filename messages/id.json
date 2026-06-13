@@ -17,7 +17,7 @@
   },
   "Sidebar": {
     "dashboard": "Dashboard",
-    "keuangan": "Pencatatan Keuangan",
+    "keuangan": "Manajemen Keuangan",
     "cuaca": "Cuaca",
     "ensiklopedia": "AI Chat",
     "kalender": "Smart Kalender",
@@ -31,9 +31,9 @@
   },
   "MobileNav": {
     "dashboard": "Dashboard",
-    "keuangan": "Keuangan",
+    "keuangan": "Manajemen Keuangan",
     "cuaca": "Cuaca",
-    "ensiklopedia": "Ensiklopedia",
+    "ensiklopedia": "AI Chat",
     "kalender": "Kalender",
     "lainnya": "Lainnya",
     "featureMenuTitle": "Menu Lainnya",
@@ -71,16 +71,28 @@
           "body": "Gunakan Keuangan untuk mencatat pemasukan dan pengeluaran, melihat kategori biaya, lalu mengekspor laporan saat dibutuhkan."
         },
         "operations": {
-          "title": "Kelola stok dan jadwal kerja",
-          "body": "Stok membantu memantau batch stok dan mutasi keluar masuk. Kalender membantu menyusun jadwal pemupukan, penyemprotan, irigasi, dan kegiatan lapangan."
+          "title": "Kelola stok panen",
+          "body": "Stok membantu memantau batch, grade, berat tersedia, dan mutasi keluar masuk agar catatan persediaan tetap akurat."
         },
-        "insights": {
-          "title": "Ambil keputusan dengan informasi",
-          "body": "Cuaca memberi prakiraan dan notifikasi, Berita memantau kabar pasar, dan AI Chat membantu mencari referensi penyakit atau budidaya cabai."
+        "weather": {
+          "title": "Pantau kondisi cuaca",
+          "body": "Cuaca memberi prakiraan dan notifikasi agar jadwal pemupukan, penyemprotan, dan irigasi bisa disesuaikan dengan kondisi lapangan."
         },
-        "settings": {
-          "title": "Atur profil dan preferensi",
-          "body": "Buka Pengaturan untuk memperbarui profil, bahasa, tema, dan kontak notifikasi. Anda bisa membuka panduan ini lagi dari tombol Panduan."
+        "market": {
+          "title": "Ikuti kabar pasar",
+          "body": "Berita membantu memantau informasi harga, pasar, cuaca, kebijakan, dan tips budidaya yang relevan untuk keputusan panen."
+        },
+        "encyclopedia": {
+          "title": "Tanya Arina AI",
+          "body": "AI Chat membantu mencari referensi penyakit, hama, perawatan, dan perhitungan usaha tani dengan format jawaban yang lebih mudah dibaca."
+        },
+        "calendar": {
+          "title": "Susun Smart Kalender",
+          "body": "Smart Kalender membantu membuat jadwal pemupukan, penyemprotan, irigasi, panen, dan pengingat kegiatan lapangan."
+        },
+        "profile": {
+          "title": "Buka profil pengguna",
+          "body": "Gunakan area profil untuk membuka menu akun, pengaturan, dan akses cepat ke preferensi aplikasi."
         }
       }
     },
@@ -98,9 +110,13 @@
             "title": "Catat transaksi pertama",
             "body": "Gunakan Catat Transaksi untuk memasukkan tanggal, kategori, nominal, dan catatan singkat agar laporan tetap rapi."
           },
+          "export": {
+            "title": "Ekspor laporan",
+            "body": "Gunakan tombol ekspor untuk mengunduh data transaksi ke Excel ketika laporan perlu dibagikan atau diarsipkan."
+          },
           "report": {
-            "title": "Ekspor saat perlu dilaporkan",
-            "body": "Gunakan ekspor Excel atau laporan AI ketika data transaksi sudah cukup lengkap untuk dibagikan atau dievaluasi."
+            "title": "Buat ringkasan AI",
+            "body": "Gunakan tombol laporan AI pada ringkasan bisnis untuk membaca analisis singkat dari transaksi yang sudah dicatat."
           }
         }
       },
@@ -156,8 +172,8 @@
             "body": "Filter kategori membantu Anda fokus pada berita harga, pasar, cuaca, kebijakan, atau tips budidaya."
           },
           "prices": {
-            "title": "Pantau sinyal harga",
-            "body": "Jika tersedia, gunakan peta dan grafik harga untuk membandingkan kondisi pasar sebelum menjual panen."
+            "title": "Segarkan berita terbaru",
+            "body": "Gunakan tombol refresh untuk memuat ulang kabar pasar terbaru tanpa mengubah kategori yang sedang dipilih."
           }
         }
       },
@@ -362,7 +378,7 @@
     },
     "emptyWeather": {
       "title": "Belum ada data cuaca",
-      "subtitle": "Nyalakan GPS atau isi lokasi manual untuk mendapatkan data cuaca terkini."
+      "subtitle": "Nyalakan GPS untuk mendapatkan data cuaca terkini."
     },
     "errors": {
       "loadBmkg": "Gagal memuat data cuaca BMKG.",

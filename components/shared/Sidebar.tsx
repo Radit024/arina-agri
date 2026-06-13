@@ -366,6 +366,7 @@ export default function Sidebar() {
 
         {/* User Profile */}
         <ListItemButton
+          data-guide-target="profile-menu"
           onClick={() => {
             if (isOpen) {
               setIsProfileDropdownOpen((prev) => !prev);

@@ -6,6 +6,7 @@ import type { ComponentProps } from 'react';
 
 import KeuanganView from '@/app/dashboard/keuangan/_components/KeuanganView';
 import type { ApiTransaction } from '@/lib/api';
+import { darkTheme } from '@/lib/theme';
 
 vi.mock('next/dynamic', () => ({
   default: () => function DynamicChartStub() {
@@ -101,6 +102,11 @@ const labels: Record<string, string> = {
   'hppDialog.results.inputProduction': 'Masukkan produksi',
   'hppDialog.results.notCalculatable': 'Belum bisa dihitung',
   'hppDialog.results.invalidBepUnit': 'Nilai BEP unit tidak valid',
+  'reportDialog.title': 'Laporan Keuangan',
+  'reportDialog.period': 'Periode',
+  'reportDialog.loading': 'Membuat laporan',
+  'reportDialog.summary.title': 'Ringkasan Data',
+  'reportDialog.summary.transactionCount': 'Jumlah Transaksi',
   'reportDialog.summary.transactions': 'transaksi',
   'reportDialog.manual.title': 'PDF Manual',
   'reportDialog.manual.desc': 'Ekspor laporan manual',
@@ -132,6 +138,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       keterangan: '',
     },
   });
+  const activeTheme = overrides.theme ?? theme;
 
   const props: KeuanganViewProps = {
     t: translate as KeuanganViewProps['t'],
@@ -155,7 +162,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setFilterBulan: vi.fn(),
     filterJenis: 'semua',
     setFilterJenis: vi.fn(),
-    theme,
+    theme: activeTheme,
     isMobile: true,
     control: form.control,
     handleSubmit: form.handleSubmit,
@@ -199,7 +206,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={activeTheme}>
       <KeuanganView {...props} />
     </ThemeProvider>
   );
@@ -226,5 +233,25 @@ describe('KeuanganView', () => {
 
     expect(handleEdit).toHaveBeenCalledWith(transaction);
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
+  });
+
+  it('keeps dark-mode finance action buttons visible before hover', () => {
+    const { unmount } = renderView({ theme: darkTheme });
+
+    const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
+    const reportButton = screen.getByRole('button', { name: 'Laporan Keuangan' });
+
+    expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.2)');
+    expect(getComputedStyle(editButton).color).toBe('rgb(104, 201, 154)');
+    expect(getComputedStyle(reportButton).backgroundColor).toBe('rgba(82, 183, 136, 0.2)');
+    expect(getComputedStyle(reportButton).color).toBe('rgb(104, 201, 154)');
+
+    unmount();
+    renderView({ theme: darkTheme, aiDialogOpen: true });
+
+    const generateAiButton = screen.getByRole('button', { name: 'Buat Laporan AI' });
+
+    expect(getComputedStyle(generateAiButton).backgroundColor).toBe('rgb(82, 183, 136)');
+    expect(getComputedStyle(generateAiButton).color).toBe('rgb(30, 38, 32)');
   });
 });

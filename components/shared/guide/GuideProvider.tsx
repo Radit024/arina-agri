@@ -21,6 +21,7 @@ import {
   isGuideSeen,
   markGuideSeen,
 } from '@/components/shared/guide/guideConfig';
+import { waitForGuideInitialTarget } from '@/components/shared/guide/guideTargets';
 
 const GuideDialog = dynamic(() => import('@/components/shared/guide/GuideDialog'), {
   ssr: false,
@@ -58,6 +59,25 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeGuide, setActiveGuide] = useState<GuideDefinition | null>(null);
   const autoPromptedPathRef = useRef<string | null>(null);
+  const pendingOpenRequestRef = useRef(0);
+
+  const queueGuideOpen = useCallback((nextGuide: GuideDefinition) => {
+    const requestId = pendingOpenRequestRef.current + 1;
+    pendingOpenRequestRef.current = requestId;
+
+    void waitForGuideInitialTarget(nextGuide).then(() => {
+      if (pendingOpenRequestRef.current !== requestId) return;
+
+      setActiveGuide(nextGuide);
+      setIsOpen(true);
+    });
+
+    return () => {
+      if (pendingOpenRequestRef.current === requestId) {
+        pendingOpenRequestRef.current += 1;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isOpen || autoPromptedPathRef.current === pathname) return;
@@ -66,13 +86,8 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
     if (!nextGuide) return;
 
     autoPromptedPathRef.current = pathname;
-    const timeoutId = window.setTimeout(() => {
-      setActiveGuide(nextGuide);
-      setIsOpen(true);
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [isOpen, pathname]);
+    return queueGuideOpen(nextGuide);
+  }, [isOpen, pathname, queueGuideOpen]);
 
   const openGuide = useCallback(
     (guideId?: GuideId) => {
@@ -82,19 +97,26 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
 
       if (!nextGuide) return;
 
-      setActiveGuide(nextGuide);
-      setIsOpen(true);
+      queueGuideOpen(nextGuide);
     },
-    [pathname]
+    [pathname, queueGuideOpen]
   );
 
   const closeGuide = useCallback(() => {
+    pendingOpenRequestRef.current += 1;
+
     if (activeGuide && typeof window !== 'undefined') {
       markGuideSeen(window.localStorage, activeGuide.id);
     }
 
     setIsOpen(false);
   }, [activeGuide]);
+
+  useEffect(() => {
+    return () => {
+      pendingOpenRequestRef.current += 1;
+    };
+  }, []);
 
   const contextValue = useMemo(() => ({ openGuide }), [openGuide]);
 

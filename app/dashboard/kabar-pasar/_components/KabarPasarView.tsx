@@ -114,8 +114,12 @@ export default function KabarPasarView({
           direction="row"
           spacing={1}
           sx={{
+            alignSelf: 'flex-start',
+            display: 'inline-flex',
             flexWrap: 'wrap',
             gap: 1,
+            maxWidth: '100%',
+            width: 'fit-content',
             '& > *': { flexShrink: 0 },
           }}
         >

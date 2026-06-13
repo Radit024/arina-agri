@@ -71,16 +71,28 @@
           "body": "Use Finance to record income and expenses, review cost categories, and export reports when needed."
         },
         "operations": {
-          "title": "Manage stock and work schedules",
-          "body": "Stock tracks batches and movements. Calendar helps plan fertilizing, spraying, irrigation, and field work."
+          "title": "Manage harvest stock",
+          "body": "Stock tracks batches, grades, available weight, and inbound or outbound movements so inventory records stay accurate."
         },
-        "insights": {
-          "title": "Make decisions with information",
-          "body": "Weather provides forecasts and alerts, Market News tracks market updates, and AI Chat helps find chili disease and cultivation references."
+        "weather": {
+          "title": "Monitor weather conditions",
+          "body": "Weather provides forecasts and alerts so fertilizing, spraying, and irrigation schedules can match field conditions."
         },
-        "settings": {
-          "title": "Set profile and preferences",
-          "body": "Open Settings to update your profile, language, theme, and notification contact. You can reopen this guide from the Guide button."
+        "market": {
+          "title": "Follow market news",
+          "body": "Market News helps track prices, market updates, weather, policy, and cultivation tips that support harvest decisions."
+        },
+        "encyclopedia": {
+          "title": "Ask Arina AI",
+          "body": "AI Chat helps find references for diseases, pests, care routines, and farm calculations in a more readable answer format."
+        },
+        "calendar": {
+          "title": "Plan the Smart Calendar",
+          "body": "Smart Calendar helps schedule fertilizing, spraying, irrigation, harvests, and field activity reminders."
+        },
+        "profile": {
+          "title": "Open the user profile",
+          "body": "Use the profile area to open account menus, settings, and quick access to app preferences."
         }
       }
     },
@@ -98,9 +110,13 @@
             "title": "Record the first transaction",
             "body": "Use Record Transaction to enter date, category, amount, and a short note so reports stay tidy."
           },
+          "export": {
+            "title": "Export the report",
+            "body": "Use the export button to download transaction data to Excel when the report needs to be shared or archived."
+          },
           "report": {
-            "title": "Export when reporting is needed",
-            "body": "Use Excel export or AI reports once transaction data is complete enough to share or evaluate."
+            "title": "Create an AI summary",
+            "body": "Use the AI report button in the business summary to read a short analysis of recorded transactions."
           }
         }
       },
@@ -156,8 +172,8 @@
             "body": "Category filters help you focus on prices, market, weather, policy, or cultivation tips."
           },
           "prices": {
-            "title": "Watch price signals",
-            "body": "When available, use the price map and chart to compare market conditions before selling harvest."
+            "title": "Refresh the latest news",
+            "body": "Use the refresh button to reload the latest market updates without changing the selected category."
           }
         }
       },

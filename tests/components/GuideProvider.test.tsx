@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import GuideProvider, { useGuide } from '@/components/shared/guide/GuideProvider';
 import {
+  GLOBAL_GUIDE,
+  getGuideDefinition,
   getGuideForPathname,
   getGuideStorageKey,
   markGuideSeen,
@@ -49,6 +51,25 @@ function ManualLauncher() {
   return <button onClick={() => openGuide()}>open guide</button>;
 }
 
+function createDomRect(rect: Partial<DOMRect>): DOMRect {
+  const left = rect.left ?? rect.x ?? 0;
+  const top = rect.top ?? rect.y ?? 0;
+  const width = rect.width ?? 0;
+  const height = rect.height ?? 0;
+
+  return {
+    bottom: rect.bottom ?? top + height,
+    height,
+    left,
+    right: rect.right ?? left + width,
+    top,
+    width,
+    x: rect.x ?? left,
+    y: rect.y ?? top,
+    toJSON: () => ({}),
+  };
+}
+
 beforeAll(() => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -82,13 +103,34 @@ describe('guide config', () => {
     markGuideSeen(window.localStorage, 'global');
     expect(window.localStorage.getItem(getGuideStorageKey('global'))).toBe('true');
   });
+
+  it('uses precise anchors for the reported guide targets', () => {
+    const financeGuide = getGuideDefinition('finance');
+    const marketGuide = getGuideDefinition('market');
+    const globalStepKeys = GLOBAL_GUIDE.steps.map((step) => step.key);
+    const globalTargets = GLOBAL_GUIDE.steps.flatMap((step) => (Array.isArray(step.target) ? step.target : [step.target]));
+
+    expect(globalStepKeys).not.toContain('settings');
+    expect(financeGuide?.steps.find((step) => step.key === 'record')?.target).toEqual([
+      'finance-add-transaction',
+      'finance-add-transaction-mobile',
+      'finance-add-transaction-empty',
+    ]);
+    expect(financeGuide?.steps.find((step) => step.key === 'export')?.target).toBe('finance-export');
+    expect(financeGuide?.steps.find((step) => step.key === 'report')?.target).toBe('finance-report');
+    expect(marketGuide?.steps.find((step) => step.key === 'categories')?.target).toBe('market-categories');
+    expect(marketGuide?.steps.find((step) => step.key === 'prices')?.target).toBe('market-refresh');
+    expect(globalTargets).toEqual(
+      expect.arrayContaining(['nav-kabarPasar', 'nav-ensiklopedia', 'nav-kalender', 'profile-menu'])
+    );
+  });
 });
 
 describe('GuideProvider', () => {
   it('auto-opens the global guide for first-time dashboard users', async () => {
     render(
       <GuideProvider>
-        <div>dashboard</div>
+        <button data-guide-target="nav-dashboard">Dashboard target</button>
       </GuideProvider>
     );
 
@@ -109,6 +151,162 @@ describe('GuideProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'actions.next' }));
 
     expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'nav-keuangan');
+  });
+
+  it('waits to auto-open a feature guide until the first page target is rendered', async () => {
+    mockPathname = '/dashboard/kalender';
+
+    const { rerender } = render(
+      <GuideProvider>
+        <div>calendar shell</div>
+      </GuideProvider>
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 40));
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    rerender(
+      <GuideProvider>
+        <button data-guide-target="calendar-grid">Calendar target</button>
+      </GuideProvider>
+    );
+
+    expect(await findGuideDialog()).toHaveTextContent('pages.calendar.title');
+    expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'calendar-grid');
+  });
+
+  it('waits to open a manual guide until the first page target is rendered', async () => {
+    mockPathname = '/dashboard/kalender';
+    markGuideSeen(window.localStorage, 'global');
+    markGuideSeen(window.localStorage, 'calendar');
+
+    const { rerender } = render(
+      <GuideProvider>
+        <ManualLauncher />
+      </GuideProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
+
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 40));
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    rerender(
+      <GuideProvider>
+        <button data-guide-target="calendar-grid">Calendar target</button>
+        <ManualLauncher />
+      </GuideProvider>
+    );
+
+    expect(await findGuideDialog()).toHaveTextContent('pages.calendar.title');
+    expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'calendar-grid');
+  });
+
+  it('keeps an oversized spotlight inside the viewport', async () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 360 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 640 });
+
+    try {
+      mockPathname = '/dashboard/kalender';
+      markGuideSeen(window.localStorage, 'global');
+      markGuideSeen(window.localStorage, 'calendar');
+
+      render(
+        <GuideProvider>
+          <button data-guide-target="calendar-grid">Calendar target</button>
+          <ManualLauncher />
+        </GuideProvider>
+      );
+
+      const target = screen.getByRole('button', { name: 'Calendar target' });
+      vi.spyOn(target, 'getBoundingClientRect').mockReturnValue(createDomRect({ left: -24, top: 12, width: 720, height: 80 }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
+      await findGuideDialog();
+
+      const spotlight = screen.getByTestId('guide-spotlight');
+      expect(spotlight).toHaveAttribute('data-guide-spotlight-width');
+      expect(Number(spotlight.getAttribute('data-guide-spotlight-left'))).toBeGreaterThanOrEqual(7);
+      expect(Number(spotlight.getAttribute('data-guide-spotlight-width'))).toBeLessThanOrEqual(346);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: originalInnerWidth });
+      Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: originalInnerHeight });
+    }
+  });
+
+  it('remeasures the spotlight when the highlighted target resizes', async () => {
+    const OriginalResizeObserver = window.ResizeObserver;
+    const callbacksByElement = new Map<Element, ResizeObserverCallback[]>();
+    let targetRect = createDomRect({ left: 24, top: 80, width: 120, height: 48 });
+
+    class MockResizeObserver {
+      private callback: ResizeObserverCallback;
+
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback;
+      }
+
+      observe = (element: Element) => {
+        callbacksByElement.set(element, [...(callbacksByElement.get(element) ?? []), this.callback]);
+      };
+
+      disconnect = vi.fn();
+      unobserve = vi.fn();
+    }
+
+    Object.defineProperty(window, 'ResizeObserver', {
+      configurable: true,
+      writable: true,
+      value: MockResizeObserver,
+    });
+
+    try {
+      mockPathname = '/dashboard/kalender';
+      markGuideSeen(window.localStorage, 'global');
+      markGuideSeen(window.localStorage, 'calendar');
+
+      render(
+        <GuideProvider>
+          <button data-guide-target="calendar-grid">Calendar target</button>
+          <ManualLauncher />
+        </GuideProvider>
+      );
+
+      const target = screen.getByRole('button', { name: 'Calendar target' });
+      vi.spyOn(target, 'getBoundingClientRect').mockImplementation(() => targetRect);
+
+      fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
+      await findGuideDialog();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-spotlight-width', '132');
+      });
+
+      targetRect = createDomRect({ left: 24, top: 80, width: 280, height: 48 });
+
+      await act(async () => {
+        callbacksByElement.get(target)?.forEach((callback) => callback([], {} as ResizeObserver));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-spotlight-width', '292');
+      });
+    } finally {
+      Object.defineProperty(window, 'ResizeObserver', {
+        configurable: true,
+        writable: true,
+        value: OriginalResizeObserver,
+      });
+    }
   });
 
   it('watches mobile layout changes so the spotlight can follow late-rendered targets', async () => {
@@ -152,7 +350,7 @@ describe('GuideProvider', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
 
-      expect(screen.getByRole('dialog')).toHaveTextContent('global.title');
+      expect(await findGuideDialog()).toHaveTextContent('global.title');
       expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'nav-dashboard');
       expect(observe).toHaveBeenCalled();
     } finally {
@@ -170,17 +368,7 @@ describe('GuideProvider', () => {
 
   it('keeps the mobile guide card away from a bottom-aligned highlighted target', async () => {
     const originalMatchMedia = window.matchMedia;
-    const bottomTargetRect: DOMRect = {
-      bottom: 676,
-      height: 56,
-      left: 24,
-      right: 344,
-      top: 620,
-      width: 320,
-      x: 24,
-      y: 620,
-      toJSON: () => ({}),
-    };
+    const bottomTargetRect = createDomRect({ left: 24, top: 620, width: 320, height: 56 });
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -228,7 +416,7 @@ describe('GuideProvider', () => {
   it('marks a guide as seen when skipped', async () => {
     render(
       <GuideProvider>
-        <div>dashboard</div>
+        <button data-guide-target="nav-dashboard">Dashboard target</button>
       </GuideProvider>
     );
 
@@ -245,7 +433,7 @@ describe('GuideProvider', () => {
 
     render(
       <GuideProvider>
-        <div>finance</div>
+        <button data-guide-target="finance-ledger">Finance target</button>
       </GuideProvider>
     );
 
@@ -274,6 +462,7 @@ describe('GuideProvider', () => {
 
     render(
       <GuideProvider>
+        <button data-guide-target="stock-summary">Stock target</button>
         <ManualLauncher />
       </GuideProvider>
     );

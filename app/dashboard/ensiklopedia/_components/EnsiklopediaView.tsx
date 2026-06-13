@@ -299,7 +299,17 @@ export default function EnsiklopediaView({
               </Typography>
 
               {/* Suggestion Cards */}
-              <Box data-guide-target="ai-quick-prompts" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%', maxWidth: '640px' }}>
+              <Box
+                data-guide-target="ai-quick-prompts"
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(240px, 1fr))' },
+                  gap: 2,
+                  justifyContent: 'center',
+                  maxWidth: '640px',
+                  width: { xs: '100%', sm: 'fit-content' },
+                }}
+              >
                 {[
                   { text: t('prompts.p1'), icon: <WaterDropOutlinedIcon sx={{ color: 'info.main' }} />, bg: alpha(theme.palette.info.main, 0.05), border: alpha(theme.palette.info.main, 0.2) },
                   { text: t('prompts.p2'), icon: <ShieldOutlinedIcon sx={{ color: 'error.main' }} />, bg: alpha(theme.palette.error.main, 0.05), border: alpha(theme.palette.error.main, 0.2) },
@@ -686,20 +696,19 @@ export default function EnsiklopediaView({
 
           {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
           {hasUserMessages && (
-            <Box data-guide-target="ai-quick-prompts" sx={{ position: 'relative' }}>
+            <Box sx={{ mb: 1.5, maxWidth: '100%', overflow: 'hidden', position: 'relative' }}>
               <Box
+                data-guide-target="ai-quick-prompts"
                 sx={{
                   display: 'flex',
-                  flexWrap: 'nowrap',
+                  flexWrap: 'wrap',
                   gap: 1,
-                  overflowX: 'auto',
-                  mb: 1.5,
+                  maxWidth: '100%',
                   pb: 0.5,
+                  px: 1,
+                  width: 'fit-content',
                   '::-webkit-scrollbar': { display: 'none' },
                   scrollbarWidth: 'none',
-                  px: 1,
-                  maskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)',
                 }}
               >
                 {[t('prompts.p1'), t('prompts.p2'), t('prompts.p3'), t('prompts.p4')].map((prompt) => (

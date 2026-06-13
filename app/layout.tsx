@@ -42,8 +42,7 @@ const themeInitScript = `
 (() => {
   try {
     const stored = window.localStorage.getItem('arina_theme_mode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const mode = stored === 'light' || stored === 'dark' ? stored : prefersDark ? 'dark' : 'light';
+    const mode = stored === 'light' || stored === 'dark' ? stored : 'light';
     const root = document.documentElement;
     root.dataset.theme = mode;
     root.style.colorScheme = mode;

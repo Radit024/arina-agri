@@ -24,6 +24,37 @@ interface KategoriChartProps {
   data: DashboardCategoryPoint[];
 }
 
+const chartCardSx = {
+  border: 'none',
+  borderRadius: 4,
+  boxShadow: 'none',
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+};
+
+const chartCardHeaderSx = {
+  px: { xs: 2.5, md: 3 },
+  pt: { xs: 2.75, md: 3.25 },
+  pb: { xs: 1.75, md: 2 },
+  '& .MuiCardHeader-content': { minWidth: 0 },
+  '& .MuiCardHeader-subheader': {
+    color: 'text.secondary',
+    fontSize: '0.95rem',
+    lineHeight: 1.45,
+    mt: 0.5,
+  },
+};
+
+const chartCardContentSx = {
+  px: { xs: 2.5, md: 3 },
+  pb: { xs: 2.5, md: 3 },
+  pt: 0,
+  '&:last-child': {
+    pb: { xs: 2.5, md: 3 },
+  },
+};
+
 const LineChart = dynamic(() => import('@mui/x-charts/LineChart').then((m) => ({ default: m.LineChart })), {
   ssr: false,
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
@@ -40,8 +71,9 @@ export function TrendChart({ data }: TrendChartProps) {
   const hasData = data.some((item) => item.pendapatan > 0 || item.pengeluaran > 0);
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>
+    <Card sx={chartCardSx}>
       <CardHeader
+        sx={chartCardHeaderSx}
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             {t('trend.title')}
@@ -49,8 +81,8 @@ export function TrendChart({ data }: TrendChartProps) {
         }
         subheader={t('trend.subheader')}
       />
-      <CardContent sx={{ pt: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ display: 'flex', gap: 2.5, mb: 3, mt: 1 }}>
+      <CardContent sx={{ ...chartCardContentSx, flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', gap: 2.5, mb: { xs: 3, md: 3.5 }, mt: 0.25 }}>
           {[{ color: theme.palette.success.main, label: t('common.income') }, { color: theme.palette.warning.main, label: t('common.expense') }].map((item) => (
             <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: item.color }} />
@@ -140,8 +172,9 @@ export function KategoriChart({ data }: KategoriChartProps) {
   const pieColors = pieData.map(d => d.color);
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 4, border: 'none', boxShadow: 'none' }}>
+    <Card sx={chartCardSx}>
       <CardHeader
+        sx={chartCardHeaderSx}
         title={
           <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>
             {t('category.title')}
@@ -152,7 +185,7 @@ export function KategoriChart({ data }: KategoriChartProps) {
           year: new Date().getFullYear() 
         })}
       />
-      <CardContent sx={{ pt: 0, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 300 }}>
+      <CardContent sx={{ ...chartCardContentSx, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 300 }}>
         {data.length === 0 ? (
           <Box sx={{ 
             height: 260, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 

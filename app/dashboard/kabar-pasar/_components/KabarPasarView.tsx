@@ -60,8 +60,6 @@ export default function KabarPasarView({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        sx={{ mb: 3 }}
-        icon={<NewspaperIcon sx={{ fontSize: 22 }} />}
         actions={(
           <Tooltip title={t('refetch')}>
             <IconButton

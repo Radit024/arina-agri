@@ -135,7 +135,7 @@ describe('EnsiklopediaView', () => {
   it('exposes accessible composer and 44px touch target hooks', () => {
     renderView({ inputValue: 'Daun cabai menguning' });
 
-    expect(screen.getByLabelText('Pesan untuk Arina AI')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Pesan untuk Arina AI' })).toBeInTheDocument();
     const sendButton = screen.getByRole('button', { name: 'Kirim pesan' });
     expect(sendButton).toBeEnabled();
     expect(sendButton).toHaveAttribute('data-touch-target', '44');
@@ -147,6 +147,41 @@ describe('EnsiklopediaView', () => {
       .forEach((button) => expect(button).toHaveAttribute('data-touch-target', '44'));
     expect(screen.getByRole('button', { name: 'Hapus chat saat ini' })).toHaveAttribute('data-touch-target', '44');
     expect(screen.getByText(/Ctrl\/Cmd \+ Enter untuk mengirim/)).toHaveAttribute('data-mobile-helper', 'desktop-only');
+  });
+
+  it('renders AI markdown tables and math as structured content', () => {
+    renderView({
+      hasUserMessages: true,
+      messages: [
+        {
+          id: 'user-1',
+          role: 'user',
+          content: 'Hitung kebutuhan pupuk',
+          timestamp: '2026-06-13T00:00:00.000Z',
+        },
+        {
+          id: 'ai-1',
+          role: 'ai',
+          content: [
+            '### Rekomendasi Pemupukan',
+            '',
+            '| Kebutuhan | Dosis |',
+            '|---|---:|',
+            '| NPK | **2 g/L** |',
+            '',
+            '$$',
+            'total = 2\\ g/L \\times 10\\ L = 20\\ g',
+            '$$',
+          ].join('\n'),
+          timestamp: '2026-06-13T00:01:00.000Z',
+        },
+      ],
+    });
+
+    expect(screen.getByRole('heading', { name: 'Rekomendasi Pemupukan', level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByText('NPK')).toBeInTheDocument();
+    expect(document.querySelector('.katex-display')).toBeInTheDocument();
   });
 
   it('keeps Enter as a multiline key and sends only through Ctrl/Cmd+Enter shortcuts', () => {

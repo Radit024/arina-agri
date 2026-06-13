@@ -567,16 +567,16 @@
         "transactions": "transaksi"
       },
       "manual": {
-        "title": "Ekspor Excel / Spreadsheet",
-        "desc": "Unduh buku besar transaksi dalam format .xlsx untuk pelaporan manual atau dicetak.",
-        "button": "Unduh Excel"
+        "title": "Laporan Keuangan",
+        "desc": "Unduh laporan keuangan lengkap dalam format PDF yang mudah dibagikan dan dicetak.",
+        "button": "Buat Laporan"
       },
       "ai": {
-        "title": "Laporan Cerdas PDF (AI)",
+        "title": "Laporan Keuangan Cerdas (AI)",
         "quotaRemaining": "tersisa",
-        "descActive": "Buat laporan PDF profesional yang dilengkapi dengan analisis kesehatan bisnis dan rekomendasi AI.",
+        "descActive": "Buat laporan Keuangan profesional yang dilengkapi dengan analisis kesehatan bisnis dan rekomendasi AI.",
         "descEmpty": "Batas AI habis. Anda tetap bisa unduh laporan manual.",
-        "button": "Buat Laporan AI"
+        "button": "Buat Laporan"
       },
       "error": {
         "failed": "Gagal membuat laporan. Silakan coba lagi.",

@@ -30,6 +30,9 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ReactMarkdown from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import { useMessages } from 'next-intl';
 import { PageActionButton } from '@/components/shared/page';
 import { accentText, softBg, softText } from '@/lib/themeColors';
@@ -431,14 +434,28 @@ export default function EnsiklopediaView({
                         p: { xs: 2, sm: 2.5 },
                         borderRadius: '4px 24px 24px 24px',
                         fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                        lineHeight: 1.8, // More breathing room
+                        lineHeight: 1.58,
                         color: 'text.primary',
                         boxShadow: 'none', // Flat look for AI to contrast with User
                         overflowWrap: 'anywhere',
                         wordBreak: 'break-word',
-                        '& p': { m: 0, mb: 2.5, '&:last-of-type': { mb: 0 } },
-                        '& ul, & ol': { m: 0, pl: 3, mb: 2.5 },
-                        '& li': { mb: 1.5, pl: 0.5 },
+                        '& h1, & h2, & h3, & h4': {
+                          fontFamily: 'var(--font-sora)',
+                          color: 'text.primary',
+                          fontWeight: 800,
+                          lineHeight: 1.25,
+                          mt: 0,
+                          mb: 1.25,
+                        },
+                        '& h1': { fontSize: '1.18rem' },
+                        '& h2': { fontSize: '1.08rem' },
+                        '& h3': { fontSize: '1rem' },
+                        '& h4': { fontSize: '0.95rem' },
+                        '& p': { m: 0, mb: 1.25, '&:last-of-type': { mb: 0 } },
+                        '& ul, & ol': { m: 0, pl: 3, mb: 1.25 },
+                        '& li': { mb: 0.5, pl: 0.25 },
+                        '& li > p': { m: 0 },
+                        '& li:last-child': { mb: 0 },
                         '& strong': { fontWeight: 800, color: softText(theme, 'success') },
                         '& code': {
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
@@ -447,7 +464,7 @@ export default function EnsiklopediaView({
                         '& blockquote': {
                           borderLeft: `4px solid ${theme.palette.success.main}`,
                           bgcolor: alpha(theme.palette.success.main, 0.05),
-                          m: 0, mb: 2.5, p: 2, borderRadius: '0 8px 8px 0',
+                          m: 0, mb: 1.25, p: 2, borderRadius: '0 8px 8px 0',
                           color: 'text.secondary'
                         },
                         '& a': {
@@ -458,21 +475,69 @@ export default function EnsiklopediaView({
                         '& pre': {
                           maxWidth: '100%',
                           overflowX: 'auto',
+                          bgcolor: alpha(theme.palette.text.primary, 0.08),
+                          borderRadius: 2,
+                          p: 1.5,
                         },
                         '& table': {
                           display: 'block',
                           maxWidth: '100%',
                           overflowX: 'auto',
                           borderCollapse: 'collapse',
+                          mb: 1.5,
+                          border: `1px solid ${theme.palette.divider}`,
+                          borderRadius: 2,
                         },
                         '& th, & td': {
                           borderBottom: `1px solid ${theme.palette.divider}`,
-                          p: 1,
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                          px: 1.25,
+                          py: 0.875,
                           textAlign: 'left',
+                          whiteSpace: 'nowrap',
+                        },
+                        '& th': {
+                          bgcolor: alpha(theme.palette.success.main, 0.1),
+                          color: softText(theme, 'success'),
+                          fontWeight: 800,
+                        },
+                        '& tr:last-child td': {
+                          borderBottom: 0,
+                        },
+                        '& th:last-child, & td:last-child': {
+                          borderRight: 0,
+                        },
+                        '& .contains-task-list': {
+                          listStyle: 'none',
+                          pl: 0,
+                        },
+                        '& .task-list-item': {
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        },
+                        '& .katex': {
+                          fontSize: '1em',
+                        },
+                        '& .katex-display': {
+                          m: '12px 0',
+                          maxWidth: '100%',
+                          overflowX: 'auto',
+                          overflowY: 'hidden',
+                          bgcolor: alpha(theme.palette.text.primary, 0.06),
+                          border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                          borderRadius: 2,
+                          px: 1.5,
+                          py: 1,
                         }
                       }}
                     >
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm, remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </Box>
                   )}
                 </Box>
@@ -621,6 +686,9 @@ export default function EnsiklopediaView({
               maxRows={6}
               variant="standard"
               slotProps={{
+                htmlInput: {
+                  'aria-label': t('inputLabel'),
+                },
                 input: {
                   disableUnderline: true,
                   sx: {

@@ -68,14 +68,22 @@ type FinanceActionIntent = 'primary' | 'error';
 function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
   const palette = theme.palette[intent];
   const isDarkMode = theme.palette.mode === 'dark';
-  const foreground = isDarkMode ? palette.light : palette.dark;
+  const isPrimaryAction = intent === 'primary';
+  const foreground = isDarkMode && isPrimaryAction
+    ? theme.palette.common.white
+    : isDarkMode
+      ? palette.main
+      : palette.dark;
+  const backgroundOpacity = isDarkMode
+    ? isPrimaryAction ? 0.28 : 0.24
+    : 0.12;
 
   return {
     borderRadius: 2,
     color: foreground,
-    bgcolor: alpha(palette.main, isDarkMode ? 0.2 : 0.12),
+    bgcolor: alpha(palette.main, backgroundOpacity),
     border: '1px solid',
-    borderColor: alpha(foreground, isDarkMode ? 0.35 : 0.24),
+    borderColor: alpha(foreground, isDarkMode ? 0.42 : 0.24),
     transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow', 'color'], {
       duration: theme.transitions.duration.shortest,
     }),
@@ -1086,13 +1094,13 @@ export default function KeuanganView({
               sx={(theme) => ({
                 borderRadius: 8,
                 bgcolor: theme.palette.mode === 'dark' ? 'primary.main' : 'text.primary',
-                color: theme.palette.mode === 'dark' ? 'primary.contrastText' : 'background.default',
+                color: theme.palette.mode === 'dark' ? theme.palette.common.white : 'background.default',
                 border: '1px solid',
                 borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.primary.light, 0.35) : 'transparent',
                 boxShadow: theme.palette.mode === 'dark' ? `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}` : 'none',
                 '&:hover': {
                   bgcolor: theme.palette.mode === 'dark' ? 'primary.light' : 'text.secondary',
-                  color: theme.palette.mode === 'dark' ? 'primary.contrastText' : 'background.default',
+                  color: theme.palette.mode === 'dark' ? theme.palette.common.white : 'background.default',
                 },
               })}
             >

@@ -239,12 +239,15 @@ describe('KeuanganView', () => {
     const { unmount } = renderView({ theme: darkTheme });
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
+    const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
     const reportButton = screen.getByRole('button', { name: 'Laporan Keuangan' });
 
-    expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.2)');
-    expect(getComputedStyle(editButton).color).toBe('rgb(104, 201, 154)');
-    expect(getComputedStyle(reportButton).backgroundColor).toBe('rgba(82, 183, 136, 0.2)');
-    expect(getComputedStyle(reportButton).color).toBe('rgb(104, 201, 154)');
+    expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
+    expect(getComputedStyle(editButton).color).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(deleteButton).backgroundColor).toBe('rgba(212, 131, 106, 0.24)');
+    expect(getComputedStyle(deleteButton).color).toBe('rgb(212, 131, 106)');
+    expect(getComputedStyle(reportButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
+    expect(getComputedStyle(reportButton).color).toBe('rgb(255, 255, 255)');
 
     unmount();
     renderView({ theme: darkTheme, aiDialogOpen: true });
@@ -252,6 +255,6 @@ describe('KeuanganView', () => {
     const generateAiButton = screen.getByRole('button', { name: 'Buat Laporan AI' });
 
     expect(getComputedStyle(generateAiButton).backgroundColor).toBe('rgb(82, 183, 136)');
-    expect(getComputedStyle(generateAiButton).color).toBe('rgb(30, 38, 32)');
+    expect(getComputedStyle(generateAiButton).color).toBe('rgb(255, 255, 255)');
   });
 });

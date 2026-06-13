@@ -528,14 +528,15 @@
         "proyeksiPanen": "Projected Harvest",
         "proyeksiPanenHelper": "Expected total harvest (kg)",
         "targetHargaJual": "Target Selling Price",
-        "targetHargaJualHelper": "Target price per kg"
+        "targetHargaJualHelper": "Enter price or margin — both auto-sync",
+        "targetMargin": "Margin (%)",
+        "targetMarginHelper": "Enter margin or selling price — both auto-sync"
       },
       "results": {
         "hpp": "Cost/kg",
         "bepKg": "BEP (kg)",
         "bepRupiah": "BEP (Rp)",
         "proyeksiLaba": "Projected Profit",
-        "margin": "Margin (%)",
         "inputRequired": "Complete the inputs",
         "layak": "This business is feasible",
         "tidakLayak": "Projected harvest is below break-even",

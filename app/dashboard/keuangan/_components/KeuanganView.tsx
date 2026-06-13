@@ -159,7 +159,6 @@ export default function KeuanganView({
   bfaBepKg,
   bfaBepRupiah,
   bfaProyeksiLaba,
-  bfaMarginPersen,
   bfaLayak,
   finalPieData,
   finalPieColors,
@@ -814,7 +813,7 @@ export default function KeuanganView({
         <DialogContent sx={{ pt: '12px !important' }}>
           {/* Input Section */}
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label={t('hppDialog.fields.totalBiaya')}
                 type="number"
@@ -835,7 +834,7 @@ export default function KeuanganView({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label={t('hppDialog.fields.proyeksiPanen')}
                 type="number"
@@ -856,7 +855,7 @@ export default function KeuanganView({
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label={t('hppDialog.fields.targetHargaJual')}
                 type="number"
@@ -877,6 +876,27 @@ export default function KeuanganView({
                 }}
               />
             </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label={t('hppDialog.fields.targetMargin')}
+                type="number"
+                value={getBepHppInputDisplayValue(bepHppInputs.targetMargin ?? 0)}
+                placeholder="0"
+                onChange={(e) => handleBepHppInputChange('targetMargin', e.target.value)}
+                fullWidth
+                helperText={t('hppDialog.fields.targetMarginHelper')}
+                slotProps={{
+                  input: {
+                    inputProps: { step: 0.1 },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>%</Typography>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Grid>
           </Grid>
 
           {/* Formula Info Box */}
@@ -893,7 +913,7 @@ export default function KeuanganView({
           </Box>
 
           {/* Results Grid */}
-          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 1.2 }}>
+          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.2 }}>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfdf3', border: '1px solid #bbf7d0' }}>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.hpp')}</Typography>
               <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 800 }}>
@@ -918,12 +938,6 @@ export default function KeuanganView({
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.proyeksiLaba')}</Typography>
               <Typography variant="body2" sx={{ color: bfaProyeksiLaba !== null && bfaProyeksiLaba >= 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
                 {bfaProyeksiLaba !== null ? formatRupiah(bfaProyeksiLaba) : t('hppDialog.results.inputRequired')}
-              </Typography>
-            </Box>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.margin')}</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                {bfaMarginPersen !== null ? `${bfaMarginPersen.toFixed(1)}%` : t('hppDialog.results.inputRequired')}
               </Typography>
             </Box>
           </Box>

@@ -35,6 +35,7 @@ type BepHppInputs = {
   totalBiaya: number;
   proyeksiPanen: number;
   targetHargaJual: number;
+  targetMargin: number; // persen, e.g. 25 = 25%
 };
 
 
@@ -65,6 +66,7 @@ export function useKeuanganController() {
     totalBiaya: 0,
     proyeksiPanen: 0,
     targetHargaJual: 0,
+    targetMargin: 0,
   });
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
@@ -187,11 +189,35 @@ export function useKeuanganController() {
   };
 
   const handleBepHppInputChange = useCallback((field: keyof BepHppInputs, rawValue: string) => {
-    const numericValue = Math.max(0, Number(rawValue) || 0);
-    setBepHppInputs((prev) => ({
-      ...prev,
-      [field]: numericValue,
-    }));
+    const raw = Number(rawValue) || 0;
+    // Only margin allows negative; all others floored at 0
+    const numericValue = field === 'targetMargin' ? raw : Math.max(0, raw);
+
+    setBepHppInputs((prev) => {
+      const next = { ...prev, [field]: numericValue };
+      const hpp = next.proyeksiPanen > 0 ? next.totalBiaya / next.proyeksiPanen : null;
+
+      if (hpp !== null) {
+        if (field === 'targetHargaJual') {
+          // Harga jual berubah → hitung ulang margin
+          next.targetMargin = numericValue > 0
+            ? parseFloat(((1 - hpp / numericValue) * 100).toFixed(2))
+            : 0;
+        } else if (field === 'targetMargin') {
+          // Margin berubah → hitung ulang harga jual
+          next.targetHargaJual = numericValue < 100
+            ? Math.round(hpp / (1 - numericValue / 100))
+            : 0;
+        } else {
+          // totalBiaya atau proyeksiPanen berubah → HPP berubah, sync margin dari hargaJual yang ada
+          if (next.targetHargaJual > 0) {
+            next.targetMargin = parseFloat(((1 - hpp / next.targetHargaJual) * 100).toFixed(2));
+          }
+        }
+      }
+
+      return next;
+    });
   }, [setBepHppInputs]);
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
@@ -373,10 +399,6 @@ export function useKeuanganController() {
     proyeksiPanen > 0 && targetHargaJual > 0
       ? proyeksiPanen * targetHargaJual - totalBiaya
       : null;
-  const bfaMarginPersen =
-    bfaProyeksiLaba !== null && proyeksiPanen > 0 && targetHargaJual > 0
-      ? (bfaProyeksiLaba / (proyeksiPanen * targetHargaJual)) * 100
-      : null;
   const bfaLayak = bfaBepKg !== null && proyeksiPanen > bfaBepKg;
 
   // Pie chart data
@@ -525,7 +547,6 @@ export function useKeuanganController() {
     bfaBepKg,
     bfaBepRupiah,
     bfaProyeksiLaba,
-    bfaMarginPersen,
     bfaLayak,
     finalPieData,
     finalPieColors,

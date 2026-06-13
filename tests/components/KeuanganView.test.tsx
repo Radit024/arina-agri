@@ -96,12 +96,13 @@ const labels: Record<string, string> = {
   'hppDialog.fields.proyeksiPanen': 'Proyeksi Hasil Panen',
   'hppDialog.fields.proyeksiPanenHelper': 'Perkiraan total panen (kg)',
   'hppDialog.fields.targetHargaJual': 'Target Harga Jual',
-  'hppDialog.fields.targetHargaJualHelper': 'Target harga per kg',
+  'hppDialog.fields.targetHargaJualHelper': 'Isi harga jual atau margin, keduanya saling otomatis',
+  'hppDialog.fields.targetMargin': 'Margin (%)',
+  'hppDialog.fields.targetMarginHelper': 'Isi margin atau harga jual, keduanya saling otomatis',
   'hppDialog.results.hpp': 'HPP/kg',
   'hppDialog.results.bepKg': 'BEP (kg)',
   'hppDialog.results.bepRupiah': 'BEP (Rp)',
   'hppDialog.results.proyeksiLaba': 'Proyeksi Laba',
-  'hppDialog.results.margin': 'Margin (%)',
   'hppDialog.results.inputRequired': 'Lengkapi input',
   'hppDialog.results.layak': 'Usaha ini layak dijalankan',
   'hppDialog.results.tidakLayak': 'Proyeksi panen tidak mencukupi BEP',
@@ -146,7 +147,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
 
   const props: KeuanganViewProps = {
     t: translate as KeuanganViewProps['t'],
-    bepHppInputs: { totalBiaya: 0, proyeksiPanen: 0, targetHargaJual: 0 },
+    bepHppInputs: { totalBiaya: 0, proyeksiPanen: 0, targetHargaJual: 0, targetMargin: 0 },
     aiDialogOpen: false,
     setAiDialogOpen: vi.fn(),
     reportLoading: false,
@@ -194,7 +195,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bfaBepKg: null,
     bfaBepRupiah: null,
     bfaProyeksiLaba: null,
-    bfaMarginPersen: null,
     bfaLayak: false,
     finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }],
     finalPieColors: ['#e2e8f0'],
@@ -234,12 +234,13 @@ describe('KeuanganView', () => {
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
   });
 
-  it('menampilkan 3 input field BFA ketika dialog dibuka', () => {
+  it('menampilkan 4 input field BFA ketika dialog dibuka', () => {
     renderView({ bepHppDialogOpen: true });
 
     expect(screen.getByLabelText('Estimasi Total Biaya')).toBeInTheDocument();
     expect(screen.getByLabelText('Proyeksi Hasil Panen')).toBeInTheDocument();
     expect(screen.getByLabelText('Target Harga Jual')).toBeInTheDocument();
+    expect(screen.getByLabelText('Margin (%)')).toBeInTheDocument();
   });
 
   it('menampilkan verdict layak ketika bfaLayak = true', () => {
@@ -249,9 +250,8 @@ describe('KeuanganView', () => {
       bfaBepKg: 33.3,
       bfaBepRupiah: 22500000,
       bfaProyeksiLaba: 2250000,
-      bfaMarginPersen: 16.7,
       bfaLayak: true,
-      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000 },
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 66.67 },
     });
 
     expect(screen.getByText('Usaha ini layak dijalankan')).toBeInTheDocument();
@@ -264,13 +264,22 @@ describe('KeuanganView', () => {
       bfaBepKg: 100,
       bfaBepRupiah: null,
       bfaProyeksiLaba: -750000,
-      bfaMarginPersen: -100,
       bfaLayak: false,
-      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 50, targetHargaJual: 15000 },
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 50, targetHargaJual: 15000, targetMargin: 0 },
     });
 
     expect(screen.getByText('Proyeksi panen tidak mencukupi BEP')).toBeInTheDocument();
     expect(screen.getByText(/Perlu tambah 50.0 kg/)).toBeInTheDocument();
+  });
+
+  it('menampilkan margin input dengan nilai yang tersimpan', () => {
+    renderView({
+      bepHppDialogOpen: true,
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 66.67 },
+    });
+
+    const marginInput = screen.getByLabelText('Margin (%)') as HTMLInputElement;
+    expect(marginInput.value).toBe('66.67');
   });
 
   it('keeps dark-mode finance action buttons visible before hover', () => {

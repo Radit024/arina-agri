@@ -528,14 +528,15 @@
         "proyeksiPanen": "Proyeksi Hasil Panen",
         "proyeksiPanenHelper": "Perkiraan total panen (kg)",
         "targetHargaJual": "Target Harga Jual",
-        "targetHargaJualHelper": "Target harga per kg yang ingin dicapai"
+        "targetHargaJualHelper": "Isi harga jual atau margin, keduanya saling otomatis",
+        "targetMargin": "Margin (%)",
+        "targetMarginHelper": "Isi margin atau harga jual, keduanya saling otomatis"
       },
       "results": {
         "hpp": "HPP/kg",
         "bepKg": "BEP (kg)",
         "bepRupiah": "BEP (Rp)",
         "proyeksiLaba": "Proyeksi Laba",
-        "margin": "Margin (%)",
         "inputRequired": "Lengkapi input",
         "layak": "Usaha ini layak dijalankan",
         "tidakLayak": "Proyeksi panen tidak mencukupi BEP",

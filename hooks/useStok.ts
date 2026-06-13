@@ -49,6 +49,37 @@ export function computeStockOutTotal(berat: number, hargaRealisasi: number): num
   return berat * hargaRealisasi;
 }
 
+export interface BatchPerformance {
+  bepKg: number | null;
+  sudahTerjual: number;
+  sisaBepKg: number;
+  bepProgress: number;
+  sudahBalikModal: boolean;
+  estimasiLabaJikaHabis: number;
+}
+
+export function computeBatchPerformance(batch: {
+  hargaModal: number;
+  beratMasuk: number;
+  stokTersisa: number;
+  hargaJual: number;
+}): BatchPerformance {
+  const { hargaModal, beratMasuk, stokTersisa, hargaJual } = batch;
+  const sudahTerjual = beratMasuk - stokTersisa;
+
+  if (hargaJual <= 0) {
+    return { bepKg: null, sudahTerjual, sisaBepKg: 0, bepProgress: 0, sudahBalikModal: false, estimasiLabaJikaHabis: 0 };
+  }
+
+  const bepKg = (hargaModal * beratMasuk) / hargaJual;
+  const sisaBepKg = Math.max(bepKg - sudahTerjual, 0);
+  const bepProgress = bepKg > 0 ? Math.min(sudahTerjual / bepKg, 1) : 0;
+  const sudahBalikModal = sudahTerjual >= bepKg;
+  const estimasiLabaJikaHabis = stokTersisa * (hargaJual - hargaModal);
+
+  return { bepKg, sudahTerjual, sisaBepKg, bepProgress, sudahBalikModal, estimasiLabaJikaHabis };
+}
+
 export function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
   const active = batches.filter(b => b.status !== 'habis');
   return {

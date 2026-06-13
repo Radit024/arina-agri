@@ -915,6 +915,15 @@
         "minWeight": "Min 0.1 kg",
         "selectBatch": "Select batch"
       }
+    },
+    "batchPerformance": {
+      "bepProgress": "BEP Progress",
+      "sudahTerjual": "Sold",
+      "bepKg": "BEP",
+      "sisaBep": "{kg} kg more to break even",
+      "sudahBalikModal": "Break-even reached!",
+      "estimasiLaba": "Est. profit if sold out",
+      "hargaJualBelumDiisi": "Set a sell price to see BEP"
     }
   },
   "Auth": {

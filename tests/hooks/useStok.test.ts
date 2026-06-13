@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLocalSummary, computeExpiryDate, computeStockOutTotal, DEFAULT_GRADES, DEFAULT_LOCATIONS } from '@/hooks/useStok';
+import { computeLocalSummary, computeExpiryDate, computeStockOutTotal, computeBatchPerformance, DEFAULT_GRADES, DEFAULT_LOCATIONS } from '@/hooks/useStok';
 import type { ApiHarvestBatch } from '@/lib/api';
 
 const mockBatch = (overrides: Partial<ApiHarvestBatch>): ApiHarvestBatch => ({
@@ -122,5 +122,83 @@ describe('DEFAULT_LOCATIONS', () => {
       expect(l.id).toBeTruthy();
       expect(l.nama).toBeTruthy();
     });
+  });
+});
+
+describe('computeBatchPerformance', () => {
+  it('menghitung bepKg dengan benar', () => {
+    // Modal 15000/kg, berat 100kg, jual 45000/kg
+    // BEP = (15000 × 100) / 45000 = 33.33 kg
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 80,
+      hargaJual: 45000,
+    });
+    expect(result.bepKg).toBeCloseTo(33.33, 1);
+  });
+
+  it('menghitung sudahTerjual dengan benar', () => {
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 80,
+      hargaJual: 45000,
+    });
+    // 100 - 80 = 20 kg terjual
+    expect(result.sudahTerjual).toBe(20);
+  });
+
+  it('menghitung sisaBepKg: sisa yang dibutuhkan untuk BEP', () => {
+    // bepKg ≈ 33.33, sudahTerjual = 20, sisa ≈ 13.33
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 80,
+      hargaJual: 45000,
+    });
+    expect(result.sisaBepKg).toBeCloseTo(13.33, 1);
+  });
+
+  it('sudahBalikModal = true ketika sudahTerjual >= bepKg', () => {
+    // bepKg ≈ 33.33, sudahTerjual = 70
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 30,
+      hargaJual: 45000,
+    });
+    expect(result.sudahBalikModal).toBe(true);
+  });
+
+  it('bepProgress di-cap 1.0 ketika sudah melewati BEP', () => {
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 30,
+      hargaJual: 45000,
+    });
+    expect(result.bepProgress).toBeLessThanOrEqual(1);
+  });
+
+  it('estimasiLabaJikaHabis dihitung dari stok tersisa', () => {
+    // stok 80kg, margin = (45000-15000) = 30000/kg → laba = 80 × 30000 = 2.400.000
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 80,
+      hargaJual: 45000,
+    });
+    expect(result.estimasiLabaJikaHabis).toBe(2_400_000);
+  });
+
+  it('mengembalikan bepKg null jika hargaJual = 0', () => {
+    const result = computeBatchPerformance({
+      hargaModal: 15000,
+      beratMasuk: 100,
+      stokTersisa: 80,
+      hargaJual: 0,
+    });
+    expect(result.bepKg).toBeNull();
   });
 });

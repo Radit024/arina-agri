@@ -31,6 +31,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import Autocomplete from '@mui/material/Autocomplete';
+import LinearProgress from '@mui/material/LinearProgress';
+import Tooltip from '@mui/material/Tooltip';
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -54,6 +56,7 @@ import type {
 } from '../_lib/stockSchemas';
 import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
+import { computeBatchPerformance } from '@/hooks/useStok';
 
 // ─── Status badge ─────────────────────────────────────────────────
 type StockTranslator = ReturnType<typeof useTranslations>;
@@ -382,6 +385,41 @@ export default function StokView({
                           </Grid>
                         </Grid>
 
+                        {/* BEP Performance Panel */}
+                        {(() => {
+                          const perf = computeBatchPerformance({ hargaModal: b.hargaModal, beratMasuk: b.beratMasuk, stokTersisa: b.stokTersisa, hargaJual: b.hargaJual });
+                          if (perf.bepKg === null) return (
+                            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 1.5 }}>
+                              {t('batchPerformance.hargaJualBelumDiisi')}
+                            </Typography>
+                          );
+                          return (
+                            <Box sx={{ mb: 1.5 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                  {t('batchPerformance.bepProgress')}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: perf.sudahBalikModal ? 'success.main' : 'text.secondary' }}>
+                                  {perf.sudahBalikModal
+                                    ? t('batchPerformance.sudahBalikModal')
+                                    : t('batchPerformance.sisaBep', { kg: perf.sisaBepKg.toFixed(1) })}
+                                </Typography>
+                              </Box>
+                              <Tooltip title={`${t('batchPerformance.sudahTerjual')}: ${perf.sudahTerjual} kg / ${t('batchPerformance.bepKg')}: ${perf.bepKg.toFixed(1)} kg`}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={perf.bepProgress * 100}
+                                  color={perf.sudahBalikModal ? 'success' : 'primary'}
+                                  sx={{ height: 6, borderRadius: 3 }}
+                                />
+                              </Tooltip>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                {t('batchPerformance.estimasiLaba')}: <strong>{formatRupiah(perf.estimasiLabaJikaHabis)}</strong>
+                              </Typography>
+                            </Box>
+                          );
+                        })()}
+
                         <Divider sx={{ mb: 1.5 }} />
 
                         <Box sx={{ display: 'flex', gap: 1.5 }}>
@@ -416,7 +454,7 @@ export default function StokView({
                 <Table stickyHeader size="small">
                   <TableHead>
                     <TableRow>
-                      {[t('table.batchId'), t('table.harvestDate'), t('table.grade'), t('table.initialWeight'), t('table.remainingWeight'), t('table.price'), t('table.location'), t('table.expiry'), t('table.status'), t('table.action')].map((h) => (
+                      {[t('table.batchId'), t('table.harvestDate'), t('table.grade'), t('table.initialWeight'), t('table.remainingWeight'), t('table.price'), t('batchPerformance.bepProgress'), t('table.location'), t('table.expiry'), t('table.status'), t('table.action')].map((h) => (
                         <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>
                           {h}
                         </TableCell>
@@ -425,10 +463,10 @@ export default function StokView({
                   </TableHead>
                   <TableBody>
                     {loading ? (
-                      <TableRow><TableCell colSpan={10} align="center" sx={{ py: 6 }}>{t('table.loading')}</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} align="center" sx={{ py: 6 }}>{t('table.loading')}</TableCell></TableRow>
                     ) : activeBatches.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                        <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
                           <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
                           <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
                         </TableCell>
@@ -444,6 +482,27 @@ export default function StokView({
                             {b.stokTersisa} kg
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
+                          <TableCell sx={{ minWidth: 120 }}>
+                            {(() => {
+                              const perf = computeBatchPerformance({ hargaModal: b.hargaModal, beratMasuk: b.beratMasuk, stokTersisa: b.stokTersisa, hargaJual: b.hargaJual });
+                              if (perf.bepKg === null) return <Typography variant="caption" color="text.disabled">—</Typography>;
+                              return (
+                                <Tooltip title={`${t('batchPerformance.sudahTerjual')}: ${perf.sudahTerjual} kg / BEP: ${perf.bepKg.toFixed(1)} kg`}>
+                                  <Box>
+                                    <LinearProgress
+                                      variant="determinate"
+                                      value={perf.bepProgress * 100}
+                                      color={perf.sudahBalikModal ? 'success' : 'primary'}
+                                      sx={{ height: 5, borderRadius: 3, mb: 0.5 }}
+                                    />
+                                    <Typography variant="caption" color={perf.sudahBalikModal ? 'success.main' : 'text.secondary'}>
+                                      {perf.sudahBalikModal ? '✓' : `${perf.sisaBepKg.toFixed(1)} kg`}
+                                    </Typography>
+                                  </Box>
+                                </Tooltip>
+                              );
+                            })()}
+                          </TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
                           <TableCell><StatusChip status={b.status} theme={theme} t={t} /></TableCell>

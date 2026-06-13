@@ -915,6 +915,15 @@
         "minWeight": "Minimal 0.1 kg",
         "selectBatch": "Pilih batch"
       }
+    },
+    "batchPerformance": {
+      "bepProgress": "Progress BEP",
+      "sudahTerjual": "Terjual",
+      "bepKg": "BEP",
+      "sisaBep": "{kg} kg lagi untuk balik modal",
+      "sudahBalikModal": "Modal sudah balik!",
+      "estimasiLaba": "Estimasi laba jika habis",
+      "hargaJualBelumDiisi": "Isi harga jual untuk melihat BEP"
     }
   },
   "Auth": {

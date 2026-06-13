@@ -887,7 +887,7 @@ export default function KeuanganView({
                 helperText={t('hppDialog.fields.targetMarginHelper')}
                 slotProps={{
                   input: {
-                    inputProps: { step: 0.1 },
+                    inputProps: { step: 'any' },
                     endAdornment: (
                       <InputAdornment position="end">
                         <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>%</Typography>

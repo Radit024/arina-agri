@@ -201,7 +201,7 @@ export function useKeuanganController() {
         if (field === 'targetHargaJual') {
           // Harga jual berubah → hitung ulang margin
           next.targetMargin = numericValue > 0
-            ? parseFloat(((1 - hpp / numericValue) * 100).toFixed(2))
+            ? parseFloat(((1 - hpp / numericValue) * 100).toFixed(10))
             : 0;
         } else if (field === 'targetMargin') {
           // Margin berubah → hitung ulang harga jual
@@ -211,7 +211,7 @@ export function useKeuanganController() {
         } else {
           // totalBiaya atau proyeksiPanen berubah → HPP berubah, sync margin dari hargaJual yang ada
           if (next.targetHargaJual > 0) {
-            next.targetMargin = parseFloat(((1 - hpp / next.targetHargaJual) * 100).toFixed(2));
+            next.targetMargin = parseFloat(((1 - hpp / next.targetHargaJual) * 100).toFixed(10));
           }
         }
       }

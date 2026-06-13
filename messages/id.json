@@ -529,8 +529,8 @@
         "proyeksiPanenHelper": "Perkiraan total panen (kg)",
         "targetHargaJual": "Target Harga Jual",
         "targetHargaJualHelper": "Isi harga jual atau margin, keduanya saling otomatis",
-        "targetMargin": "Margin (%)",
-        "targetMarginHelper": "Isi margin atau harga jual, keduanya saling otomatis"
+        "targetMargin": "Mark-up (%)",
+        "targetMarginHelper": "Keuntungan dari modal — isi mark-up atau harga jual, keduanya saling otomatis"
       },
       "results": {
         "hpp": "HPP/kg",

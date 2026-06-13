@@ -197,21 +197,21 @@ export function useKeuanganController() {
       const next = { ...prev, [field]: numericValue };
       const hpp = next.proyeksiPanen > 0 ? next.totalBiaya / next.proyeksiPanen : null;
 
-      if (hpp !== null) {
+      if (hpp !== null && hpp > 0) {
         if (field === 'targetHargaJual') {
-          // Harga jual berubah → hitung ulang margin
+          // Harga jual berubah → hitung markup (keuntungan dari modal)
           next.targetMargin = numericValue > 0
-            ? parseFloat(((1 - hpp / numericValue) * 100).toFixed(10))
+            ? parseFloat(((numericValue / hpp - 1) * 100).toFixed(10))
             : 0;
         } else if (field === 'targetMargin') {
-          // Margin berubah → hitung ulang harga jual
-          next.targetHargaJual = numericValue < 100
-            ? Math.round(hpp / (1 - numericValue / 100))
+          // Markup berubah → hitung harga jual: HPP × (1 + markup/100)
+          next.targetHargaJual = numericValue > -100
+            ? Math.round(hpp * (1 + numericValue / 100))
             : 0;
         } else {
-          // totalBiaya atau proyeksiPanen berubah → HPP berubah, sync margin dari hargaJual yang ada
+          // totalBiaya atau proyeksiPanen berubah → HPP berubah, sync markup dari hargaJual yang ada
           if (next.targetHargaJual > 0) {
-            next.targetMargin = parseFloat(((1 - hpp / next.targetHargaJual) * 100).toFixed(10));
+            next.targetMargin = parseFloat(((next.targetHargaJual / hpp - 1) * 100).toFixed(10));
           }
         }
       }
@@ -392,7 +392,7 @@ export function useKeuanganController() {
   const bfaHpp = proyeksiPanen > 0 ? totalBiaya / proyeksiPanen : null;
   const bfaBepKg = targetHargaJual > 0 ? totalBiaya / targetHargaJual : null;
   const bfaBepRupiah =
-    bfaHpp !== null && targetHargaJual > 0 && bfaHpp < targetHargaJual
+    bfaHpp !== null && targetHargaJual > 0 && targetHargaJual !== bfaHpp
       ? totalBiaya / (1 - bfaHpp / targetHargaJual)
       : null;
   const bfaProyeksiLaba =

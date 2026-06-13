@@ -97,8 +97,8 @@ const labels: Record<string, string> = {
   'hppDialog.fields.proyeksiPanenHelper': 'Perkiraan total panen (kg)',
   'hppDialog.fields.targetHargaJual': 'Target Harga Jual',
   'hppDialog.fields.targetHargaJualHelper': 'Isi harga jual atau margin, keduanya saling otomatis',
-  'hppDialog.fields.targetMargin': 'Margin (%)',
-  'hppDialog.fields.targetMarginHelper': 'Isi margin atau harga jual, keduanya saling otomatis',
+  'hppDialog.fields.targetMargin': 'Mark-up (%)',
+  'hppDialog.fields.targetMarginHelper': 'Keuntungan dari modal — isi mark-up atau harga jual, keduanya saling otomatis',
   'hppDialog.results.hpp': 'HPP/kg',
   'hppDialog.results.bepKg': 'BEP (kg)',
   'hppDialog.results.bepRupiah': 'BEP (Rp)',
@@ -240,7 +240,7 @@ describe('KeuanganView', () => {
     expect(screen.getByLabelText('Estimasi Total Biaya')).toBeInTheDocument();
     expect(screen.getByLabelText('Proyeksi Hasil Panen')).toBeInTheDocument();
     expect(screen.getByLabelText('Target Harga Jual')).toBeInTheDocument();
-    expect(screen.getByLabelText('Margin (%)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Mark-up (%)')).toBeInTheDocument();
   });
 
   it('menampilkan verdict layak ketika bfaLayak = true', () => {
@@ -251,7 +251,7 @@ describe('KeuanganView', () => {
       bfaBepRupiah: 22500000,
       bfaProyeksiLaba: 2250000,
       bfaLayak: true,
-      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 66.67 },
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 200 },
     });
 
     expect(screen.getByText('Usaha ini layak dijalankan')).toBeInTheDocument();
@@ -275,11 +275,11 @@ describe('KeuanganView', () => {
   it('menampilkan margin input dengan nilai yang tersimpan', () => {
     renderView({
       bepHppDialogOpen: true,
-      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 66.67 },
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000, targetMargin: 200 },
     });
 
-    const marginInput = screen.getByLabelText('Margin (%)') as HTMLInputElement;
-    expect(marginInput.value).toBe('66.67');
+    const marginInput = screen.getByLabelText('Mark-up (%)') as HTMLInputElement;
+    expect(marginInput.value).toBe('200');
   });
 
   it('keeps dark-mode finance action buttons visible before hover', () => {

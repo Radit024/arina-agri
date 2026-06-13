@@ -529,8 +529,8 @@
         "proyeksiPanenHelper": "Expected total harvest (kg)",
         "targetHargaJual": "Target Selling Price",
         "targetHargaJualHelper": "Enter price or margin — both auto-sync",
-        "targetMargin": "Margin (%)",
-        "targetMarginHelper": "Enter margin or selling price — both auto-sync"
+        "targetMargin": "Mark-up (%)",
+        "targetMarginHelper": "Profit on cost — enter mark-up or selling price, both auto-sync"
       },
       "results": {
         "hpp": "Cost/kg",

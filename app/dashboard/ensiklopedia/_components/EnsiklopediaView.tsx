@@ -31,6 +31,7 @@ import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import ReactMarkdown from 'react-markdown';
 import { useMessages } from 'next-intl';
+import { PageActionButton } from '@/components/shared/page';
 import { accentText, softBg, softText } from '@/lib/themeColors';
 
 interface QuickReferenceDisease {
@@ -120,7 +121,7 @@ export default function EnsiklopediaView({
             <AutoAwesomeIcon sx={{ color: theme.palette.text.primary, fontSize: 18 }} />
           </Box>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, fontFamily: 'var(--font-sora)', color: 'text.primary', lineHeight: 1.2 }}>
               Arina AI
             </Typography>
           </Box>
@@ -128,7 +129,7 @@ export default function EnsiklopediaView({
 
         {/* Right Side: Actions */}
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          <Button
+          <PageActionButton
             aria-label={t('newChat')}
             data-touch-target="44"
             variant="contained"
@@ -136,18 +137,15 @@ export default function EnsiklopediaView({
             onClick={handleNewChat}
             size="small"
             sx={{
-              display: { xs: 'none', sm: 'flex' },
-              borderRadius: 2,
-              textTransform: 'none',
+              display: { xs: 'none', sm: 'inline-flex' },
               fontWeight: 700,
-              minHeight: 44,
               px: 2,
               boxShadow: 'none',
               '&:hover': { boxShadow: 'none' },
             }}
           >
             {t('newChat')}
-          </Button>
+          </PageActionButton>
           <Tooltip title={t('newChat')}>
             <IconButton
               aria-label={t('newChat')}
@@ -167,7 +165,7 @@ export default function EnsiklopediaView({
             </IconButton>
           </Tooltip>
 
-          <Button
+          <PageActionButton
             data-guide-target="ai-quick-reference"
             data-touch-target="44"
             variant="text"
@@ -175,17 +173,14 @@ export default function EnsiklopediaView({
             onClick={() => setDiseaseModalOpen(true)}
             size="small"
             sx={{
-              display: { xs: 'none', sm: 'flex' },
-              borderRadius: 2,
-              textTransform: 'none',
+              display: { xs: 'none', sm: 'inline-flex' },
               fontWeight: 600,
-              minHeight: 44,
               color: 'text.secondary',
               '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' },
             }}
           >
             {t('quickReference.title')}
-          </Button>
+          </PageActionButton>
           <Tooltip title={t('quickReference.title')}>
             <IconButton
               aria-label={t('quickReference.title')}
@@ -205,7 +200,7 @@ export default function EnsiklopediaView({
             </IconButton>
           </Tooltip>
 
-          <Button
+          <PageActionButton
             aria-label={t('historyOpen')}
             data-touch-target="44"
             variant="outlined"
@@ -213,11 +208,8 @@ export default function EnsiklopediaView({
             onClick={() => setHistoryDrawerOpen(true)}
             size="small"
             sx={{
-              borderRadius: 2,
-              textTransform: 'none',
               fontWeight: 600,
               px: { xs: 1.5, sm: 2 },
-              minHeight: 44,
               fontSize: { xs: '0.75rem', sm: '0.8125rem' },
               borderColor: alpha(theme.palette.primary.main, 0.3),
               color: 'primary.main',
@@ -226,7 +218,7 @@ export default function EnsiklopediaView({
           >
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('historyTitle')}</Box>
             <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('historyTitle')}</Box>
-          </Button>
+          </PageActionButton>
           <Tooltip title={t('currentChatClear')}>
             <IconButton
               aria-label={t('currentChatClear')}

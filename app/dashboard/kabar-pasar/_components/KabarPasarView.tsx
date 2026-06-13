@@ -11,6 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import { PageHeader, PageShell } from '@/components/shared/page';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { PriceTrendChart } from '@/components/dashboard/PriceCharts';
 import type { NewsArticle } from '@/lib/types/news';
@@ -55,41 +56,13 @@ export default function KabarPasarView({
   onRefetch,
 }: KabarPasarViewProps) {
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={(theme) => ({
-                width: 40,
-                height: 40,
-                borderRadius: 2.5,
-                bgcolor: softBg(theme, 'success', 0.16),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              })}
-            >
-              <NewspaperIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontFamily: 'var(--font-sora)',
-                  color: 'text.primary',
-                  fontWeight: 700,
-                  lineHeight: 1.2,
-                }}
-              >
-                {t('title')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-                {t('subtitle')}
-              </Typography>
-            </Box>
-          </Box>
-
+    <PageShell>
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        sx={{ mb: 3 }}
+        icon={<NewspaperIcon sx={{ fontSize: 22 }} />}
+        actions={(
           <Tooltip title={t('refetch')}>
             <IconButton
               data-guide-target="market-refresh"
@@ -97,6 +70,11 @@ export default function KabarPasarView({
               size="small"
               aria-label={t('refetch')}
               sx={(theme) => ({
+                minWidth: 44,
+                minHeight: 44,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
                 color: 'text.secondary',
                 '&:hover': { bgcolor: softBg(theme, 'success', 0.16), color: softText(theme, 'success') },
               })}
@@ -104,9 +82,8 @@ export default function KabarPasarView({
               <RefreshIcon />
             </IconButton>
           </Tooltip>
-        </Box>
-
-        {!isLoading && total > 0 ? (
+        )}
+        meta={!isLoading && total > 0 ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1.5 }}>
             <Chip
               label={t('stats', { total })}
@@ -122,15 +99,15 @@ export default function KabarPasarView({
               {t('updateInterval')}
             </Typography>
           </Box>
-        ) : null}
-      </Box>
+        ) : undefined}
+      />
 
       <Box data-guide-target="market-price-chart" sx={{ mb: 4 }}>
         <PriceTrendChart />
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}>
+        <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: 'text.primary' }}>
           {t('latestSectionTitle')}
         </Typography>
 
@@ -263,6 +240,6 @@ export default function KabarPasarView({
           ) : null}
         </>
       )}
-    </Box>
+    </PageShell>
   );
 }

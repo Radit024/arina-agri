@@ -1069,7 +1069,7 @@
       "code": "Kode",
       "previewTitle": "Preview",
       "previewEmpty": "Preview markdown akan muncul di sini.",
-      "helper": "Gunakan markdown: **tebal**, _miring_, - list, `kode`, atau > kutipan."
+      "helper": "Gunakan : **tebal**, _miring_, - list, `kode`, atau > kutipan. Jika dibutuhkan "
     },
     "categories": {
       "bug": "Lapor Bug / Error",

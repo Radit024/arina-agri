@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import FeedbackModal from '@/components/shared/FeedbackModal';
 
@@ -52,6 +52,9 @@ vi.mock('@/context/AuthContext', () => ({
 beforeEach(() => {
   fetchMock.mockReset();
   vi.stubGlobal('fetch', fetchMock);
+  document.head.querySelectorAll('[data-testid="tailwind-list-reset"]').forEach((node) => {
+    node.remove();
+  });
 });
 
 describe('FeedbackModal', () => {
@@ -105,5 +108,39 @@ describe('FeedbackModal', () => {
     expect(messageInput).toHaveValue('**rapi**');
     const previewText = screen.getByText('rapi');
     expect(previewText.tagName).toBe('STRONG');
+  });
+
+  it('keeps markdown list markers visible in the message preview', () => {
+    const tailwindListReset = document.createElement('style');
+    tailwindListReset.dataset.testid = 'tailwind-list-reset';
+    tailwindListReset.textContent = 'ol, ul, menu { list-style-type: none; }';
+    document.head.appendChild(tailwindListReset);
+
+    render(<FeedbackModal open onClose={vi.fn()} />);
+
+    const messageInput = screen.getByLabelText('Pesan / Masukan') as HTMLTextAreaElement;
+    fireEvent.change(messageInput, { target: { value: '- Poin pertama\n- Poin kedua' } });
+
+    const preview = screen.getByText('Preview').parentElement;
+    expect(preview).not.toBeNull();
+
+    const previewList = within(preview as HTMLElement).getByRole('list');
+    expect(previewList.tagName).toBe('UL');
+    expect(window.getComputedStyle(previewList).listStyleType).toBe('disc');
+    expect(within(previewList).getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('keeps loose markdown lists compact in the message preview', () => {
+    render(<FeedbackModal open onClose={vi.fn()} />);
+
+    const messageInput = screen.getByLabelText('Pesan / Masukan') as HTMLTextAreaElement;
+    fireEvent.change(messageInput, { target: { value: '- Poin pertama\n\n- Poin kedua' } });
+
+    const preview = screen.getByText('Preview').parentElement;
+    expect(preview).not.toBeNull();
+
+    const previewList = within(preview as HTMLElement).getByRole('list');
+    expect(previewList.querySelector('li p')).not.toBeInTheDocument();
+    expect(within(previewList).getAllByRole('listitem')).toHaveLength(2);
   });
 });

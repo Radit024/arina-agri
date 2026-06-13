@@ -38,8 +38,8 @@ import Typography from '@mui/material/Typography';
 
 import { useMessages } from 'next-intl';
 
+import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
 import { formatDateShort } from '@/lib/formatters';
-import { accentText } from '@/lib/themeColors';
 
 function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'small' | 'medium' | 'large' }) {
   const theme = useTheme();
@@ -109,49 +109,26 @@ export default function CuacaView({
   const intlMessages = useMessages() as any;
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
+    <PageShell>
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        sx={{ mb: 1.5 }}
+        actions={(
+          <PageActionButton
+            data-guide-target="weather-gps"
+            data-touch-target="44"
+            variant="contained"
+            startIcon={gpsStatus === 'loading' ? <CircularProgress color="inherit" size={16} /> : <MyLocationIcon />}
+            onClick={handleUseGpsLocation}
+            disabled={gpsStatus === 'loading'}
+            sx={{ width: { xs: '100%', sm: 'auto' }, px: 2.25, fontWeight: 700 }}
+          >
+            {gpsStatus === 'loading' ? t('gps.buttons.loading') : t('gps.buttons.enable')}
+          </PageActionButton>
+        )}
+      />
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          {t('title')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('subtitle')}
-        </Typography>
-        <Grid container spacing={1.25} sx={{ mt: 1 }}>
-          <Grid size={{ xs: 12, sm: 'auto' }}>
-            <Button
-              data-guide-target="weather-gps"
-              data-touch-target="44"
-              variant="contained"
-              startIcon={gpsStatus === 'loading' ? <CircularProgress color="inherit" size={16} /> : <MyLocationIcon />}
-              onClick={handleUseGpsLocation}
-              disabled={gpsStatus === 'loading'}
-              sx={{
-                minHeight: 44,
-                px: 2.25,
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 700,
-                width: { xs: '100%', sm: 'auto' },
-                color: accentText(theme, 'primary'),
-                border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.32 : 0.18)}`,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                boxShadow: `0 10px 22px ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.32 : 0.22)}`,
-                '&:hover': {
-                  background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.dark} 100%)`,
-                  boxShadow: `0 12px 26px ${alpha(theme.palette.primary.dark, theme.palette.mode === 'dark' ? 0.38 : 0.28)}`,
-                },
-                '&.Mui-disabled': {
-                  color: theme.palette.action.disabled,
-                  background: theme.palette.action.disabledBackground,
-                  boxShadow: 'none',
-                },
-              }}
-            >
-              {gpsStatus === 'loading' ? t('gps.buttons.loading') : t('gps.buttons.enable')}
-            </Button>
-          </Grid>
-        </Grid>
         {gpsLocation && (
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
             {t('location.active', {
@@ -265,7 +242,7 @@ export default function CuacaView({
                       { icon: <ThermostatIcon />, label: t('current.temperature'), value: `${displayedCurrentWeather.suhu}°C` },
                     ].map((item) => (
                       <Grid key={item.label} size={{ xs: 6, sm: 3 }}>
-                        <Box className="flex items-center gap-2">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Box sx={{ color: 'rgba(255,255,255,0.7)' }}>{item.icon}</Box>
                           <Box>
                             <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)', display: 'block' }}>{item.label}</Typography>
@@ -319,7 +296,7 @@ export default function CuacaView({
           >
             <CardHeader
               title={
-                <Box className="flex items-center gap-2">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, color: 'text.primary', letterSpacing: '-0.01em' }}>
                     {t('forecast.bmkgTitle')}
                   </Typography>
@@ -633,7 +610,7 @@ export default function CuacaView({
                         {t('whatsapp.activeAlertTypes')}
                       </Typography>
                       {[t('whatsapp.alerts.heavyRain'), t('whatsapp.alerts.strongWind'), t('whatsapp.alerts.extremeTemp'), t('whatsapp.alerts.lowHumidity')].map((item) => (
-                        <Box key={item} className="flex items-center gap-2 mt-2">
+                        <Box key={item} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
                           <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'primary.main' }} />
                           <Typography variant="caption" color="text.secondary">{item}</Typography>
                         </Box>
@@ -645,7 +622,7 @@ export default function CuacaView({
                           {t('whatsapp.tutorialTitle')}
                         </Typography>
                         {((intlMessages?.Weather?.whatsapp?.tutorialSteps || []) as string[]).map((step: string) => (
-                          <Box key={step} className="flex items-start gap-2 mt-2">
+                          <Box key={step} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mt: 1 }}>
                             <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#229ED9', mt: '6px' }} />
                             <Typography variant="caption" color="text.secondary">{step}</Typography>
                           </Box>
@@ -728,6 +705,6 @@ export default function CuacaView({
           </Grid>
 
       </Grid>
-    </Box>
+    </PageShell>
   );
 }

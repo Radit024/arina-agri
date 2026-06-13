@@ -1,7 +1,7 @@
 'use client';
 
-import { Fragment, useRef, type ReactNode } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { Children, Fragment, isValidElement, useRef, type ReactNode } from 'react';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -37,6 +37,67 @@ import type {
   FeedbackModalControllerState,
 } from '@/controllers/feedback/useFeedbackModalController';
 
+function compactListItemChildren(children: ReactNode) {
+  return Children.toArray(children).map((child, index) => {
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === 'p') {
+      return <Fragment key={child.key ?? index}>{child.props.children}</Fragment>;
+    }
+
+    return child;
+  });
+}
+
+const feedbackMarkdownComponents: Components = {
+  ol: ({ node, style, ...props }) => {
+    void node;
+    return (
+      <ol
+        {...props}
+        style={{
+          ...style,
+          listStylePosition: 'outside',
+          listStyleType: 'decimal',
+          marginBottom: '0.625rem',
+          marginTop: 0,
+          paddingLeft: '1.5rem',
+        }}
+      />
+    );
+  },
+  ul: ({ node, style, ...props }) => {
+    void node;
+    return (
+      <ul
+        {...props}
+        style={{
+          ...style,
+          listStylePosition: 'outside',
+          listStyleType: 'disc',
+          marginBottom: '0.625rem',
+          marginTop: 0,
+          paddingLeft: '1.5rem',
+        }}
+      />
+    );
+  },
+  li: ({ node, style, children, ...props }) => {
+    void node;
+    return (
+      <li
+        {...props}
+        style={{
+          ...style,
+          marginBottom: '0.25rem',
+          paddingLeft: '0.125rem',
+          whiteSpace: 'normal',
+        }}
+      >
+        {compactListItemChildren(children)}
+      </li>
+    );
+  },
+};
+
 interface TabPanelProps {
   children?: ReactNode;
   index: number;
@@ -63,15 +124,19 @@ function FeedbackMarkdown({ children }: { children: string }) {
       sx={(theme) => ({
         color: 'text.primary',
         fontSize: '0.875rem',
-        lineHeight: 1.65,
+        lineHeight: 1.55,
         overflowWrap: 'anywhere',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
         '& > :first-of-type': { mt: 0 },
         '& > :last-child': { mb: 0 },
-        '& p': { mb: 1.25 },
-        '& ul, & ol': { mb: 1.25, mt: 0, pl: 3 },
-        '& li': { mb: 0.5, pl: 0.25 },
+        '& p': { m: 0 },
+        '& > p': { mb: 1 },
+        '& ul, & ol': { mb: 1, mt: 0, pl: 3, whiteSpace: 'normal' },
+        '& ul': { listStyleType: 'disc' },
+        '& ol': { listStyleType: 'decimal' },
+        '& li': { mb: 0.25, pl: 0.25, whiteSpace: 'normal' },
+        '& li:last-child': { mb: 0 },
         '& strong': { color: 'text.primary', fontWeight: 800 },
         '& em': { color: 'text.primary' },
         '& h1, & h2, & h3': {
@@ -115,7 +180,7 @@ function FeedbackMarkdown({ children }: { children: string }) {
         },
       })}
     >
-      <ReactMarkdown>{children}</ReactMarkdown>
+      <ReactMarkdown components={feedbackMarkdownComponents}>{children}</ReactMarkdown>
     </Box>
   );
 }

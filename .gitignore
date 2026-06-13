@@ -10,9 +10,14 @@
 !.yarn/releases
 !.yarn/versions
 
-# skills
+# skills & ai
 .agents
 .docs
+.superpowers
+.claude
+.tmp
+docs
+
 
 # testing
 /coverage
@@ -45,3 +50,4 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+

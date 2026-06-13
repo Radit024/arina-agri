@@ -52,6 +52,7 @@ import type {
   StockOutFormInput,
   StockOutFormOutput,
 } from '../_lib/stockSchemas';
+import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 
 // ─── Status badge ─────────────────────────────────────────────────
@@ -243,29 +244,28 @@ export default function StokView({
   const t = useTranslations('Stock');
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
-      {/* Header */}
-      <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { sm: 'center' }, gap: 2 }}>
-        <Box>
-          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            {t('title')}
-          </Typography>
-          <Box sx={{ typography: 'body2', color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-            {t('subtitle', { commodity: t('commodity'), location: t('location') })}
-            {!backendOnline && (
-              <Chip label={t('offlineMode')} size="small" sx={{ ml: 1.5, bgcolor: alpha(theme.palette.warning.main, 0.12), color: theme.palette.warning.main, fontWeight: 600, fontSize: '0.65rem' }} />
-            )}
-          </Box>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          <Button data-guide-target="stock-stock-out" variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)} sx={{ borderRadius: 8 }}>
-            {t('buttons.stockOut')}
-          </Button>
-          <Button data-guide-target="stock-add-batch" variant="contained" startIcon={<AddIcon />} onClick={openAddBatch} sx={{ borderRadius: 8 }}>
-            {t('buttons.addBatch')}
-          </Button>
-        </Box>
-      </Box>
+    <PageShell sx={{ minHeight: '100dvh' }}>
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle', { commodity: t('commodity'), location: t('location') })}
+        meta={!backendOnline ? (
+          <Chip
+            label={t('offlineMode')}
+            size="small"
+            sx={{ bgcolor: alpha(theme.palette.warning.main, 0.12), color: theme.palette.warning.main, fontWeight: 600, fontSize: '0.65rem' }}
+          />
+        ) : undefined}
+        actions={(
+          <>
+            <PageActionButton data-guide-target="stock-stock-out" variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)}>
+              {t('buttons.stockOut')}
+            </PageActionButton>
+            <PageActionButton data-guide-target="stock-add-batch" variant="contained" startIcon={<AddIcon />} onClick={openAddBatch}>
+              {t('buttons.addBatch')}
+            </PageActionButton>
+          </>
+        )}
+      />
 
       {/* Alert kadaluarsa */}
       {alertBatches.length > 0 && (
@@ -1104,6 +1104,6 @@ export default function StokView({
         deleteError={locationDeleteError}
         onClearDeleteError={onClearLocationDeleteError}
       />
-    </Box>
+    </PageShell>
   );
 }

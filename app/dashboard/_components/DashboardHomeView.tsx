@@ -6,6 +6,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
+import { PageShell } from '@/components/shared/page';
 import type { DashboardCategoryPoint, DashboardTrendPoint } from '@/lib/dashboard/summary';
 import type { NewsArticle } from '@/lib/types/news';
 import DashboardSkeleton from './DashboardSkeleton';
@@ -94,7 +95,7 @@ export default function DashboardHomeView({
           transition: pullDistance > 0 ? 'none' : 'transform 0.2s ease',
         }}
       >
-        <Box sx={{ p: { xs: 2, md: 4, lg: 5 }, maxWidth: '1600px', mx: 'auto' }}>
+        <PageShell sx={{ p: { xs: 2, md: 4, lg: 5 }, maxWidth: '1600px', mx: 'auto' }}>
           {showSkeleton ? (
             <DashboardSkeleton />
           ) : (
@@ -119,7 +120,7 @@ export default function DashboardHomeView({
                   <Typography
                     component="h1"
                     variant="h3"
-                    sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: '-0.03em', mb: 1 }}
+                    sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: 0, mb: 1 }}
                   >
                     {firstName}.
                   </Typography>
@@ -170,7 +171,7 @@ export default function DashboardHomeView({
               </Grid>
             </>
           )}
-        </Box>
+        </PageShell>
       </Box>
     </Box>
   );

@@ -13,7 +13,6 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import TextField from '@mui/material/TextField';
 import Switch from '@mui/material/Switch';
-import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -31,6 +30,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useTranslations } from 'next-intl';
+import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
 import type { SettingsTabId } from '@/controllers/pengaturan/usePengaturanController';
 
 interface PengaturanViewProps {
@@ -125,9 +125,9 @@ export default function PengaturanView({
                 <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
                   {t('general.securityBox.desc')}
                 </Typography>
-                <Button variant="contained" sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
+                <PageActionButton variant="contained" sx={{ width: { xs: '100%', sm: 'auto' } }}>
                   {t('general.securityBox.button')}
-                </Button>
+                </PageActionButton>
              </Box>
 
               <Box sx={{ mb: 4 }}>
@@ -180,7 +180,7 @@ export default function PengaturanView({
                   </ToggleButtonGroup>
                 </Box>
 
-               <Box className="flex items-center justify-between" sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+               <Box sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{t('general.language')}</Typography>
                  <Typography variant="body2" color="text.secondary" sx={{ cursor: 'pointer' }}>{t('general.languageName')}</Typography>
                </Box>
@@ -193,7 +193,7 @@ export default function PengaturanView({
            <Box>
              <Typography variant="h5" sx={{ mb: 4, fontFamily: 'var(--font-sora)', fontWeight: 700, display: { xs: 'none', md: 'block' } }}>{t('profile.tab')}</Typography>
              
-             <Box className="flex items-center gap-4 mb-6">
+             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                 <Avatar
                   src={userAvatar || undefined}
                   sx={{
@@ -208,7 +208,7 @@ export default function PengaturanView({
                  {!userAvatar && userInitials}
                </Avatar>
                <Box>
-                 <Button variant="outlined" size="small" sx={{ mb: 1, borderRadius: 2 }}>{t('profile.changePhoto')}</Button>
+                 <PageActionButton variant="outlined" size="small" sx={{ mb: 1 }}>{t('profile.changePhoto')}</PageActionButton>
                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t('profile.photoHint')}</Typography>
                </Box>
              </Box>
@@ -257,15 +257,16 @@ export default function PengaturanView({
                <Typography variant="body2" color={profileSaveError ? 'error.main' : phoneSaveSuccess ? 'success.main' : 'text.secondary'} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
                  {profileSaveError || (phoneSaveSuccess ? t('profile.phoneSaved') : t('profile.phoneSaveHint'))}
                </Typography>
-                <Button
+                <PageActionButton
                   data-guide-target="settings-profile-save"
                   variant="contained"
                   disabled={profileSaving}
-                  sx={{ px: 4, py: { xs: 1.5, sm: 1 }, borderRadius: 2, bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' }, width: { xs: '100%', sm: 'auto' } }}
+                  color="success"
+                  sx={{ px: 4, py: { xs: 1.5, sm: 1 }, width: { xs: '100%', sm: 'auto' } }}
                   onClick={onSaveProfile}
                 >
                   {profileSaving ? 'Menyimpan...' : t('profile.saveChanges')}
-                </Button>
+                </PageActionButton>
              </Box>
            </Box>
         )}
@@ -282,7 +283,7 @@ export default function PengaturanView({
                { label: t('notification.items.tips.label'), desc: t('notification.items.tips.desc') },
              ].map((item) => (
                <Box key={item.label} sx={{ py: 2.5, borderBottom: '1px solid', borderColor: 'divider' }}>
-                 <Box className="flex items-start justify-between gap-4">
+                 <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
                    <Box>
                      <Typography variant="body1" sx={{ mb: 0.5, fontWeight: 600 }}>{item.label}</Typography>
                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{item.desc}</Typography>
@@ -348,7 +349,7 @@ export default function PengaturanView({
 
   // Shared inner content (used by both mobile sheet and desktop page)
   const innerContent = (
-    <Box sx={{ p: { xs: 2, md: 3 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <PageShell sx={{ height: '100%' }}>
       
       {/* Header */}
       <Box sx={{ display: { xs: activeTab !== null ? 'flex' : 'block', md: 'block' }, alignItems: 'center', mb: 3, gap: 1 }}>
@@ -368,11 +369,8 @@ export default function PengaturanView({
         ) : null}
 
         {/* Standard Page Title (Hidden on mobile if a tab is open) */}
-        <Box sx={{ display: { xs: activeTab === null ? 'block' : 'none', md: 'block' } }}>
-          <Typography variant="h4" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            {t('title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">{t('pageSubtitle')}</Typography>
+        <Box sx={{ display: { xs: activeTab === null ? 'block' : 'none', md: 'block' }, flex: 1 }}>
+          <PageHeader title={t('title')} subtitle={t('pageSubtitle')} sx={{ mb: 0 }} />
         </Box>
       </Box>
 
@@ -506,7 +504,7 @@ export default function PengaturanView({
         </Box>
         
       </Box>
-    </Box>
+    </PageShell>
   );
 
   // Mobile: Bottom sheet (SwipeableDrawer)

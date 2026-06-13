@@ -52,6 +52,8 @@ import Fab from '@mui/material/Fab';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 
+import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
+
 const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
   loading: () => <Skeleton variant="rectangular" width={300} height={200} sx={{ borderRadius: 2 }} />,
@@ -125,28 +127,23 @@ export default function KeuanganView({
   displayedTransactions,
 }: UseKeuanganControllerResult) {
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: { md: 'calc(100dvh - 96px)' }, display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
-      <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', alignItems: { md: 'center' }, gap: 2 }}>
-        <Box>
-          <Typography variant="h5" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-              {t('title')}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-              {t('subtitle')}
-          </Typography>
-        </Box>
-        <Button
-          data-guide-target="finance-export"
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportExcel}
-          color="success"
-          sx={{ borderRadius: 8, bgcolor: 'background.paper', boxShadow: 1, whiteSpace: 'nowrap' }}
-        >
-          {t('exportCsv')}
-        </Button>
-      </Box>
+    <PageShell>
+      <PageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+        actions={(
+          <PageActionButton
+            data-guide-target="finance-export"
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={handleExportExcel}
+            color="success"
+            sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
+          >
+            {t('exportCsv')}
+          </PageActionButton>
+        )}
+      />
 
       <Grid container spacing={{ xs: 2, md: 3 }} sx={{ flex: 1, alignItems: 'stretch' }}>
         {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
@@ -1124,6 +1121,6 @@ export default function KeuanganView({
         </Alert>
       </Snackbar>
 
-    </Box>
+    </PageShell>
   );
 }

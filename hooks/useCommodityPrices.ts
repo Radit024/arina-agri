@@ -4,7 +4,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import {
+  buildLatestRegionAveragePriceKpi,
   buildLatestRegionPrices,
+  buildProvincePriceTrend,
+  calculateRegionAveragePrice,
+  PROVINCE_PRICE_LOCATIONS,
+  type CommodityPriceKpi,
   type CommodityRegionPriceRow,
   type RegionPrice,
 } from '@/lib/commodityPriceRegions';
@@ -18,19 +23,19 @@ export interface CommodityPrice {
   created_at: string;
 }
 
-const PROVINCE_LOCATIONS = ['Jawa Timur', 'Propinsi Jawa Timur', 'Pasar Induk Malang'];
-
-function preferProvincePrice(current: CommodityPrice | undefined, candidate: CommodityPrice) {
-  if (!current) return candidate;
-  const currentRank = PROVINCE_LOCATIONS.indexOf(current.location);
-  const candidateRank = PROVINCE_LOCATIONS.indexOf(candidate.location);
-  return candidateRank !== -1 && (currentRank === -1 || candidateRank < currentRank) ? candidate : current;
-}
+const EMPTY_PRICE_KPI: CommodityPriceKpi = {
+  todayPrice: null,
+  yesterdayPrice: null,
+  priceDelta: null,
+  priceDeltaPct: null,
+  isTrendingUp: null,
+};
 
 export function useCommodityPrices(limit: number = 30) {
   const { user, loading: authLoading } = useAuth();
   const [prices, setPrices] = useState<CommodityPrice[]>([]);
   const [dbRegionPrices, setDbRegionPrices] = useState<RegionPrice[]>([]);
+  const [priceKpi, setPriceKpi] = useState<CommodityPriceKpi>(EMPTY_PRICE_KPI);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,6 +46,7 @@ export function useCommodityPrices(limit: number = 30) {
       if (!user) {
         setPrices([]);
         setDbRegionPrices([]);
+        setPriceKpi(EMPTY_PRICE_KPI);
         return;
       }
 
@@ -49,24 +55,14 @@ export function useCommodityPrices(limit: number = 30) {
         .from('commodity_prices')
         .select('*')
         .eq('commodity', 'Cabe Rawit Merah')
-        .in('location', PROVINCE_LOCATIONS)
+        .in('location', [...PROVINCE_PRICE_LOCATIONS])
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
-        .limit(limit * PROVINCE_LOCATIONS.length);
+        .limit(limit * PROVINCE_PRICE_LOCATIONS.length);
 
       if (sbError) throw new Error(sbError.message);
 
-      const byDate = new Map<string, CommodityPrice>();
-      (trendDataRaw || []).forEach((row) => {
-        const price = row as CommodityPrice;
-        byDate.set(price.date, preferProvincePrice(byDate.get(price.date), price));
-      });
-
-      const trendData = Array.from(byDate.values())
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(-limit);
-
-      setPrices(trendData);
+      setPrices(buildProvincePriceTrend((trendDataRaw || []) as CommodityPrice[], limit));
 
       // 2. Fetch map data from recent rows, then keep the latest available price per region.
       // Siskaperbapo can publish partial regional data on a given day, so using only one
@@ -82,8 +78,11 @@ export function useCommodityPrices(limit: number = 30) {
       if (mapError) {
         console.error('Map data fetch error:', mapError.message);
         setDbRegionPrices([]);
+        setPriceKpi(EMPTY_PRICE_KPI);
       } else {
-        setDbRegionPrices(buildLatestRegionPrices((mapData || []) as CommodityRegionPriceRow[]));
+        const mapRows = (mapData || []) as CommodityRegionPriceRow[];
+        setDbRegionPrices(buildLatestRegionPrices(mapRows));
+        setPriceKpi(buildLatestRegionAveragePriceKpi(mapRows));
       }
       
       setError(null);
@@ -92,6 +91,7 @@ export function useCommodityPrices(limit: number = 30) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data harga dari database');
       setPrices([]);
       setDbRegionPrices([]);
+      setPriceKpi(EMPTY_PRICE_KPI);
     } finally {
       setLoading(false);
     }
@@ -101,32 +101,24 @@ export function useCommodityPrices(limit: number = 30) {
     loadData();
   }, [loadData]);
 
-  // ─── Derived values ──────────────────────────────────────────────
-  const todayPrice = prices.at(-1)?.price ?? null;
-  const yesterdayPrice = prices.at(-2)?.price ?? null;
-  const priceDelta = todayPrice !== null && yesterdayPrice !== null
-    ? todayPrice - yesterdayPrice
-    : null;
-  const priceDeltaPct = yesterdayPrice && priceDelta !== null
-    ? ((priceDelta / yesterdayPrice) * 100).toFixed(1)
-    : null;
-  const isTrendingUp = priceDelta !== null ? priceDelta >= 0 : null;
-
   // Region prices (strictly from DB)
   const regionPrices: RegionPrice[] = useMemo(() => {
     return [...dbRegionPrices].sort((a, b) => b.price - a.price);
   }, [dbRegionPrices]);
 
+  const averagePrice = useMemo(() => calculateRegionAveragePrice(regionPrices) ?? 0, [regionPrices]);
+
   return {
     prices,
     regionPrices,
+    averagePrice,
     loading,
     error,
     reload: loadData,
-    todayPrice,
-    yesterdayPrice,
-    priceDelta,
-    priceDeltaPct,
-    isTrendingUp,
+    todayPrice: priceKpi.todayPrice,
+    yesterdayPrice: priceKpi.yesterdayPrice,
+    priceDelta: priceKpi.priceDelta,
+    priceDeltaPct: priceKpi.priceDeltaPct,
+    isTrendingUp: priceKpi.isTrendingUp,
   };
 }

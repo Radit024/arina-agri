@@ -35,7 +35,6 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Tooltip from '@mui/material/Tooltip';
 
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -166,7 +165,6 @@ interface StokViewProps {
   stockOutForm: UseFormReturn<StockOutFormInput, unknown, StockOutFormOutput>;
   summary: StokSummary;
   tab: number;
-  weatherRiskNote: string;
   buyers: ApiBuyer[];
   stockOutSelectedBatch: ApiHarvestBatch | null;
   batchEstimatedValue: number;
@@ -224,7 +222,6 @@ export default function StokView({
   stockOutForm,
   summary,
   tab,
-  weatherRiskNote,
   buyers,
   stockOutSelectedBatch,
   batchEstimatedValue,
@@ -259,7 +256,7 @@ export default function StokView({
     <PageShell sx={{ minHeight: '100dvh' }}>
       <PageHeader
         title={t('title')}
-        subtitle={t('subtitle', { commodity: t('commodity'), location: t('location') })}
+        subtitle={t('subtitle')}
         meta={!backendOnline ? (
           <Chip
             label={t('offlineMode')}
@@ -287,12 +284,6 @@ export default function StokView({
             list: alertBatches.map((b) => b.batchCode).join(', '),
             strong: (chunks) => <strong>{chunks}</strong> 
           })}
-        </Alert>
-      )}
-
-      {weatherRiskNote && (
-        <Alert severity="warning" sx={{ mb: 3, borderRadius: 3 }}>
-          {weatherRiskNote}
         </Alert>
       )}
 

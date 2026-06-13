@@ -16,7 +16,6 @@ import Link from 'next/link';
 import Grid from '@mui/material/Grid';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { formatRupiah } from '@/lib/formatters';
-import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { softBg, softText } from '@/lib/themeColors';
 
@@ -33,16 +32,7 @@ const EastJavaMap = dynamic(
 // ─── Price Trend Chart (used on Kabar Pasar page) ─────────────────
 export function PriceTrendChart() {
   const t = useTranslations('KabarPasar.priceChart');
-  const { regionPrices, loading } = useCommodityPrices(30);
-
-
-  const averagePrice = useMemo(() => {
-    if (regionPrices.length === 0) return 0;
-    const total = regionPrices.reduce((sum, r) => sum + r.price, 0);
-    return total / regionPrices.length;
-  }, [regionPrices]);
-
-
+  const { regionPrices, averagePrice, loading } = useCommodityPrices(30);
 
   return (
     <Grid container spacing={3}>

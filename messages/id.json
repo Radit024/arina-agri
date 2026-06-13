@@ -823,7 +823,7 @@
   },
   "Stock": {
     "title": "Manajemen Stok",
-    "subtitle": "{location}",
+    "subtitle": "Kelola batch panen, stok keluar, bahan pendukung, dan lokasi penyimpanan.",
     "commodity": "",
     "location": "Lokasi belum dipilih",
     "offlineMode": "Mode Offline",

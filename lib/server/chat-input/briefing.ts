@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getBmkgForecast, getBmkgWarnings } from '@/lib/server/weather/bmkgClient';
-import { weatherSnapshotFromBmkgForecast } from '@/lib/server/notifications/weatherSnapshot';
 import { generateGeminiReply } from '@/lib/server/ai/gemini';
+import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
 export async function buildBriefingText(
   supabase: SupabaseClient,
@@ -29,7 +29,6 @@ export async function buildBriefingText(
         getBmkgForecast({ adm4: weatherAdm4, locationLabel }),
         getBmkgWarnings(),
       ]);
-      const weather = weatherSnapshotFromBmkgForecast(forecast, locationLabel);
       
       const isToday = range === 'hari ini';
       const day1 = forecast.days[0] || forecast.current;
@@ -45,8 +44,9 @@ export async function buildBriefingText(
         ? `Hari ini: Suhu ${tMin1}-${tMax1}C, Kondisi dominan: ${cond1}.`
         : `Prakiraan 3 hari ke depan: Suhu berkisar ${tMin1}-${tMax3}C, Kondisi awal: ${cond1}.`;
         
-      if (warnings.warnings.length > 0) {
-        weatherContextSummary += ` PERINGATAN BMKG: ${warnings.warnings.map(w => w.headline || w.event).join(', ')}.`;
+      const relevantWarnings = filterWeatherWarningsByLocation(warnings.warnings, locationLabel);
+      if (relevantWarnings.length > 0) {
+        weatherContextSummary += ` PERINGATAN BMKG: ${relevantWarnings.map(w => w.headline || w.event).join(', ')}.`;
       }
     } catch (err) {
       console.error('[buildBriefingText] Error fetching weather:', err);

@@ -231,9 +231,6 @@ export default memo(function DashboardKPI({
                     <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
                       Belum ada data
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                      Isi lokasi di menu cuaca
-                    </Typography>
                   </Box>
                 </Box>
               )}

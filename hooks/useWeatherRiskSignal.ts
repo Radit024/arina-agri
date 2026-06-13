@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { weatherApi } from '@/lib/api';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
+import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
 type WeatherRiskMode = 'calendar' | 'stock';
 
@@ -25,15 +26,19 @@ export function useWeatherRiskSignal(mode: WeatherRiskMode): WeatherRiskSignal {
 
     async function loadWeatherRiskSignal() {
       try {
+        if (!activeAdm4) {
+          setSignal({ planningNote: '', riskNote: '', warningMessage: '' });
+          return;
+        }
+
         const [forecast, warnings] = await Promise.all([
-          activeAdm4
-            ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
-            : Promise.resolve(null),
+          weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel }),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
 
-        const topWarning = warnings.warnings[0];
+        const relevantWarnings = filterWeatherWarningsByLocation(warnings.warnings, activeLocationLabel);
+        const topWarning = relevantWarnings[0];
         const warningText = topWarning ? topWarning.headline || topWarning.description || topWarning.event : '';
 
         if (mode === 'calendar') {

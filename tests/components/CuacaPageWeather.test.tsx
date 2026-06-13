@@ -123,6 +123,7 @@ vi.mock('@/lib/api', () => ({
           event: 'Peringatan dini cuaca Jawa Timur',
           headline: 'Hujan lebat disertai petir',
           description: 'Hujan lebat...',
+          affectedAreas: ['Malang'],
           effective: '2026-05-21T07:00:00Z',
           expires: '2026-05-21T10:00:00Z',
         },
@@ -190,6 +191,15 @@ describe('CuacaPage GPS', () => {
 
     await waitFor(() => expect(screen.getByText(/Sumber data: BMKG/)).toBeInTheDocument());
     expect(screen.getAllByText(/Peringatan dini cuaca Jawa Timur/).length).toBeGreaterThan(0);
+  });
+
+  it('does not load or render BMKG warning placeholders before a BMKG location is selected', async () => {
+    render(<CuacaPage />);
+
+    await screen.findByText('emptyWeather.title');
+    expect(weatherApi.getForecast).not.toHaveBeenCalled();
+    expect(weatherApi.getWarnings).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Peringatan dini cuaca Jawa Timur/i)).not.toBeInTheDocument();
   });
 
   it('exposes responsive weather UI hooks for mobile and desktop polish', async () => {

@@ -32,6 +32,7 @@ interface DashboardHomeViewProps {
     labaBersihRaw: number;
     priceDelta: number | null;
     priceDeltaPct: string | null;
+    priceLoading: boolean;
     profitTrend: number;
     todayPrice: number | null;
     totalPengeluaran: string;
@@ -142,7 +143,7 @@ export default function DashboardHomeView({
                 weatherCond={currentWeather ? currentWeather.condition : ''}
                 weatherHum={currentWeather ? currentWeather.humidityPercent : 0}
                 weatherBannerMessage={weatherBannerMessage}
-                priceLoading={false}
+                priceLoading={kpi.priceLoading}
                 todayPrice={kpi.todayPrice}
                 priceDelta={kpi.priceDelta}
                 priceDeltaPct={kpi.priceDeltaPct}
@@ -165,7 +166,7 @@ export default function DashboardHomeView({
 
                 <Grid size={{ xs: 12, lg: 4 }}>
                   <Box sx={{ height: '100%', position: 'sticky', top: 24, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <NewsWidget layout="vertical" initialArticles={newsArticles} />
+                    <NewsWidget layout="vertical" initialArticles={newsArticles.length > 0 ? newsArticles : undefined} />
                   </Box>
                 </Grid>
               </Grid>

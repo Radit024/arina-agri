@@ -201,16 +201,23 @@ function normalizeWarningArea(value: string) {
     .trim();
 }
 
-function warningMatchesLocation(warning: DashboardWeatherWarningLike, locationLabel?: string) {
+export function warningMatchesLocation(warning: DashboardWeatherWarningLike, locationLabel?: string) {
   const affectedAreas = warning.affectedAreas?.map(normalizeWarningArea).filter(Boolean) ?? [];
-  if (!locationLabel?.trim() || affectedAreas.length === 0) return true;
+  if (!locationLabel?.trim() || affectedAreas.length === 0) return false;
 
   const normalizedLocation = normalizeWarningArea(locationLabel);
-  if (!normalizedLocation) return true;
+  if (!normalizedLocation) return false;
 
   return affectedAreas.some((area) =>
     normalizedLocation.includes(area) || area.includes(normalizedLocation)
   );
+}
+
+export function filterWeatherWarningsByLocation<TWarning extends DashboardWeatherWarningLike>(
+  warnings: TWarning[],
+  locationLabel?: string
+) {
+  return warnings.filter((warning) => warningMatchesLocation(warning, locationLabel));
 }
 
 export function buildWeatherSignal<TCurrent extends DashboardWeatherCurrentLike>({
@@ -222,7 +229,7 @@ export function buildWeatherSignal<TCurrent extends DashboardWeatherCurrentLike>
   forecast: DashboardForecastLike<TCurrent> | null;
   locationLabel?: string;
 }) {
-  const relevantWarnings = warnings.filter((warning) => warningMatchesLocation(warning, locationLabel));
+  const relevantWarnings = filterWeatherWarningsByLocation(warnings, locationLabel);
 
   if (relevantWarnings.length > 0) {
     const topWarning = relevantWarnings[0];

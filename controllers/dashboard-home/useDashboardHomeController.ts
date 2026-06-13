@@ -6,6 +6,7 @@ import { useTheme } from '@mui/material/styles';
 import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import { useDashboardSummary } from '@/hooks/useDashboardSummary';
+import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import { farmerProfile } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { usePullToRefresh } from './usePullToRefresh';
@@ -42,10 +43,20 @@ export function useDashboardHomeController() {
     enabled: Boolean(session?.access_token),
     locationLabel: activeLocationLabel,
   });
+  const {
+    loading: priceLoading,
+    reload: reloadPrices,
+    todayPrice,
+    priceDelta,
+    priceDeltaPct,
+    isTrendingUp,
+  } = useCommodityPrices(30);
 
   const pullToRefresh = usePullToRefresh({
     enabled: isMobile,
-    onRefresh: reloadSummary,
+    onRefresh: async () => {
+      await Promise.all([reloadSummary(), reloadPrices()]);
+    },
   });
 
   const totalPengeluaran = summary?.kpi.totalPengeluaran ?? 0;
@@ -62,13 +73,14 @@ export function useDashboardHomeController() {
     isRefreshing: pullToRefresh.isRefreshing,
     kpi: {
       expTrend: summary?.kpi.expTrend ?? 0,
-      isTrendingUp: summary?.price.isTrendingUp ?? null,
+      isTrendingUp,
       labaBersih: formatRupiah(labaBersih),
       labaBersihRaw: labaBersih,
-      priceDelta: summary?.price.priceDelta ?? null,
-      priceDeltaPct: summary?.price.priceDeltaPct ?? null,
+      priceDelta,
+      priceDeltaPct,
+      priceLoading,
       profitTrend: summary?.kpi.profitTrend ?? 0,
-      todayPrice: summary?.price.todayPrice ?? null,
+      todayPrice,
       totalPengeluaran: formatRupiah(totalPengeluaran),
     },
     locale,

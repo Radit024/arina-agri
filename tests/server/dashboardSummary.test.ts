@@ -65,14 +65,25 @@ describe('buildPriceKpi', () => {
 describe('buildWeatherSignal', () => {
   it('prefers a BMKG warning message over rainy forecast text', () => {
     expect(buildWeatherSignal({
-      warnings: [{ event: 'Hujan Lebat', headline: 'Waspada hujan sore ini', description: 'Detail' }],
+      warnings: [{ event: 'Hujan Lebat', headline: 'Waspada hujan sore ini', description: 'Detail', affectedAreas: ['Dau'] }],
       forecast: {
         current: { temperatureC: 29, condition: 'hujan', humidityPercent: 80 },
         days: [{ date: '2026-05-15', totalRainfallMm: 35 }],
       },
+      locationLabel: 'Mulyoagung, Dau, Kabupaten Malang',
     })).toEqual({
       currentWeather: { temperatureC: 29, condition: 'hujan', humidityPercent: 80 },
       weatherBannerMessage: 'Hujan Lebat: Waspada hujan sore ini',
+    });
+  });
+
+  it('does not show a BMKG warning without a selected weather location', () => {
+    expect(buildWeatherSignal({
+      warnings: [{ event: 'Hujan Lebat', headline: 'Waspada Jawa Timur', description: 'Detail', affectedAreas: ['Dau'] }],
+      forecast: null,
+    })).toEqual({
+      currentWeather: null,
+      weatherBannerMessage: undefined,
     });
   });
 
@@ -111,7 +122,7 @@ describe('buildWeatherSignal', () => {
 });
 
 describe('buildDevDashboardSummary', () => {
-  it('returns a complete local fallback for the development mock user', () => {
+  it('does not include demo weather, market price, news, or warning placeholders in the development fallback', () => {
     const summary = buildDevDashboardSummary({
       locationLabel: 'Malang',
       now,
@@ -119,9 +130,15 @@ describe('buildDevDashboardSummary', () => {
 
     expect(summary.kpi.totalPengeluaran).toBeGreaterThan(0);
     expect(summary.category.length).toBeGreaterThan(0);
-    expect(summary.price.todayPrice).toBeGreaterThan(0);
-    expect(summary.weather.currentWeather?.temperatureC).toBeGreaterThan(0);
-    expect(summary.weather.weatherBannerMessage).toContain('Malang');
-    expect(summary.news.articles).toHaveLength(1);
+    expect(summary.price).toEqual({
+      todayPrice: null,
+      yesterdayPrice: null,
+      priceDelta: null,
+      priceDeltaPct: null,
+      isTrendingUp: null,
+    });
+    expect(summary.weather.currentWeather).toBeNull();
+    expect(summary.weather.weatherBannerMessage).toBeUndefined();
+    expect(summary.news.articles).toEqual([]);
   });
 });

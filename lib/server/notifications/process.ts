@@ -4,6 +4,7 @@ import { sendDirectNotification } from './channels';
 import { isScheduleDue, NotificationScheduleRow } from './schedule';
 import { weatherSnapshotFromBmkgForecast } from './weatherSnapshot';
 import { getBmkgForecast, getBmkgWarnings } from '@/lib/server/weather/bmkgClient';
+import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
 export async function processScheduledNotifications(forceAll: boolean = false) {
   const supabase = getSupabaseAdmin();
@@ -78,7 +79,10 @@ export async function processScheduledNotifications(forceAll: boolean = false) {
           getBmkgWarnings(),
         ]);
         weather = weatherSnapshotFromBmkgForecast(forecast, raw.weather_location_label);
-        bmkgWarnings = warnings.warnings;
+        bmkgWarnings = filterWeatherWarningsByLocation(
+          warnings.warnings,
+          raw.weather_location_label || forecast.locationLabel || weatherAdm4
+        );
       } catch (weatherError) {
         results.push({
           user_id: raw.user_id,

@@ -24,6 +24,7 @@ type GpsRequestMode = 'auto' | 'manual';
 
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
+import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
 export function useCuacaController() {
 
@@ -81,6 +82,7 @@ export function useCuacaController() {
   const [weatherError, setWeatherError] = useState('');
   const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
   const gpsAdm4LookupAttemptsRef = useRef(new Set<string>());
+  const weatherAdm4LookupAttemptsRef = useRef(new Set<string>());
 
   const missingBmkgLocationMessage = t('errors.missingBmkgLocation');
   const loadBmkgErrorMessage = t('errors.loadBmkg');
@@ -204,25 +206,54 @@ export function useCuacaController() {
       try {
         setWeatherLoading(true);
         setWeatherError('');
-        
-        const warnings = await weatherApi.getWarnings();
-        if (!active) return;
-        setWarningsData(warnings);
 
-        const currentAdm4 = activeAdm4;
-        const currentLabel = activeLocationLabel;
+        let currentAdm4 = activeAdm4;
+        let currentLabel = activeLocationLabel;
+
+        if (!currentAdm4 && gpsLocation) {
+          const lookupKey = `${gpsLocation.latitude}:${gpsLocation.longitude}`;
+          if (!weatherAdm4LookupAttemptsRef.current.has(lookupKey)) {
+            weatherAdm4LookupAttemptsRef.current.add(lookupKey);
+            try {
+              const resolvedLocation = await locationApi.reverse({
+                lat: gpsLocation.latitude,
+                lon: gpsLocation.longitude,
+              });
+
+              if (resolvedLocation.adm4) {
+                currentAdm4 = resolvedLocation.adm4;
+                currentLabel = resolvedLocation.label || currentLabel;
+                setGpsLocation({
+                  ...gpsLocation,
+                  label: currentLabel || gpsLocation.label,
+                  adm4: resolvedLocation.adm4,
+                });
+              }
+            } catch (error) {
+              console.warn('Weather GPS location could not be mapped to BMKG adm4', error);
+            }
+          }
+        }
 
         if (!currentAdm4) {
           setForecastData(null);
+          setWarningsData(null);
           if (currentLabel) {
             setWeatherError(missingBmkgLocationMessage);
           }
           return;
         }
 
-        const forecast = await weatherApi.getForecast({ adm4: currentAdm4, locationLabel: currentLabel });
+        const [forecast, warnings] = await Promise.all([
+          weatherApi.getForecast({ adm4: currentAdm4, locationLabel: currentLabel }),
+          weatherApi.getWarnings(),
+        ]);
         if (!active) return;
         setForecastData(forecast);
+        setWarningsData({
+          ...warnings,
+          warnings: filterWeatherWarningsByLocation(warnings.warnings, forecast.locationLabel || currentLabel),
+        });
       } catch (error) {
         if (!active) return;
         setWeatherError(error instanceof Error ? error.message : loadBmkgErrorMessage);
@@ -240,7 +271,7 @@ export function useCuacaController() {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [activeAdm4, activeLocationLabel, loadBmkgErrorMessage, missingBmkgLocationMessage]);
+  }, [activeAdm4, activeLocationLabel, gpsLocation, loadBmkgErrorMessage, missingBmkgLocationMessage, setGpsLocation]);
 
   const fForecast = forecastData
     ? forecastData.days.map((day) => ({

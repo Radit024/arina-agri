@@ -823,7 +823,7 @@
   },
   "Stock": {
     "title": "Stock Management",
-    "subtitle": "{location}",
+    "subtitle": "Manage harvest batches, outbound stock, supporting supplies, and storage locations.",
     "commodity": "",
     "location": "Location not selected",
     "offlineMode": "Offline Mode",

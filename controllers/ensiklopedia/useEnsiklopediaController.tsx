@@ -3,6 +3,7 @@
 import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import { aiApi, weatherApi, type GeminiWeatherContextPayload } from '@/lib/api';
+import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 import { useTheme } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -80,22 +81,24 @@ export function useEnsiklopediaController() {
 
     async function loadWeatherContext() {
       try {
+        if (!activeAdm4) {
+          setWeatherContext(undefined);
+          return;
+        }
+
         const [forecast, warnings] = await Promise.all([
-          activeAdm4
-            ? weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel })
-            : Promise.resolve(null),
+          weatherApi.getForecast({ adm4: activeAdm4, locationLabel: activeLocationLabel }),
           weatherApi.getWarnings(),
         ]);
         if (!active) return;
 
-        const forecastSummary = forecast
-          ? forecast.days
-              .slice(0, 3)
-              .map((day) => `${day.date}: ${day.dominantCondition}, hujan ${day.totalRainfallMm}mm`)
-              .join(' | ')
-          : undefined;
-        const warningSummary = warnings.warnings.length
-          ? warnings.warnings.map((warning) => warning.headline || warning.description || warning.event).join(' | ')
+        const forecastSummary = forecast.days
+          .slice(0, 3)
+          .map((day) => `${day.date}: ${day.dominantCondition}, hujan ${day.totalRainfallMm}mm`)
+          .join(' | ');
+        const relevantWarnings = filterWeatherWarningsByLocation(warnings.warnings, forecast.locationLabel || activeLocationLabel);
+        const warningSummary = relevantWarnings.length
+          ? relevantWarnings.map((warning) => warning.headline || warning.description || warning.event).join(' | ')
           : 'Tidak ada peringatan dini aktif';
 
         setWeatherContext({ forecastSummary, warningSummary });

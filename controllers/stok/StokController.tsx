@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { useStok, computeExpiryDate } from '@/hooks/useStok';
-import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSupplyItems } from '@/hooks/useSupplyItems';
 import StokView from '@/app/dashboard/stok/_components/StokView';
@@ -28,7 +27,6 @@ export default function StokController() {
     addGrade, renameGrade, removeGrade,
     addLocation, renameLocation, removeLocation,
   } = useStok();
-  const { riskNote: weatherRiskNote } = useWeatherRiskSignal('stock');
   const { addTransaction } = useTransactions();
   const {
     items: supplyItems,
@@ -36,9 +34,6 @@ export default function StokController() {
     addItem: addSupplyItem,
     addMutation: addSupplyMutation,
   } = useSupplyItems();
-
-  const [supplyAddItemOpen, setSupplyAddItemOpen] = useState(false);
-  const [supplyMutationItemId, setSupplyMutationItemId] = useState<string | null>(null);
 
   const [tab, setTab] = useState(0);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
@@ -88,7 +83,7 @@ export default function StokController() {
   });
 
   // ── Auto-fill estimasiKadaluarsa = tanggalPanen + 14 hari ───────
-  const watchedTanggalPanen = batchForm.watch('tanggalPanen');
+  const watchedTanggalPanen = useWatch({ control: batchForm.control, name: 'tanggalPanen' });
   useEffect(() => {
     if (!watchedTanggalPanen) return;
     const current = batchForm.getValues('estimasiKadaluarsa');
@@ -98,9 +93,9 @@ export default function StokController() {
   }, [watchedTanggalPanen, batchForm]);
 
   // ── Auto-fill hargaRealisasi + validasi berat real-time ─────────
-  const watchedBatchId = stockOutForm.watch('batchId');
-  const watchedBerat = stockOutForm.watch('berat');
-  const watchedHargaRealisasi = stockOutForm.watch('hargaRealisasi');
+  const watchedBatchId = useWatch({ control: stockOutForm.control, name: 'batchId' });
+  const watchedBerat = useWatch({ control: stockOutForm.control, name: 'berat' });
+  const watchedHargaRealisasi = useWatch({ control: stockOutForm.control, name: 'hargaRealisasi' });
 
   useEffect(() => {
     if (!watchedBatchId) return;
@@ -130,8 +125,10 @@ export default function StokController() {
   // ── Computed props untuk StokView ────────────────────────────────
   const stockOutSelectedBatch = batches.find((b) => b._id === watchedBatchId) ?? null;
 
-  const beratMasukNum = Number(batchForm.watch('beratMasuk')) || 0;
-  const hargaJualNum = Number(batchForm.watch('hargaJual')) || 0;
+  const watchedBeratMasuk = useWatch({ control: batchForm.control, name: 'beratMasuk' });
+  const watchedHargaJual = useWatch({ control: batchForm.control, name: 'hargaJual' });
+  const beratMasukNum = Number(watchedBeratMasuk) || 0;
+  const hargaJualNum = Number(watchedHargaJual) || 0;
   const batchEstimatedValue =
     beratMasukNum > 0 && hargaJualNum > 0 ? beratMasukNum * hargaJualNum : 0;
 
@@ -149,8 +146,8 @@ export default function StokController() {
     try {
       setGradeDeleteError(null);
       await removeGrade(id);
-    } catch (err: any) {
-      setGradeDeleteError(err.message ?? 'Gagal menghapus grade');
+    } catch (err: unknown) {
+      setGradeDeleteError(err instanceof Error ? err.message : 'Gagal menghapus grade');
     }
   };
 
@@ -158,8 +155,8 @@ export default function StokController() {
     try {
       setLocationDeleteError(null);
       await removeLocation(id);
-    } catch (err: any) {
-      setLocationDeleteError(err.message ?? 'Gagal menghapus lokasi');
+    } catch (err: unknown) {
+      setLocationDeleteError(err instanceof Error ? err.message : 'Gagal menghapus lokasi');
     }
   };
 
@@ -272,7 +269,6 @@ export default function StokController() {
       stockOutForm={stockOutForm}
       summary={summary}
       tab={tab}
-      weatherRiskNote={weatherRiskNote}
       buyers={buyers}
       stockOutSelectedBatch={stockOutSelectedBatch}
       batchEstimatedValue={batchEstimatedValue}

@@ -519,24 +519,27 @@
       "update": "Update Data"
     },
     "hppDialog": {
-      "title": "HPP & BEP Calculation",
-      "subtitle": "Uses transaction data + production input",
+      "title": "Business Feasibility Analysis",
+      "subtitle": "Plan your business before planting season — all manual inputs",
       "close": "Close",
       "fields": {
-        "fixedCost": "Fixed Cost Per Period",
-        "totalProduction": "Total Production Per Period",
-        "unitPrice": "Selling Price per Kg"
+        "totalBiaya": "Estimated Total Cost",
+        "totalBiayaHelper": "All costs: seeds, fertilizer, pesticides, labor",
+        "proyeksiPanen": "Projected Harvest",
+        "proyeksiPanenHelper": "Expected total harvest (kg)",
+        "targetHargaJual": "Target Selling Price",
+        "targetHargaJualHelper": "Target price per kg"
       },
       "results": {
-        "variableCostTotal": "Total Variable Cost",
-        "variableCostPerUnit": "Variable Cost/Unit",
-        "inputProduction": "Production Input",
-        "hppPerUnit": "HPP/Unit (COGS)",
-        "bepUnit": "BEP (Unit/Kg)",
-        "invalidBepUnit": "Invalid BEP unit value",
-        "notCalculatable": "Cannot be calculated",
-        "bepValue": "BEP (Rp)",
-        "invalidBepValue": "Invalid BEP value"
+        "hpp": "Cost/kg",
+        "bepKg": "BEP (kg)",
+        "bepRupiah": "BEP (Rp)",
+        "proyeksiLaba": "Projected Profit",
+        "margin": "Margin (%)",
+        "inputRequired": "Complete the inputs",
+        "layak": "This business is feasible",
+        "tidakLayak": "Projected harvest is below break-even",
+        "kurangPanen": "Need {kg} kg more to reach break-even"
       }
     },
     "months": [

@@ -155,17 +155,12 @@ export default function KeuanganView({
   totalPendapatan,
   totalPengeluaran,
   labaBersih,
-  jumlahProduksi,
-  biayaVariabelTotal,
-  biayaVariabelPerUnit,
-  hppPerUnit,
-  marginKontribusiPerUnit,
-  bepUnit,
-  marginKontribusiRasio,
-  bepRupiah,
-  formatAngka,
-  biayaTetapDisplayValue,
-  hargaJualDisplayValue,
+  bfaHpp,
+  bfaBepKg,
+  bfaBepRupiah,
+  bfaProyeksiLaba,
+  bfaMarginPersen,
+  bfaLayak,
   finalPieData,
   finalPieColors,
   bulanOptions,
@@ -792,7 +787,7 @@ export default function KeuanganView({
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL: Kalkulator HPP & BEP ─── */}
+      {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog
         open={bepHppDialogOpen}
         onClose={() => setBepHppDialogOpen(false)}
@@ -817,37 +812,38 @@ export default function KeuanganView({
         </DialogTitle>
 
         <DialogContent sx={{ pt: '12px !important' }}>
+          {/* Input Section */}
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label={t('hppDialog.fields.fixedCost')}
+                label={t('hppDialog.fields.totalBiaya')}
                 type="number"
-                value={biayaTetapDisplayValue}
+                value={getBepHppInputDisplayValue(bepHppInputs.totalBiaya)}
                 placeholder="0"
-                onChange={(e) => handleBepHppInputChange('biayaTetap', e.target.value)}
+                onChange={(e) => handleBepHppInputChange('totalBiaya', e.target.value)}
                 fullWidth
+                helperText={t('hppDialog.fields.totalBiayaHelper')}
                 slotProps={{
                   input: {
                     inputProps: { min: 0 },
-                    startAdornment: biayaTetapDisplayValue
-                      ? (
-                        <InputAdornment position="start">
-                          <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
-                        </InputAdornment>
-                      )
-                      : undefined,
+                    startAdornment: getBepHppInputDisplayValue(bepHppInputs.totalBiaya) ? (
+                      <InputAdornment position="start">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                      </InputAdornment>
+                    ) : undefined,
                   },
                 }}
               />
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label={t('hppDialog.fields.totalProduction')}
+                label={t('hppDialog.fields.proyeksiPanen')}
                 type="number"
-                value={getBepHppInputDisplayValue(bepHppInputs.jumlahProduksi)}
+                value={getBepHppInputDisplayValue(bepHppInputs.proyeksiPanen)}
                 placeholder="0"
-                onChange={(e) => handleBepHppInputChange('jumlahProduksi', e.target.value)}
+                onChange={(e) => handleBepHppInputChange('proyeksiPanen', e.target.value)}
                 fullWidth
+                helperText={t('hppDialog.fields.proyeksiPanenHelper')}
                 slotProps={{
                   input: {
                     inputProps: { min: 0 },
@@ -862,80 +858,88 @@ export default function KeuanganView({
             </Grid>
             <Grid size={{ xs: 12, md: 4 }}>
               <TextField
-                label={t('hppDialog.fields.unitPrice')}
+                label={t('hppDialog.fields.targetHargaJual')}
                 type="number"
-                value={hargaJualDisplayValue}
+                value={getBepHppInputDisplayValue(bepHppInputs.targetHargaJual)}
                 placeholder="0"
-                onChange={(e) => handleBepHppInputChange('hargaJualPerUnit', e.target.value)}
+                onChange={(e) => handleBepHppInputChange('targetHargaJual', e.target.value)}
                 fullWidth
+                helperText={t('hppDialog.fields.targetHargaJualHelper')}
                 slotProps={{
                   input: {
                     inputProps: { min: 0 },
-                    startAdornment: hargaJualDisplayValue
-                      ? (
-                        <InputAdornment position="start">
-                          <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
-                        </InputAdornment>
-                      )
-                      : undefined,
+                    startAdornment: getBepHppInputDisplayValue(bepHppInputs.targetHargaJual) ? (
+                      <InputAdornment position="start">
+                        <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
+                      </InputAdornment>
+                    ) : undefined,
                   },
                 }}
               />
             </Grid>
           </Grid>
 
+          {/* Formula Info Box */}
           <Box sx={{ mt: 2, p: 1.5, bgcolor: alpha(theme.palette.text.primary, 0.03), borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-              HPP = Total Biaya Produksi / Jumlah Produksi
+              HPP = Total Biaya / Proyeksi Panen
             </Typography>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-              BEP Unit = Biaya Tetap / (Harga Jual per Unit - Biaya Variabel per Unit)
+              BEP (kg) = Total Biaya / Target Harga Jual
             </Typography>
             <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
-              BEP Rupiah = Biaya Tetap / (1 - Biaya Variabel / Penjualan)
+              BEP (Rp) = Total Biaya / (1 − HPP / Target Harga Jual)
             </Typography>
           </Box>
 
-          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr' }, gap: 1.2 }}>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostTotal')}</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatRupiah(biayaVariabelTotal)}</Typography>
-            </Box>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.variableCostPerUnit')}</Typography>
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {jumlahProduksi > 0 ? formatRupiah(biayaVariabelPerUnit) : t('hppDialog.results.inputProduction')}
-              </Typography>
-            </Box>
+          {/* Results Grid */}
+          <Box sx={{ mt: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 1.2 }}>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfdf3', border: '1px solid #bbf7d0' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.hppPerUnit')}</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.hpp')}</Typography>
               <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 800 }}>
-                {jumlahProduksi > 0 ? formatRupiah(hppPerUnit) : t('hppDialog.results.inputProduction')}
+                {bfaHpp !== null ? formatRupiah(bfaHpp) : t('hppDialog.results.inputRequired')}
               </Typography>
             </Box>
             <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#ecfeff', border: '1px solid #bae6fd' }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepUnit')}</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepKg')}</Typography>
               <Typography variant="body2" sx={{ color: 'info.main', fontWeight: 800 }}>
-                {bepUnit !== null ? `${formatAngka(bepUnit)} kg` : t('hppDialog.results.notCalculatable')}
+                {bfaBepKg !== null
+                  ? `${new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(bfaBepKg)} kg`
+                  : t('hppDialog.results.inputRequired')}
               </Typography>
             </Box>
-            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa', gridColumn: { xs: '1 / -1', md: '1 / -1' } }}>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepValue')}</Typography>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.bepRupiah')}</Typography>
               <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 800 }}>
-                {bepRupiah !== null ? formatRupiah(bepRupiah) : t('hppDialog.results.notCalculatable')}
+                {bfaBepRupiah !== null ? formatRupiah(bfaBepRupiah) : t('hppDialog.results.inputRequired')}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: bfaProyeksiLaba !== null && bfaProyeksiLaba >= 0 ? '#ecfdf3' : '#fef2f2', border: '1px solid', borderColor: bfaProyeksiLaba !== null && bfaProyeksiLaba >= 0 ? '#bbf7d0' : '#fecaca' }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.proyeksiLaba')}</Typography>
+              <Typography variant="body2" sx={{ color: bfaProyeksiLaba !== null && bfaProyeksiLaba >= 0 ? 'success.main' : 'error.main', fontWeight: 800 }}>
+                {bfaProyeksiLaba !== null ? formatRupiah(bfaProyeksiLaba) : t('hppDialog.results.inputRequired')}
+              </Typography>
+            </Box>
+            <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: alpha(theme.palette.text.primary, 0.03) }}>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>{t('hppDialog.results.margin')}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                {bfaMarginPersen !== null ? `${bfaMarginPersen.toFixed(1)}%` : t('hppDialog.results.inputRequired')}
               </Typography>
             </Box>
           </Box>
 
-          {marginKontribusiPerUnit <= 0 && jumlahProduksi > 0 && (
-            <Typography variant="caption" sx={{ mt: 1.5, display: 'block', color: 'error.main' }}>
-              {t('hppDialog.results.invalidBepUnit')}
-            </Typography>
-          )}
-          {(marginKontribusiRasio === null || marginKontribusiRasio <= 0) && (
-            <Typography variant="caption" sx={{ mt: 0.8, display: 'block', color: 'error.main' }}>
-              {t('hppDialog.results.invalidBepValue')}
-            </Typography>
+          {/* Feasibility verdict */}
+          {bfaBepKg !== null && bepHppInputs.proyeksiPanen > 0 && (
+            <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: bfaLayak ? '#ecfdf3' : '#fef2f2', border: '1px solid', borderColor: bfaLayak ? '#bbf7d0' : '#fecaca' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: bfaLayak ? 'success.main' : 'error.main' }}>
+                {bfaLayak ? t('hppDialog.results.layak') : t('hppDialog.results.tidakLayak')}
+              </Typography>
+              {!bfaLayak && bfaBepKg !== null && (
+                <Typography variant="caption" color="text.secondary">
+                  {t('hppDialog.results.kurangPanen', { kg: (bfaBepKg - bepHppInputs.proyeksiPanen).toFixed(1) })}
+                </Typography>
+              )}
+            </Box>
           )}
 
           <Box sx={{ mt: 2.5, display: 'flex', justifyContent: 'flex-end' }}>

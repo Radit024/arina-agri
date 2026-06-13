@@ -519,24 +519,27 @@
       "update": "Perbarui Data"
     },
     "hppDialog": {
-      "title": "Perhitungan HPP & BEP",
-      "subtitle": "Menggunakan data transaksi + input produksi",
+      "title": "Analisis Kelayakan Usaha",
+      "subtitle": "Perencanaan bisnis sebelum musim tanam — semua input manual",
       "close": "Tutup",
       "fields": {
-        "fixedCost": "Biaya Tetap Periode",
-        "totalProduction": "Total Produksi Periode",
-        "unitPrice": "Harga Jual per Kg"
+        "totalBiaya": "Estimasi Total Biaya",
+        "totalBiayaHelper": "Semua biaya: benih, pupuk, pestisida, tenaga kerja",
+        "proyeksiPanen": "Proyeksi Hasil Panen",
+        "proyeksiPanenHelper": "Perkiraan total panen (kg)",
+        "targetHargaJual": "Target Harga Jual",
+        "targetHargaJualHelper": "Target harga per kg yang ingin dicapai"
       },
       "results": {
-        "variableCostTotal": "Total Biaya Variabel",
-        "variableCostPerUnit": "Biaya Variabel/Unit",
-        "inputProduction": "Input Produksi",
-        "hppPerUnit": "HPP/Unit",
-        "bepUnit": "BEP (Unit/Kg)",
-        "invalidBepUnit": "Nilai BEP unit tidak valid",
-        "notCalculatable": "Belum dapat dihitung",
-        "bepValue": "BEP (Rp)",
-        "invalidBepValue": "Nilai BEP tidak valid"
+        "hpp": "HPP/kg",
+        "bepKg": "BEP (kg)",
+        "bepRupiah": "BEP (Rp)",
+        "proyeksiLaba": "Proyeksi Laba",
+        "margin": "Margin (%)",
+        "inputRequired": "Lengkapi input",
+        "layak": "Usaha ini layak dijalankan",
+        "tidakLayak": "Proyeksi panen tidak mencukupi BEP",
+        "kurangPanen": "Perlu tambah {kg} kg lagi untuk mencapai BEP"
       }
     },
     "months": [

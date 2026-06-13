@@ -32,9 +32,9 @@ const transactionSchema = z.object({
 type TransactionFormData = z.infer<typeof transactionSchema>;
 
 type BepHppInputs = {
-  biayaTetap: number;
-  jumlahProduksi: number;
-  hargaJualPerUnit: number;
+  totalBiaya: number;
+  proyeksiPanen: number;
+  targetHargaJual: number;
 };
 
 
@@ -60,11 +60,11 @@ export function useKeuanganController() {
   
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   
-  const bepKey = `arina-bep-hpp-inputs-${user?.id || 'guest'}`;
+  const bepKey = `arina-bfa-inputs-${user?.id || 'guest'}`;
   const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>(bepKey, {
-    biayaTetap: 0,
-    jumlahProduksi: 0,
-    hargaJualPerUnit: 0,
+    totalBiaya: 0,
+    proyeksiPanen: 0,
+    targetHargaJual: 0,
   });
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
@@ -360,25 +360,24 @@ export function useKeuanganController() {
   }, [monthFilteredTransactions]);
   const labaBersih = totalPendapatan - totalPengeluaran;
 
-  // HPP & BEP calculations
-  const biayaTetap = bepHppInputs.biayaTetap;
-  const jumlahProduksi = bepHppInputs.jumlahProduksi;
-  const hargaJualPerUnit = bepHppInputs.hargaJualPerUnit;
+  // BFA (Business Feasibility Analysis) — standalone planning tool, tidak terkait data transaksi
+  const { totalBiaya, proyeksiPanen, targetHargaJual } = bepHppInputs;
 
-  const totalBiayaProduksi = totalPengeluaran;
-  const biayaVariabelTotal = Math.max(totalPengeluaran - biayaTetap, 0);
-  const biayaVariabelPerUnit = jumlahProduksi > 0 ? biayaVariabelTotal / jumlahProduksi : 0;
-  const hppPerUnit = jumlahProduksi > 0 ? totalBiayaProduksi / jumlahProduksi : 0;
-
-  const marginKontribusiPerUnit = hargaJualPerUnit - biayaVariabelPerUnit;
-  const bepUnit = marginKontribusiPerUnit > 0 ? biayaTetap / marginKontribusiPerUnit : null;
-
-  const marginKontribusiRasio = totalPendapatan > 0 ? 1 - (biayaVariabelTotal / totalPendapatan) : null;
-  const bepRupiah = marginKontribusiRasio !== null && marginKontribusiRasio > 0 ? biayaTetap / marginKontribusiRasio : null;
-
-  const formatAngka = (value: number) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(value);
-  const biayaTetapDisplayValue = getBepHppInputDisplayValue(bepHppInputs.biayaTetap);
-  const hargaJualDisplayValue = getBepHppInputDisplayValue(bepHppInputs.hargaJualPerUnit);
+  const bfaHpp = proyeksiPanen > 0 ? totalBiaya / proyeksiPanen : null;
+  const bfaBepKg = targetHargaJual > 0 ? totalBiaya / targetHargaJual : null;
+  const bfaBepRupiah =
+    bfaHpp !== null && targetHargaJual > 0 && bfaHpp < targetHargaJual
+      ? totalBiaya / (1 - bfaHpp / targetHargaJual)
+      : null;
+  const bfaProyeksiLaba =
+    proyeksiPanen > 0 && targetHargaJual > 0
+      ? proyeksiPanen * targetHargaJual - totalBiaya
+      : null;
+  const bfaMarginPersen =
+    bfaProyeksiLaba !== null && proyeksiPanen > 0 && targetHargaJual > 0
+      ? (bfaProyeksiLaba / (proyeksiPanen * targetHargaJual)) * 100
+      : null;
+  const bfaLayak = bfaBepKg !== null && proyeksiPanen > bfaBepKg;
 
   // Pie chart data
   const expenseCategoryDefinitions = useMemo(
@@ -522,17 +521,12 @@ export function useKeuanganController() {
     totalPendapatan,
     totalPengeluaran,
     labaBersih,
-    jumlahProduksi,
-    biayaVariabelTotal,
-    biayaVariabelPerUnit,
-    hppPerUnit,
-    marginKontribusiPerUnit,
-    bepUnit,
-    marginKontribusiRasio,
-    bepRupiah,
-    formatAngka,
-    biayaTetapDisplayValue,
-    hargaJualDisplayValue,
+    bfaHpp,
+    bfaBepKg,
+    bfaBepRupiah,
+    bfaProyeksiLaba,
+    bfaMarginPersen,
+    bfaLayak,
     finalPieData,
     finalPieColors,
     bulanOptions,

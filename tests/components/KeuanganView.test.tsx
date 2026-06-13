@@ -89,19 +89,23 @@ const labels: Record<string, string> = {
   'transactionDialog.options.expense': 'Pengeluaran',
   'transactionDialog.save': 'Simpan Transaksi',
   'transactionDialog.update': 'Perbarui Transaksi',
-  'hppDialog.title': 'Perhitungan HPP & BEP',
-  'hppDialog.subtitle': 'Hitung biaya produksi',
-  'hppDialog.fields.fixedCost': 'Biaya Tetap',
-  'hppDialog.fields.totalProduction': 'Jumlah Produksi',
-  'hppDialog.fields.unitPrice': 'Harga Jual',
-  'hppDialog.results.variableCostTotal': 'Biaya Variabel Total',
-  'hppDialog.results.variableCostPerUnit': 'Biaya Variabel per Unit',
-  'hppDialog.results.hppPerUnit': 'HPP/Unit',
-  'hppDialog.results.bepUnit': 'BEP Unit',
-  'hppDialog.results.bepValue': 'BEP Rupiah',
-  'hppDialog.results.inputProduction': 'Masukkan produksi',
-  'hppDialog.results.notCalculatable': 'Belum bisa dihitung',
-  'hppDialog.results.invalidBepUnit': 'Nilai BEP unit tidak valid',
+  'hppDialog.title': 'Analisis Kelayakan Usaha',
+  'hppDialog.subtitle': 'Perencanaan bisnis sebelum musim tanam',
+  'hppDialog.fields.totalBiaya': 'Estimasi Total Biaya',
+  'hppDialog.fields.totalBiayaHelper': 'Semua biaya produksi',
+  'hppDialog.fields.proyeksiPanen': 'Proyeksi Hasil Panen',
+  'hppDialog.fields.proyeksiPanenHelper': 'Perkiraan total panen (kg)',
+  'hppDialog.fields.targetHargaJual': 'Target Harga Jual',
+  'hppDialog.fields.targetHargaJualHelper': 'Target harga per kg',
+  'hppDialog.results.hpp': 'HPP/kg',
+  'hppDialog.results.bepKg': 'BEP (kg)',
+  'hppDialog.results.bepRupiah': 'BEP (Rp)',
+  'hppDialog.results.proyeksiLaba': 'Proyeksi Laba',
+  'hppDialog.results.margin': 'Margin (%)',
+  'hppDialog.results.inputRequired': 'Lengkapi input',
+  'hppDialog.results.layak': 'Usaha ini layak dijalankan',
+  'hppDialog.results.tidakLayak': 'Proyeksi panen tidak mencukupi BEP',
+  'hppDialog.results.kurangPanen': 'Perlu tambah {kg} kg lagi untuk mencapai BEP',
   'reportDialog.title': 'Laporan Keuangan',
   'reportDialog.period': 'Periode',
   'reportDialog.loading': 'Membuat laporan',
@@ -142,7 +146,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
 
   const props: KeuanganViewProps = {
     t: translate as KeuanganViewProps['t'],
-    bepHppInputs: { biayaTetap: 0, jumlahProduksi: 0, hargaJualPerUnit: 0 },
+    bepHppInputs: { totalBiaya: 0, proyeksiPanen: 0, targetHargaJual: 0 },
     aiDialogOpen: false,
     setAiDialogOpen: vi.fn(),
     reportLoading: false,
@@ -186,17 +190,12 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     totalPendapatan: 0,
     totalPengeluaran: transaction.nominal,
     labaBersih: -transaction.nominal,
-    jumlahProduksi: 0,
-    biayaVariabelTotal: transaction.nominal,
-    biayaVariabelPerUnit: 0,
-    hppPerUnit: 0,
-    marginKontribusiPerUnit: 0,
-    bepUnit: null,
-    marginKontribusiRasio: null,
-    bepRupiah: null,
-    formatAngka: (value) => String(value),
-    biayaTetapDisplayValue: '',
-    hargaJualDisplayValue: '',
+    bfaHpp: null,
+    bfaBepKg: null,
+    bfaBepRupiah: null,
+    bfaProyeksiLaba: null,
+    bfaMarginPersen: null,
+    bfaLayak: false,
     finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }],
     finalPieColors: ['#e2e8f0'],
     bulanOptions: ['2026-06'],
@@ -233,6 +232,45 @@ describe('KeuanganView', () => {
 
     expect(handleEdit).toHaveBeenCalledWith(transaction);
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
+  });
+
+  it('menampilkan 3 input field BFA ketika dialog dibuka', () => {
+    renderView({ bepHppDialogOpen: true });
+
+    expect(screen.getByLabelText('Estimasi Total Biaya')).toBeInTheDocument();
+    expect(screen.getByLabelText('Proyeksi Hasil Panen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Target Harga Jual')).toBeInTheDocument();
+  });
+
+  it('menampilkan verdict layak ketika bfaLayak = true', () => {
+    renderView({
+      bepHppDialogOpen: true,
+      bfaHpp: 15000,
+      bfaBepKg: 33.3,
+      bfaBepRupiah: 22500000,
+      bfaProyeksiLaba: 2250000,
+      bfaMarginPersen: 16.7,
+      bfaLayak: true,
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 100, targetHargaJual: 45000 },
+    });
+
+    expect(screen.getByText('Usaha ini layak dijalankan')).toBeInTheDocument();
+  });
+
+  it('menampilkan verdict tidak layak beserta sisa kg yang dibutuhkan', () => {
+    renderView({
+      bepHppDialogOpen: true,
+      bfaHpp: 15000,
+      bfaBepKg: 100,
+      bfaBepRupiah: null,
+      bfaProyeksiLaba: -750000,
+      bfaMarginPersen: -100,
+      bfaLayak: false,
+      bepHppInputs: { totalBiaya: 1500000, proyeksiPanen: 50, targetHargaJual: 15000 },
+    });
+
+    expect(screen.getByText('Proyeksi panen tidak mencukupi BEP')).toBeInTheDocument();
+    expect(screen.getByText(/Perlu tambah 50.0 kg/)).toBeInTheDocument();
   });
 
   it('keeps dark-mode finance action buttons visible before hover', () => {

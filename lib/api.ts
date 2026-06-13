@@ -95,6 +95,47 @@ export interface ApiLocation {
   urutan: number;
 }
 
+export interface ApiSupplyItem {
+  id: string;
+  nama: string;
+  kategori: 'bahan_pendukung' | 'alat';
+  satuan: string;
+  stokSaatIni: number;
+  hargaBeliTerakhir: number | null;
+  catatan: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApiSupplyMutation {
+  id: string;
+  itemId: string;
+  tipe: 'masuk' | 'keluar' | 'distribusi';
+  jumlah: number;
+  hargaSatuan: number | null;
+  tanggal: string;
+  keterangan: string;
+  linkedTransactionId: string | null;
+  createdAt: string;
+}
+
+export interface NewSupplyItem {
+  nama: string;
+  kategori: 'bahan_pendukung' | 'alat';
+  satuan: string;
+  hargaBeliTerakhir?: number;
+  catatan?: string;
+}
+
+export interface NewSupplyMutation {
+  itemId: string;
+  tipe: 'masuk' | 'keluar' | 'distribusi';
+  jumlah: number;
+  hargaSatuan?: number;
+  tanggal: string;
+  keterangan?: string;
+}
+
 export interface GeminiChatMessage {
   role: 'user' | 'ai';
   content: string;

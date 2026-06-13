@@ -65,3 +65,29 @@ export interface DbStockMutation {
   catatan: string;
   created_at: string;
 }
+
+export interface DbSupplyItem {
+  id: string;
+  user_id: string;
+  nama: string;
+  kategori: 'bahan_pendukung' | 'alat';
+  satuan: string;
+  stok_saat_ini: number;
+  harga_beli_terakhir: number | null;
+  catatan: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbSupplyMutation {
+  id: string;
+  user_id: string;
+  item_id: string;
+  tipe: 'masuk' | 'keluar' | 'distribusi';
+  jumlah: number;
+  harga_satuan: number | null;
+  tanggal: string;
+  keterangan: string | null;
+  linked_transaction_id: string | null;
+  created_at: string;
+}

@@ -842,7 +842,42 @@
     },
     "tabs": {
       "batches": "Stock Batch List",
-      "mutations": "Mutation History"
+      "mutations": "Mutation History",
+      "supply": "Supplies"
+    },
+    "supply": {
+      "addItem": "Add Item",
+      "addMutation": "Record In/Out",
+      "emptyState": "No supplies yet",
+      "emptyStateDesc": "Add fertilizer, pesticides, or tools you store",
+      "fields": {
+        "nama": "Item Name",
+        "kategori": "Category",
+        "satuan": "Unit",
+        "stokSaatIni": "Current Stock",
+        "hargaBeliTerakhir": "Last Purchase Price",
+        "catatan": "Notes",
+        "jumlah": "Quantity",
+        "tipe": "Mutation Type",
+        "tanggal": "Date",
+        "hargaSatuan": "Unit Price (optional)"
+      },
+      "kategori": {
+        "bahan_pendukung": "Supply",
+        "alat": "Tool"
+      },
+      "satuan": {
+        "kg": "kg",
+        "liter": "litre",
+        "botol": "bottle",
+        "sak": "sack",
+        "unit": "unit"
+      },
+      "mutation": {
+        "masuk": "In",
+        "keluar": "Out",
+        "distribusi": "Field Distribution"
+      }
     },
     "table": {
       "batchId": "Batch ID",

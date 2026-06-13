@@ -842,7 +842,42 @@
     },
     "tabs": {
       "batches": "Daftar Batch Stok",
-      "mutations": "Riwayat Mutasi"
+      "mutations": "Riwayat Mutasi",
+      "supply": "Bahan Pendukung"
+    },
+    "supply": {
+      "addItem": "Tambah Item",
+      "addMutation": "Catat Masuk/Keluar",
+      "emptyState": "Belum ada bahan pendukung",
+      "emptyStateDesc": "Tambah pupuk, pestisida, atau alat yang Anda simpan",
+      "fields": {
+        "nama": "Nama Item",
+        "kategori": "Kategori",
+        "satuan": "Satuan",
+        "stokSaatIni": "Stok Saat Ini",
+        "hargaBeliTerakhir": "Harga Beli Terakhir",
+        "catatan": "Catatan",
+        "jumlah": "Jumlah",
+        "tipe": "Tipe Mutasi",
+        "tanggal": "Tanggal",
+        "hargaSatuan": "Harga Satuan (opsional)"
+      },
+      "kategori": {
+        "bahan_pendukung": "Bahan Pendukung",
+        "alat": "Alat"
+      },
+      "satuan": {
+        "kg": "kg",
+        "liter": "liter",
+        "botol": "botol",
+        "sak": "sak",
+        "unit": "unit"
+      },
+      "mutation": {
+        "masuk": "Masuk",
+        "keluar": "Keluar",
+        "distribusi": "Distribusi ke Lahan"
+      }
     },
     "table": {
       "batchId": "ID Batch",

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { useTranslations } from 'next-intl';
 import { useStok, computeExpiryDate } from '@/hooks/useStok';
 import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
+import { useTransactions } from '@/hooks/useTransactions';
+import { useSupplyItems } from '@/hooks/useSupplyItems';
 import StokView from '@/app/dashboard/stok/_components/StokView';
 import {
   batchSchema,
@@ -27,6 +29,16 @@ export default function StokController() {
     addLocation, renameLocation, removeLocation,
   } = useStok();
   const { riskNote: weatherRiskNote } = useWeatherRiskSignal('stock');
+  const { addTransaction } = useTransactions();
+  const {
+    items: supplyItems,
+    loading: supplyLoading,
+    addItem: addSupplyItem,
+    addMutation: addSupplyMutation,
+  } = useSupplyItems();
+
+  const [supplyAddItemOpen, setSupplyAddItemOpen] = useState(false);
+  const [supplyMutationItemId, setSupplyMutationItemId] = useState<string | null>(null);
 
   const [tab, setTab] = useState(0);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
@@ -179,6 +191,20 @@ export default function StokController() {
       namaPembeli: data.namaPembeli?.trim() || undefined,
       hargaRealisasi: data.hargaRealisasi || undefined,
     });
+
+    // Auto-create income transaction when stock is sold with a realized price
+    if (data.hargaRealisasi && data.hargaRealisasi > 0) {
+      const batch = batches.find((b) => b._id === data.batchId);
+      const nominal = data.berat * data.hargaRealisasi;
+      await addTransaction({
+        jenis: 'pendapatan',
+        kategori: 'Penjualan Panen',
+        nominal,
+        tanggal: data.tanggal,
+        keterangan: `Penjualan ${data.berat} kg ${batch?.batchCode ?? ''} ke ${data.namaPembeli?.trim() || data.tujuan}`,
+      });
+    }
+
     setStockOutDialogOpen(false);
     stockOutForm.reset();
   };
@@ -268,6 +294,10 @@ export default function StokController() {
       onRemoveLocation={handleRemoveLocation}
       onClearGradeDeleteError={() => setGradeDeleteError(null)}
       onClearLocationDeleteError={() => setLocationDeleteError(null)}
+      supplyItems={supplyItems}
+      supplyLoading={supplyLoading}
+      onAddSupplyItem={addSupplyItem}
+      onAddSupplyMutation={addSupplyMutation}
     />
   );
 }

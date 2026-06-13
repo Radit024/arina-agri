@@ -45,8 +45,9 @@ import SettingsIcon from '@mui/icons-material/Settings';
 
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { formatRupiah, formatDateShort } from '@/lib/formatters';
-import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation } from '@/lib/api';
+import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation, ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
 import MasterDataDialog from './MasterDataDialog';
+import SupplyItemsView from './SupplyItemsView';
 import { useTranslations } from 'next-intl';
 import type {
   BatchFormInput,
@@ -187,6 +188,10 @@ interface StokViewProps {
   onRemoveLocation: (id: string) => Promise<void>;
   onClearGradeDeleteError: () => void;
   onClearLocationDeleteError: () => void;
+  supplyItems: ApiSupplyItem[];
+  supplyLoading: boolean;
+  onAddSupplyItem: (payload: NewSupplyItem) => Promise<boolean>;
+  onAddSupplyMutation: (payload: NewSupplyMutation) => Promise<boolean>;
 }
 
 export default function StokView({
@@ -241,6 +246,10 @@ export default function StokView({
   onRemoveLocation,
   onClearGradeDeleteError,
   onClearLocationDeleteError,
+  supplyItems,
+  supplyLoading,
+  onAddSupplyItem,
+  onAddSupplyMutation,
 }: StokViewProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -316,6 +325,7 @@ export default function StokView({
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Tab label={t('tabs.batches')} />
           <Tab label={t('tabs.mutations')} />
+          <Tab label={t('tabs.supply')} />
         </Tabs>
 
         {/* Tab 1: Batch List */}
@@ -655,6 +665,26 @@ export default function StokView({
                 </Table>
               </TableContainer>
             )}
+          </CardContent>
+        )}
+
+        {/* Tab 3: Bahan Pendukung */}
+        {tab === 2 && (
+          <CardContent sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <SupplyItemsView
+              items={supplyItems}
+              loading={supplyLoading}
+              onAddItem={onAddSupplyItem}
+              onAddMutation={onAddSupplyMutation}
+              t={(key, values) => {
+                const result = t(key as Parameters<typeof t>[0]);
+                if (!values || typeof result !== 'string') return result as string;
+                return Object.entries(values).reduce(
+                  (text, [k, v]) => text.replace(`{${k}}`, String(v)),
+                  result,
+                );
+              }}
+            />
           </CardContent>
         )}
       </Card>

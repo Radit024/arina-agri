@@ -6,5 +6,7 @@ describe('AI chat output formatting prompt', () => {
     expect(SYSTEM_PROMPTS.ensiklopedia).toContain('Markdown');
     expect(SYSTEM_PROMPTS.ensiklopedia).toContain('LaTeX');
     expect(SYSTEM_PROMPTS.ensiklopedia).toContain('tabel Markdown');
+    expect(SYSTEM_PROMPTS.ensiklopedia).toContain('maksimal 2 kalimat');
+    expect(SYSTEM_PROMPTS.ensiklopedia).toContain('rumus panjang');
   });
 });

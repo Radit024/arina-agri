@@ -429,43 +429,107 @@ export default function EnsiklopediaView({
                     </Box>
                   ) : (
                     <Box
+                      component="article"
+                      aria-label="Jawaban Arina AI"
+                      data-ai-markdown="readable"
                       sx={{
-                        bgcolor: softBg(theme, 'success', 0.12),
-                        p: { xs: 2, sm: 2.5 },
+                        bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.success.main, 0.16) : softBg(theme, 'success', 0.12),
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
+                        p: { xs: 2.25, sm: 3 },
                         borderRadius: '4px 24px 24px 24px',
-                        fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                        lineHeight: 1.58,
+                        fontSize: { xs: '0.93rem', sm: '1rem' },
+                        lineHeight: 1.72,
                         color: 'text.primary',
                         boxShadow: 'none', // Flat look for AI to contrast with User
                         overflowWrap: 'anywhere',
                         wordBreak: 'break-word',
+                        letterSpacing: 0,
+                        '& > :first-of-type': {
+                          mt: 0,
+                          pt: 0,
+                          borderTop: 0,
+                        },
+                        '& > :last-child': {
+                          mb: 0,
+                        },
                         '& h1, & h2, & h3, & h4': {
                           fontFamily: 'var(--font-sora)',
                           color: 'text.primary',
                           fontWeight: 800,
-                          lineHeight: 1.25,
-                          mt: 0,
-                          mb: 1.25,
+                          lineHeight: 1.35,
+                          letterSpacing: 0,
+                          mt: 2.4,
+                          mb: 1,
+                          pt: 1.5,
+                          borderTop: `1px solid ${alpha(theme.palette.success.main, 0.18)}`,
                         },
-                        '& h1': { fontSize: '1.18rem' },
-                        '& h2': { fontSize: '1.08rem' },
-                        '& h3': { fontSize: '1rem' },
-                        '& h4': { fontSize: '0.95rem' },
-                        '& p': { m: 0, mb: 1.25, '&:last-of-type': { mb: 0 } },
-                        '& ul, & ol': { m: 0, pl: 3, mb: 1.25 },
-                        '& li': { mb: 0.5, pl: 0.25 },
-                        '& li > p': { m: 0 },
+                        '& h1:first-of-type, & h2:first-of-type, & h3:first-of-type, & h4:first-of-type': {
+                          mt: 0,
+                          pt: 0,
+                          borderTop: 0,
+                        },
+                        '& h1': { fontSize: { xs: '1.16rem', sm: '1.24rem' } },
+                        '& h2': { fontSize: { xs: '1.08rem', sm: '1.15rem' } },
+                        '& h3': { fontSize: { xs: '1.02rem', sm: '1.08rem' } },
+                        '& h4': { fontSize: { xs: '0.98rem', sm: '1.02rem' } },
+                        '& p': {
+                          m: 0,
+                          mb: 1.45,
+                          maxWidth: '68ch',
+                          lineHeight: 1.72,
+                          '&:last-of-type': { mb: 0 },
+                        },
+                        '& ul, & ol': {
+                          m: 0,
+                          pl: { xs: 2.75, sm: 3.25 },
+                          mb: 1.6,
+                          maxWidth: '68ch',
+                        },
+                        '& li': {
+                          mb: 0.75,
+                          pl: 0.4,
+                          lineHeight: 1.68,
+                        },
+                        '& li::marker': {
+                          color: softText(theme, 'success'),
+                          fontWeight: 800,
+                        },
+                        '& li > p': {
+                          m: 0,
+                          mb: 0.7,
+                          maxWidth: 'none',
+                        },
                         '& li:last-child': { mb: 0 },
+                        '& li > p:last-child': { mb: 0 },
+                        '& ol > li': { mb: 1.35 },
+                        '& ol > li > p:first-of-type': {
+                          color: 'text.primary',
+                          fontWeight: 650,
+                        },
+                        '& li ul, & li ol': {
+                          mt: 0.75,
+                          mb: 0.25,
+                        },
                         '& strong': { fontWeight: 800, color: softText(theme, 'success') },
                         '& code': {
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
-                          px: 1, py: 0.25, borderRadius: 1, fontFamily: 'monospace', fontSize: '0.85em'
+                          color: 'text.primary',
+                          px: 0.75,
+                          py: 0.25,
+                          borderRadius: 1,
+                          fontFamily: 'monospace',
+                          fontSize: '0.88em'
                         },
                         '& blockquote': {
                           borderLeft: `4px solid ${theme.palette.success.main}`,
                           bgcolor: alpha(theme.palette.success.main, 0.05),
-                          m: 0, mb: 1.25, p: 2, borderRadius: '0 8px 8px 0',
-                          color: 'text.secondary'
+                          m: 0,
+                          mb: 1.6,
+                          p: 2,
+                          borderRadius: '0 8px 8px 0',
+                          color: 'text.secondary',
+                          maxWidth: '68ch',
                         },
                         '& a': {
                           color: softText(theme, 'success'),
@@ -478,26 +542,35 @@ export default function EnsiklopediaView({
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
                           borderRadius: 2,
                           p: 1.5,
+                          mb: 1.6,
+                          lineHeight: 1.55,
+                        },
+                        '& pre code': {
+                          bgcolor: 'transparent',
+                          p: 0,
+                          fontSize: '0.9em',
                         },
                         '& table': {
                           display: 'block',
                           maxWidth: '100%',
                           overflowX: 'auto',
                           borderCollapse: 'collapse',
-                          mb: 1.5,
-                          border: `1px solid ${theme.palette.divider}`,
+                          my: 1.75,
+                          border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                           borderRadius: 2,
+                          backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.18 : 0.64),
                         },
                         '& th, & td': {
-                          borderBottom: `1px solid ${theme.palette.divider}`,
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                          px: 1.25,
-                          py: 0.875,
+                          borderBottom: `1px solid ${alpha(theme.palette.success.main, 0.16)}`,
+                          borderRight: `1px solid ${alpha(theme.palette.success.main, 0.16)}`,
+                          px: 1.4,
+                          py: 1,
                           textAlign: 'left',
                           whiteSpace: 'nowrap',
+                          lineHeight: 1.5,
                         },
                         '& th': {
-                          bgcolor: alpha(theme.palette.success.main, 0.1),
+                          bgcolor: alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.18 : 0.1),
                           color: softText(theme, 'success'),
                           fontWeight: 800,
                         },
@@ -517,19 +590,27 @@ export default function EnsiklopediaView({
                           gap: 1,
                         },
                         '& .katex': {
-                          fontSize: '1em',
+                          fontSize: '1.04em',
                         },
                         '& .katex-display': {
-                          m: '12px 0',
+                          m: '14px 0 18px',
                           maxWidth: '100%',
                           overflowX: 'auto',
                           overflowY: 'hidden',
-                          bgcolor: alpha(theme.palette.text.primary, 0.06),
-                          border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                          bgcolor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.22 : 0.72),
+                          border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                           borderRadius: 2,
-                          px: 1.5,
-                          py: 1,
-                        }
+                          px: 1.75,
+                          py: 1.25,
+                        },
+                        '& .katex-display > .katex': {
+                          fontSize: '1.08em',
+                        },
+                        '& hr': {
+                          border: 0,
+                          borderTop: `1px solid ${alpha(theme.palette.success.main, 0.18)}`,
+                          my: 2,
+                        },
                       }}
                     >
                       <ReactMarkdown

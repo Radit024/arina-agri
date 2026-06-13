@@ -181,6 +181,7 @@ describe('EnsiklopediaView', () => {
     expect(screen.getByRole('heading', { name: 'Rekomendasi Pemupukan', level: 3 })).toBeInTheDocument();
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('NPK')).toBeInTheDocument();
+    expect(document.querySelector('[aria-label="Jawaban Arina AI"][data-ai-markdown="readable"]')).toBeInTheDocument();
     expect(document.querySelector('.katex-display')).toBeInTheDocument();
   });
 

@@ -137,7 +137,6 @@ export default function DashboardHomeView({
                 totalPengeluaran={kpi.totalPengeluaran}
                 expTrend={kpi.expTrend}
                 labaBersih={kpi.labaBersih}
-                labaBersihRaw={kpi.labaBersihRaw}
                 profitTrend={kpi.profitTrend}
                 weatherTemp={currentWeather ? currentWeather.temperatureC : 0}
                 weatherCond={currentWeather ? currentWeather.condition : ''}

@@ -1,5 +1,9 @@
-export function validateGeminiPayload(body: any): { valid: boolean; message?: string } {
-  if (!body || typeof body !== 'object') {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+export function validateGeminiPayload(body: unknown): { valid: boolean; message?: string } {
+  if (!isRecord(body)) {
     return { valid: false, message: 'Payload tidak valid.' };
   }
 
@@ -10,8 +14,8 @@ export function validateGeminiPayload(body: any): { valid: boolean; message?: st
   return { valid: true };
 }
 
-export function validateFinancialReportPayload(body: any): { valid: boolean; message?: string } {
-  if (!body || typeof body !== 'object') {
+export function validateFinancialReportPayload(body: unknown): { valid: boolean; message?: string } {
+  if (!isRecord(body)) {
     return { valid: false, message: 'Payload tidak valid.' };
   }
 

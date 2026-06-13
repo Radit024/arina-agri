@@ -12,7 +12,7 @@ export async function POST() {
       inserted,
     });
   } catch (err) {
-    const message = (err as any)?.message || 'Unknown error';
+    const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

@@ -51,6 +51,12 @@ const SETTINGS_TABS = [
 
 const TAB_CONTENT_MIN_HEIGHT = 380;
 type LanguageMode = 'id' | 'en';
+type AuthIdentity = {
+  provider?: string;
+};
+type UserWithIdentities = {
+  identities?: AuthIdentity[];
+};
 
 export default function SettingsModal() {
   const router = useRouter();
@@ -67,8 +73,8 @@ export default function SettingsModal() {
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
   const userInitials = userName.substring(0, 2).toUpperCase();
   const userAvatar = user?.user_metadata?.avatar_url;
-  const isGoogleUser = user?.app_metadata?.provider === 'google' || 
-                       (user as any)?.identities?.some((id: any) => id.provider === 'google');
+  const isGoogleUser = user?.app_metadata?.provider === 'google' ||
+                       (user as UserWithIdentities | null)?.identities?.some((id) => id.provider === 'google');
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);

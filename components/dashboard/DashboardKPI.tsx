@@ -9,10 +9,8 @@ import { useTheme, alpha } from '@mui/material/styles';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import AgricultureIcon from '@mui/icons-material/Agriculture';
 import WbCloudyIcon from '@mui/icons-material/WbCloudy';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import Divider from '@mui/material/Divider';
 import WeatherBanner from './WeatherBanner';
 import { formatRupiah } from '@/lib/formatters';
 import Skeleton from '@mui/material/Skeleton';
@@ -22,7 +20,6 @@ interface DashboardKPIProps {
   totalPengeluaran: string;
   expTrend: number;
   labaBersih: string;
-  labaBersihRaw: number;
   profitTrend: number;
   weatherTemp: number;
   weatherCond: string;
@@ -34,14 +31,13 @@ interface DashboardKPIProps {
   priceDeltaPct: string | null;
   isTrendingUp: boolean | null;
   locale: string;
-  t: any; // Translation function
+  t: (key: string, values?: Record<string, string | number>) => string;
 }
 
 export default memo(function DashboardKPI({
   totalPengeluaran,
   expTrend,
   labaBersih,
-  labaBersihRaw,
   profitTrend,
   weatherTemp,
   weatherCond,

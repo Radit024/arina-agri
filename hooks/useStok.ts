@@ -127,8 +127,8 @@ export function useStok() {
       setSummary(summaryData);
       setMutations(mutationData);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Gagal memuat data stok');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat data stok');
     } finally {
       setLoading(false);
     }

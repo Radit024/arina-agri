@@ -5,6 +5,36 @@ import { processInboundChatMessage } from '@/lib/server/chat-input/processor';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+interface WhatsAppContact {
+  wa_id: string;
+  profile?: {
+    name?: string;
+  };
+}
+
+interface WhatsAppMessage {
+  id: string;
+  from: string;
+  timestamp?: string;
+  type?: string;
+  text?: {
+    body?: string;
+  };
+}
+
+interface WhatsAppWebhookChange {
+  value?: {
+    contacts?: WhatsAppContact[];
+    messages?: WhatsAppMessage[];
+  };
+}
+
+interface WhatsAppWebhookBody {
+  entry?: Array<{
+    changes?: WhatsAppWebhookChange[];
+  }>;
+}
+
 // ─── Signature Verification ───────────────────────────────────────────────────
 
 function isValidSignature(rawBody: string, signatureHeader: string | null): boolean {
@@ -48,15 +78,15 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = JSON.parse(rawBody);
-  const changes = (body.entry ?? []).flatMap((entry: any) => entry.changes ?? []);
+  const body = JSON.parse(rawBody) as WhatsAppWebhookBody;
+  const changes = (body.entry ?? []).flatMap((entry) => entry.changes ?? []);
   const results = [];
 
   for (const change of changes) {
     const value = change.value ?? {};
     // Build a map from wa_id to contact display name for lookup during message processing.
     const contactNameByWaId = new Map<string, string>(
-      (value.contacts ?? []).map((c: any) => [c.wa_id, c.profile?.name]),
+      (value.contacts ?? []).map((contact) => [contact.wa_id, contact.profile?.name ?? '']),
     );
 
     for (const message of value.messages ?? []) {

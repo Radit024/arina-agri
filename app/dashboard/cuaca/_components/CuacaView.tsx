@@ -52,6 +52,14 @@ function WeatherIcon({ kondisi, size = 'medium' }: { kondisi: string; size?: 'sm
 
 import type { UseCuacaControllerResult } from '@/controllers/cuaca/useCuacaController';
 
+type WeatherMessages = {
+  Weather?: {
+    whatsapp?: {
+      tutorialSteps?: string[];
+    };
+  };
+};
+
 export default function CuacaView({
   theme,
   t,
@@ -106,7 +114,7 @@ export default function CuacaView({
   handleTestNotification,
   handleSaveSchedule,
 }: UseCuacaControllerResult) {
-  const intlMessages = useMessages() as any;
+  const intlMessages = useMessages() as WeatherMessages;
 
   return (
     <PageShell>

@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sendDirectNotification } from '@/lib/server/notifications/channels';
 
-function validateSendPayload(body: any): { valid: boolean; message?: string } {
-  if (!body || typeof body !== 'object') {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function validateSendPayload(body: unknown): { valid: boolean; message?: string } {
+  if (!isRecord(body)) {
     return { valid: false, message: 'Payload tidak valid.' };
   }
 
@@ -29,11 +33,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });
     }
 
+    const payload = body as {
+      platform: 'whatsapp' | 'telegram';
+      to: string;
+      message: string;
+      metadata?: Record<string, unknown>;
+    };
+
     const result = await sendDirectNotification({
-      platform: body.platform,
-      to: body.to,
-      message: body.message,
-      metadata: body.metadata,
+      platform: payload.platform,
+      to: payload.to,
+      message: payload.message,
+      metadata: payload.metadata,
     });
 
     if (!result.success) {

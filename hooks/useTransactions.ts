@@ -34,8 +34,8 @@ export function useTransactions() {
       const data = await transactionApi.getAll();
       setTransactions(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Gagal memuat transaksi');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat transaksi');
     } finally {
       setLoading(false);
     }

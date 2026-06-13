@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       category,
     });
   } catch (err) {
-    const message = (err as any)?.message || 'Unknown error';
+    const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[API News] Error:', message);
     return NextResponse.json({ success: false, message: 'Internal Server Error' }, { status: 500 });
   }

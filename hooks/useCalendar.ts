@@ -34,8 +34,8 @@ export function useCalendar() {
       const data = await eventApi.getAll();
       setEvents(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Gagal memuat jadwal');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gagal memuat jadwal');
     } finally {
       setLoading(false);
     }

@@ -47,6 +47,14 @@ interface QuickReferenceDisease {
   treatment: string;
 }
 
+type EncyclopediaMessages = {
+  Encyclopedia?: {
+    quickReference?: {
+      diseases?: QuickReferenceDisease[];
+    };
+  };
+};
+
 export default function EnsiklopediaView({
   theme,
   t,
@@ -73,7 +81,7 @@ export default function EnsiklopediaView({
   canRetryLastPrompt,
 }: UseEnsiklopediaControllerResult) {
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-  const intlMessages = useMessages() as any;
+  const intlMessages = useMessages() as EncyclopediaMessages;
 
   return (
     <Box

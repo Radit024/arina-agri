@@ -10,9 +10,17 @@ import type { ApiCalendarEvent } from '@/lib/api';
 import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
 import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_lib/eventSchema';
 
+type CalendarMessages = {
+  Calendar?: {
+    daysShort?: string[];
+    jenisLabels?: Record<string, string>;
+    months?: string[];
+  };
+};
+
 export default function KalenderController() {
   const t = useTranslations('Calendar');
-  const messages = useMessages() as any;
+  const messages = useMessages() as CalendarMessages;
   const { events, loading, error, addEvent, updateEvent, deleteEvent, reload } = useCalendar();
   const { warningMessage: weatherWarningMessage, planningNote: weatherPlanningNote } = useWeatherRiskSignal('calendar');
   const [dialogOpen, setDialogOpen] = useState(false);

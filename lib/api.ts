@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { DEVELOPMENT_ACCESS_TOKEN, DEVELOPMENT_USER_ID } from '@/lib/devAuth';
+import type { DbHarvestBatch, DbStockMutation, DbTransaction } from '@/lib/supabase';
 import type {
   BmkgForecastResponse,
   BmkgWeatherWarning,
@@ -239,7 +240,45 @@ interface ApiEnvelope<T = unknown> {
 }
 
 // ─── Helpers to map Supabase rows → frontend shape ────────────────
-function mapTx(row: any): ApiTransaction {
+type DbStockMutationWithSale = DbStockMutation & {
+  nama_pembeli?: string | null;
+  harga_realisasi?: number | null;
+};
+
+interface DbBuyer {
+  id: string;
+  nama: string;
+  user_id: string;
+  created_at: string;
+}
+
+interface DbMasterDataRow {
+  id: string;
+  nama: string;
+  urutan?: number | null;
+}
+
+type DbTransactionUpdate = Partial<Pick<
+  DbTransaction,
+  'jenis' | 'kategori' | 'nominal' | 'tanggal' | 'keterangan' | 'updated_at'
+>>;
+
+type DbHarvestBatchUpdate = Partial<Pick<
+  DbHarvestBatch,
+  | 'tanggal_panen'
+  | 'grade'
+  | 'berat_masuk'
+  | 'stok_tersisa'
+  | 'harga_modal'
+  | 'harga_jual'
+  | 'lokasi_penyimpanan'
+  | 'estimasi_kadaluarsa'
+  | 'catatan'
+  | 'status'
+  | 'updated_at'
+>>;
+
+function mapTx(row: DbTransaction): ApiTransaction {
   return {
     _id: row.id,
     jenis: row.jenis,

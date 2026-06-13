@@ -21,15 +21,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // ─── AUTH BYPASS FOR DEVELOPMENT ──────────────────────────────────
     if (process.env.NODE_ENV === 'development') {
-      const mockUser: any = {
+      const mockUser = {
         id: DEVELOPMENT_USER_ID,
         email: 'developer@arinaagri.com',
         user_metadata: { full_name: 'Arina Developer' },
-      };
-      const mockSession: any = {
+      } as User;
+      const mockSession = {
         access_token: DEVELOPMENT_ACCESS_TOKEN,
         user: mockUser,
-      };
+      } as Session;
       
       setUser(mockUser);
       setSession(mockSession);

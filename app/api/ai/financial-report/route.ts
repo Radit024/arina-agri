@@ -20,8 +20,9 @@ export async function POST(request: Request) {
       message: 'OK',
       data: { analysis, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' },
     });
-  } catch (error: any) {
-    console.error('[Gemini Error]', error.message);
-    return NextResponse.json({ success: false, message: error.message || 'Gagal memanggil Gemini.' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal memanggil Gemini.';
+    console.error('[Gemini Error]', message);
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

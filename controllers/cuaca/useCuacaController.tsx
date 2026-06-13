@@ -14,6 +14,7 @@ import {
   weatherApi,
   type BmkgForecastResponse,
   type BmkgWarningsResponse,
+  type NotificationScheduleConfig,
 } from '@/lib/api';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -72,7 +73,7 @@ export function useCuacaController() {
   const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleReady, setScheduleReady] = useState(false);
-  const [dbSchedule, setDbSchedule] = useState<any>(null);
+  const [dbSchedule, setDbSchedule] = useState<NotificationScheduleConfig | null>(null);
 
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsMessage, setGpsMessage] = useState('');
@@ -647,8 +648,16 @@ export function useCuacaController() {
 
           if (res && res.success) {
             console.log('[useCuacaController] Synced weather location to database:', activeLocationLabel);
-            setDbSchedule((prev: any) => ({
-              ...prev,
+            setDbSchedule((prev) => ({
+              enabled: prev?.enabled ?? scheduleEnabled,
+              time: prev?.time ?? scheduleTime,
+              timezone: prev?.timezone ?? scheduleTimezone,
+              platform: prev?.platform ?? schedulePlatform,
+              to: prev?.to ?? targetContact,
+              recipientName: prev?.recipientName ?? recipientName,
+              customMessage: prev?.customMessage ?? scheduleMessage.trim(),
+              userId: prev?.userId ?? user.id,
+              ...(prev ?? {}),
               weatherAdm4: activeAdm4,
               weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
             }));

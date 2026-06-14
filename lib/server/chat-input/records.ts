@@ -38,6 +38,13 @@ function isFinanceCategorySchemaError(error: unknown) {
 
 // ─── Finance ──────────────────────────────────────────────────────────────────
 
+interface HarvestBatchRow {
+  id: string;
+  berat_masuk: number | string;
+  stok_tersisa: number | string;
+  estimasi_kadaluarsa: string;
+}
+
 export async function recordFinanceCommand(
   supabase: SupabaseClient,
   userId: string,
@@ -130,7 +137,7 @@ export async function recordStockInCommand(
     .from('stock_mutations')
     .insert({
       user_id: userId,
-      batch_id: (batch as any).id,
+      batch_id: (batch as HarvestBatchRow).id,
       batch_code: batchCode,
       tipe: 'masuk',
       berat: command.berat,
@@ -166,7 +173,8 @@ export async function recordStockOutCommand(
     throw new Error(`Batch ${command.batchCode} tidak ditemukan.`);
   }
 
-  const stokTersisa = Number((batch as any).stok_tersisa);
+  const batchRow = batch as HarvestBatchRow;
+  const stokTersisa = Number(batchRow.stok_tersisa);
   if (command.berat > stokTersisa) {
     throw new Error(`Stok tidak cukup. Tersisa: ${stokTersisa} kg.`);
   }
@@ -174,8 +182,8 @@ export async function recordStockOutCommand(
   const newStock = stokTersisa - command.berat;
   const newStatus = computeBatchStatus(
     newStock,
-    Number((batch as any).berat_masuk),
-    (batch as any).estimasi_kadaluarsa,
+    Number(batchRow.berat_masuk),
+    batchRow.estimasi_kadaluarsa,
   );
 
   const { error: updateError } = await supabase
@@ -185,7 +193,7 @@ export async function recordStockOutCommand(
       status: newStatus,
       updated_at: now.toISOString(),
     })
-    .eq('id', (batch as any).id);
+    .eq('id', batchRow.id);
 
   if (updateError) throw new Error(updateError.message);
 
@@ -193,7 +201,7 @@ export async function recordStockOutCommand(
     .from('stock_mutations')
     .insert({
       user_id: userId,
-      batch_id: (batch as any).id,
+      batch_id: batchRow.id,
       batch_code: command.batchCode,
       tipe: 'keluar',
       berat: command.berat,

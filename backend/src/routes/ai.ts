@@ -4,6 +4,11 @@ import { supabaseAdmin } from '../services/supabase';
 
 const router = express.Router();
 
+interface GeminiHistoryMessage {
+  role: 'user' | 'ai';
+  content: string;
+}
+
 router.post('/gemini', async (req, res) => {
   try {
     const { prompt, history, userName } = req.body;
@@ -14,7 +19,9 @@ router.post('/gemini', async (req, res) => {
 
     let context = '';
     if (history && Array.isArray(history)) {
-      context = history.map((msg: any) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
+      context = (history as GeminiHistoryMessage[])
+        .map((msg) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`)
+        .join('\n');
     }
 
     // Sisipkan informasi harga komoditas (Cabai Rawit) 7 hari terakhir sebagai konteks tambahan
@@ -43,9 +50,10 @@ router.post('/gemini', async (req, res) => {
       message: 'OK', 
       data: { reply, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' } 
     });
-  } catch (error: any) {
-    console.error('[Gemini Error]', error.message);
-    return res.status(500).json({ success: false, message: error.message || 'Gagal memanggil Gemini.' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal memanggil Gemini.';
+    console.error('[Gemini Error]', message);
+    return res.status(500).json({ success: false, message });
   }
 });
 
@@ -64,9 +72,10 @@ router.post('/financial-report', async (req, res) => {
       message: 'OK', 
       data: { analysis, model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' } 
     });
-  } catch (error: any) {
-    console.error('[Gemini Error]', error.message);
-    return res.status(500).json({ success: false, message: error.message || 'Gagal memanggil Gemini.' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Gagal memanggil Gemini.';
+    console.error('[Gemini Error]', message);
+    return res.status(500).json({ success: false, message });
   }
 });
 

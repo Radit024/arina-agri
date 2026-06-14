@@ -13,6 +13,27 @@ import { recordFinanceCommand, recordStockInCommand, recordStockOutCommand } fro
 import { buildBriefingText } from './briefing';
 import type { CategoryCommand, InboundChatMessage, ProcessChatInputResult, ResolvedChatUser, UtilityCommand } from './types';
 
+interface FinanceSummaryRow {
+  jenis?: string | null;
+  nominal?: number | string | null;
+}
+
+interface StockSummaryRow {
+  status?: string | null;
+  stok_tersisa?: number | string | null;
+}
+
+interface BatchListRow {
+  batch_code?: string | null;
+  grade?: string | null;
+  stok_tersisa?: number | string | null;
+  status?: string | null;
+}
+
+interface InboundMessageLogRow {
+  id: string;
+}
+
 async function sendReply(message: InboundChatMessage, text: string): Promise<void> {
   await sendDirectNotification({
     platform: message.channel,
@@ -94,17 +115,17 @@ async function buildSummaryText(supabase: SupabaseClient, userId: string, now: D
   if (transactionsResult.error) throw new Error(transactionsResult.error.message);
   if (batchesResult.error) throw new Error(batchesResult.error.message);
 
-  const transactions = transactionsResult.data ?? [];
-  const batches = batchesResult.data ?? [];
+  const transactions = (transactionsResult.data ?? []) as FinanceSummaryRow[];
+  const batches = (batchesResult.data ?? []) as StockSummaryRow[];
   const pemasukan = transactions
-    .filter((row: any) => row.jenis === 'pendapatan')
-    .reduce((sum: number, row: any) => sum + Number(row.nominal || 0), 0);
+    .filter((row) => row.jenis === 'pendapatan')
+    .reduce((sum, row) => sum + Number(row.nominal || 0), 0);
   const pengeluaran = transactions
-    .filter((row: any) => row.jenis === 'pengeluaran')
-    .reduce((sum: number, row: any) => sum + Number(row.nominal || 0), 0);
+    .filter((row) => row.jenis === 'pengeluaran')
+    .reduce((sum, row) => sum + Number(row.nominal || 0), 0);
   const stokTersisa = batches
-    .filter((row: any) => row.status !== 'habis')
-    .reduce((sum: number, row: any) => sum + Number(row.stok_tersisa || 0), 0);
+    .filter((row) => row.status !== 'habis')
+    .reduce((sum, row) => sum + Number(row.stok_tersisa || 0), 0);
 
   return [
     'Ringkasan bulan ini:',
@@ -125,7 +146,7 @@ async function buildBatchText(supabase: SupabaseClient, userId: string) {
 
   if (error) throw new Error(error.message);
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as BatchListRow[];
   if (rows.length === 0) {
     return [
       'Belum ada batch stok.',
@@ -136,7 +157,7 @@ async function buildBatchText(supabase: SupabaseClient, userId: string) {
 
   return [
     'Batch stok terakhir:',
-    ...rows.map((row: any) => `${row.batch_code} - grade ${row.grade}, sisa ${row.stok_tersisa} kg, status ${row.status}`),
+    ...rows.map((row) => `${row.batch_code} - grade ${row.grade}, sisa ${row.stok_tersisa} kg, status ${row.status}`),
     '',
     'Gunakan kode batch untuk /stok_keluar.',
   ].join('\n');
@@ -331,7 +352,7 @@ export async function processInboundChatMessage(
         response_text: result.summary,
         processed_at: now.toISOString(),
       })
-      .eq('id', (logRow as any).id);
+      .eq('id', (logRow as InboundMessageLogRow).id);
 
     await sendReply(message, result.summary);
     return { success: true, status: 'processed', replyText: result.summary };
@@ -347,7 +368,7 @@ export async function processInboundChatMessage(
         response_text: replyText,
         processed_at: now.toISOString(),
       })
-      .eq('id', (logRow as any).id);
+      .eq('id', (logRow as InboundMessageLogRow).id);
 
     await sendReply(message, `Gagal: ${replyText}`);
     return { success: false, status: 'failed', replyText };

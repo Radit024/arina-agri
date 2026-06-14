@@ -291,7 +291,7 @@ function mapTx(row: DbTransaction): ApiTransaction {
   };
 }
 
-function mapBatch(row: any): ApiHarvestBatch {
+function mapBatch(row: DbHarvestBatch): ApiHarvestBatch {
   return {
     _id: row.id,
     batchCode: row.batch_code,
@@ -310,7 +310,7 @@ function mapBatch(row: any): ApiHarvestBatch {
   };
 }
 
-function mapMutation(row: any): ApiStockMutation {
+function mapMutation(row: DbStockMutationWithSale): ApiStockMutation {
   return {
     _id: row.id,
     batchId: row.batch_id,
@@ -455,7 +455,7 @@ export const transactionApi = {
   },
 
   update: async (id: string, payload: Partial<ApiTransaction>): Promise<ApiTransaction> => {
-    const update: any = {};
+    const update: DbTransactionUpdate = {};
     if (payload.jenis !== undefined) update.jenis = payload.jenis;
     if (payload.kategori !== undefined) update.kategori = payload.kategori;
     if (payload.nominal !== undefined) update.nominal = payload.nominal;
@@ -617,7 +617,7 @@ export const stokApi = {
   },
 
   update: async (id: string, payload: Partial<ApiHarvestBatch>): Promise<ApiHarvestBatch> => {
-    const update: any = {};
+    const update: DbHarvestBatchUpdate = {};
     if (payload.tanggalPanen !== undefined) update.tanggal_panen = payload.tanggalPanen;
     if (payload.grade !== undefined) update.grade = payload.grade;
     if (payload.beratMasuk !== undefined) update.berat_masuk = payload.beratMasuk;
@@ -707,7 +707,7 @@ export const buyersApi = {
       .eq('user_id', user.id)
       .order('nama', { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: any) => ({
+    return (data ?? []).map((row: DbBuyer) => ({
       id: row.id,
       nama: row.nama,
       userId: row.user_id,
@@ -736,7 +736,7 @@ export const gradesApi = {
       .order('urutan', { ascending: true })
       .order('nama', { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: any) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
+    return (data ?? []).map((row: DbMasterDataRow) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
   },
 
   create: async (nama: string): Promise<ApiGrade> => {
@@ -804,7 +804,7 @@ export const locationsApi = {
       .order('urutan', { ascending: true })
       .order('nama', { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []).map((row: any) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
+    return (data ?? []).map((row: DbMasterDataRow) => ({ id: row.id, nama: row.nama, urutan: row.urutan ?? 0 }));
   },
 
   create: async (nama: string): Promise<ApiLocation> => {

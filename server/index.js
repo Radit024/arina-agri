@@ -444,13 +444,9 @@ async function bootstrap() {
   const firebaseReady = initFirebaseAdmin();
 
   app.listen(PORT, () => {
-    // eslint-disable-next-line no-console
     console.log(`[arina-backend] running on http://localhost:${PORT}`);
-    // eslint-disable-next-line no-console
     console.log(`[arina-backend] mongodb: ${mongoState.connected ? 'connected' : `disabled (${mongoState.reason})`}`);
-    // eslint-disable-next-line no-console
     console.log(`[arina-backend] firebase admin: ${firebaseReady ? 'configured' : 'not configured'}`);
-    // eslint-disable-next-line no-console
     console.log(`[arina-backend] gemini: ${process.env.GEMINI_API_KEY ? 'enabled' : 'disabled'}`);
   });
 }

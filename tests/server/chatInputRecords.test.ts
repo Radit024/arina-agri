@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { recordFinanceCommand, recordStockOutCommand } from '@/lib/server/chat-input/records';
 
 // ─── Mock Builders ────────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ describe('recordFinanceCommand', () => {
         if (table === 'transactions') return transactions;
         throw new Error(`Unexpected table: ${table}`);
       }),
-    } as any;
+    } as unknown as SupabaseClient;
 
     const result = await recordFinanceCommand(
       supabase,
@@ -66,7 +67,7 @@ describe('recordFinanceCommand', () => {
         if (table === 'transactions') return makeInsertBuilder({ id: 'tx-2' });
         throw new Error(`Unexpected table: ${table}`);
       }),
-    } as any;
+    } as unknown as SupabaseClient;
 
     const result = await recordFinanceCommand(
       supabase,
@@ -109,7 +110,7 @@ describe('recordFinanceCommand', () => {
         if (table === 'transactions') return transactions;
         throw new Error(`Unexpected table: ${table}`);
       }),
-    } as any;
+    } as unknown as SupabaseClient;
 
     await recordFinanceCommand(
       supabase,
@@ -143,7 +144,7 @@ describe('recordFinanceCommand', () => {
         }
         throw new Error(`Unexpected table: ${table}`);
       }),
-    } as any;
+    } as unknown as SupabaseClient;
 
     await expect(
       recordFinanceCommand(
@@ -184,7 +185,7 @@ describe('recordStockOutCommand', () => {
         }
         throw new Error(`Unexpected table: ${table}`);
       }),
-    } as any;
+    } as unknown as SupabaseClient;
 
     await expect(
       recordStockOutCommand(
@@ -207,7 +208,7 @@ describe('recordStockOutCommand', () => {
           })),
         })),
       })),
-    } as any;
+    } as unknown as SupabaseClient;
 
     await expect(
       recordStockOutCommand(

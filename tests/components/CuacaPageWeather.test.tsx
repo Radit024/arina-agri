@@ -16,7 +16,7 @@ vi.mock('@mui/material/Autocomplete', () => ({
 vi.mock('next-intl', () => ({
   useLocale: () => 'id',
   useMessages: () => ({}),
-  useTranslations: (namespace?: string) => (key: string, values?: any) => {
+  useTranslations: (namespace?: string) => (key: string, values: Record<string, string | number> = {}) => {
     if (namespace === 'Weather') {
       if (key === 'days.sun') return 'Min';
       if (key === 'days.mon') return 'Sen';

@@ -4,13 +4,37 @@ export interface ChannelNotificationPayload {
   platform: NotificationPlatform;
   to: string;
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface ChannelSendResult {
   success: boolean;
   data?: unknown;
   error?: string;
+}
+
+interface TelegramChat {
+  id?: string | number;
+  username?: string;
+}
+
+interface TelegramMessageLike {
+  chat?: TelegramChat;
+  from?: {
+    username?: string;
+  };
+}
+
+interface TelegramUpdate {
+  message?: TelegramMessageLike;
+  channel_post?: TelegramMessageLike;
+  my_chat_member?: TelegramMessageLike;
+}
+
+interface TelegramApiResponse<T> {
+  ok?: boolean;
+  result?: T;
+  description?: string;
 }
 
 function isNumericChatId(value: string) {
@@ -32,7 +56,7 @@ async function resolveTelegramChatId(input: string, apiBase: string): Promise<st
 
   try {
     const chatResponse = await fetch(`${apiBase}/getChat?chat_id=${encodeURIComponent(normalized)}`);
-    const chatData = await chatResponse.json() as any;
+    const chatData = await chatResponse.json() as TelegramApiResponse<TelegramChat>;
     if (chatResponse.ok && chatData?.ok && chatData?.result?.id) {
       return String(chatData.result.id);
     }
@@ -41,7 +65,7 @@ async function resolveTelegramChatId(input: string, apiBase: string): Promise<st
   }
 
   const updatesResponse = await fetch(`${apiBase}/getUpdates?limit=50`);
-  const updatesData = await updatesResponse.json() as any;
+  const updatesData = await updatesResponse.json() as TelegramApiResponse<TelegramUpdate[]>;
   if (!updatesResponse.ok || !updatesData?.ok) {
     throw new Error('Tidak bisa mengakses update Telegram. Pastikan bot aktif dan token benar.');
   }
@@ -138,7 +162,7 @@ async function sendTelegram(payload: ChannelNotificationPayload): Promise<Channe
       }),
     });
 
-    const data = await response.json() as any;
+    const data = await response.json() as TelegramApiResponse<unknown>;
 
     if (!response.ok) {
       let friendlyError = data.description || 'Gagal mengirim pesan ke Telegram';

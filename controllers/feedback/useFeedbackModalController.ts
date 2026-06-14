@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
@@ -185,16 +185,16 @@ export function useFeedbackModalController({ open, onClose }: FeedbackModalProps
     },
   });
 
-  const messagePreview = form.watch('message');
+  const messagePreview = useWatch({ control: form.control, name: 'message' });
+  const accessToken = session?.access_token || '';
 
   const fetchFeedbacks = useCallback(async () => {
     setIsFetching(true);
 
     try {
-      const token = session?.access_token || '';
       const response = await fetch('/api/feedback', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -208,7 +208,7 @@ export function useFeedbackModalController({ open, onClose }: FeedbackModalProps
     } finally {
       setIsFetching(false);
     }
-  }, [errorFetchMessage, session?.access_token]);
+  }, [accessToken, errorFetchMessage]);
 
   useEffect(() => {
     if (open && tabValue === 1) {
@@ -225,13 +225,12 @@ export function useFeedbackModalController({ open, onClose }: FeedbackModalProps
 
     try {
       const deviceType = window.innerWidth <= 768 ? 'mobile' : 'desktop';
-      const token = session?.access_token || '';
 
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           ...data,

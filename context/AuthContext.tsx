@@ -25,11 +25,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: DEVELOPMENT_USER_ID,
         email: 'developer@arinaagri.com',
         user_metadata: { full_name: 'Arina Developer' },
-      } as User;
+      } as unknown as User;
       const mockSession = {
         access_token: DEVELOPMENT_ACCESS_TOKEN,
         user: mockUser,
-      } as Session;
+      } as unknown as Session;
       
       setUser(mockUser);
       setSession(mockSession);

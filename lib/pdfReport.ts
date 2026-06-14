@@ -29,6 +29,18 @@ export interface ReportData {
   aiAnalysis?: string;
 }
 
+interface JsPdfWithAutoTable {
+  lastAutoTable?: {
+    finalY?: number;
+  };
+}
+
+interface JsPdfWithPageCount {
+  internal: {
+    getNumberOfPages: () => number;
+  };
+}
+
 // Helper to load SVG logo and convert to PNG data URL
 const getLogoDataUrl = (): Promise<string> => {
   return new Promise((resolve) => {
@@ -49,7 +61,7 @@ const getLogoDataUrl = (): Promise<string> => {
         }
       };
       img.onerror = () => resolve('');
-    } catch (e) {
+    } catch {
       resolve('');
     }
   });
@@ -208,8 +220,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
 
   // ── AI Analysis (jika ada) ──────────────────────────────────────
   if (data.aiAnalysis) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const finalY = (doc as any).lastAutoTable.finalY + 14;
+    const finalY = ((doc as unknown as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 0) + 14;
 
     if (finalY + 20 > doc.internal.pageSize.getHeight() - 20) {
       doc.addPage();
@@ -270,8 +281,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
           line = line.replace(/^[-*]\s/, '');
         } else if (line.match(/^\d+\.\s/)) {
           isBullet = true;
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          bulletChar = line.match(/^\d+\.\s/)![0];
+          bulletChar = line.match(/^\d+\.\s/)?.[0] ?? '';
           line = line.replace(/^\d+\.\s/, '');
         }
       }
@@ -294,7 +304,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
         // We need to handle internal wrapping if a single line is too long
         // Simplest: use doc.splitTextToSize on a clean version to find wrap points
         const cleanText = textStr.replace(/\*\*/g, '');
-        const wrappedLines = doc.splitTextToSize(cleanText, maxWidth);
+        doc.splitTextToSize(cleanText, maxWidth);
         
         // This is a simplified rich text wrapper
         // It's hard to perfectly map segments to wrapped lines, 
@@ -368,8 +378,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
   }
 
   // ── Footer ──────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pageCount = (doc as any).internal.getNumberOfPages();
+  const pageCount = (doc as unknown as JsPdfWithPageCount).internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     const footerY = doc.internal.pageSize.getHeight() - 10;

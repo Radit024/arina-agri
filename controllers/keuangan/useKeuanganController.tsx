@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTheme } from '@mui/material/styles';
 import { useCallback,useMemo,useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 
@@ -91,7 +91,7 @@ export function useKeuanganController() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm<TransactionFormData>({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema.extend({
       jenis: z.enum(['pengeluaran', 'pendapatan'], { message: t('validation.type') }),
       kategori: z.string().min(1, t('validation.category')),
@@ -110,7 +110,7 @@ export function useKeuanganController() {
     },
   });
 
-  const selectedJenis = watch('jenis');
+  const selectedJenis = useWatch({ control, name: 'jenis' });
 
   const kategoriFiltered = useMemo(
     () =>
@@ -366,24 +366,20 @@ export function useKeuanganController() {
     }
   };
 
-  const monthFilteredTransactions = useMemo(
-    () => transactions.filter((t) => filterBulan === 'semua' || t.tanggal.startsWith(filterBulan)),
-    [transactions, filterBulan]
+  const monthFilteredTransactions = transactions.filter((tx) =>
+    filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
   );
 
   // Summaries
-  const { totalPendapatan, totalPengeluaran } = useMemo(() => {
-    let pendapatan = 0;
-    let pengeluaran = 0;
-    monthFilteredTransactions.forEach((tx) => {
-      if (tx.jenis === 'pendapatan') {
-        pendapatan += tx.nominal;
-      } else if (tx.jenis === 'pengeluaran') {
-        pengeluaran += tx.nominal;
-      }
-    });
-    return { totalPendapatan: pendapatan, totalPengeluaran: pengeluaran };
-  }, [monthFilteredTransactions]);
+  let totalPendapatan = 0;
+  let totalPengeluaran = 0;
+  for (const tx of monthFilteredTransactions) {
+    if (tx.jenis === 'pendapatan') {
+      totalPendapatan += tx.nominal;
+    } else if (tx.jenis === 'pengeluaran') {
+      totalPengeluaran += tx.nominal;
+    }
+  }
   const labaBersih = totalPendapatan - totalPengeluaran;
 
   // BFA (Business Feasibility Analysis) — standalone planning tool, tidak terkait data transaksi

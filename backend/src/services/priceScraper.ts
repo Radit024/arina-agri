@@ -1,7 +1,4 @@
-// @ts-nocheck
 import cron from 'node-cron';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
 import { supabaseAdmin } from './supabase';
 
 import puppeteer from 'puppeteer';
@@ -47,10 +44,14 @@ export async function fetchAndSavePrice() {
 
     // Ekstrak data dari list/tabel yang muncul di home
     const rawData = await page.evaluate(() => {
-      const doc = (window as any).document;
+      const doc = (globalThis as unknown as {
+        document: {
+          querySelectorAll: (selectors: string) => Iterable<{ textContent?: string | null }>;
+        };
+      }).document;
       // Di home siskaperbapo, data biasanya ada di list atau tabel detail
       const rows = Array.from(doc.querySelectorAll('table tr, .list-group-item'));
-      return rows.map((r: any) => {
+      return rows.map((r) => {
         const text = r.textContent?.trim() || '';
         // Format biasanya: "Nama Daerah: Rp 65.000" atau kolom terpisah
         return { text };
@@ -84,8 +85,9 @@ export async function fetchAndSavePrice() {
 
     console.log(`[Price Scraper] Berhasil mendapatkan ${scrapedData.length} baris data dari web.`);
 
-  } catch (err: any) {
-    console.warn(`[Price Scraper] Scraping dengan Puppeteer gagal (${err.message}). Menggunakan fallback data simulasi untuk 38 kabupaten.`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.warn(`[Price Scraper] Scraping dengan Puppeteer gagal (${message}). Menggunakan fallback data simulasi untuk 38 kabupaten.`);
     scrapedData = [];
   }
 

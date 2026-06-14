@@ -1,8 +1,6 @@
 import './env'; // Harus di atas import lain yang memakai process.env
 import express from 'express';
 import cors from 'cors';
-import fs from 'fs';
-import path from 'path';
 import aiRoutes from './routes/ai';
 import notificationRoutes from './routes/notification';
 import newsRoutes from './routes/news';
@@ -56,8 +54,9 @@ app.use((_req, res) => {
 });
 
 // ─── Global Error Handler ────────────────────────────────────────
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('[Global Error]', error.message || error);
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  void _next;
+  console.error('[Global Error]', error instanceof Error ? error.message : error);
   res.status(500).json({ success: false, message: 'Internal Server Error' });
 });
 

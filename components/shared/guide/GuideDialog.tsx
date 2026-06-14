@@ -290,7 +290,6 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   useLayoutEffect(() => {
     if (!open) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Measure the target before first paint so mobile guide cards do not cover the highlight.
     refreshTarget({ scroll: true });
   }, [open, refreshTarget]);
 
@@ -394,8 +393,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
   if (!guide || !currentStep || !open) return null;
 
   const totalSteps = guide.steps.length;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mk = guide.messageKey as any;
+  const mk = String(guide.messageKey);
   const eyebrow = t(mk + '.eyebrow');
   const title = t(mk + '.title');
   const stepTitle = t(mk + '.steps.' + currentStep.key + '.title');

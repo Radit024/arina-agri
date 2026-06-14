@@ -3,6 +3,14 @@ import { getBmkgForecast, getBmkgWarnings } from '@/lib/server/weather/bmkgClien
 import { generateGeminiReply } from '@/lib/server/ai/gemini';
 import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
+interface BriefingForecastDay {
+  minTemperatureC?: number | string;
+  maxTemperatureC?: number | string;
+  temperatureC?: number | string;
+  dominantCondition?: string;
+  condition?: string;
+}
+
 export async function buildBriefingText(
   supabase: SupabaseClient,
   userId: string,
@@ -31,14 +39,14 @@ export async function buildBriefingText(
       ]);
       
       const isToday = range === 'hari ini';
-      const day1 = forecast.days[0] || forecast.current;
-      const day3 = forecast.days[2] || day1;
+      const day1 = (forecast.days[0] || forecast.current) as BriefingForecastDay;
+      const day3 = (forecast.days[2] || day1) as BriefingForecastDay;
       
-      const tMin1 = (day1 as any).minTemperatureC ?? (day1 as any).temperatureC ?? '-';
-      const tMax1 = (day1 as any).maxTemperatureC ?? (day1 as any).temperatureC ?? '-';
-      const cond1 = (day1 as any).dominantCondition ?? (day1 as any).condition ?? '-';
+      const tMin1 = day1.minTemperatureC ?? day1.temperatureC ?? '-';
+      const tMax1 = day1.maxTemperatureC ?? day1.temperatureC ?? '-';
+      const cond1 = day1.dominantCondition ?? day1.condition ?? '-';
       
-      const tMax3 = (day3 as any).maxTemperatureC ?? (day3 as any).temperatureC ?? '-';
+      const tMax3 = day3.maxTemperatureC ?? day3.temperatureC ?? '-';
       
       weatherContextSummary = isToday 
         ? `Hari ini: Suhu ${tMin1}-${tMax1}C, Kondisi dominan: ${cond1}.`

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from '@mui/material/styles';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
@@ -422,19 +422,19 @@ export function useCuacaController() {
     }
   };
 
-  const getGpsErrorMessage = (error: GeolocationPositionError) => {
+  const getGpsErrorMessage = useCallback((error: GeolocationPositionError) => {
     if (error.code === 1) return t('gps.errors.permissionDenied');
     if (error.code === 2) return t('gps.errors.unavailable');
     if (error.code === 3) return t('gps.errors.timeout');
     return error.message || t('gps.errors.generic');
-  };
+  }, [t]);
 
-  const getCurrentPosition = (options: PositionOptions) =>
+  const getCurrentPosition = useCallback((options: PositionOptions) =>
     new Promise<GeolocationPosition>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, options);
-    });
+    }), []);
 
-  const resolveGpsLocation = async () => {
+  const resolveGpsLocation = useCallback(async () => {
     try {
       return await getCurrentPosition({
         enableHighAccuracy: true,
@@ -453,9 +453,9 @@ export function useCuacaController() {
         maximumAge: 600000,
       });
     }
-  };
+  }, [getCurrentPosition]);
 
-  const requestGpsLocation = async (mode: GpsRequestMode) => {
+  const requestGpsLocation = useCallback(async (mode: GpsRequestMode) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGpsStatus('error');
       setGpsMessage(t('gps.errors.unsupported'));
@@ -502,7 +502,7 @@ export function useCuacaController() {
       setGpsMessage(getGpsErrorMessage(geoError));
       setGpsAutoAttempted(true);
     }
-  };
+  }, [getGpsErrorMessage, resolveGpsLocation, setGpsAutoAttempted, setGpsLocation, t]);
 
   const handleUseGpsLocation = () => {
     void requestGpsLocation('manual');
@@ -511,7 +511,7 @@ export function useCuacaController() {
   useEffect(() => {
     if (!isWeatherLocationHydrated || gpsAutoAttempted || gpsLocation) return;
     void requestGpsLocation('auto');
-  }, [gpsAutoAttempted, gpsLocation, isWeatherLocationHydrated]);
+  }, [gpsAutoAttempted, gpsLocation, isWeatherLocationHydrated, requestGpsLocation]);
 
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();

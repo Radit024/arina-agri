@@ -40,17 +40,17 @@ describe('newsHelpers', () => {
   describe('extractImageUrl', () => {
     it('should extract from media:content', () => {
       const item = { 'media:content': { '$': { url: 'https://img.com/1.jpg' } } };
-      expect(extractImageUrl(item as any)).toBe('https://img.com/1.jpg');
+      expect(extractImageUrl(item as Parameters<typeof extractImageUrl>[0])).toBe('https://img.com/1.jpg');
     });
 
     it('should extract from enclosure', () => {
       const item = { enclosure: { url: 'https://img.com/2.jpg' } };
-      expect(extractImageUrl(item as any)).toBe('https://img.com/2.jpg');
+      expect(extractImageUrl(item as Parameters<typeof extractImageUrl>[0])).toBe('https://img.com/2.jpg');
     });
 
     it('should extract from content:encoded img tag', () => {
       const item = { 'content:encoded': '<div><img src="https://img.com/3.jpg" /></div>' };
-      expect(extractImageUrl(item as any)).toBe('https://img.com/3.jpg');
+      expect(extractImageUrl(item as Parameters<typeof extractImageUrl>[0])).toBe('https://img.com/3.jpg');
     });
 
     it('should return null if no image found', () => {

@@ -80,8 +80,12 @@ export function isScheduleDue(
   return true;
 }
 
-export function validateSchedulePayload(body: any): { valid: boolean; message?: string; payload?: NotificationSchedulePayload } {
-  if (!body || typeof body !== 'object') {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+export function validateSchedulePayload(body: unknown): { valid: boolean; message?: string; payload?: NotificationSchedulePayload } {
+  if (!isRecord(body)) {
     return { valid: false, message: 'Payload tidak valid.' };
   }
 
@@ -103,16 +107,22 @@ export function validateSchedulePayload(body: any): { valid: boolean; message?: 
     return { valid: false, message: 'Field weatherAdm4 wajib diisi saat jadwal notifikasi aktif.' };
   }
 
+  const platform = body.platform as NotificationSchedulePlatform;
+  const timezone = typeof body.timezone === 'string' ? body.timezone : 'Asia/Jakarta';
+  const to = typeof body.to === 'string' ? body.to : '';
+  const recipientName = typeof body.recipientName === 'string' ? body.recipientName : 'Petani';
+  const customMessage = typeof body.customMessage === 'string' ? body.customMessage : undefined;
+
   return {
     valid: true,
     payload: {
       enabled,
       time: body.time,
-      timezone: body.timezone || 'Asia/Jakarta',
-      platform: body.platform,
-      to: body.to || '',
-      recipientName: body.recipientName || 'Petani',
-      customMessage: body.customMessage,
+      timezone,
+      platform,
+      to,
+      recipientName,
+      customMessage,
       weatherAdm4: weatherAdm4 || undefined,
       weatherLocationLabel: typeof body.weatherLocationLabel === 'string'
         ? body.weatherLocationLabel.trim() || undefined

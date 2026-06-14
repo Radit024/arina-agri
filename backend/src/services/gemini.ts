@@ -136,7 +136,24 @@ export async function generateGeminiReply({ prompt, context, userName }: { promp
 
 // ─── Generate Financial Report AI Analysis ────────────────────────
 
-export async function generateFinancialAnalysis({ reportData }: { reportData: any }) {
+interface FinancialReportTransaction {
+  jenis: 'pengeluaran' | 'pendapatan';
+  kategori: string;
+  nominal: number;
+  tanggal?: string;
+  keterangan?: string;
+}
+
+interface FinancialReportData {
+  periode: string;
+  totalPendapatan: number;
+  totalPengeluaran: number;
+  labaBersih: number;
+  transactions?: FinancialReportTransaction[];
+  userName?: string;
+}
+
+export async function generateFinancialAnalysis({ reportData }: { reportData: FinancialReportData }) {
   const client = getClient();
   if (!client) {
     throw new Error('GEMINI_API_KEY belum diisi di env backend.');
@@ -152,7 +169,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
   const pendapatanPerKategori: Record<string, number> = {};
   
   if (transactions && Array.isArray(transactions)) {
-    transactions.forEach((tx: any) => {
+    transactions.forEach((tx) => {
       if (tx.jenis === 'pengeluaran') {
         pengeluaranPerKategori[tx.kategori] = (pengeluaranPerKategori[tx.kategori] || 0) + tx.nominal;
       } else {
@@ -178,7 +195,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: an
     'RINCIAN PENDAPATAN PER KATEGORI:',
     ...Object.entries(pendapatanPerKategori).map(([k, v]) => `- ${k}: ${formatRp(v)}`),
     '',
-    `TOTAL TRANSAKSI: ${transactions?.length || 0} transaksi (${transactions?.filter((t: any) => t.jenis === 'pengeluaran').length || 0} pengeluaran, ${transactions?.filter((t: any) => t.jenis === 'pendapatan').length || 0} pendapatan)`,
+    `TOTAL TRANSAKSI: ${transactions?.length || 0} transaksi (${transactions?.filter((t) => t.jenis === 'pengeluaran').length || 0} pengeluaran, ${transactions?.filter((t) => t.jenis === 'pendapatan').length || 0} pendapatan)`,
   ].join('\n');
 
   const mergedPrompt = [

@@ -1,10 +1,13 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CuacaPage from '@/app/dashboard/cuaca/page';
 import { locationApi, weatherApi } from '@/lib/api';
 
+type TestGpsLocation = null | { latitude: number; longitude: number; accuracy: number; label: string; adm4?: string };
+type TestGpsLocationSetter = TestGpsLocation | ((current: TestGpsLocation) => TestGpsLocation);
+
 const mockStorage = vi.hoisted(() => ({
-  gpsLocation: null as null | { latitude: number; longitude: number; accuracy: number; label: string; adm4?: string },
+  gpsLocation: null as TestGpsLocation,
   gpsAutoAttempted: false,
   isWeatherLocationHydrated: true,
 }));
@@ -49,20 +52,26 @@ vi.mock('@/hooks/useWeatherLocation', async () => {
     useWeatherLocation: () => {
       const [gpsLocation, setGpsLocationState] = React.useState(mockStorage.gpsLocation);
       const [gpsAutoAttempted, setGpsAutoAttemptedState] = React.useState(mockStorage.gpsAutoAttempted);
+      const setGpsLocation = React.useCallback((val: TestGpsLocationSetter) => {
+        setGpsLocationState((current) => {
+          const nextValue = typeof val === 'function' ? val(current) : val;
+          mockStorage.gpsLocation = nextValue;
+          return nextValue;
+        });
+      }, []);
+      const setGpsAutoAttempted = React.useCallback((val: boolean | ((current: boolean) => boolean)) => {
+        setGpsAutoAttemptedState((current) => {
+          const nextValue = typeof val === 'function' ? val(current) : val;
+          mockStorage.gpsAutoAttempted = nextValue;
+          return nextValue;
+        });
+      }, []);
 
       return {
         gpsLocation,
-        setGpsLocation: vi.fn((val) => {
-          const nextValue = typeof val === 'function' ? val(gpsLocation) : val;
-          mockStorage.gpsLocation = nextValue;
-          setGpsLocationState(nextValue);
-        }),
+        setGpsLocation,
         gpsAutoAttempted,
-        setGpsAutoAttempted: vi.fn((val) => {
-          const nextValue = typeof val === 'function' ? val(gpsAutoAttempted) : val;
-          mockStorage.gpsAutoAttempted = nextValue;
-          setGpsAutoAttemptedState(nextValue);
-        }),
+        setGpsAutoAttempted,
         isWeatherLocationHydrated: mockStorage.isWeatherLocationHydrated,
         activeAdm4: gpsLocation?.adm4,
         activeLocationLabel: gpsLocation?.label,
@@ -182,7 +191,9 @@ describe('CuacaPage GPS', () => {
     mockStorage.isWeatherLocationHydrated = true;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    cleanup();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
     vi.unstubAllGlobals();
     clearNavigatorGeolocation();

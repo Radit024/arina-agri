@@ -21,8 +21,6 @@ import { useLocale, useTranslations } from 'next-intl';
 const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
 const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
 
-type GpsRequestMode = 'auto' | 'manual';
-
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
 import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
@@ -39,9 +37,7 @@ export function useCuacaController() {
   const {
     gpsLocation,
     setGpsLocation,
-    gpsAutoAttempted,
     setGpsAutoAttempted,
-    isWeatherLocationHydrated,
     activeAdm4,
     activeLocationLabel,
   } = useWeatherLocation();
@@ -455,7 +451,7 @@ export function useCuacaController() {
     }
   }, [getCurrentPosition]);
 
-  const requestGpsLocation = useCallback(async (mode: GpsRequestMode) => {
+  const requestGpsLocation = useCallback(async () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       setGpsStatus('error');
       setGpsMessage(t('gps.errors.unsupported'));
@@ -463,7 +459,7 @@ export function useCuacaController() {
     }
 
     setGpsStatus('loading');
-    setGpsMessage(mode === 'auto' ? t('gps.messages.autoLoading') : t('gps.messages.manualLoading'));
+    setGpsMessage(t('gps.messages.manualLoading'));
 
     try {
       const position = await resolveGpsLocation();
@@ -505,13 +501,8 @@ export function useCuacaController() {
   }, [getGpsErrorMessage, resolveGpsLocation, setGpsAutoAttempted, setGpsLocation, t]);
 
   const handleUseGpsLocation = () => {
-    void requestGpsLocation('manual');
+    void requestGpsLocation();
   };
-
-  useEffect(() => {
-    if (!isWeatherLocationHydrated || gpsAutoAttempted || gpsLocation) return;
-    void requestGpsLocation('auto');
-  }, [gpsAutoAttempted, gpsLocation, isWeatherLocationHydrated, requestGpsLocation]);
 
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();

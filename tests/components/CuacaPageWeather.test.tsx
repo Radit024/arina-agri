@@ -167,8 +167,16 @@ function stubReverseGeocodeFetch() {
   }));
 }
 
+function clearNavigatorGeolocation() {
+  Object.defineProperty(global.navigator, 'geolocation', {
+    configurable: true,
+    value: undefined,
+  });
+}
+
 describe('CuacaPage GPS', () => {
   beforeEach(() => {
+    clearNavigatorGeolocation();
     mockStorage.gpsLocation = null;
     mockStorage.gpsAutoAttempted = false;
     mockStorage.isWeatherLocationHydrated = true;
@@ -177,6 +185,7 @@ describe('CuacaPage GPS', () => {
   afterEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    clearNavigatorGeolocation();
   });
 
   it('shows BMKG forecast attribution and active warning when GPS is active', async () => {
@@ -194,9 +203,31 @@ describe('CuacaPage GPS', () => {
   });
 
   it('does not load or render BMKG warning placeholders before a BMKG location is selected', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({
+        coords: {
+          latitude: -7.9201,
+          longitude: 112.5899,
+          accuracy: 10,
+          altitude: null,
+          altitudeAccuracy: null,
+          heading: null,
+          speed: null,
+        },
+        timestamp: Date.now(),
+      } as GeolocationPosition);
+    });
+
+    Object.defineProperty(global.navigator, 'geolocation', {
+      configurable: true,
+      value: { getCurrentPosition },
+    });
+
     render(<CuacaPage />);
 
     await screen.findByText('emptyWeather.title');
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(getCurrentPosition).not.toHaveBeenCalled();
     expect(weatherApi.getForecast).not.toHaveBeenCalled();
     expect(weatherApi.getWarnings).not.toHaveBeenCalled();
     expect(screen.queryByText(/Peringatan dini cuaca Jawa Timur/i)).not.toBeInTheDocument();
@@ -275,6 +306,13 @@ describe('CuacaPage GPS', () => {
     fireEvent.click(gpsButtons[0]);
 
     expect(getCurrentPosition.mock.calls.length).toBeGreaterThanOrEqual(1);
+    await waitFor(() => expect(locationApi.reverse).toHaveBeenCalledWith({ lat: -7.9845, lon: 112.6214 }));
+    await waitFor(() => {
+      expect(weatherApi.getForecast).toHaveBeenCalledWith({
+        adm4: '35.73.05.1008',
+        locationLabel: 'Tunjungsekar, Kec. Lowokwaru, Kota Malang, Jawa Timur',
+      });
+    });
     await waitFor(() => expect(screen.getAllByText(/Lokasi GPS aktif/i).length).toBeGreaterThan(0));
   });
 

@@ -152,3 +152,17 @@ export interface DbSupplyMutation {
   linked_transaction_id: string | null;
   created_at: string;
 }
+
+export interface DbTransactionCategory {
+  id: string;
+  user_id: string;
+  nama: string;
+  created_at: string;
+}
+
+export interface DbTransactionSatuan {
+  id: string;
+  user_id: string;
+  nama: string;
+  created_at: string;
+}

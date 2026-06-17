@@ -8,6 +8,8 @@ import type {
   DbRabItem,
   DbStockMutation,
   DbTransaction,
+  DbTransactionCategory,
+  DbTransactionSatuan,
 } from '@/lib/supabase';
 import type { FinanceProject, RabCategory, RabItem } from '@/lib/finance/rabTypes';
 import type {
@@ -48,6 +50,11 @@ export type ApiFinanceProject = FinanceProject;
 export type ApiRabCategory = RabCategory;
 
 export type ApiRabItem = RabItem;
+
+export interface ApiTransactionCategory {
+  id: string;
+  nama: string;
+}
 
 export interface ApiRabImport {
   id: string;
@@ -1305,5 +1312,101 @@ export const locationApi = {
     search.set('lat', String(params.lat));
     search.set('lon', String(params.lon));
     return apiGet<LocationSearchResult>(`/api/location/reverse?${search.toString()}`);
+  },
+};
+
+// ─── Transaction Category API ─────────────────────────────────────
+export const transactionCategoryApi = {
+  getAll: async (): Promise<ApiTransactionCategory[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: DbTransactionCategory) => ({ id: row.id, nama: row.nama }));
+  },
+
+  create: async (nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionCategory;
+    return { id: row.id, nama: row.nama };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiTransactionCategory> => {
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .update({ nama })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionCategory;
+    return { id: row.id, nama: row.nama };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('finance_transaction_categories')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
+  },
+};
+
+// ─── Transaction Satuan API ───────────────────────────────────────
+export const transactionSatuanApi = {
+  getAll: async (): Promise<ApiTransactionCategory[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: DbTransactionSatuan) => ({ id: row.id, nama: row.nama }));
+  },
+
+  create: async (nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionSatuan;
+    return { id: row.id, nama: row.nama };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiTransactionCategory> => {
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .update({ nama })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionSatuan;
+    return { id: row.id, nama: row.nama };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const { error } = await supabase
+      .from('finance_transaction_satuans')
+      .delete()
+      .eq('id', id);
+    if (error) throw new Error(error.message);
   },
 };

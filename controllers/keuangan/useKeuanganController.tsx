@@ -17,6 +17,11 @@ import { useTransactions } from '@/hooks/useTransactions';
 import type { ApiTransaction } from '@/lib/api';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
+import { useFinanceExportController } from './useFinanceExportController';
+import { useFinanceLedgerController } from './useFinanceLedgerController';
+import { useFinanceProjectController } from './useFinanceProjectController';
+import { useFinanceReportController } from './useFinanceReportController';
+import { useRabController } from './useRabController';
 
 const transactionSchema = z.object({
   jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
@@ -88,6 +93,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'export'>('buku-besar');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -111,6 +117,28 @@ export function useKeuanganController() {
   });
 
   const selectedJenis = useWatch({ control, name: 'jenis' });
+  const selectedKategori = useWatch({ control, name: 'kategori' }) ?? '';
+  const selectedKeterangan = useWatch({ control, name: 'keterangan' }) ?? '';
+  const financeProject = useFinanceProjectController();
+  const rab = useRabController(financeProject.selectedProject);
+  const financeLedger = useFinanceLedgerController({
+    rabItems: rab.items,
+    selectedJenis,
+    selectedKategori,
+    selectedKeterangan,
+  });
+  const financeReports = useFinanceReportController({
+    project: financeProject.selectedProject,
+    rabItems: rab.items,
+    transactions,
+  });
+  const financeExport = useFinanceExportController({
+    project: financeProject.selectedProject,
+    rabItems: rab.items,
+    transactions: financeReports.reportTransactions,
+    startMonth: financeReports.reportStartMonth,
+    endMonth: financeReports.reportEndMonth,
+  });
 
   const kategoriFiltered = useMemo(
     () =>
@@ -145,13 +173,22 @@ export function useKeuanganController() {
   };
 
   const onSubmit = async (data: TransactionFormData) => {
-    const txData = {
+    const bestRabItem = financeLedger.rabSuggestions[0]?.item;
+    const txData: Parameters<typeof addTransaction>[0] = {
       jenis: data.jenis,
       kategori: data.kategori,
       nominal: Number(data.nominal.replace(/\./g, '')),
       tanggal: data.tanggal,
       keterangan: data.keterangan || '',
     };
+    if (financeProject.selectedProject) {
+      txData.projectId = financeProject.selectedProject.id;
+    }
+    if (bestRabItem) {
+      txData.projectId = bestRabItem.projectId;
+      txData.rabCategoryId = bestRabItem.categoryId;
+      txData.rabItemId = bestRabItem.id;
+    }
 
     setTxSubmitting(true);
     try {
@@ -515,6 +552,8 @@ export function useKeuanganController() {
     setFilterBulan,
     filterJenis,
     setFilterJenis,
+    financeTab,
+    setFinanceTab,
     theme,
     isMobile,
     control,
@@ -549,6 +588,11 @@ export function useKeuanganController() {
     bulanOptions,
     getBulanLabel,
     displayedTransactions,
+    financeProject,
+    rab,
+    financeLedger,
+    financeReports,
+    financeExport,
   };
 }
 

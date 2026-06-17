@@ -20,12 +20,14 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { alpha, type Theme } from '@mui/material/styles';
+import Tab from '@mui/material/Tab';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dynamic from 'next/dynamic';
@@ -53,6 +55,11 @@ import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 
 import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
+import FinanceCashFlowView from './FinanceCashFlowView';
+import FinanceExportView from './FinanceExportView';
+import FinanceIncomeStatementView from './FinanceIncomeStatementView';
+import FinanceProjectToolbar from './FinanceProjectToolbar';
+import RabPlanningView from './RabPlanningView';
 
 const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
@@ -147,7 +154,6 @@ export default function KeuanganView({
   handleNominalChange,
   handleBepHppInputChange,
   getBepHppInputDisplayValue,
-  handleExportExcel,
   aiQuotaRemaining,
   handleGeneratePdfManual,
   handleGeneratePdfAI,
@@ -165,7 +171,16 @@ export default function KeuanganView({
   bulanOptions,
   getBulanLabel,
   displayedTransactions,
+  financeTab,
+  setFinanceTab,
+  financeProject,
+  rab,
+  financeLedger,
+  financeReports,
+  financeExport,
 }: UseKeuanganControllerResult) {
+  const bestRabSuggestion = financeLedger.rabSuggestions[0];
+
   return (
     <PageShell>
       <PageHeader
@@ -176,7 +191,8 @@ export default function KeuanganView({
             data-guide-target="finance-export"
             variant="outlined"
             startIcon={<DownloadIcon />}
-            onClick={handleExportExcel}
+            onClick={financeExport.handleExportFinanceWorkbook}
+            disabled={!financeProject.selectedProject || financeExport.exportLoading}
             color="success"
             sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
           >
@@ -185,6 +201,34 @@ export default function KeuanganView({
         )}
       />
 
+      <FinanceProjectToolbar financeProject={financeProject} rab={rab} financeExport={financeExport} />
+
+      <Tabs
+        value={financeTab}
+        onChange={(_, value) => setFinanceTab(value)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        aria-label="Navigasi laporan keuangan"
+        sx={{
+          mb: 2,
+          borderBottom: 1,
+          borderColor: 'divider',
+          '& .MuiTab-root': {
+            minHeight: 44,
+            textTransform: 'none',
+            fontWeight: 700,
+          },
+        }}
+      >
+        <Tab value="buku-besar" label="Buku Besar" />
+        <Tab value="rab" label="RAB" />
+        <Tab value="laba-rugi" label="Laba Rugi" />
+        <Tab value="arus-kas" label="Arus Kas" />
+        <Tab value="export" label="Export Excel" />
+      </Tabs>
+
+      {financeTab === 'buku-besar' && (
       <Grid container spacing={{ xs: 2, md: 3 }} sx={{ flex: 1, alignItems: 'stretch' }}>
         {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
         <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
@@ -604,6 +648,12 @@ export default function KeuanganView({
           </Card>
         </Grid>
       </Grid>
+      )}
+
+      {financeTab === 'rab' && <RabPlanningView financeProject={financeProject} rab={rab} />}
+      {financeTab === 'laba-rugi' && <FinanceIncomeStatementView financeReports={financeReports} />}
+      {financeTab === 'arus-kas' && <FinanceCashFlowView financeReports={financeReports} />}
+      {financeTab === 'export' && <FinanceExportView financeProject={financeProject} financeExport={financeExport} />}
 
       {/* ─── MODAL: Catat / Edit Transaksi ─── */}
       <Dialog
@@ -755,6 +805,12 @@ export default function KeuanganView({
                 />
               )}
             />
+
+            {bestRabSuggestion && (
+              <Alert severity="info" variant="outlined" sx={{ borderRadius: 2 }}>
+                Transaksi ini akan dihubungkan ke RAB: <strong>{bestRabSuggestion.item.categoryName ?? 'Kategori RAB'} - {bestRabSuggestion.item.name}</strong>.
+              </Alert>
+            )}
 
             {/* Actions */}
             <Box sx={{ display: 'flex', gap: 2, pt: 1 }}>

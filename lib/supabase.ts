@@ -19,8 +19,69 @@ export interface DbTransaction {
   nominal: number;
   tanggal: string;
   keterangan: string;
+  project_id?: string | null;
+  rab_category_id?: string | null;
+  rab_item_id?: string | null;
+  volume?: number | null;
+  satuan?: string | null;
+  harga_satuan?: number | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DbFinanceProject {
+  id: string;
+  user_id: string;
+  name: string;
+  commodity: string;
+  land_area: number;
+  land_area_unit: string;
+  season_label: string;
+  start_date: string;
+  end_date: string;
+  status: 'draft' | 'active' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbRabCategory {
+  id: string;
+  user_id: string;
+  project_id: string;
+  name: string;
+  type: 'income' | 'expense';
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbRabItem {
+  id: string;
+  user_id: string;
+  project_id: string;
+  category_id: string;
+  name: string;
+  type: 'income' | 'expense';
+  volume: number;
+  unit: string;
+  unit_price: number;
+  planned_total: number;
+  planned_cash_month: string | null;
+  aliases: string[] | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbRabImport {
+  id: string;
+  user_id: string;
+  project_id: string;
+  file_name: string;
+  status: 'success' | 'failed';
+  summary: string | null;
+  errors: string[] | null;
+  created_at: string;
 }
 
 export interface DbCalendarEvent {

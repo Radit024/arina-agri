@@ -1,6 +1,15 @@
 import { supabase } from '@/lib/supabase';
 import { DEVELOPMENT_ACCESS_TOKEN, DEVELOPMENT_USER_ID } from '@/lib/devAuth';
-import type { DbHarvestBatch, DbStockMutation, DbTransaction } from '@/lib/supabase';
+import type {
+  DbFinanceProject,
+  DbHarvestBatch,
+  DbRabCategory,
+  DbRabImport,
+  DbRabItem,
+  DbStockMutation,
+  DbTransaction,
+} from '@/lib/supabase';
+import type { FinanceProject, RabCategory, RabItem } from '@/lib/finance/rabTypes';
 import type {
   BmkgForecastResponse,
   BmkgWeatherWarning,
@@ -24,8 +33,30 @@ export interface ApiTransaction {
   nominal: number;
   tanggal: string;
   keterangan: string;
+  projectId?: string | null;
+  rabCategoryId?: string | null;
+  rabItemId?: string | null;
+  volume?: number | null;
+  satuan?: string | null;
+  hargaSatuan?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export type ApiFinanceProject = FinanceProject;
+
+export type ApiRabCategory = RabCategory;
+
+export type ApiRabItem = RabItem;
+
+export interface ApiRabImport {
+  id: string;
+  projectId: string;
+  fileName: string;
+  status: 'success' | 'failed';
+  summary: string;
+  errors: string[];
+  createdAt: string;
 }
 
 export interface ApiCalendarEvent {
@@ -260,7 +291,18 @@ interface DbMasterDataRow {
 
 type DbTransactionUpdate = Partial<Pick<
   DbTransaction,
-  'jenis' | 'kategori' | 'nominal' | 'tanggal' | 'keterangan' | 'updated_at'
+  | 'jenis'
+  | 'kategori'
+  | 'nominal'
+  | 'tanggal'
+  | 'keterangan'
+  | 'project_id'
+  | 'rab_category_id'
+  | 'rab_item_id'
+  | 'volume'
+  | 'satuan'
+  | 'harga_satuan'
+  | 'updated_at'
 >>;
 
 type DbHarvestBatchUpdate = Partial<Pick<
@@ -286,8 +328,70 @@ function mapTx(row: DbTransaction): ApiTransaction {
     nominal: row.nominal,
     tanggal: row.tanggal,
     keterangan: row.keterangan ?? '',
+    projectId: row.project_id ?? null,
+    rabCategoryId: row.rab_category_id ?? null,
+    rabItemId: row.rab_item_id ?? null,
+    volume: row.volume ?? null,
+    satuan: row.satuan ?? null,
+    hargaSatuan: row.harga_satuan ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapFinanceProject(row: DbFinanceProject): ApiFinanceProject {
+  return {
+    id: row.id,
+    name: row.name,
+    commodity: row.commodity,
+    landArea: row.land_area,
+    landAreaUnit: row.land_area_unit,
+    seasonLabel: row.season_label,
+    startDate: row.start_date,
+    endDate: row.end_date,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapRabCategory(row: DbRabCategory): ApiRabCategory {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    name: row.name,
+    type: row.type,
+    sortOrder: row.sort_order,
+  };
+}
+
+function mapRabItem(row: DbRabItem, category?: ApiRabCategory): ApiRabItem {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    categoryId: row.category_id,
+    categoryName: category?.name,
+    type: row.type,
+    name: row.name,
+    volume: row.volume,
+    unit: row.unit,
+    unitPrice: row.unit_price,
+    plannedTotal: row.planned_total,
+    plannedCashMonth: row.planned_cash_month ?? undefined,
+    aliases: row.aliases ?? [],
+    sortOrder: row.sort_order,
+  };
+}
+
+function mapRabImport(row: DbRabImport): ApiRabImport {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    fileName: row.file_name,
+    status: row.status,
+    summary: row.summary ?? '',
+    errors: row.errors ?? [],
+    createdAt: row.created_at,
   };
 }
 
@@ -438,16 +542,24 @@ export const transactionApi = {
   create: async (payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiTransaction> => {
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
+    const insertPayload: Record<string, unknown> = {
+      user_id: user.id,
+      jenis: payload.jenis,
+      kategori: payload.kategori,
+      nominal: payload.nominal,
+      tanggal: payload.tanggal,
+      keterangan: payload.keterangan ?? '',
+    };
+    if (payload.projectId) insertPayload.project_id = payload.projectId;
+    if (payload.rabCategoryId) insertPayload.rab_category_id = payload.rabCategoryId;
+    if (payload.rabItemId) insertPayload.rab_item_id = payload.rabItemId;
+    if (payload.volume !== undefined && payload.volume !== null) insertPayload.volume = payload.volume;
+    if (payload.satuan) insertPayload.satuan = payload.satuan;
+    if (payload.hargaSatuan !== undefined && payload.hargaSatuan !== null) insertPayload.harga_satuan = payload.hargaSatuan;
+
     const { data, error } = await supabase
       .from('transactions')
-      .insert({
-        user_id: user.id,
-        jenis: payload.jenis,
-        kategori: payload.kategori,
-        nominal: payload.nominal,
-        tanggal: payload.tanggal,
-        keterangan: payload.keterangan ?? '',
-      })
+      .insert(insertPayload)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -461,6 +573,12 @@ export const transactionApi = {
     if (payload.nominal !== undefined) update.nominal = payload.nominal;
     if (payload.tanggal !== undefined) update.tanggal = payload.tanggal;
     if (payload.keterangan !== undefined) update.keterangan = payload.keterangan;
+    if (payload.projectId !== undefined) update.project_id = payload.projectId;
+    if (payload.rabCategoryId !== undefined) update.rab_category_id = payload.rabCategoryId;
+    if (payload.rabItemId !== undefined) update.rab_item_id = payload.rabItemId;
+    if (payload.volume !== undefined) update.volume = payload.volume;
+    if (payload.satuan !== undefined) update.satuan = payload.satuan;
+    if (payload.hargaSatuan !== undefined) update.harga_satuan = payload.hargaSatuan;
     update.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -481,6 +599,194 @@ export const transactionApi = {
 };
 
 // ─── Calendar Events API ──────────────────────────────────────────
+export const financeProjectApi = {
+  getAll: async (): Promise<ApiFinanceProject[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('finance_projects')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('start_date', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row) => mapFinanceProject(row as DbFinanceProject));
+  },
+
+  create: async (payload: Omit<ApiFinanceProject, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiFinanceProject> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_projects')
+      .insert({
+        user_id: user.id,
+        name: payload.name,
+        commodity: payload.commodity,
+        land_area: payload.landArea,
+        land_area_unit: payload.landAreaUnit,
+        season_label: payload.seasonLabel,
+        start_date: payload.startDate,
+        end_date: payload.endDate,
+        status: payload.status,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapFinanceProject(data as DbFinanceProject);
+  },
+
+  update: async (id: string, payload: Partial<ApiFinanceProject>): Promise<ApiFinanceProject> => {
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (payload.name !== undefined) update.name = payload.name;
+    if (payload.commodity !== undefined) update.commodity = payload.commodity;
+    if (payload.landArea !== undefined) update.land_area = payload.landArea;
+    if (payload.landAreaUnit !== undefined) update.land_area_unit = payload.landAreaUnit;
+    if (payload.seasonLabel !== undefined) update.season_label = payload.seasonLabel;
+    if (payload.startDate !== undefined) update.start_date = payload.startDate;
+    if (payload.endDate !== undefined) update.end_date = payload.endDate;
+    if (payload.status !== undefined) update.status = payload.status;
+
+    const { data, error } = await supabase
+      .from('finance_projects')
+      .update(update)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapFinanceProject(data as DbFinanceProject);
+  },
+
+  delete: async (id: string): Promise<null> => {
+    const { error } = await supabase.from('finance_projects').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    return null;
+  },
+};
+
+export const rabApi = {
+  getByProject: async (projectId: string): Promise<{ categories: ApiRabCategory[]; items: ApiRabItem[]; imports: ApiRabImport[] }> => {
+    const [categoryResult, itemResult, importResult] = await Promise.all([
+      supabase.from('rab_categories').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
+      supabase.from('rab_items').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
+      supabase.from('rab_imports').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+    ]);
+    if (categoryResult.error) throw new Error(categoryResult.error.message);
+    if (itemResult.error) throw new Error(itemResult.error.message);
+    if (importResult.error) throw new Error(importResult.error.message);
+
+    const categories = (categoryResult.data ?? []).map((row) => mapRabCategory(row as DbRabCategory));
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+    const items = (itemResult.data ?? []).map((row) => {
+      const item = row as DbRabItem;
+      return mapRabItem(item, categoriesById.get(item.category_id));
+    });
+    const imports = (importResult.data ?? []).map((row) => mapRabImport(row as DbRabImport));
+    return { categories, items, imports };
+  },
+
+  createCategory: async (payload: Omit<ApiRabCategory, 'id'>): Promise<ApiRabCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('rab_categories')
+      .insert({
+        user_id: user.id,
+        project_id: payload.projectId,
+        name: payload.name,
+        type: payload.type,
+        sort_order: payload.sortOrder,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRabCategory(data as DbRabCategory);
+  },
+
+  updateCategory: async (id: string, payload: Partial<ApiRabCategory>): Promise<ApiRabCategory> => {
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (payload.name !== undefined) update.name = payload.name;
+    if (payload.type !== undefined) update.type = payload.type;
+    if (payload.sortOrder !== undefined) update.sort_order = payload.sortOrder;
+    const { data, error } = await supabase.from('rab_categories').update(update).eq('id', id).select().single();
+    if (error) throw new Error(error.message);
+    return mapRabCategory(data as DbRabCategory);
+  },
+
+  deleteCategory: async (id: string): Promise<null> => {
+    const { error } = await supabase.from('rab_categories').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    return null;
+  },
+
+  createItem: async (payload: Omit<ApiRabItem, 'id'>): Promise<ApiRabItem> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('rab_items')
+      .insert({
+        user_id: user.id,
+        project_id: payload.projectId,
+        category_id: payload.categoryId,
+        name: payload.name,
+        type: payload.type,
+        volume: payload.volume,
+        unit: payload.unit,
+        unit_price: payload.unitPrice,
+        planned_total: payload.plannedTotal,
+        planned_cash_month: payload.plannedCashMonth ?? null,
+        aliases: payload.aliases,
+        sort_order: payload.sortOrder,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRabItem(data as DbRabItem);
+  },
+
+  updateItem: async (id: string, payload: Partial<ApiRabItem>): Promise<ApiRabItem> => {
+    const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (payload.categoryId !== undefined) update.category_id = payload.categoryId;
+    if (payload.name !== undefined) update.name = payload.name;
+    if (payload.type !== undefined) update.type = payload.type;
+    if (payload.volume !== undefined) update.volume = payload.volume;
+    if (payload.unit !== undefined) update.unit = payload.unit;
+    if (payload.unitPrice !== undefined) update.unit_price = payload.unitPrice;
+    if (payload.plannedTotal !== undefined) update.planned_total = payload.plannedTotal;
+    if (payload.plannedCashMonth !== undefined) update.planned_cash_month = payload.plannedCashMonth ?? null;
+    if (payload.aliases !== undefined) update.aliases = payload.aliases;
+    if (payload.sortOrder !== undefined) update.sort_order = payload.sortOrder;
+
+    const { data, error } = await supabase.from('rab_items').update(update).eq('id', id).select().single();
+    if (error) throw new Error(error.message);
+    return mapRabItem(data as DbRabItem);
+  },
+
+  deleteItem: async (id: string): Promise<null> => {
+    const { error } = await supabase.from('rab_items').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+    return null;
+  },
+
+  recordImport: async (payload: Omit<ApiRabImport, 'id' | 'createdAt'>): Promise<ApiRabImport> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('rab_imports')
+      .insert({
+        user_id: user.id,
+        project_id: payload.projectId,
+        file_name: payload.fileName,
+        status: payload.status,
+        summary: payload.summary,
+        errors: payload.errors,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRabImport(data as DbRabImport);
+  },
+};
+
 export const eventApi = {
   getAll: async (): Promise<ApiCalendarEvent[]> => {
     return calendarEventRequest<ApiCalendarEvent[]>('/api/calendar/events', { method: 'GET' });

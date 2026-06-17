@@ -91,7 +91,7 @@ export function useRabController(project: ApiFinanceProject | null) {
           sortOrder: index + 1,
         };
       });
-      await rabState.replaceRab({ categories, items });
+      rabState.replaceRab({ categories, items });
       setImportDialogOpen(false);
       return { categories, items };
     } catch (err) {

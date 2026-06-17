@@ -93,7 +93,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'export'>('buku-besar');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 

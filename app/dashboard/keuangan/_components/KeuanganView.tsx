@@ -54,9 +54,8 @@ import Fab from '@mui/material/Fab';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
 
-import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
+import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
-import FinanceExportView from './FinanceExportView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
 import RabPlanningView from './RabPlanningView';
@@ -186,19 +185,6 @@ export default function KeuanganView({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        actions={(
-          <PageActionButton
-            data-guide-target="finance-export"
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            onClick={financeExport.handleExportFinanceWorkbook}
-            disabled={!financeProject.selectedProject || financeExport.exportLoading}
-            color="success"
-            sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
-          >
-            {t('exportCsv')}
-          </PageActionButton>
-        )}
       />
 
       <FinanceProjectToolbar financeProject={financeProject} rab={rab} financeExport={financeExport} />
@@ -225,7 +211,6 @@ export default function KeuanganView({
         <Tab value="rab" label="RAB" />
         <Tab value="laba-rugi" label="Laba Rugi" />
         <Tab value="arus-kas" label="Arus Kas" />
-        <Tab value="export" label="Export Excel" />
       </Tabs>
 
       {financeTab === 'buku-besar' && (
@@ -653,7 +638,6 @@ export default function KeuanganView({
       {financeTab === 'rab' && <RabPlanningView financeProject={financeProject} rab={rab} />}
       {financeTab === 'laba-rugi' && <FinanceIncomeStatementView financeReports={financeReports} />}
       {financeTab === 'arus-kas' && <FinanceCashFlowView financeReports={financeReports} />}
-      {financeTab === 'export' && <FinanceExportView financeProject={financeProject} financeExport={financeExport} />}
 
       {/* ─── MODAL: Catat / Edit Transaksi ─── */}
       <Dialog

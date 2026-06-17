@@ -46,9 +46,9 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
     >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
         <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 260 } }}>
-          <InputLabel>Proyek RAB</InputLabel>
+          <InputLabel>Proyek </InputLabel>
           <Select
-            label="Proyek RAB"
+            label="Proyek"
             value={financeProject.selectedProjectId ?? ''}
             onChange={(event) => financeProject.setSelectedProjectId(event.target.value || null)}
           >
@@ -62,7 +62,7 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
         </FormControl>
 
         <Button variant="outlined" startIcon={<AddCircleIcon />} onClick={createSampleProject} sx={{ borderRadius: 8 }}>
-          Buat Proyek RAB
+          Buat Proyek 
         </Button>
 
         <Button
@@ -86,6 +86,7 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
         </Button>
 
         <Button
+          data-guide-target="finance-export"
           variant="contained"
           startIcon={<DownloadIcon />}
           disabled={!financeProject.selectedProject || financeExport.exportLoading}

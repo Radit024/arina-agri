@@ -302,6 +302,17 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       setExportError: vi.fn(),
       handleExportFinanceWorkbook: vi.fn(),
     },
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    sortColumn: 'tanggal' as const,
+    sortDir: 'desc' as const,
+    toggleSort: vi.fn(),
+    selectedTxIds: [],
+    toggleSelectTx: vi.fn(),
+    clearSelectionTxs: vi.fn(),
+    bulkDeleteConfirm: false,
+    setBulkDeleteConfirm: vi.fn(),
+    handleBulkDeleteConfirm: vi.fn(),
     ...overrides,
   };
 

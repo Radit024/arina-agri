@@ -75,6 +75,11 @@ export function useKeuanganController() {
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
   const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis'>('tanggal');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -115,6 +120,33 @@ export function useKeuanganController() {
     await deleteTransaction(deleteConfirmId);
     setDeleteConfirmId(null);
     setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
+  };
+
+  const toggleSort = (col: typeof sortColumn) => {
+    if (sortColumn === col) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDir('asc');
+    }
+  };
+
+  const toggleSelectTx = (id: string) => {
+    setSelectedTxIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const clearSelectionTxs = () => setSelectedTxIds([]);
+
+  const handleBulkDeleteConfirm = async () => {
+    const count = selectedTxIds.length;
+    for (const id of selectedTxIds) {
+      await deleteTransaction(id);
+    }
+    clearSelectionTxs();
+    setBulkDeleteConfirm(false);
+    setSnackbar({ open: true, message: `${count} transaksi berhasil dihapus`, severity: 'success' });
   };
 
   const handleBepHppInputChange = useCallback((field: keyof BepHppInputs, rawValue: string) => {
@@ -416,11 +448,30 @@ export function useKeuanganController() {
     return `${BULAN_LABELS[monthIndex]} ${tahun}`;
   };
 
-  // Filtered table data
-  const displayedTransactions = useMemo(
-    () => monthFilteredTransactions.filter((t) => (filterJenis === 'semua' || t.jenis === filterJenis)),
-    [monthFilteredTransactions, filterJenis]
-  );
+  // Filtered + searched + sorted table data
+  const displayedTransactions = useMemo(() => {
+    let result = monthFilteredTransactions.filter(
+      (tx) => filterJenis === 'semua' || tx.jenis === filterJenis
+    );
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (tx) =>
+          tx.kategori.toLowerCase().includes(q) ||
+          (tx.keterangan ?? '').toLowerCase().includes(q)
+      );
+    }
+
+    return [...result].sort((a, b) => {
+      let cmp = 0;
+      if (sortColumn === 'tanggal') cmp = a.tanggal.localeCompare(b.tanggal);
+      else if (sortColumn === 'kategori') cmp = a.kategori.localeCompare(b.kategori);
+      else if (sortColumn === 'nominal') cmp = a.nominal - b.nominal;
+      else if (sortColumn === 'jenis') cmp = a.jenis.localeCompare(b.jenis);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [monthFilteredTransactions, filterJenis, searchQuery, sortColumn, sortDir]);
 
   return {
     t,
@@ -472,6 +523,17 @@ export function useKeuanganController() {
     financeExport,
     transactionBatch,
     transactionMaster,
+    searchQuery,
+    setSearchQuery,
+    sortColumn,
+    sortDir,
+    toggleSort,
+    selectedTxIds,
+    toggleSelectTx,
+    clearSelectionTxs,
+    bulkDeleteConfirm,
+    setBulkDeleteConfirm,
+    handleBulkDeleteConfirm,
   };
 }
 

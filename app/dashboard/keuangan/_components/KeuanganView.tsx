@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -35,10 +36,14 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import SearchIcon from '@mui/icons-material/Search';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import Checkbox from '@mui/material/Checkbox';
+import TableSortLabel from '@mui/material/TableSortLabel';
 
 
 import { formatDateShort,formatRupiah } from '@/lib/formatters';
@@ -163,7 +168,34 @@ export default function KeuanganView({
   financeExport,
   transactionBatch,
   transactionMaster,
+  searchQuery,
+  setSearchQuery,
+  sortColumn,
+  sortDir,
+  toggleSort,
+  selectedTxIds,
+  toggleSelectTx,
+  clearSelectionTxs,
+  bulkDeleteConfirm,
+  setBulkDeleteConfirm,
+  handleBulkDeleteConfirm,
 }: UseKeuanganControllerResult) {
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (searchOpen) {
+      const timer = setTimeout(() => searchInputRef.current?.focus(), 30);
+      return () => clearTimeout(timer);
+    }
+  }, [searchOpen]);
+
+  const allVisibleSelected =
+    displayedTransactions.length > 0 &&
+    displayedTransactions.every((tx) => selectedTxIds.includes(tx._id));
+  const someSelected =
+    selectedTxIds.length > 0 && !allVisibleSelected;
 
   return (
     <PageShell>
@@ -213,21 +245,12 @@ export default function KeuanganView({
               sx={{ pb: 1 }}
             />
 
-            {/* Responsive Toolbar Row */}
-            <Box
-              sx={{
-                px: 2,
-                pb: 2,
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 1.5, sm: 1 },
-                alignItems: { xs: 'stretch', sm: 'center' },
-                flexWrap: 'wrap',
-              }}
-            >
-              {/* Filters row */}
-              <Box sx={{ display: 'flex', gap: 1, flex: 1, flexWrap: 'nowrap' }}>
-                <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 150 }, flex: 1 }}>
+            {/* Toolbar */}
+            <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {/* Row 1: Filter + Search + Actions */}
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Filter Bulan */}
+                <FormControl size="small" sx={{ minWidth: 150 }}>
                   <InputLabel>{t('filters.month')}</InputLabel>
                   <Select value={filterBulan} label={t('filters.month')} onChange={(e) => setFilterBulan(e.target.value)}>
                     <MenuItem value="semua">{t('filters.allMonths')}</MenuItem>
@@ -237,39 +260,152 @@ export default function KeuanganView({
                   </Select>
                 </FormControl>
 
-                <FormControl size="small" sx={{ minWidth: { xs: 0, sm: 140 }, flex: 1 }}>
-                  <InputLabel>{t('filters.type')}</InputLabel>
-                  <Select value={filterJenis} label={t('filters.type')} onChange={(e) => setFilterJenis(e.target.value as typeof filterJenis)}>
-                    <MenuItem value="semua">{t('filters.allTypes')}</MenuItem>
-                    <MenuItem value="pendapatan">{t('common.income')}</MenuItem>
-                    <MenuItem value="pengeluaran">{t('common.expense')}</MenuItem>
-                  </Select>
-                </FormControl>
+                {/* Expandable Search — always rendered, no unmount */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: searchOpen ? 280 : 40,
+                    height: 40,
+                    flexShrink: 0,
+                    transition: 'width 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+                    willChange: 'width',
+                  }}
+                >
+                  {/* Icon button (fades out when open) */}
+                  <IconButton
+                    size="small"
+                    onClick={() => setSearchOpen(true)}
+                    aria-label="Buka pencarian"
+                    sx={(t) => ({
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: searchQuery ? 'primary.light' : 'divider',
+                      color: searchQuery ? 'primary.main' : 'text.secondary',
+                      bgcolor: searchQuery ? alpha(t.palette.primary.main, 0.08) : 'transparent',
+                      opacity: searchOpen ? 0 : 1,
+                      pointerEvents: searchOpen ? 'none' : 'auto',
+                      transition: 'opacity 0.15s ease',
+                      zIndex: 1,
+                    })}
+                  >
+                    <SearchIcon fontSize="small" />
+                  </IconButton>
+
+                  {/* TextField (fades in when open) */}
+                  <TextField
+                    size="small"
+                    fullWidth
+                    placeholder="Cari kategori atau catatan..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => { if (!searchQuery) setSearchOpen(false); }}
+                    onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); setSearchOpen(false); } }}
+                    slotProps={{
+                      htmlInput: { ref: searchInputRef },
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: searchQuery ? (
+                          <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setSearchQuery('');
+                                setSearchOpen(false);
+                              }}
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </InputAdornment>
+                        ) : undefined,
+                      },
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      opacity: searchOpen ? 1 : 0,
+                      pointerEvents: searchOpen ? 'auto' : 'none',
+                      transition: 'opacity 0.15s ease',
+                      '& .MuiOutlinedInput-root': { borderRadius: 3, height: '100%' },
+                      '& .MuiInputBase-input': { py: 0 },
+                    }}
+                  />
+                </Box>
+
+                {/* Push actions to the right */}
+                <Box sx={{ ml: 'auto' }} />
+
+                {/* Actions */}
+                <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                  <Button
+                    data-guide-target="finance-hpp-bep"
+                    id="btn-hpp-bep"
+                    variant="outlined"
+                    startIcon={<AccountBalanceIcon />}
+                    onClick={() => setBepHppDialogOpen(true)}
+                    sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
+                  >
+                    {t('buttons.hppBep')}
+                  </Button>
+                  <Button
+                    data-guide-target="finance-add-transaction"
+                    id="btn-catat-transaksi"
+                    variant="contained"
+                    startIcon={<AddCircleIcon />}
+                    onClick={transactionBatch.openForCreate}
+                    sx={{ display: { xs: 'none', md: 'inline-flex' }, borderRadius: 8, whiteSpace: 'nowrap' }}
+                  >
+                    {t('buttons.addTransaction')}
+                  </Button>
+                </Box>
               </Box>
 
-              {/* Actions row */}
-              <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                <Button
-                  data-guide-target="finance-hpp-bep"
-                  id="btn-hpp-bep"
-                  variant="outlined"
-                  startIcon={<AccountBalanceIcon />}
-                  onClick={() => setBepHppDialogOpen(true)}
-                  sx={{ borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
+              {/* Row 3: Bulk action bar (conditional) */}
+              {selectedTxIds.length > 0 && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: 2,
+                    bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                    border: '1px solid',
+                    borderColor: 'primary.light',
+                  }}
                 >
-                  {t('buttons.hppBep')}
-                </Button>
-                <Button
-                  data-guide-target="finance-add-transaction"
-                  id="btn-catat-transaksi"
-                  variant="contained"
-                  startIcon={<AddCircleIcon />}
-                  onClick={transactionBatch.openForCreate}
-                  sx={{ display: { xs: 'none', md: 'inline-flex' }, borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
-                >
-                  {t('buttons.addTransaction')}
-                </Button>
-              </Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700, flex: 1, color: 'primary.dark' }}>
+                    {selectedTxIds.length} transaksi dipilih
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={clearSelectionTxs}
+                    sx={{ borderRadius: 2, textTransform: 'none', color: 'text.secondary' }}
+                  >
+                    Batalkan
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteSweepIcon />}
+                    onClick={() => setBulkDeleteConfirm(true)}
+                    sx={{ borderRadius: 2, textTransform: 'none' }}
+                  >
+                    Hapus {selectedTxIds.length} data
+                  </Button>
+                </Box>
+              )}
             </Box>
 
             <CardContent sx={{ pt: 0, flex: 1, px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
@@ -373,48 +509,113 @@ export default function KeuanganView({
               </Box>
 
               <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
-                  <Table size="medium" stickyHeader>
-                    <TableHead>
+                <Table size="medium" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      {/* Select all checkbox */}
+                      <TableCell padding="checkbox" sx={{ backgroundColor: 'background.paper' }}>
+                        <Checkbox
+                          size="small"
+                          checked={allVisibleSelected}
+                          indeterminate={someSelected}
+                          onChange={() => {
+                            if (allVisibleSelected) {
+                              clearSelectionTxs();
+                            } else {
+                              displayedTransactions.forEach((tx) => {
+                                if (!selectedTxIds.includes(tx._id)) toggleSelectTx(tx._id);
+                              });
+                            }
+                          }}
+                          disabled={displayedTransactions.length === 0}
+                        />
+                      </TableCell>
+                      {/* Tanggal */}
+                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 90 }}>
+                        <TableSortLabel
+                          active={sortColumn === 'tanggal'}
+                          direction={sortColumn === 'tanggal' ? sortDir : 'asc'}
+                          onClick={() => toggleSort('tanggal')}
+                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                        >
+                          {t('ledger.columns.date')}
+                        </TableSortLabel>
+                      </TableCell>
+                      {/* Kategori */}
+                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 120 }}>
+                        <TableSortLabel
+                          active={sortColumn === 'kategori'}
+                          direction={sortColumn === 'kategori' ? sortDir : 'asc'}
+                          onClick={() => toggleSort('kategori')}
+                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                        >
+                          {t('ledger.columns.category')}
+                        </TableSortLabel>
+                      </TableCell>
+                      {/* Catatan (tidak sortable) */}
+                      <TableCell sx={{ backgroundColor: 'background.paper', fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        {t('ledger.columns.note')}
+                      </TableCell>
+                      {/* Tipe */}
+                      <TableCell sx={{ backgroundColor: 'background.paper' }}>
+                        <TableSortLabel
+                          active={sortColumn === 'jenis'}
+                          direction={sortColumn === 'jenis' ? sortDir : 'asc'}
+                          onClick={() => toggleSort('jenis')}
+                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                        >
+                          {t('ledger.columns.type')}
+                        </TableSortLabel>
+                      </TableCell>
+                      {/* Nilai */}
+                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 120 }}>
+                        <TableSortLabel
+                          active={sortColumn === 'nominal'}
+                          direction={sortColumn === 'nominal' ? sortDir : 'asc'}
+                          onClick={() => toggleSort('nominal')}
+                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                        >
+                          {t('ledger.columns.value')}
+                        </TableSortLabel>
+                      </TableCell>
+                      {/* Opsi */}
+                      <TableCell sx={{ backgroundColor: 'background.paper', fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                        {t('ledger.columns.action')}
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {displayedTransactions.length === 0 ? (
                       <TableRow>
-                        {[t('ledger.columns.date'), t('ledger.columns.category'), t('ledger.columns.note'), t('ledger.columns.type'), t('ledger.columns.value'), t('ledger.columns.action')].map((h) => (
-                          <TableCell
-                            key={h}
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: '0.78rem',
-                              color: 'text.secondary',
-                              backgroundColor: 'background.paper',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.03em',
-                            }}
-                          >
-                            {h}
-                          </TableCell>
-                        ))}
+                        <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                            <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {t('ledger.empty')}
+                            </Typography>
+                            <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={transactionBatch.openForCreate} sx={{ mt: 1, borderRadius: 8 }}>
+                              {t('ledger.addFirst')}
+                            </Button>
+                          </Box>
+                        </TableCell>
                       </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {displayedTransactions.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                              <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                              <Typography variant="body2" color="text.secondary">
-                                {t('ledger.empty')}
-                              </Typography>
-                              <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={transactionBatch.openForCreate} sx={{ mt: 1, borderRadius: 8 }}>
-                                {t('ledger.addFirst')}
-                              </Button>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        displayedTransactions.map((tx) => (
-                          <TableRow key={tx._id} sx={{ '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' } }}>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 90 }}>
+                    ) : (
+                      displayedTransactions.map((tx) => {
+                        const isSelected = selectedTxIds.includes(tx._id);
+                        return (
+                          <TableRow
+                            key={tx._id}
+                            selected={isSelected}
+                            onClick={() => toggleSelectTx(tx._id)}
+                            sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' }, '&.Mui-selected': { bgcolor: (t) => alpha(t.palette.primary.main, 0.07) } }}
+                          >
+                            <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox size="small" checked={isSelected} onChange={() => toggleSelectTx(tx._id)} />
+                            </TableCell>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
                               {formatDateShort(tx.tanggal)}
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 120 }}>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
                               {tx.kategori}
                             </TableCell>
                             <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
@@ -440,12 +641,11 @@ export default function KeuanganView({
                                 fontWeight: 800,
                                 fontSize: '0.9rem',
                                 color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                                minWidth: 120,
                               }}
                             >
                               {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
                               <Box sx={{ display: 'flex', gap: 0.5 }}>
                                 <IconButton
                                   size="small"
@@ -466,10 +666,11 @@ export default function KeuanganView({
                               </Box>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
               </TableContainer>
             </CardContent>
           </Card>
@@ -985,35 +1186,39 @@ export default function KeuanganView({
         </DialogContent>
       </Dialog>
     {/* Confirm Delete Dialog */}
-      <Dialog
-        open={!!deleteConfirmId}
-        onClose={() => setDeleteConfirmId(null)}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-          Hapus Transaksi?
-        </DialogTitle>
+      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>Hapus Transaksi?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
             Tindakan ini tidak dapat dibatalkan. Transaksi akan dihapus secara permanen.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          <Button
-            variant="outlined"
-            onClick={() => setDeleteConfirmId(null)}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
+          <Button variant="outlined" onClick={() => setDeleteConfirmId(null)} sx={{ borderRadius: 2, textTransform: 'none' }}>
             Batal
           </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleConfirmDelete}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
-          >
+          <Button variant="contained" color="error" onClick={handleConfirmDelete} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
             Ya, Hapus
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm Bulk Delete Dialog */}
+      <Dialog open={bulkDeleteConfirm} onClose={() => setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
+          Hapus {selectedTxIds.length} Transaksi?
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Semua transaksi yang dipilih akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setBulkDeleteConfirm(false)} sx={{ borderRadius: 2, textTransform: 'none' }}>
+            Batal
+          </Button>
+          <Button variant="contained" color="error" startIcon={<DeleteSweepIcon />} onClick={handleBulkDeleteConfirm} sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}>
+            Ya, Hapus Semua
           </Button>
         </DialogActions>
       </Dialog>

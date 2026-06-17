@@ -73,8 +73,8 @@ function draftFromTransaction(tx: ApiTransaction): TransactionDraft {
 
 export function useTransactionBatchController(
   rabItems: RabItem[],
-  addTransaction: (data: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>) => Promise<ApiTransaction>,
-  updateTransaction: (id: string, data: Partial<ApiTransaction>) => Promise<ApiTransaction>
+  addTransaction: (data: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>) => Promise<unknown>,
+  updateTransaction: (id: string, data: Partial<ApiTransaction>) => Promise<unknown>
 ) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [drafts, setDrafts] = useState<TransactionDraft[]>([createEmptyDraft()]);

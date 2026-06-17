@@ -32,7 +32,7 @@ export default function FinanceIncomeStatementView({ financeReports }: Props) {
   const { summary } = financeReports.incomeStatementComparison;
 
   return (
-    <Card>
+    <Card sx={{ flex: 1 }}>
       <CardContent>
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Laba Rugi Rencana vs Aktual</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

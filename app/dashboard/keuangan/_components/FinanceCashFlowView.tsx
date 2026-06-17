@@ -17,7 +17,7 @@ type Props = Pick<UseKeuanganControllerResult, 'financeReports'>;
 
 export default function FinanceCashFlowView({ financeReports }: Props) {
   return (
-    <Card>
+    <Card sx={{ flex: 1 }}>
       <CardContent>
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Arus Kas Rencana vs Aktual</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

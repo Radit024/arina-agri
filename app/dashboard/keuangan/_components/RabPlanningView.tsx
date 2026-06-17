@@ -46,7 +46,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
 
   if (!financeProject.selectedProject) {
     return (
-      <Card>
+      <Card sx={{ flex: 1 }}>
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>Belum ada proyek</Typography>
           <Typography variant="body2" color="text.secondary">
@@ -86,7 +86,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         </Card>
       </Stack>
 
-      <Card>
+      <Card sx={{ flex: 1 }}>
         <CardContent>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 2 }}>
             <Box>

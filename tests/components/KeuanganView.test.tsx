@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 
@@ -17,14 +16,6 @@ vi.mock('next/dynamic', () => ({
 const theme = createTheme();
 
 type KeuanganViewProps = ComponentProps<typeof KeuanganView>;
-
-type TransactionFormData = {
-  jenis: 'pengeluaran' | 'pendapatan';
-  kategori: string;
-  nominal: string;
-  tanggal: string;
-  keterangan?: string;
-};
 
 const transaction: ApiTransaction = {
   _id: 'tx-1',
@@ -133,16 +124,59 @@ function translate(key: string, values?: Record<string, unknown>) {
   );
 }
 
+function makeTransactionBatch(overrides: Record<string, unknown> = {}) {
+  return {
+    dialogOpen: false,
+    drafts: [],
+    expandedDraftId: null,
+    stage: 'input' as const,
+    submitting: false,
+    editingTransactionId: null,
+    draftErrors: {},
+    closeConfirmOpen: false,
+    submitResults: null,
+    openForCreate: vi.fn(),
+    openForEdit: vi.fn(),
+    requestClose: vi.fn(),
+    closeDialog: vi.fn(),
+    setCloseConfirmOpen: vi.fn(),
+    updateDraftField: vi.fn(),
+    expandDraft: vi.fn(),
+    addDraft: vi.fn(),
+    removeDraft: vi.fn(),
+    goToConfirm: vi.fn(),
+    goBackToInput: vi.fn(),
+    submitAll: vi.fn(),
+    rabSuggestion: null,
+    getRabLinkForDraft: vi.fn(),
+    ...overrides,
+  };
+}
+
+function makeTransactionMaster() {
+  return {
+    customKategori: [],
+    customSatuan: [],
+    kategoriDialogOpen: false,
+    setKategoriDialogOpen: vi.fn(),
+    satuanDialogOpen: false,
+    setSatuanDialogOpen: vi.fn(),
+    deleteKategoriError: null,
+    setDeleteKategoriError: vi.fn(),
+    deleteSatuanError: null,
+    setDeleteSatuanError: vi.fn(),
+    allKategori: vi.fn(() => [] as string[]),
+    allSatuan: [] as string[],
+    addKategori: vi.fn(),
+    renameKategori: vi.fn(),
+    deleteKategori: vi.fn(),
+    addSatuan: vi.fn(),
+    renameSatuan: vi.fn(),
+    deleteSatuan: vi.fn(),
+  };
+}
+
 function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganViewProps> }) {
-  const form = useForm<TransactionFormData>({
-    defaultValues: {
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: '2026-06-06',
-      keterangan: '',
-    },
-  });
   const activeTheme = overrides.theme ?? theme;
 
   const props: KeuanganViewProps = {
@@ -155,10 +189,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setReportError: vi.fn(),
     bepHppDialogOpen: false,
     setBepHppDialogOpen: vi.fn(),
-    txDialogOpen: false,
-    setTxDialogOpen: vi.fn(),
-    editingId: null,
-    setEditingId: vi.fn(),
     deleteConfirmId: null,
     setDeleteConfirmId: vi.fn(),
     snackbar: { open: false, message: '', severity: 'success' },
@@ -169,24 +199,16 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setFilterJenis: vi.fn(),
     theme: activeTheme,
     isMobile: true,
-    control: form.control,
-    handleSubmit: form.handleSubmit,
-    errors: form.formState.errors,
-    selectedJenis: 'pengeluaran',
-    kategoriFiltered: ['Pupuk', 'Pestisida', 'Lainnya'],
-    openAddDialog: vi.fn(),
-    handleEdit: vi.fn(),
-    onSubmit: vi.fn(),
-    txSubmitting: false,
     handleDelete: vi.fn(),
     handleConfirmDelete: vi.fn(),
-    handleNominalChange: vi.fn(),
     handleBepHppInputChange: vi.fn(),
     getBepHppInputDisplayValue: (value) => (value === 0 ? '' : String(value)),
     handleExportExcel: vi.fn(),
     aiQuotaRemaining: 3,
     handleGeneratePdfManual: vi.fn(),
     handleGeneratePdfAI: vi.fn(),
+    transactionBatch: makeTransactionBatch() as KeuanganViewProps['transactionBatch'],
+    transactionMaster: makeTransactionMaster() as KeuanganViewProps['transactionMaster'],
     monthFilteredTransactions: [transaction],
     totalPendapatan: 0,
     totalPengeluaran: transaction.nominal,
@@ -243,9 +265,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       addRabItem: vi.fn(),
       importRabFile: vi.fn(),
     },
-    financeLedger: {
-      rabSuggestions: [],
-    },
     financeReports: {
       reportTransactions: [],
       reportStartMonth: '2026-06',
@@ -299,9 +318,12 @@ function renderView(overrides: Partial<KeuanganViewProps> = {}) {
 
 describe('KeuanganView', () => {
   it('keeps mobile edit and delete actions visible on each transaction card', () => {
-    const handleEdit = vi.fn();
+    const openForEdit = vi.fn();
     const handleDelete = vi.fn();
-    renderView({ handleEdit, handleDelete });
+    renderView({
+      handleDelete,
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
@@ -312,7 +334,7 @@ describe('KeuanganView', () => {
     fireEvent.click(editButton);
     fireEvent.click(deleteButton);
 
-    expect(handleEdit).toHaveBeenCalledWith(transaction);
+    expect(openForEdit).toHaveBeenCalledWith(transaction);
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
   });
 

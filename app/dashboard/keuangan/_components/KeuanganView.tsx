@@ -11,10 +11,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
-import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
-import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -31,7 +29,6 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dynamic from 'next/dynamic';
-import { Controller } from 'react-hook-form';
 
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -42,6 +39,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+
 
 import { formatDateShort,formatRupiah } from '@/lib/formatters';
 import { getPeriodeLabel } from '@/lib/pdfReport';
@@ -59,6 +57,7 @@ import FinanceCashFlowView from './FinanceCashFlowView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
 import RabPlanningView from './RabPlanningView';
+import TransactionBatchDialog from './TransactionBatchDialog';
 
 const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
@@ -125,10 +124,6 @@ export default function KeuanganView({
   setReportError,
   bepHppDialogOpen,
   setBepHppDialogOpen,
-  txDialogOpen,
-  setTxDialogOpen,
-  editingId,
-  setEditingId,
   deleteConfirmId,
   setDeleteConfirmId,
   snackbar,
@@ -139,18 +134,8 @@ export default function KeuanganView({
   setFilterJenis,
   theme,
   isMobile,
-  control,
-  handleSubmit,
-  errors,
-  selectedJenis,
-  kategoriFiltered,
-  openAddDialog,
-  handleEdit,
-  onSubmit,
-  txSubmitting,
   handleDelete,
   handleConfirmDelete,
-  handleNominalChange,
   handleBepHppInputChange,
   getBepHppInputDisplayValue,
   aiQuotaRemaining,
@@ -174,11 +159,11 @@ export default function KeuanganView({
   setFinanceTab,
   financeProject,
   rab,
-  financeLedger,
   financeReports,
   financeExport,
+  transactionBatch,
+  transactionMaster,
 }: UseKeuanganControllerResult) {
-  const bestRabSuggestion = financeLedger.rabSuggestions[0];
 
   return (
     <PageShell>
@@ -279,7 +264,7 @@ export default function KeuanganView({
                   id="btn-catat-transaksi"
                   variant="contained"
                   startIcon={<AddCircleIcon />}
-                  onClick={openAddDialog}
+                  onClick={transactionBatch.openForCreate}
                   sx={{ display: { xs: 'none', md: 'inline-flex' }, borderRadius: 8, whiteSpace: 'nowrap', flex: { xs: 1, sm: 'none' } }}
                 >
                   {t('buttons.addTransaction')}
@@ -349,7 +334,7 @@ export default function KeuanganView({
                               data-touch-target="44"
                               size="small"
                               aria-label={`Edit transaksi ${tx.kategori}`}
-                              onClick={() => handleEdit(tx)}
+                              onClick={() => transactionBatch.openForEdit(tx)}
                               sx={(theme) => ({
                                 width: 44,
                                 height: 44,
@@ -380,7 +365,7 @@ export default function KeuanganView({
                     data-guide-target="finance-add-transaction-mobile"
                     color="primary" 
                     aria-label="add" 
-                    onClick={openAddDialog}
+                    onClick={transactionBatch.openForCreate}
                     sx={{ position: 'fixed', bottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', md: 84 }, right: 24, zIndex: 1000 }}
                   >
                     <AddCircleIcon />
@@ -417,7 +402,7 @@ export default function KeuanganView({
                               <Typography variant="body2" color="text.secondary">
                                 {t('ledger.empty')}
                               </Typography>
-                              <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={openAddDialog} sx={{ mt: 1, borderRadius: 8 }}>
+                              <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={transactionBatch.openForCreate} sx={{ mt: 1, borderRadius: 8 }}>
                                 {t('ledger.addFirst')}
                               </Button>
                             </Box>
@@ -465,7 +450,7 @@ export default function KeuanganView({
                                 <IconButton
                                   size="small"
                                   aria-label="Edit Transaksi"
-                                  onClick={() => handleEdit(tx)}
+                                  onClick={() => transactionBatch.openForEdit(tx)}
                                   sx={(theme) => financeActionIconButtonSx(theme, 'primary')}
                                 >
                                   <EditOutlinedIcon fontSize="small" />
@@ -635,196 +620,28 @@ export default function KeuanganView({
       </Grid>
       )}
 
-      {financeTab === 'rab' && <RabPlanningView financeProject={financeProject} rab={rab} />}
-      {financeTab === 'laba-rugi' && <FinanceIncomeStatementView financeReports={financeReports} />}
-      {financeTab === 'arus-kas' && <FinanceCashFlowView financeReports={financeReports} />}
+      {financeTab === 'rab' && (
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <RabPlanningView financeProject={financeProject} rab={rab} />
+        </Box>
+      )}
+      {financeTab === 'laba-rugi' && (
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FinanceIncomeStatementView financeReports={financeReports} />
+        </Box>
+      )}
+      {financeTab === 'arus-kas' && (
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <FinanceCashFlowView financeReports={financeReports} />
+        </Box>
+      )}
 
-      {/* ─── MODAL: Catat / Edit Transaksi ─── */}
-      <Dialog
-        open={txDialogOpen}
-        onClose={() => { setTxDialogOpen(false); setEditingId(null); }}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{ paper: { sx: { borderRadius: 4 } } }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 3,
-                  bgcolor: editingId ? 'primary.light' : '#f0fdf4',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {editingId
-                  ? <EditOutlinedIcon sx={{ color: 'primary.dark', fontSize: 20 }} />
-                  : <AddCircleIcon sx={{ color: '#16a34a', fontSize: 20 }} />}
-              </Box>
-              <Box>
-                <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', lineHeight: 1.2, fontWeight: 800 }}>
-                  {editingId ? t('transactionDialog.editTitle') : t('transactionDialog.addTitle')}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {editingId ? t('transactionDialog.editSubtitle') : t('transactionDialog.addSubtitle')}
-                </Typography>
-              </Box>
-            </Box>
-            <IconButton
-              aria-label={t('common.cancel')}
-              size="small"
-              onClick={() => { setTxDialogOpen(false); setEditingId(null); }}
-              sx={(theme) => closeIconButtonSx(theme)}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ pt: '12px !important' }}>
-          <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {/* Jenis & Tanggal */}
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  name="jenis"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.jenis} required>
-                      <InputLabel>{t('transactionDialog.fields.type')}</InputLabel>
-                      <Select {...field} label={t('transactionDialog.fields.type')}>
-                        <MenuItem value="pendapatan">{t('transactionDialog.options.income')}</MenuItem>
-                        <MenuItem value="pengeluaran">{t('transactionDialog.options.expense')}</MenuItem>
-                      </Select>
-                      {errors.jenis && <FormHelperText>{errors.jenis.message}</FormHelperText>}
-                    </FormControl>
-                  )}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Controller
-                  name="tanggal"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      type="date"
-                      label={t('transactionDialog.fields.date')}
-                      fullWidth
-                      required
-                      error={!!errors.tanggal}
-                      helperText={errors.tanggal?.message}
-                      slotProps={{ inputLabel: { shrink: true } }}
-                    />
-                  )}
-                />
-              </Grid>
-            </Grid>
-
-            {/* Kategori */}
-            <Controller
-              name="kategori"
-              control={control}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.kategori} required>
-                  <InputLabel>{t('transactionDialog.fields.category')}</InputLabel>
-                  <Select {...field} label={t('transactionDialog.fields.category')}>
-                    {kategoriFiltered.map((k) => (
-                      <MenuItem key={k} value={k}>{k}</MenuItem>
-                    ))}
-                  </Select>
-                  {errors.kategori && <FormHelperText>{errors.kategori.message}</FormHelperText>}
-                </FormControl>
-              )}
-            />
-
-            {/* Nominal */}
-            <Controller
-              name="nominal"
-              control={control}
-              render={({ field: { value, onChange, ...rest } }) => (
-                <TextField
-                  {...rest}
-                  value={value}
-                  onChange={(e) => handleNominalChange(e.target.value, onChange)}
-                  label={t('transactionDialog.fields.amount')}
-                  placeholder="250.000"
-                  required
-                  error={!!errors.nominal}
-                  helperText={errors.nominal?.message}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Typography sx={{ color: 'text.secondary', fontWeight: 600 }}>Rp</Typography>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-              )}
-            />
-
-            {/* Keterangan */}
-            <Controller
-              name="keterangan"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label={t('transactionDialog.fields.noteOptional')}
-                  multiline
-                  rows={2}
-                  fullWidth
-                  placeholder={
-                    selectedJenis === 'pengeluaran'
-                      ? t('transactionDialog.placeholders.expense')
-                      : t('transactionDialog.placeholders.income')
-                  }
-                />
-              )}
-            />
-
-            {bestRabSuggestion && (
-              <Alert severity="info" variant="outlined" sx={{ borderRadius: 2 }}>
-                Transaksi ini akan dihubungkan ke RAB: <strong>{bestRabSuggestion.item.categoryName ?? 'Kategori RAB'} - {bestRabSuggestion.item.name}</strong>.
-              </Alert>
-            )}
-
-            {/* Actions */}
-            <Box sx={{ display: 'flex', gap: 2, pt: 1 }}>
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={() => { setTxDialogOpen(false); setEditingId(null); }}
-                sx={{ flex: 1, borderRadius: 8 }}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={txSubmitting}
-                sx={{
-                  flex: 2,
-                  borderRadius: 8,
-                  bgcolor: 'success.main',
-                  '&:hover': { bgcolor: 'success.dark' },
-                }}
-              >
-                {txSubmitting
-                  ? <CircularProgress size={20} color="inherit" />
-                  : (editingId ? t('transactionDialog.update') : t('transactionDialog.save'))}
-              </Button>
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
+      {/* ─── MODAL: Catat / Edit Transaksi (Batch) ─── */}
+      <TransactionBatchDialog
+        batch={transactionBatch}
+        master={transactionMaster}
+        selectedProjectId={financeProject.selectedProject?.id}
+      />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog

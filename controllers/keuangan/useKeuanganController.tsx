@@ -1,16 +1,12 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useTheme } from '@mui/material/styles';
-import { useCallback,useMemo,useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { aiApi } from '@/lib/api';
-import { generatePdfReport,getPeriodeLabel } from '@/lib/pdfReport';
+import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
 
 import { useTransactions } from '@/hooks/useTransactions';
@@ -18,23 +14,11 @@ import type { ApiTransaction } from '@/lib/api';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { useFinanceExportController } from './useFinanceExportController';
-import { useFinanceLedgerController } from './useFinanceLedgerController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
 import { useRabController } from './useRabController';
-
-const transactionSchema = z.object({
-  jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
-  kategori: z.string().min(1, 'category'),
-  nominal: z.string().min(1, 'amount').refine(
-    (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
-    'amountPositive'
-  ),
-  tanggal: z.string().min(1, 'date'),
-  keterangan: z.string().optional(),
-});
-
-type TransactionFormData = z.infer<typeof transactionSchema>;
+import { useTransactionBatchController } from './useTransactionBatchController';
+import { useTransactionMasterController } from './useTransactionMasterController';
 
 type BepHppInputs = {
   totalBiaya: number;
@@ -82,10 +66,7 @@ export function useKeuanganController() {
     { month: '', used: 0 }
   );
   const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
-  const [txDialogOpen, setTxDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [txSubmitting, setTxSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -97,36 +78,10 @@ export function useKeuanganController() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<TransactionFormData>({
-    resolver: zodResolver(transactionSchema.extend({
-      jenis: z.enum(['pengeluaran', 'pendapatan'], { message: t('validation.type') }),
-      kategori: z.string().min(1, t('validation.category')),
-      nominal: z.string().min(1, t('validation.amount')).refine(
-        (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
-        t('validation.amountPositive')
-      ),
-      tanggal: z.string().min(1, t('validation.date')),
-    })),
-    defaultValues: {
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: new Date().toISOString().split('T')[0],
-      keterangan: '',
-    },
-  });
-
-  const selectedJenis = useWatch({ control, name: 'jenis' });
-  const selectedKategori = useWatch({ control, name: 'kategori' }) ?? '';
-  const selectedKeterangan = useWatch({ control, name: 'keterangan' }) ?? '';
   const financeProject = useFinanceProjectController();
   const rab = useRabController(financeProject.selectedProject);
-  const financeLedger = useFinanceLedgerController({
-    rabItems: rab.items,
-    selectedJenis,
-    selectedKategori,
-    selectedKeterangan,
-  });
+  const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
+  const transactionMaster = useTransactionMasterController();
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
@@ -140,73 +95,16 @@ export function useKeuanganController() {
     endMonth: financeReports.reportEndMonth,
   });
 
-  const kategoriFiltered = useMemo(
-    () =>
-      selectedJenis === 'pendapatan'
-        ? [t('categories.harvestSales'), t('categories.service'), t('categories.other')]
-        : [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')],
-    [selectedJenis, t]
-  );
-
-  const openAddDialog = () => {
-    setEditingId(null);
-    reset({
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: new Date().toISOString().split('T')[0],
-      keterangan: '',
-    });
-    setTxDialogOpen(true);
-  };
-
-  const handleEdit = (tx: ApiTransaction) => {
-    setEditingId(tx._id);
-    reset({
-      jenis: tx.jenis,
-      kategori: tx.kategori,
-      nominal: tx.nominal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
-      tanggal: tx.tanggal,
-      keterangan: tx.keterangan,
-    });
-    setTxDialogOpen(true);
-  };
-
-  const onSubmit = async (data: TransactionFormData) => {
-    const bestRabItem = financeLedger.rabSuggestions[0]?.item;
-    const txData: Parameters<typeof addTransaction>[0] = {
-      jenis: data.jenis,
-      kategori: data.kategori,
-      nominal: Number(data.nominal.replace(/\./g, '')),
-      tanggal: data.tanggal,
-      keterangan: data.keterangan || '',
-    };
-    if (financeProject.selectedProject) {
-      txData.projectId = financeProject.selectedProject.id;
+  useEffect(() => {
+    const results = transactionBatch.submitResults;
+    if (!results) return;
+    if (results.failed === 0) {
+      setSnackbar({ open: true, message: `${results.success} transaksi berhasil disimpan`, severity: 'success' });
+    } else {
+      setSnackbar({ open: true, message: `${results.success} berhasil, ${results.failed} gagal`, severity: 'error' });
     }
-    if (bestRabItem) {
-      txData.projectId = bestRabItem.projectId;
-      txData.rabCategoryId = bestRabItem.categoryId;
-      txData.rabItemId = bestRabItem.id;
-    }
-
-    setTxSubmitting(true);
-    try {
-      if (editingId) {
-        await updateTransaction(editingId, txData);
-        setSnackbar({ open: true, message: 'Transaksi berhasil diperbarui', severity: 'success' });
-      } else {
-        await addTransaction(txData);
-        setSnackbar({ open: true, message: 'Transaksi berhasil dicatat', severity: 'success' });
-      }
-      setTxDialogOpen(false);
-      setEditingId(null);
-    } catch {
-      setSnackbar({ open: true, message: 'Gagal menyimpan transaksi', severity: 'error' });
-    } finally {
-      setTxSubmitting(false);
-    }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionBatch.submitResults]);
 
   const handleDelete = async (id: string) => {
     setDeleteConfirmId(id);
@@ -217,12 +115,6 @@ export function useKeuanganController() {
     await deleteTransaction(deleteConfirmId);
     setDeleteConfirmId(null);
     setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
-  };
-
-  const handleNominalChange = (value: string, onChange: (v: string) => void) => {
-    const raw = value.replace(/\D/g, '');
-    const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    onChange(formatted);
   };
 
   const handleBepHppInputChange = useCallback((field: keyof BepHppInputs, rawValue: string) => {
@@ -540,10 +432,6 @@ export function useKeuanganController() {
     setReportError,
     bepHppDialogOpen,
     setBepHppDialogOpen,
-    txDialogOpen,
-    setTxDialogOpen,
-    editingId,
-    setEditingId,
     deleteConfirmId,
     setDeleteConfirmId,
     snackbar,
@@ -556,18 +444,8 @@ export function useKeuanganController() {
     setFinanceTab,
     theme,
     isMobile,
-    control,
-    handleSubmit,
-    errors,
-    selectedJenis,
-    kategoriFiltered,
-    openAddDialog,
-    handleEdit,
-    onSubmit,
-    txSubmitting,
     handleDelete,
     handleConfirmDelete,
-    handleNominalChange,
     handleBepHppInputChange,
     getBepHppInputDisplayValue,
     handleExportExcel,
@@ -590,9 +468,10 @@ export function useKeuanganController() {
     displayedTransactions,
     financeProject,
     rab,
-    financeLedger,
     financeReports,
     financeExport,
+    transactionBatch,
+    transactionMaster,
   };
 }
 

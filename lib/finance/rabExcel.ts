@@ -19,6 +19,7 @@ const INCOME_FILL = 'FFDCFCE7';
 const EXPENSE_FILL = 'FFFFEDD5';
 const COMPARISON_FILL = 'FFDBEAFE';
 const BORDER_COLOR = 'FFCBD5E1';
+const IGNORED_RAB_SUMMARY_ROW_PATTERN = /total|keuntungan|hpp|bep|ratio|bagi hasil/i;
 
 export interface ParsedRabWorkbook {
   project: FinanceProject;
@@ -145,13 +146,13 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       return;
     }
 
-    if (description && marker && Number.isNaN(Number(marker)) && !/total|keuntungan|hpp|bep|ratio|bagi hasil/i.test(description)) {
+    if (description && marker && Number.isNaN(Number(marker)) && !IGNORED_RAB_SUMMARY_ROW_PATTERN.test(description)) {
       currentCategory = description;
       currentType = /pendapatan|penerimaan/i.test(description) ? 'income' : currentType;
       return;
     }
 
-    if (!description || /total|keuntungan|hpp|bep|ratio|bagi hasil/i.test(normalizedDescription)) return;
+    if (!description || IGNORED_RAB_SUMMARY_ROW_PATTERN.test(normalizedDescription)) return;
     if (volume === 0 && unitPrice === 0 && plannedTotal === 0) return;
 
     const type: RabEntryType = currentType === 'income' || /penerimaan|penjualan/i.test(description) ? 'income' : 'expense';

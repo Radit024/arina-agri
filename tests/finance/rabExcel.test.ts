@@ -25,6 +25,8 @@ async function buildSampleRabWorkbook() {
   sheet.getCell('D52').value = 'kg';
   sheet.getCell('E52').value = 6_500;
   sheet.getCell('F52').value = { formula: 'C52*E52', result: 45_500_000 };
+  sheet.getCell('B58').value = 'Bagi Hasil';
+  sheet.getCell('F58').value = { formula: 'F52*40%', result: 18_200_000 };
   return workbook;
 }
 
@@ -95,6 +97,13 @@ describe('RAB Excel helpers', () => {
         plannedTotal: 45_500_000,
       }),
     ]);
+  });
+
+  it('does not import profit-sharing rows as RAB items', async () => {
+    const workbook = await buildSampleRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.items.map((item) => item.name.toLowerCase())).not.toContain('bagi hasil');
   });
 
   it('builds export workbook with the expected five worksheets', async () => {

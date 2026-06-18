@@ -17,8 +17,9 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const adm4 = url.searchParams.get('adm4')?.trim() || undefined;
+    const financeProjectId = url.searchParams.get('financeProjectId')?.trim() || undefined;
     const locationLabel = url.searchParams.get('locationLabel')?.trim() || undefined;
-    const data = await getDashboardSummary({ userId, adm4, locationLabel });
+    const data = await getDashboardSummary({ userId, adm4, financeProjectId, locationLabel });
 
     return NextResponse.json(
       { success: true, data },

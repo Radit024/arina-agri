@@ -4,6 +4,7 @@ export interface DashboardSummaryTransaction {
   jenis: 'pengeluaran' | 'pendapatan';
   kategori: string;
   nominal: number;
+  projectId?: string | null;
   tanggal: string;
 }
 
@@ -16,6 +17,30 @@ export interface DashboardTrendPoint {
 export interface DashboardCategoryPoint {
   kategori: string;
   jumlah: number;
+}
+
+export interface DashboardFinanceProjectOption {
+  id: string;
+  name: string;
+  commodity: string;
+  seasonLabel: string;
+  status: 'draft' | 'active' | 'archived';
+}
+
+export interface DashboardProjectPerformancePoint {
+  projectId: string | null;
+  projectName: string;
+  income: number;
+  expense: number;
+  profit: number;
+  transactionCount: number;
+}
+
+export interface DashboardFinanceScope {
+  selectedProjectId: string | null;
+  selectedProjectName: string;
+  projects: DashboardFinanceProjectOption[];
+  projectPerformance: DashboardProjectPerformancePoint[];
 }
 
 export interface DashboardKpi {
@@ -66,6 +91,7 @@ export interface DashboardSummary {
   kpi: DashboardKpi;
   trend: DashboardTrendPoint[];
   category: DashboardCategoryPoint[];
+  financeScope: DashboardFinanceScope;
   price: DashboardPriceKpi;
   weather: {
     currentWeather: DashboardWeatherCurrentLike | null;
@@ -77,6 +103,8 @@ export interface DashboardSummary {
 }
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+const UNASSIGNED_PROJECT_LABEL = 'Tanpa Project';
+const UNASSIGNED_PROJECT_KEY = '__unassigned__';
 
 function monthKey(year: number, month: number) {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -171,6 +199,59 @@ export function buildDashboardMetrics(transactions: DashboardSummaryTransaction[
       .sort((a, b) => b.jumlah - a.jumlah)
       .slice(0, 5),
   };
+}
+
+export function buildDashboardProjectPerformance({
+  transactions,
+  projects,
+  now = new Date(),
+}: {
+  transactions: DashboardSummaryTransaction[];
+  projects: DashboardFinanceProjectOption[];
+  now?: Date;
+}): DashboardProjectPerformancePoint[] {
+  const currentMonthKey = monthKey(now.getUTCFullYear(), now.getUTCMonth());
+  const projectNames = new Map(projects.map((project) => [project.id, project.name]));
+  const performanceMap = new Map<string, DashboardProjectPerformancePoint>();
+
+  const ensureRow = (projectId: string | null) => {
+    const key = projectId ?? UNASSIGNED_PROJECT_KEY;
+    const existing = performanceMap.get(key);
+    if (existing) return existing;
+
+    const row: DashboardProjectPerformancePoint = {
+      projectId,
+      projectName: projectId ? projectNames.get(projectId) ?? 'Project Tidak Dikenal' : UNASSIGNED_PROJECT_LABEL,
+      income: 0,
+      expense: 0,
+      profit: 0,
+      transactionCount: 0,
+    };
+    performanceMap.set(key, row);
+    return row;
+  };
+
+  for (const transaction of transactions) {
+    if (transaction.tanggal.slice(0, 7) !== currentMonthKey) continue;
+
+    const row = ensureRow(transaction.projectId ?? null);
+    if (transaction.jenis === 'pendapatan') {
+      row.income += transaction.nominal;
+    } else {
+      row.expense += transaction.nominal;
+    }
+    row.profit = row.income - row.expense;
+    row.transactionCount += 1;
+  }
+
+  return Array.from(performanceMap.values())
+    .filter((row) => row.transactionCount > 0)
+    .sort((a, b) =>
+      b.profit - a.profit ||
+      b.income - a.income ||
+      a.expense - b.expense ||
+      a.projectName.localeCompare(b.projectName)
+    );
 }
 
 export function buildPriceKpi(prices: DashboardPricePoint[]): DashboardPriceKpi {

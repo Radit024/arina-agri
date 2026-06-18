@@ -36,8 +36,9 @@ describe('dashboard summary route', () => {
   it('returns summary data for the development mock token', async () => {
     Object.assign(process.env, { NODE_ENV: 'development' });
     const { GET } = await import('@/app/api/dashboard/summary/route');
+    const { getDashboardSummary } = await import('@/lib/server/dashboard/summary');
 
-    const response = await GET(new Request('http://localhost/api/dashboard/summary?adm4=35.07.22.2008', {
+    const response = await GET(new Request('http://localhost/api/dashboard/summary?adm4=35.07.22.2008&financeProjectId=project-padi-1', {
       headers: { authorization: 'Bearer mock-token' },
     }));
     const json = await response.json();
@@ -45,5 +46,11 @@ describe('dashboard summary route', () => {
     expect(response.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.data.generatedAt).toBe('2026-05-15T08:00:00.000Z');
+    expect(getDashboardSummary).toHaveBeenCalledWith({
+      userId: '00000000-0000-4000-8000-000000000001',
+      adm4: '35.07.22.2008',
+      financeProjectId: 'project-padi-1',
+      locationLabel: undefined,
+    });
   });
 });

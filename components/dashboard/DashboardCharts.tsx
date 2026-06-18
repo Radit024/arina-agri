@@ -18,10 +18,12 @@ import type { DashboardCategoryPoint, DashboardTrendPoint } from '@/lib/dashboar
 
 interface TrendChartProps {
   data: DashboardTrendPoint[];
+  scopeLabel?: string;
 }
 
 interface KategoriChartProps {
   data: DashboardCategoryPoint[];
+  scopeLabel?: string;
 }
 
 const chartCardSx = {
@@ -65,7 +67,7 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
   loading: () => <Skeleton variant="rectangular" height={260} sx={{ borderRadius: 2 }} />,
 });
 
-export function TrendChart({ data }: TrendChartProps) {
+export function TrendChart({ data, scopeLabel }: TrendChartProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
   const hasData = data.some((item) => item.pendapatan > 0 || item.pengeluaran > 0);
@@ -79,7 +81,7 @@ export function TrendChart({ data }: TrendChartProps) {
             {t('trend.title')}
           </Typography>
         }
-        subheader={t('trend.subheader')}
+        subheader={scopeLabel ? t('trend.subheaderScoped', { scope: scopeLabel }) : t('trend.subheader')}
       />
       <CardContent sx={{ ...chartCardContentSx, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', gap: 2.5, mb: { xs: 3, md: 3.5 }, mt: 0.25 }}>
@@ -146,7 +148,7 @@ export function TrendChart({ data }: TrendChartProps) {
   );
 }
 
-export function KategoriChart({ data }: KategoriChartProps) {
+export function KategoriChart({ data, scopeLabel }: KategoriChartProps) {
   const theme = useTheme();
   const t = useTranslations('Dashboard.charts');
   const locale = useLocale();
@@ -180,10 +182,16 @@ export function KategoriChart({ data }: KategoriChartProps) {
             {t('category.title')}
           </Typography>
         }
-        subheader={t('category.subheader', { 
-          month: new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' }).format(new Date()), 
-          year: new Date().getFullYear() 
-        })}
+        subheader={scopeLabel
+          ? t('category.subheaderScoped', {
+              month: new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' }).format(new Date()),
+              scope: scopeLabel,
+              year: new Date().getFullYear(),
+            })
+          : t('category.subheader', {
+              month: new Intl.DateTimeFormat(locale === 'id' ? 'id-ID' : 'en-US', { month: 'long' }).format(new Date()),
+              year: new Date().getFullYear(),
+            })}
       />
       <CardContent sx={{ ...chartCardContentSx, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: 300 }}>
         {data.length === 0 ? (

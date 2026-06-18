@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
@@ -7,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import { useDashboardSummary } from '@/hooks/useDashboardSummary';
 import { useCommodityPrices } from '@/hooks/useCommodityPrices';
+import useLocalStorage from '@/hooks/useLocalStorage';
 import { farmerProfile } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
 import { usePullToRefresh } from './usePullToRefresh';
@@ -35,12 +37,17 @@ export function useDashboardHomeController() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
+  const [financeProjectScopeId, setFinanceProjectScopeId] = useLocalStorage<string | null>(
+    'arina-dashboard-finance-project-scope',
+    null,
+  );
 
   const { activeAdm4, activeLocationLabel } = useWeatherLocation();
   const { summary, loading: summaryLoading, reload: reloadSummary } = useDashboardSummary({
     accessToken: session?.access_token,
     adm4: activeAdm4,
     enabled: Boolean(session?.access_token),
+    financeProjectId: financeProjectScopeId,
     locationLabel: activeLocationLabel,
   });
   const {
@@ -62,6 +69,22 @@ export function useDashboardHomeController() {
   const totalPengeluaran = summary?.kpi.totalPengeluaran ?? 0;
   const labaBersih = summary?.kpi.labaBersih ?? 0;
   const currentWeather = summary?.weather.currentWeather ?? null;
+  const financeProjectOptions = summary?.financeScope.projects ?? [];
+
+  useEffect(() => {
+    if (!summary || !financeProjectScopeId) return;
+    const projectStillExists = summary.financeScope.projects.some((project) => project.id === financeProjectScopeId);
+    if (!projectStillExists) {
+      setFinanceProjectScopeId(null);
+    }
+  }, [financeProjectScopeId, setFinanceProjectScopeId, summary]);
+
+  const selectedFinanceProjectId = financeProjectScopeId && financeProjectOptions.some((project) => project.id === financeProjectScopeId)
+    ? financeProjectScopeId
+    : summary?.financeScope.selectedProjectId ?? null;
+  const selectedFinanceProjectName = selectedFinanceProjectId
+    ? financeProjectOptions.find((project) => project.id === selectedFinanceProjectId)?.name ?? t('financeScope.unknownProject')
+    : t('financeScope.allProjects');
 
   return {
     categoryData: summary?.category ?? [],
@@ -69,6 +92,13 @@ export function useDashboardHomeController() {
     currentWeather,
     firstName: userName.split(' ')[0],
     formattedToday: getFormattedToday(locale),
+    financeScope: {
+      selectedProjectId: selectedFinanceProjectId,
+      selectedProjectName: selectedFinanceProjectName,
+      projects: financeProjectOptions,
+      projectPerformance: summary?.financeScope.projectPerformance ?? [],
+      setSelectedProjectId: setFinanceProjectScopeId,
+    },
     greeting: getGreeting(locale),
     isRefreshing: pullToRefresh.isRefreshing,
     kpi: {

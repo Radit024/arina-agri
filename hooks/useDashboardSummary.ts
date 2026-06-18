@@ -8,6 +8,7 @@ interface DashboardSummaryParams {
   adm4?: string;
   accessToken?: string | null;
   enabled?: boolean;
+  financeProjectId?: string | null;
   locationLabel?: string;
 }
 
@@ -20,9 +21,11 @@ interface DashboardSummaryEnvelope {
 export function buildDashboardSummaryUrl(params: DashboardSummaryParams) {
   const search = new URLSearchParams();
   const adm4 = params.adm4?.trim();
+  const financeProjectId = params.financeProjectId?.trim();
   const locationLabel = params.locationLabel?.trim();
 
   if (adm4) search.set('adm4', adm4);
+  if (financeProjectId) search.set('financeProjectId', financeProjectId);
   if (locationLabel) search.set('locationLabel', locationLabel);
 
   const query = search.toString();
@@ -47,10 +50,10 @@ export function useDashboardSummary(params: DashboardSummaryParams) {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { accessToken, adm4, enabled = true, locationLabel } = params;
+  const { accessToken, adm4, enabled = true, financeProjectId, locationLabel } = params;
   const requestUrl = useMemo(
-    () => buildDashboardSummaryUrl({ adm4, locationLabel }),
-    [adm4, locationLabel]
+    () => buildDashboardSummaryUrl({ adm4, financeProjectId, locationLabel }),
+    [adm4, financeProjectId, locationLabel]
   );
 
   const loadData = useCallback(async (signal?: AbortSignal) => {

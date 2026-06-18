@@ -9,8 +9,14 @@ describe('buildDashboardSummaryUrl', () => {
     })).toBe('/api/dashboard/summary?adm4=35.07.22.2008&locationLabel=Desa+Sumber%2C+Malang');
   });
 
+  it('adds the finance project scope when present', () => {
+    expect(buildDashboardSummaryUrl({
+      financeProjectId: 'project-padi-1',
+    })).toBe('/api/dashboard/summary?financeProjectId=project-padi-1');
+  });
+
   it('omits empty params', () => {
-    expect(buildDashboardSummaryUrl({ adm4: '', locationLabel: undefined })).toBe('/api/dashboard/summary');
+    expect(buildDashboardSummaryUrl({ adm4: '', financeProjectId: '', locationLabel: undefined })).toBe('/api/dashboard/summary');
   });
 });
 

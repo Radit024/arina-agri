@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildDashboardProjectPerformance,
   buildDashboardMetrics,
   buildPriceKpi,
   buildWeatherSignal,
   getDashboardDateWindow,
+  type DashboardFinanceProjectOption,
   type DashboardSummaryTransaction,
 } from '@/lib/dashboard/summary';
 import { buildDevDashboardSummary } from '@/lib/server/dashboard/summary';
@@ -42,6 +44,49 @@ describe('buildDashboardMetrics', () => {
     expect(metrics.category).toEqual([
       { kategori: 'Pupuk', jumlah: 1_000_000 },
       { kategori: 'Pestisida', jumlah: 500_000 },
+    ]);
+  });
+});
+
+describe('buildDashboardProjectPerformance', () => {
+  it('groups current month finance activity by project and keeps unlinked transactions visible', () => {
+    const projects: DashboardFinanceProjectOption[] = [
+      { id: 'project-padi', name: 'Padi MT 1', commodity: 'Padi', seasonLabel: 'MT 1', status: 'active' },
+      { id: 'project-cabai', name: 'Cabai Greenhouse', commodity: 'Cabai', seasonLabel: '2026', status: 'draft' },
+    ];
+    const transactions: DashboardSummaryTransaction[] = [
+      { jenis: 'pendapatan', kategori: 'Panen', nominal: 8_000_000, tanggal: '2026-05-03', projectId: 'project-padi' },
+      { jenis: 'pengeluaran', kategori: 'Pupuk', nominal: 1_000_000, tanggal: '2026-05-05', projectId: 'project-padi' },
+      { jenis: 'pengeluaran', kategori: 'Benih', nominal: 2_500_000, tanggal: '2026-05-06', projectId: 'project-cabai' },
+      { jenis: 'pengeluaran', kategori: 'Solar', nominal: 300_000, tanggal: '2026-05-07', projectId: null },
+      { jenis: 'pendapatan', kategori: 'Panen Lama', nominal: 2_000_000, tanggal: '2026-04-03', projectId: 'project-padi' },
+    ];
+
+    expect(buildDashboardProjectPerformance({ transactions, projects, now })).toEqual([
+      {
+        projectId: 'project-padi',
+        projectName: 'Padi MT 1',
+        income: 8_000_000,
+        expense: 1_000_000,
+        profit: 7_000_000,
+        transactionCount: 2,
+      },
+      {
+        projectId: null,
+        projectName: 'Tanpa Project',
+        income: 0,
+        expense: 300_000,
+        profit: -300_000,
+        transactionCount: 1,
+      },
+      {
+        projectId: 'project-cabai',
+        projectName: 'Cabai Greenhouse',
+        income: 0,
+        expense: 2_500_000,
+        profit: -2_500_000,
+        transactionCount: 1,
+      },
     ]);
   });
 });

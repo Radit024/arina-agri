@@ -15,7 +15,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveIcon from '@mui/icons-material/Save';
 
-import { formatRupiah, formatDateShort } from '@/lib/formatters';
+import { formatRupiah, formatDateLong } from '@/lib/formatters';
 import type { TransactionDraft } from '@/controllers/keuangan/useTransactionBatchController';
 
 interface Props {
@@ -74,7 +74,7 @@ export default function TransactionConfirmView({
               return (
                 <TableRow key={draft.id}>
                   <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-                    {formatDateShort(draft.tanggal)}
+                    {formatDateLong(draft.tanggal)}
                   </TableCell>
                   <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
                     {draft.kategori}

@@ -4,6 +4,7 @@
  */
 
 import type { Transaction } from '@/lib/mockData';
+import { formatDateLong } from '@/lib/formatters';
 
 const BULAN_LABELS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -190,7 +191,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
     startY: y + 4,
     head: [['Tanggal', 'Kategori', 'Keterangan', 'Jenis', 'Nominal']],
     body: sortedTx.map((tx) => [
-      tx.tanggal,
+      formatDateLong(tx.tanggal),
       tx.kategori,
       tx.keterangan || '—',
       tx.jenis === 'pendapatan' ? 'Pemasukan' : 'Pengeluaran',

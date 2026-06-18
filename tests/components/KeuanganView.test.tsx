@@ -23,7 +23,10 @@ const transaction: ApiTransaction = {
   kategori: 'pupuk',
   nominal: 50000,
   tanggal: '2026-06-05',
-  keterangan: '',
+  keterangan: 'Pembelian urea',
+  volume: 2,
+  satuan: 'kg',
+  hargaSatuan: 25000,
   createdAt: '2026-06-05T00:00:00.000Z',
   updatedAt: '2026-06-05T00:00:00.000Z',
 };
@@ -47,9 +50,12 @@ const labels: Record<string, string> = {
   'ledger.addFirst': 'Tambah transaksi pertama',
   'ledger.columns.date': 'Tanggal',
   'ledger.columns.category': 'Kategori',
+  'ledger.columns.quantity': 'Volume',
+  'ledger.columns.unit': 'Satuan',
+  'ledger.columns.unitPrice': 'Harga Satuan',
   'ledger.columns.note': 'Catatan',
   'ledger.columns.type': 'Jenis',
-  'ledger.columns.value': 'Nominal',
+  'ledger.columns.value': 'Nominal (Rp)',
   'ledger.columns.action': 'Aksi',
   'summary.title': 'Ringkasan',
   'summary.totalIncome': 'Total Pemasukan',
@@ -203,7 +209,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     handleConfirmDelete: vi.fn(),
     handleBepHppInputChange: vi.fn(),
     getBepHppInputDisplayValue: (value) => (value === 0 ? '' : String(value)),
-    handleExportExcel: vi.fn(),
     aiQuotaRemaining: 3,
     handleGeneratePdfManual: vi.fn(),
     handleGeneratePdfAI: vi.fn(),
@@ -261,6 +266,8 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       importLoading: false,
       importError: null,
       setImportError: vi.fn(),
+      rabItemError: null,
+      setRabItemError: vi.fn(),
       totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
       addRabItem: vi.fn(),
       importRabFile: vi.fn(),
@@ -349,6 +356,18 @@ describe('KeuanganView', () => {
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
   });
 
+  it('menampilkan rincian input transaksi pada ledger', () => {
+    renderView();
+
+    expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Harga Satuan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
+    expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
+  });
+
   it('menampilkan 4 input field BFA ketika dialog dibuka', () => {
     renderView({ bepHppDialogOpen: true });
 
@@ -402,14 +421,14 @@ describe('KeuanganView', () => {
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
-    const reportButton = screen.getByRole('button', { name: 'Laporan Keuangan' });
+    const reportButton = screen.getByRole('button', { name: 'Export Laporan' });
 
     expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
     expect(getComputedStyle(editButton).color).toBe('rgb(255, 255, 255)');
     expect(getComputedStyle(deleteButton).backgroundColor).toBe('rgba(212, 131, 106, 0.24)');
     expect(getComputedStyle(deleteButton).color).toBe('rgb(212, 131, 106)');
-    expect(getComputedStyle(reportButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
-    expect(getComputedStyle(reportButton).color).toBe('rgb(255, 255, 255)');
+    expect(reportButton).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Perhitungan HPP & BEP' })).not.toBeInTheDocument();
 
     unmount();
     renderView({ theme: darkTheme, aiDialogOpen: true });

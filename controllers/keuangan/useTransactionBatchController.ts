@@ -20,6 +20,8 @@ export type TransactionDraft = {
 export type DraftErrors = Record<string, string>;
 export type AllDraftErrors = Record<string, DraftErrors>;
 
+const MIN_AUTO_RAB_LINK_SCORE = 4;
+
 function createEmptyDraft(): TransactionDraft {
   return {
     id: crypto.randomUUID(),
@@ -39,16 +41,42 @@ function formatNumber(value: string): string {
   return raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
-function parseNumber(formatted: string): number {
+function parseCurrencyNumber(formatted: string): number {
   return Number(formatted.replace(/\./g, '')) || 0;
+}
+
+function parseQuantityNumber(value: string): number {
+  const normalized = value.trim().replace(',', '.');
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isValidDateInput(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
 }
 
 function validateDraft(draft: TransactionDraft): DraftErrors {
   const errors: DraftErrors = {};
   if (!draft.kategori.trim()) errors.kategori = 'Kategori wajib dipilih';
   if (!draft.tanggal) errors.tanggal = 'Tanggal wajib diisi';
-  const nominalNum = parseNumber(draft.nominal);
+  else if (!isValidDateInput(draft.tanggal)) errors.tanggal = 'Format tanggal tidak valid';
+
+  const nominalNum = parseCurrencyNumber(draft.nominal);
   if (!draft.nominal || nominalNum <= 0) errors.nominal = 'Nominal harus lebih dari 0';
+
+  if (draft.volume.trim() && parseQuantityNumber(draft.volume) <= 0) {
+    errors.volume = 'Volume harus lebih dari 0';
+  }
+  if (draft.hargaSatuan.trim() && parseCurrencyNumber(draft.hargaSatuan) <= 0) {
+    errors.hargaSatuan = 'Harga satuan harus lebih dari 0';
+  }
   return errors;
 }
 
@@ -131,10 +159,10 @@ export function useTransactionBatchController(
         const updated = { ...d, [field]: value };
 
         if (field === 'volume' || field === 'hargaSatuan') {
-          const vol = parseNumber(field === 'volume' ? value : d.volume);
-          const harga = parseNumber(field === 'hargaSatuan' ? value : d.hargaSatuan);
+          const vol = parseQuantityNumber(field === 'volume' ? value : d.volume);
+          const harga = parseCurrencyNumber(field === 'hargaSatuan' ? value : d.hargaSatuan);
           if (vol > 0 && harga > 0) {
-            updated.nominal = formatNumber(String(vol * harga));
+            updated.nominal = formatNumber(String(Math.round(vol * harga)));
           }
         }
 
@@ -219,7 +247,7 @@ export function useTransactionBatchController(
       transaction: { jenis: draft.jenis, kategori: draft.kategori, keterangan: draft.keterangan },
     });
     const best = suggestions[0];
-    if (!best) return null;
+    if (!best || best.score < MIN_AUTO_RAB_LINK_SCORE) return null;
     return {
       projectId: best.item.projectId,
       rabCategoryId: best.item.categoryId,
@@ -240,15 +268,15 @@ export function useTransactionBatchController(
       const payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> = {
         jenis: draft.jenis,
         kategori: draft.kategori,
-        nominal: parseNumber(draft.nominal),
+        nominal: parseCurrencyNumber(draft.nominal),
         tanggal: draft.tanggal,
         keterangan: draft.keterangan,
         projectId: rabLink?.projectId ?? getProjectId(),
         rabCategoryId: rabLink?.rabCategoryId ?? null,
         rabItemId: rabLink?.rabItemId ?? null,
-        volume: draft.volume ? parseNumber(draft.volume) : null,
+        volume: draft.volume ? parseQuantityNumber(draft.volume) : null,
         satuan: draft.satuan || null,
-        hargaSatuan: draft.hargaSatuan ? parseNumber(draft.hargaSatuan) : null,
+        hargaSatuan: draft.hargaSatuan ? parseCurrencyNumber(draft.hargaSatuan) : null,
       };
 
       try {
@@ -285,7 +313,7 @@ export function useTransactionBatchController(
       },
     });
     const best = suggestions[0];
-    if (!best) return null;
+    if (!best || best.score < MIN_AUTO_RAB_LINK_SCORE) return null;
     return `${best.item.categoryName ?? 'Kategori RAB'} - ${best.item.name}`;
   }, [expandedDraft, rabItems]);
 

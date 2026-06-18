@@ -13,7 +13,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
-import { formatRupiah } from '@/lib/formatters';
+import { formatDateLong, formatRupiah } from '@/lib/formatters';
 import type { TransactionDraft, DraftErrors } from '@/controllers/keuangan/useTransactionBatchController';
 import TransactionEntryForm from './TransactionEntryForm';
 
@@ -103,7 +103,7 @@ export default function TransactionDraftCard({
           </Typography>
           {!isExpanded && nominalNum > 0 && (
             <Typography variant="caption" color="text.secondary">
-              {formatRupiah(nominalNum)} · {draft.tanggal}
+              {formatRupiah(nominalNum)} - {formatDateLong(draft.tanggal)}
             </Typography>
           )}
         </Box>

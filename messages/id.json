@@ -475,9 +475,12 @@
       "columns": {
         "date": "Tanggal",
         "category": "Kategori",
+        "quantity": "Volume",
+        "unit": "Satuan",
+        "unitPrice": "Harga Satuan",
         "note": "Detail / Catatan",
-        "type": "Tipe",
-        "value": "Nilai (Rp)",
+        "type": "Jenis",
+        "value": "Nominal (Rp)",
         "action": "Opsi"
       },
       "empty": "Belum ada Catatan transaksi.",

@@ -60,7 +60,7 @@ export function useFinanceReportController({
 }) {
   return useMemo(() => {
     const filteredTransactions = project
-      ? transactions.filter((transaction) => !transaction.projectId || transaction.projectId === project.id)
+      ? transactions.filter((transaction) => transaction.projectId === project.id)
       : transactions;
     const reportTransactions = filteredTransactions.map(transactionToReport);
     const { startMonth, endMonth } = resolveReportRange(project, rabItems, filteredTransactions);

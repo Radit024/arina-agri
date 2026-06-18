@@ -2,6 +2,7 @@
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DownloadIcon from '@mui/icons-material/Download';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,9 +16,11 @@ import Typography from '@mui/material/Typography';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import FinanceProjectDialog from './FinanceProjectDialog';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab' | 'financeExport'>;
+type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
+  onOpenPdfReport: () => void;
+};
 
-export default function FinanceProjectToolbar({ financeProject, rab, financeExport }: Props) {
+export default function FinanceProjectToolbar({ financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
   return (
     <>
       <Box
@@ -57,23 +60,12 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
           </Button>
 
           <Button
-            component="label"
             variant="outlined"
             startIcon={<UploadFileIcon />}
-            disabled={!financeProject.selectedProject}
+            disabled
             sx={{ borderRadius: 8 }}
           >
-            Import Excel
-            <input
-              hidden
-              type="file"
-              accept=".xlsx"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void rab.importRabFile(file);
-                event.currentTarget.value = '';
-              }}
-            />
+            Import Excel Nonaktif
           </Button>
 
           <Button
@@ -85,6 +77,17 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             sx={{ borderRadius: 8 }}
           >
             Export Excel
+          </Button>
+
+          <Button
+            data-guide-target="finance-export-pdf"
+            variant="outlined"
+            startIcon={<PictureAsPdfIcon />}
+            disabled={reportLoading}
+            onClick={onOpenPdfReport}
+            sx={{ borderRadius: 8 }}
+          >
+            Export Laporan
           </Button>
         </Stack>
 
@@ -98,6 +101,9 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             {rab.importError}
           </Typography>
         )}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          Import Excel sementara dinonaktifkan. Gunakan tambah item RAB manual untuk sementara.
+        </Typography>
         {financeExport.exportError && (
           <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
             {financeExport.exportError}

@@ -537,9 +537,12 @@ async function authenticatedJsonRequest<T>(endpoint: string, init: { method: str
 
 export const transactionApi = {
   getAll: async (): Promise<ApiTransaction[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .eq('user_id', user.id)
       .order('tanggal', { ascending: false })
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
@@ -574,6 +577,8 @@ export const transactionApi = {
   },
 
   update: async (id: string, payload: Partial<ApiTransaction>): Promise<ApiTransaction> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: DbTransactionUpdate = {};
     if (payload.jenis !== undefined) update.jenis = payload.jenis;
     if (payload.kategori !== undefined) update.kategori = payload.kategori;
@@ -592,6 +597,7 @@ export const transactionApi = {
       .from('transactions')
       .update(update)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -599,7 +605,9 @@ export const transactionApi = {
   },
 
   delete: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase.from('transactions').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     return null;
   },

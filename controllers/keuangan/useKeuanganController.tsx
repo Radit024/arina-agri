@@ -10,7 +10,6 @@ import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
 
 import { useTransactions } from '@/hooks/useTransactions';
-import type { ApiTransaction } from '@/lib/api';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { useFinanceExportController } from './useFinanceExportController';
@@ -100,6 +99,12 @@ export function useKeuanganController() {
     endMonth: financeReports.reportEndMonth,
   });
 
+  const projectScopedTransactions = useMemo(() => {
+    const selectedProjectId = financeProject.selectedProject?.id;
+    if (!selectedProjectId) return transactions;
+    return transactions.filter((tx) => tx.projectId === selectedProjectId);
+  }, [financeProject.selectedProject?.id, transactions]);
+
   useEffect(() => {
     const results = transactionBatch.submitResults;
     if (!results) return;
@@ -108,7 +113,6 @@ export function useKeuanganController() {
     } else {
       setSnackbar({ open: true, message: `${results.success} berhasil, ${results.failed} gagal`, severity: 'error' });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionBatch.submitResults]);
 
   const handleDelete = async (id: string) => {
@@ -183,81 +187,6 @@ export function useKeuanganController() {
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
-  const handleExportExcel = async () => {
-    const [ExcelJS, { saveAs }] = await Promise.all([
-      import('exceljs').then(m => m.default),
-      import('file-saver'),
-    ]);
-
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Buku Keuangan');
-
-    // Add Title
-    worksheet.mergeCells('A1:E1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = t('excel.reportTitle');
-    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16A34A' } };
-    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-
-    worksheet.addRow([]); // Empty row
-
-    // Add Headers
-    const headerRow = worksheet.addRow([
-      t('ledger.columns.date'), 
-      t('ledger.columns.category'), 
-      t('ledger.columns.note'), 
-      t('ledger.columns.type'), 
-      t('ledger.columns.value')
-    ]);
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' }
-      };
-    });
-
-    // Add Data
-    transactions.forEach((tx) => {
-      const row = worksheet.addRow([
-        tx.tanggal,
-        tx.kategori,
-        tx.keterangan || '-',
-        tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense'),
-        tx.nominal
-      ]);
-      row.eachCell((cell, colNumber) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        if (colNumber === 5) {
-          cell.numFmt = '"Rp"#,##0';
-        }
-      });
-    });
-
-    // Adjust column widths
-    worksheet.columns = [
-      { width: 15 },
-      { width: 25 },
-      { width: 40 },
-      { width: 15 },
-      { width: 20 }
-    ];
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `${t('excel.filename')}_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
-
   // ─── AI Quota helpers ──────────────────────────────────────────
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quotaThisMonth = aiReportQuota.month === currentMonth ? aiReportQuota.used : 0;
@@ -327,7 +256,7 @@ export function useKeuanganController() {
     }
   };
 
-  const monthFilteredTransactions = transactions.filter((tx) =>
+  const monthFilteredTransactions = projectScopedTransactions.filter((tx) =>
     filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
   );
 
@@ -431,12 +360,12 @@ export function useKeuanganController() {
     () =>
       Array.from(
         new Set(
-          transactions
+          projectScopedTransactions
             .map((t) => t.tanggal.slice(0, 7))
             .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
         )
       ).sort((a, b) => a.localeCompare(b)),
-    [transactions]
+    [projectScopedTransactions]
   );
 
   const getBulanLabel = (bulanKey: string) => {
@@ -447,6 +376,12 @@ export function useKeuanganController() {
     }
     return `${BULAN_LABELS[monthIndex]} ${tahun}`;
   };
+
+  useEffect(() => {
+    if (filterBulan !== 'semua' && !bulanOptions.includes(filterBulan)) {
+      setFilterBulan('semua');
+    }
+  }, [bulanOptions, filterBulan, setFilterBulan]);
 
   // Filtered + searched + sorted table data
   const displayedTransactions = useMemo(() => {
@@ -459,6 +394,10 @@ export function useKeuanganController() {
       result = result.filter(
         (tx) =>
           tx.kategori.toLowerCase().includes(q) ||
+          String(tx.volume ?? '').includes(q) ||
+          (tx.satuan ?? '').toLowerCase().includes(q) ||
+          String(tx.hargaSatuan ?? '').includes(q) ||
+          String(tx.nominal ?? '').includes(q) ||
           (tx.keterangan ?? '').toLowerCase().includes(q)
       );
     }
@@ -499,7 +438,6 @@ export function useKeuanganController() {
     handleConfirmDelete,
     handleBepHppInputChange,
     getBepHppInputDisplayValue,
-    handleExportExcel,
     aiQuotaRemaining,
     handleGeneratePdfManual,
     handleGeneratePdfAI,

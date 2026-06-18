@@ -37,6 +37,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import DonutLargeIcon from '@mui/icons-material/DonutLarge';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SearchIcon from '@mui/icons-material/Search';
@@ -46,7 +47,7 @@ import Checkbox from '@mui/material/Checkbox';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
 
-import { formatDateShort,formatRupiah } from '@/lib/formatters';
+import { formatDateLong, formatRupiah } from '@/lib/formatters';
 import { getPeriodeLabel } from '@/lib/pdfReport';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -74,6 +75,20 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 const MAX_AI_REPORTS_PER_MONTH = 3;
 
 type FinanceActionIntent = 'primary' | 'error';
+type LedgerTransaction = UseKeuanganControllerResult['displayedTransactions'][number];
+
+const ledgerQuantityFormatter = new Intl.NumberFormat('id-ID', {
+  maximumFractionDigits: 2,
+});
+
+function formatLedgerQuantity(value: number | null | undefined) {
+  if (value == null || !Number.isFinite(value)) return '-';
+  return ledgerQuantityFormatter.format(value);
+}
+
+function hasLedgerInputDetails(tx: LedgerTransaction) {
+  return tx.volume != null || Boolean(tx.satuan) || tx.hargaSatuan != null;
+}
 
 function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
   const palette = theme.palette[intent];
@@ -135,8 +150,6 @@ export default function KeuanganView({
   setSnackbar,
   filterBulan,
   setFilterBulan,
-  filterJenis,
-  setFilterJenis,
   theme,
   isMobile,
   handleDelete,
@@ -182,6 +195,8 @@ export default function KeuanganView({
 }: UseKeuanganControllerResult) {
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [distributionPanelOpen, setDistributionPanelOpen] = useState(true);
+  const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -196,6 +211,33 @@ export default function KeuanganView({
     displayedTransactions.every((tx) => selectedTxIds.includes(tx._id));
   const someSelected =
     selectedTxIds.length > 0 && !allVisibleSelected;
+  const hasDistributionData = finalPieData.some((item) => item.id !== t('distribution.empty'));
+  const ledgerHeaderCellSx = {
+    backgroundColor: 'background.paper',
+    fontWeight: 800,
+    fontSize: '0.76rem',
+    color: 'text.secondary',
+    textTransform: 'uppercase',
+    letterSpacing: 0,
+    whiteSpace: 'nowrap',
+  };
+  const ledgerSortLabelSx = {
+    fontWeight: 800,
+    fontSize: '0.76rem',
+    color: 'text.secondary',
+    textTransform: 'uppercase',
+    letterSpacing: 0,
+    gap: 0.5,
+    '& .MuiTableSortLabel-icon': {
+      marginLeft: 0,
+      marginRight: 0,
+    },
+  };
+  const ledgerNumericSortLabelSx = {
+    ...ledgerSortLabelSx,
+    width: '100%',
+    justifyContent: 'flex-end',
+  };
 
   return (
     <PageShell>
@@ -204,7 +246,13 @@ export default function KeuanganView({
         subtitle={t('subtitle')}
       />
 
-      <FinanceProjectToolbar financeProject={financeProject} rab={rab} financeExport={financeExport} />
+      <FinanceProjectToolbar
+        financeProject={financeProject}
+        rab={rab}
+        financeExport={financeExport}
+        reportLoading={reportLoading}
+        onOpenPdfReport={() => setAiDialogOpen(true)}
+      />
 
       <Tabs
         value={financeTab}
@@ -231,9 +279,83 @@ export default function KeuanganView({
       </Tabs>
 
       {financeTab === 'buku-besar' && (
-      <Grid container spacing={{ xs: 2, md: 3 }} sx={{ flex: 1, alignItems: 'stretch' }}>
-        {/* ─── KIRI: Buku Besar Transaksi (BESAR) ─── */}
-        <Grid size={{ xs: 12, lg: 8 }} sx={{ display: 'flex' }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Grid container spacing={1.5}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card data-guide-target="finance-summary" sx={{ height: '100%' }}>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <TrendingUpIcon sx={{ color: 'white', fontSize: 20 }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                    {t('summary.totalIncome')}
+                  </Typography>
+                  <Typography variant="h6" color="success.main" sx={{ lineHeight: 1.2, fontWeight: 900, fontFamily: 'var(--font-sora)' }}>
+                    {formatRupiah(totalPendapatan)}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'error.main', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <TrendingDownIcon sx={{ color: 'white', fontSize: 20 }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                    {t('summary.totalExpense')}
+                  </Typography>
+                  <Typography variant="h6" color="error.main" sx={{ lineHeight: 1.2, fontWeight: 900, fontFamily: 'var(--font-sora)' }}>
+                    {formatRupiah(totalPengeluaran)}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 2,
+                    bgcolor: labaBersih >= 0 ? 'success.main' : 'error.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <AccountBalanceIcon sx={{ color: 'white', fontSize: 20 }} />
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                    {labaBersih >= 0 ? t('summary.netProfit') : t('summary.deficit')}
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: labaBersih >= 0 ? 'success.main' : 'error.main',
+                      lineHeight: 1.2,
+                      fontWeight: 900,
+                      fontFamily: 'var(--font-sora)',
+                    }}
+                  >
+                    {formatRupiah(Math.abs(labaBersih))}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch', minHeight: 0 }}>
+        {/* ─── Buku Besar Transaksi ─── */}
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex' }}>
           <Card data-guide-target="finance-ledger" sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
               title={
@@ -346,14 +468,18 @@ export default function KeuanganView({
                 {/* Actions */}
                 <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                   <Button
-                    data-guide-target="finance-hpp-bep"
-                    id="btn-hpp-bep"
                     variant="outlined"
-                    startIcon={<AccountBalanceIcon />}
-                    onClick={() => setBepHppDialogOpen(true)}
+                    startIcon={<DonutLargeIcon />}
+                    onClick={() => {
+                      if (isMobile) {
+                        setDistributionDialogOpen(true);
+                      } else {
+                        setDistributionPanelOpen((open) => !open);
+                      }
+                    }}
                     sx={{ borderRadius: 8, whiteSpace: 'nowrap' }}
                   >
-                    {t('buttons.hppBep')}
+                    {t('distribution.title')}
                   </Button>
                   <Button
                     data-guide-target="finance-add-transaction"
@@ -442,7 +568,7 @@ export default function KeuanganView({
                           {/* Row 2: Tanggal & Nominal */}
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="caption" color="text.secondary">
-                              {formatDateShort(tx.tanggal)}
+                              {formatDateLong(tx.tanggal)}
                             </Typography>
                             <Typography
                               variant="subtitle1"
@@ -452,9 +578,42 @@ export default function KeuanganView({
                                 whiteSpace: 'nowrap',
                               }}
                             >
-                              {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                              {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </Typography>
                           </Box>
+
+                          {hasLedgerInputDetails(tx) && (
+                            <Box
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: 'auto minmax(0, 1fr)',
+                                columnGap: 1,
+                                rowGap: 0.5,
+                                bgcolor: alpha(theme.palette.text.primary, 0.025),
+                                borderRadius: 1.5,
+                                p: 1,
+                              }}
+                            >
+                              <Typography variant="caption" color="text.secondary">
+                                {t('ledger.columns.quantity')}
+                              </Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
+                                {formatLedgerQuantity(tx.volume)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {t('ledger.columns.unit')}
+                              </Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right', overflowWrap: 'anywhere' }}>
+                                {tx.satuan || '-'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {t('ledger.columns.unitPrice')}
+                              </Typography>
+                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
+                                {tx.hargaSatuan == null ? '-' : formatRupiah(tx.hargaSatuan)}
+                              </Typography>
+                            </Box>
+                          )}
                           
                           {/* Row 3: Keterangan (optional) */}
                           {tx.keterangan && (
@@ -509,7 +668,7 @@ export default function KeuanganView({
               </Box>
 
               <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
-                <Table size="medium" stickyHeader>
+                <Table size="medium" stickyHeader sx={{ minWidth: 1080 }}>
                   <TableHead>
                     <TableRow>
                       {/* Select all checkbox */}
@@ -530,56 +689,59 @@ export default function KeuanganView({
                           disabled={displayedTransactions.length === 0}
                         />
                       </TableCell>
-                      {/* Tanggal */}
-                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 90 }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 110 }}>
                         <TableSortLabel
                           active={sortColumn === 'tanggal'}
                           direction={sortColumn === 'tanggal' ? sortDir : 'asc'}
                           onClick={() => toggleSort('tanggal')}
-                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                          sx={ledgerSortLabelSx}
                         >
                           {t('ledger.columns.date')}
                         </TableSortLabel>
                       </TableCell>
-                      {/* Kategori */}
-                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 120 }}>
-                        <TableSortLabel
-                          active={sortColumn === 'kategori'}
-                          direction={sortColumn === 'kategori' ? sortDir : 'asc'}
-                          onClick={() => toggleSort('kategori')}
-                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
-                        >
-                          {t('ledger.columns.category')}
-                        </TableSortLabel>
-                      </TableCell>
-                      {/* Catatan (tidak sortable) */}
-                      <TableCell sx={{ backgroundColor: 'background.paper', fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                        {t('ledger.columns.note')}
-                      </TableCell>
-                      {/* Tipe */}
-                      <TableCell sx={{ backgroundColor: 'background.paper' }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 120 }}>
                         <TableSortLabel
                           active={sortColumn === 'jenis'}
                           direction={sortColumn === 'jenis' ? sortDir : 'asc'}
                           onClick={() => toggleSort('jenis')}
-                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                          sx={ledgerSortLabelSx}
                         >
                           {t('ledger.columns.type')}
                         </TableSortLabel>
                       </TableCell>
-                      {/* Nilai */}
-                      <TableCell sx={{ backgroundColor: 'background.paper', minWidth: 120 }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 150 }}>
+                        <TableSortLabel
+                          active={sortColumn === 'kategori'}
+                          direction={sortColumn === 'kategori' ? sortDir : 'asc'}
+                          onClick={() => toggleSort('kategori')}
+                          sx={ledgerSortLabelSx}
+                        >
+                          {t('ledger.columns.category')}
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 90 }}>
+                        {t('ledger.columns.quantity')}
+                      </TableCell>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 90 }}>
+                        {t('ledger.columns.unit')}
+                      </TableCell>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 145 }}>
+                        {t('ledger.columns.unitPrice')}
+                      </TableCell>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 140 }}>
                         <TableSortLabel
                           active={sortColumn === 'nominal'}
                           direction={sortColumn === 'nominal' ? sortDir : 'asc'}
                           onClick={() => toggleSort('nominal')}
-                          sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}
+                          sx={ledgerNumericSortLabelSx}
                         >
                           {t('ledger.columns.value')}
                         </TableSortLabel>
                       </TableCell>
-                      {/* Opsi */}
-                      <TableCell sx={{ backgroundColor: 'background.paper', fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 220 }}>
+                        {t('ledger.columns.note')}
+                      </TableCell>
+                      <TableCell align="right" sx={ledgerHeaderCellSx}>
                         {t('ledger.columns.action')}
                       </TableCell>
                     </TableRow>
@@ -587,7 +749,7 @@ export default function KeuanganView({
                   <TableBody>
                     {displayedTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                        <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                             <Typography variant="body2" color="text.secondary">
@@ -612,16 +774,8 @@ export default function KeuanganView({
                             <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
                               <Checkbox size="small" checked={isSelected} onChange={() => toggleSelectTx(tx._id)} />
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary' }}>
-                              {formatDateShort(tx.tanggal)}
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem' }}>
-                              {tx.kategori}
-                            </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
-                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-                                {tx.keterangan || '—'}
-                              </Typography>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                              {formatDateLong(tx.tanggal)}
                             </TableCell>
                             <TableCell>
                               <Chip
@@ -636,17 +790,38 @@ export default function KeuanganView({
                                 }}
                               />
                             </TableCell>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 150 }}>
+                              {tx.kategori}
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                              {formatLedgerQuantity(tx.volume)}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 120 }}>
+                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
+                                {tx.satuan || '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right" sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                              {tx.hargaSatuan == null ? '-' : formatRupiah(tx.hargaSatuan)}
+                            </TableCell>
                             <TableCell
+                              align="right"
                               sx={{
                                 fontWeight: 800,
                                 fontSize: '0.9rem',
                                 color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                whiteSpace: 'nowrap',
                               }}
                             >
-                              {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                              {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </TableCell>
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
+                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
+                                {tx.keterangan || '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                                 <IconButton
                                   size="small"
                                   aria-label="Edit Transaksi"
@@ -674,121 +849,33 @@ export default function KeuanganView({
               </TableContainer>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
-        {/* ─── KANAN: Ringkasan & Grafik ─── */}
-        <Grid size={{ xs: 12, lg: 4 }} sx={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Kartu Ringkasan */}
-          <Card data-guide-target="finance-summary" sx={{ mb: 3 }}>
+          <Card
+            sx={{
+              width: { md: 300, lg: 330 },
+              flexShrink: 0,
+              display: { xs: 'none', md: distributionPanelOpen ? 'flex' : 'none' },
+              flexDirection: 'column',
+            }}
+          >
             <CardHeader
               title={
-                <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                  {t('summary.title')}
+                <Typography variant="subtitle1" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+                  {t('distribution.title')}
                 </Typography>
               }
               action={
                 <IconButton
-                  data-guide-target="finance-report"
-                  aria-label={t('reportDialog.title')}
-                  onClick={() => setAiDialogOpen(true)}
-                  sx={(theme) => ({
-                    width: 44,
-                    height: 44,
-                    ...financeActionIconButtonSx(theme, 'primary'),
-                  })}
+                  aria-label={t('common.cancel')}
+                  size="small"
+                  onClick={() => setDistributionPanelOpen(false)}
+                  sx={(theme) => closeIconButtonSx(theme)}
                 >
-                  <AutoFixHighIcon fontSize="small" />
+                  <CloseIcon fontSize="small" />
                 </IconButton>
               }
-            />
-            <CardContent sx={{ pt: 0 }}>
-              {/* Pemasukan */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  p: 2,
-                  bgcolor: alpha(theme.palette.success.main, 0.1),
-                  borderRadius: 3,
-                  mb: 2,
-                  border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                }}
-              >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingUpIcon sx={{ color: 'white', fontSize: 20 }} />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('summary.totalIncome')}</Typography>
-                  <Typography variant="h6" color="success.main" sx={{ lineHeight: 1.2, fontWeight: 800 }}>
-                    {formatRupiah(totalPendapatan)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* Pengeluaran */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  p: 2,
-                  bgcolor: alpha(theme.palette.error.main, 0.1),
-                  borderRadius: 3,
-                  mb: 2,
-                  border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
-                }}
-              >
-                <Box sx={{ width: 40, height: 40, borderRadius: 2, bgcolor: 'error.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <TrendingDownIcon sx={{ color: 'white', fontSize: 20 }} />
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{t('summary.totalExpense')}</Typography>
-                  <Typography variant="h6" color="error.main" sx={{ lineHeight: 1.2, fontWeight: 800 }}>
-                    {formatRupiah(totalPengeluaran)}
-                  </Typography>
-                </Box>
-              </Box>
-
-              <Divider sx={{ my: 2 }} />
-
-              {/* Laba bersih */}
-              <Box
-                sx={{
-                  p: 2.5,
-                  bgcolor: labaBersih >= 0 ? alpha(theme.palette.success.main, 0.07) : alpha(theme.palette.error.main, 0.07),
-                  borderRadius: 3,
-                  border: '1px solid',
-                  borderColor: labaBersih >= 0 ? alpha(theme.palette.success.main, 0.2) : alpha(theme.palette.error.main, 0.2),
-                }}
-              >
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                  {labaBersih >= 0 ? t('summary.netProfit') : t('summary.deficit')}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    fontFamily: 'var(--font-sora)',
-                    color: labaBersih >= 0 ? 'success.main' : 'error.main',
-                    lineHeight: 1.1,
-                    mt: 0.5,
-                    fontWeight: 900,
-                  }}
-                >
-                  {formatRupiah(Math.abs(labaBersih))}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* Grafik Distribusi Pengeluaran */}
-          <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <CardHeader
-              title={
-                <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-                  {t('distribution.title')}
-                </Typography>
-              }
+              sx={{ pb: 0 }}
             />
             <CardContent sx={{ pt: 0, flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <PieChart
@@ -797,28 +884,69 @@ export default function KeuanganView({
                     data: finalPieData,
                     innerRadius: 48,
                     outerRadius: 88,
-                    paddingAngle: finalPieData.some((item) => item.id !== t('distribution.empty')) ? 4 : 0,
+                    paddingAngle: hasDistributionData ? 4 : 0,
                     cornerRadius: 5,
                     highlightScope: { fade: 'global', highlight: 'item' },
                     faded: { innerRadius: 40, additionalRadius: -10, color: 'gray' },
                   },
                 ]}
                 colors={finalPieColors}
-                width={isMobile ? 290 : 300}
-                height={isMobile ? 240 : 200}
+                width={300}
+                height={240}
                 slotProps={{
                   legend: {
-                    direction: isMobile ? 'horizontal' : 'vertical',
-                    position: isMobile
-                      ? { vertical: 'bottom', horizontal: 'center' }
-                      : { vertical: 'middle', horizontal: 'end' },
+                    direction: 'horizontal',
+                    position: { vertical: 'bottom', horizontal: 'center' },
                   },
                 }}
               />
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+
+        <Dialog
+          open={distributionDialogOpen}
+          onClose={() => setDistributionDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          slotProps={{ paper: { sx: { borderRadius: 4 } } }}
+        >
+          <DialogTitle sx={{ pb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+              <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+                {t('distribution.title')}
+              </Typography>
+              <IconButton aria-label={t('common.cancel')} size="small" onClick={() => setDistributionDialogOpen(false)} sx={(theme) => closeIconButtonSx(theme)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent sx={{ pt: '8px !important', display: 'flex', justifyContent: 'center' }}>
+            <PieChart
+              series={[
+                {
+                  data: finalPieData,
+                  innerRadius: 52,
+                  outerRadius: 96,
+                  paddingAngle: hasDistributionData ? 4 : 0,
+                  cornerRadius: 5,
+                  highlightScope: { fade: 'global', highlight: 'item' },
+                  faded: { innerRadius: 44, additionalRadius: -10, color: 'gray' },
+                },
+              ]}
+              colors={finalPieColors}
+              width={320}
+              height={280}
+              slotProps={{
+                legend: {
+                  direction: 'horizontal',
+                  position: { vertical: 'bottom', horizontal: 'center' },
+                },
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      </Box>
       )}
 
       {financeTab === 'rab' && (

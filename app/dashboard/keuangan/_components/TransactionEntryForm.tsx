@@ -106,6 +106,8 @@ export default function TransactionEntryForm({
             fullWidth
             size="small"
             type="number"
+            error={!!errors.volume}
+            helperText={errors.volume}
             slotProps={{ input: { inputProps: { min: 0, step: 'any' } } }}
           />
         </Grid>
@@ -142,6 +144,7 @@ export default function TransactionEntryForm({
         fullWidth
         size="small"
         placeholder="0"
+        error={!!errors.hargaSatuan}
         slotProps={{
           input: {
             startAdornment: draft.hargaSatuan ? (
@@ -151,7 +154,7 @@ export default function TransactionEntryForm({
             ) : undefined,
           },
         }}
-        helperText="Jika diisi bersama Volume, Nominal dihitung otomatis"
+        helperText={errors.hargaSatuan || 'Jika diisi bersama Volume, Nominal dihitung otomatis'}
       />
 
       {/* Nominal */}
@@ -176,9 +179,9 @@ export default function TransactionEntryForm({
         }}
       />
 
-      {/* Keterangan */}
+      {/* Detail / Catatan */}
       <TextField
-        label="Keterangan (opsional)"
+        label="Detail / Catatan (opsional)"
         value={draft.keterangan}
         onChange={(e) => onFieldChange('keterangan', e.target.value)}
         fullWidth

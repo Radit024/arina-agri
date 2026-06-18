@@ -475,9 +475,12 @@
       "columns": {
         "date": "Date",
         "category": "Category",
+        "quantity": "Volume",
+        "unit": "Unit",
+        "unitPrice": "Unit Price",
         "note": "Detail / Note",
         "type": "Type",
-        "value": "Value (Rp)",
+        "value": "Amount (Rp)",
         "action": "Action"
       },
       "empty": "No transactions for this filter.",

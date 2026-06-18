@@ -1,6 +1,7 @@
 'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -22,26 +23,30 @@ import Typography from '@mui/material/Typography';
 import type { FormEvent } from 'react';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
-import { formatRupiah } from '@/lib/formatters';
+import { formatMonthYear, formatRupiah } from '@/lib/formatters';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'>;
 
 export default function RabPlanningView({ financeProject, rab }: Props) {
-  const submitRabItem = (event: FormEvent<HTMLFormElement>) => {
+  const submitRabItem = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const volume = Number(formData.get('volume') || 0);
     const unitPrice = Number(formData.get('unitPrice') || 0);
-    void rab.addRabItem({
-      categoryName: String(formData.get('categoryName') || 'Lain-lain'),
-      type: String(formData.get('type') || 'expense') === 'income' ? 'income' : 'expense',
-      name: String(formData.get('name') || 'Item RAB'),
-      volume,
-      unit: String(formData.get('unit') || 'Unit'),
-      unitPrice,
-      plannedCashMonth: String(formData.get('plannedCashMonth') || '') || undefined,
-    });
-    rab.setRabItemDialogOpen(false);
+    try {
+      await rab.addRabItem({
+        categoryName: String(formData.get('categoryName') || ''),
+        type: String(formData.get('type') || 'expense') === 'income' ? 'income' : 'expense',
+        name: String(formData.get('name') || ''),
+        volume,
+        unit: String(formData.get('unit') || ''),
+        unitPrice,
+        plannedCashMonth: String(formData.get('plannedCashMonth') || '') || undefined,
+      });
+      rab.setRabItemDialogOpen(false);
+    } catch {
+      // Error message is stored in the RAB controller for the view to render.
+    }
   };
 
   if (!financeProject.selectedProject) {
@@ -95,7 +100,15 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
                 Kelola item rencana biaya dan pendapatan per proyek tanam.
               </Typography>
             </Box>
-            <Button variant="contained" startIcon={<AddCircleIcon />} onClick={() => rab.setRabItemDialogOpen(true)} sx={{ borderRadius: 8 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddCircleIcon />}
+              onClick={() => {
+                rab.setRabItemError(null);
+                rab.setRabItemDialogOpen(true);
+              }}
+              sx={{ borderRadius: 8 }}
+            >
               Tambah Item
             </Button>
           </Box>
@@ -131,7 +144,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
                       <TableCell>{item.unit}</TableCell>
                       <TableCell align="right">{formatRupiah(item.unitPrice)}</TableCell>
                       <TableCell align="right">{formatRupiah(item.plannedTotal)}</TableCell>
-                      <TableCell>{item.plannedCashMonth ?? '-'}</TableCell>
+                      <TableCell>{item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}</TableCell>
                     </TableRow>
                   ))
                 )}
@@ -145,6 +158,11 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         <DialogTitle>Tambah Item RAB</DialogTitle>
         <Box component="form" onSubmit={submitRabItem}>
           <DialogContent sx={{ display: 'grid', gap: 2 }}>
+            {rab.rabItemError && (
+              <Alert severity="error" onClose={() => rab.setRabItemError(null)}>
+                {rab.rabItemError}
+              </Alert>
+            )}
             <TextField name="categoryName" label="Kategori" defaultValue="Saprodi" required />
             <TextField name="type" label="Jenis" select defaultValue="expense">
               <MenuItem value="expense">Pengeluaran</MenuItem>

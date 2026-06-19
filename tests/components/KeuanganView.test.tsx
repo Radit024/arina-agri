@@ -365,6 +365,24 @@ function renderView(overrides: Partial<KeuanganViewProps> = {}) {
 }
 
 describe('KeuanganView', () => {
+  it('membuat seluruh panel tab keuangan mengisi tinggi konten', () => {
+    const panels: Array<[KeuanganViewProps['financeTab'], string, string]> = [
+      ['buku-besar', 'finance-panel-buku-besar', 'Buku Besar Transaksi'],
+      ['rab', 'finance-panel-rab', 'Belum ada proyek'],
+      ['laba-rugi', 'finance-panel-laba-rugi', 'Laba Rugi Rencana vs Aktual'],
+      ['arus-kas', 'finance-panel-arus-kas', 'Arus Kas Rencana vs Aktual'],
+    ];
+
+    for (const [financeTab, testId, visibleTitle] of panels) {
+      const { unmount } = renderView({ financeTab });
+
+      expect(screen.getByTestId(testId)).toHaveAttribute('data-finance-fill-height', 'true');
+      expect(screen.getByText(visibleTitle)).toBeInTheDocument();
+
+      unmount();
+    }
+  });
+
   it('keeps mobile edit and delete actions visible on each transaction card', () => {
     const openForEdit = vi.fn();
     const handleDelete = vi.fn();

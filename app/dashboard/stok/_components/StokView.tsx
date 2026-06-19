@@ -990,7 +990,11 @@ export default function StokView({
                 <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
                   <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
                     <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
-                    <Select {...field} label={t('dialogs.fields.batch')}>
+                    <Select
+                      {...field}
+                      label={t('dialogs.fields.batch')}
+                      value={activeBatches.some((batch) => batch._id === field.value) ? field.value : ''}
+                    >
                       {activeBatches.map((b) => (
                         <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
                       ))}
@@ -1089,7 +1093,11 @@ export default function StokView({
               <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
                 <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
                   <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
-                  <Select {...field} label={t('dialogs.fields.batch')}>
+                  <Select
+                    {...field}
+                    label={t('dialogs.fields.batch')}
+                    value={activeBatches.some((batch) => batch._id === field.value) ? field.value : ''}
+                  >
                     {activeBatches.map((b) => (
                       <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
                     ))}

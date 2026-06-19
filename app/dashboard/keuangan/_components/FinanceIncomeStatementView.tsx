@@ -32,13 +32,13 @@ export default function FinanceIncomeStatementView({ financeReports }: Props) {
   const { summary } = financeReports.incomeStatementComparison;
 
   return (
-    <Card sx={{ flex: 1 }}>
-      <CardContent>
+    <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <CardContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Laba Rugi Rencana vs Aktual</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Rencana laba {formatRupiah(summary.plannedProfit)} dibanding aktual {formatRupiah(summary.actualProfit)}.
         </Typography>
-        <TableContainer>
+        <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <Table size="small">
             <TableHead>
               <TableRow>

@@ -262,6 +262,14 @@ export default function KeuanganView({
   const ledgerValueLabelMatch = ledgerValueColumnLabel.match(/^(.*?)\s*(\([^)]*\))$/);
   const ledgerValueLabel = ledgerValueLabelMatch?.[1] ?? ledgerValueColumnLabel;
   const ledgerValueUnit = ledgerValueLabelMatch?.[2] ?? '';
+  const financePanelSx = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 2,
+    minWidth: 0,
+    minHeight: { xs: 'auto', md: 'max(520px, calc(100dvh - 220px))' },
+  } as const;
 
   return (
     <PageShell>
@@ -304,7 +312,11 @@ export default function KeuanganView({
       </Tabs>
 
       {financeTab === 'buku-besar' && (
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box
+        data-testid="finance-panel-buku-besar"
+        data-finance-fill-height="true"
+        sx={financePanelSx}
+      >
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, md: 4 }}>
             <Card data-guide-target="finance-summary" sx={{ height: '100%' }}>
@@ -378,10 +390,10 @@ export default function KeuanganView({
           </Grid>
         </Grid>
 
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch', minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', gap: 2, alignItems: 'stretch', minHeight: 0 }}>
         {/* ─── Buku Besar Transaksi ─── */}
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex' }}>
-          <Card data-guide-target="finance-ledger" sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
+          <Card data-guide-target="finance-ledger" sx={{ height: '100%', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -562,8 +574,8 @@ export default function KeuanganView({
               )}
             </Box>
 
-            <CardContent sx={{ pt: 0, flex: 1, px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, maxHeight: { xs: 450, md: 500, lg: 700 }, overflowY: 'auto', pr: 0.5, pb: 2 }}>
+            <CardContent sx={{ pt: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, flex: 1, minHeight: 0, flexDirection: 'column', gap: 1.5, overflowY: 'auto', pr: 0.5, pb: 2 }}>
                   {displayedTransactions.length === 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
                       <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
@@ -698,7 +710,7 @@ export default function KeuanganView({
                   </Fab>
               </Box>
 
-              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflowX: 'hidden', overflowY: 'auto' }}>
+              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, flex: 1, minHeight: 0, overflowX: 'hidden', overflowY: 'auto' }}>
                 <Table size="medium" stickyHeader sx={{ width: '100%', tableLayout: 'fixed' }}>
                   <TableHead>
                     <TableRow>
@@ -912,6 +924,8 @@ export default function KeuanganView({
             sx={{
               width: { md: 300, lg: 330 },
               flexShrink: 0,
+              height: '100%',
+              minHeight: 0,
               display: { xs: 'none', md: distributionPanelOpen ? 'flex' : 'none' },
               flexDirection: 'column',
             }}
@@ -934,7 +948,7 @@ export default function KeuanganView({
               }
               sx={{ pb: 0 }}
             />
-            <CardContent sx={{ pt: 0, flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <CardContent sx={{ pt: 0, flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <PieChart
                 series={[
                   {
@@ -1013,17 +1027,29 @@ export default function KeuanganView({
       )}
 
       {financeTab === 'rab' && (
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          data-testid="finance-panel-rab"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
           <RabPlanningView financeProject={financeProject} rab={rab} />
         </Box>
       )}
       {financeTab === 'laba-rugi' && (
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          data-testid="finance-panel-laba-rugi"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
           <FinanceIncomeStatementView financeReports={financeReports} />
         </Box>
       )}
       {financeTab === 'arus-kas' && (
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box
+          data-testid="finance-panel-arus-kas"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
           <FinanceCashFlowView financeReports={financeReports} />
         </Box>
       )}

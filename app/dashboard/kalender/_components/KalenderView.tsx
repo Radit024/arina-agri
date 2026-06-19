@@ -412,7 +412,7 @@ export default function KalenderView({
                   value={formatDateInputValue(field.value ?? '')}
                   onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                   error={!!errors.tanggal}
-                  helperText={errors.tanggal?.message || 'Format: dd-MM-yyyy'}
+                  helperText={errors.tanggal?.message || ''}
                   fullWidth
                   required
                   placeholder="05-06-2026"

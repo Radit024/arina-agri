@@ -131,7 +131,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
                 {rab.items.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                      Belum ada item RAB. Tambahkan manual atau import Excel.
+                      Belum ada item RAB.
                     </TableCell>
                   </TableRow>
                 ) : (

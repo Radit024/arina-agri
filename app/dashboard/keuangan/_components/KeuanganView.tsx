@@ -57,6 +57,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Fab from '@mui/material/Fab';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
+import type { HighlightItemIdentifierWithType } from '@mui/x-charts/models';
 
 import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
@@ -73,6 +74,7 @@ const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ d
 
 
 const MAX_AI_REPORTS_PER_MONTH = 3;
+const EXPENSE_DISTRIBUTION_SERIES_ID = 'expense-distribution';
 
 type FinanceActionIntent = 'primary' | 'error';
 type LedgerTransaction = UseKeuanganControllerResult['displayedTransactions'][number];
@@ -209,6 +211,8 @@ export default function KeuanganView({
   const [searchOpen, setSearchOpen] = useState(false);
   const [distributionPanelOpen, setDistributionPanelOpen] = useState(true);
   const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
+  const [distributionHighlightedItem, setDistributionHighlightedItem] =
+    useState<HighlightItemIdentifierWithType<'pie'> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -254,6 +258,10 @@ export default function KeuanganView({
     width: '100%',
     justifyContent: 'flex-end',
   };
+  const ledgerValueColumnLabel = t('ledger.columns.value');
+  const ledgerValueLabelMatch = ledgerValueColumnLabel.match(/^(.*?)\s*(\([^)]*\))$/);
+  const ledgerValueLabel = ledgerValueLabelMatch?.[1] ?? ledgerValueColumnLabel;
+  const ledgerValueUnit = ledgerValueLabelMatch?.[2] ?? '';
 
   return (
     <PageShell>
@@ -732,7 +740,7 @@ export default function KeuanganView({
                           {t('ledger.columns.type')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '16%' }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '15%' }}>
                         <TableSortLabel
                           active={sortColumn === 'kategori'}
                           direction={sortColumn === 'kategori' ? sortDir : 'asc'}
@@ -745,28 +753,40 @@ export default function KeuanganView({
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
                         Input
                       </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '14%' }}>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
                         <TableSortLabel
                           active={sortColumn === 'nominal'}
                           direction={sortColumn === 'nominal' ? sortDir : 'asc'}
                           onClick={() => toggleSort('nominal')}
                           sx={ledgerNumericSortLabelSx}
                         >
-                          {t('ledger.columns.value')}
+                          <Box
+                            component="span"
+                            sx={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'flex-end',
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            <Box component="span">{ledgerValueLabel}</Box>
+                            {ledgerValueUnit && (
+                              <Box component="span" sx={{ fontSize: '0.68rem', fontWeight: 800 }}>
+                                {ledgerValueUnit}
+                              </Box>
+                            )}
+                          </Box>
                         </TableSortLabel>
                       </TableCell>
                       <TableCell sx={{ ...ledgerHeaderCellSx }}>
                         Detail / Catatan
-                      </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: 84 }}>
-                        {t('ledger.columns.action')}
                       </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {displayedTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
+                        <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                             <Typography variant="body2" color="text.secondary">
@@ -833,33 +853,48 @@ export default function KeuanganView({
                                 fontSize: '0.9rem',
                                 color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
                                 whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                               }}
                             >
                               {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
-                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-                                {tx.keterangan || '-'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                              <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                                <IconButton
-                                  size="small"
-                                  aria-label="Edit Transaksi"
-                                  onClick={() => transactionBatch.openForEdit(tx)}
-                                  sx={(theme) => financeActionIconButtonSx(theme, 'primary')}
-                                >
-                                  <EditOutlinedIcon fontSize="small" />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  aria-label="Hapus Transaksi"
-                                  onClick={() => handleDelete(tx._id)}
-                                  sx={(theme) => financeActionIconButtonSx(theme, 'error')}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0, overflow: 'hidden' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                <Typography variant="caption" noWrap sx={{ display: 'block', flex: 1, minWidth: 0 }}>
+                                  {tx.keterangan || '-'}
+                                </Typography>
+                                {isSelected && (
+                                  <Box
+                                    onClick={(e) => e.stopPropagation()}
+                                    sx={{ display: 'inline-flex', gap: 0.5, flexShrink: 0 }}
+                                  >
+                                    <IconButton
+                                      size="small"
+                                      aria-label={`Edit transaksi ${tx.kategori}`}
+                                      onClick={() => transactionBatch.openForEdit(tx)}
+                                      sx={(theme) => ({
+                                        width: 34,
+                                        height: 34,
+                                        ...financeActionIconButtonSx(theme, 'primary'),
+                                      })}
+                                    >
+                                      <EditOutlinedIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      aria-label={`Hapus transaksi ${tx.kategori}`}
+                                      onClick={() => handleDelete(tx._id)}
+                                      sx={(theme) => ({
+                                        width: 34,
+                                        height: 34,
+                                        ...financeActionIconButtonSx(theme, 'error'),
+                                      })}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                )}
                               </Box>
                             </TableCell>
                           </TableRow>
@@ -903,6 +938,7 @@ export default function KeuanganView({
               <PieChart
                 series={[
                   {
+                    id: EXPENSE_DISTRIBUTION_SERIES_ID,
                     data: finalPieData,
                     innerRadius: 48,
                     outerRadius: 88,
@@ -913,6 +949,8 @@ export default function KeuanganView({
                   },
                 ]}
                 colors={finalPieColors}
+                highlightedItem={distributionHighlightedItem}
+                onHighlightChange={(item) => setDistributionHighlightedItem(item)}
                 width={300}
                 height={240}
                 slotProps={{
@@ -947,6 +985,7 @@ export default function KeuanganView({
             <PieChart
               series={[
                 {
+                  id: EXPENSE_DISTRIBUTION_SERIES_ID,
                   data: finalPieData,
                   innerRadius: 52,
                   outerRadius: 96,
@@ -957,6 +996,8 @@ export default function KeuanganView({
                 },
               ]}
               colors={finalPieColors}
+              highlightedItem={distributionHighlightedItem}
+              onHighlightChange={(item) => setDistributionHighlightedItem(item)}
               width={320}
               height={280}
               slotProps={{

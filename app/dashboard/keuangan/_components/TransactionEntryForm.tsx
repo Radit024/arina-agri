@@ -65,7 +65,7 @@ export default function TransactionEntryForm({
             size="small"
             required
             error={!!errors.tanggal}
-            helperText={errors.tanggal || 'Format: dd-MM-yyyy'}
+            helperText={errors.tanggal || ''}
             placeholder="05-06-2026"
           />
         </Grid>

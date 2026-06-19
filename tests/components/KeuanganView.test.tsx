@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
@@ -8,8 +8,19 @@ import type { ApiTransaction } from '@/lib/api';
 import { darkTheme } from '@/lib/theme';
 
 vi.mock('next/dynamic', () => ({
-  default: () => function DynamicChartStub() {
-    return <div data-testid="finance-pie-chart" />;
+  default: () => function DynamicChartStub(props: { highlightedItem?: unknown; onHighlightChange?: unknown; series?: Array<{ id?: string }> }) {
+    const highlightedItemState = Object.prototype.hasOwnProperty.call(props, 'highlightedItem')
+      ? props.highlightedItem === null ? 'null' : 'set'
+      : 'missing';
+
+    return (
+      <div
+        data-testid="finance-pie-chart"
+        data-highlighted-item={highlightedItemState}
+        data-has-on-highlight-change={typeof props.onHighlightChange === 'function' ? 'true' : 'false'}
+        data-series-id={props.series?.[0]?.id ?? ''}
+      />
+    );
   },
 }));
 
@@ -386,6 +397,57 @@ describe('KeuanganView', () => {
     expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
     expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
+  });
+
+  it('menampilkan tombol aksi desktop hanya ketika transaksi dipilih', () => {
+    const openForEdit = vi.fn();
+    const handleDelete = vi.fn();
+    const toggleSelectTx = vi.fn();
+
+    const { unmount } = renderView({
+      isMobile: false,
+      handleDelete,
+      toggleSelectTx,
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const table = screen.getByRole('table');
+    expect(within(table).queryByRole('columnheader', { name: 'Aksi' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Edit transaksi pupuk' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Hapus transaksi pupuk' })).not.toBeInTheDocument();
+
+    unmount();
+    renderView({
+      isMobile: false,
+      handleDelete,
+      toggleSelectTx,
+      selectedTxIds: [transaction._id],
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const selectedTable = screen.getByRole('table');
+    const editButton = within(selectedTable).getByRole('button', { name: 'Edit transaksi pupuk' });
+    const deleteButton = within(selectedTable).getByRole('button', { name: 'Hapus transaksi pupuk' });
+
+    fireEvent.click(editButton);
+    fireEvent.click(deleteButton);
+
+    expect(openForEdit).toHaveBeenCalledWith(transaction);
+    expect(handleDelete).toHaveBeenCalledWith(transaction._id);
+    expect(toggleSelectTx).not.toHaveBeenCalled();
+  });
+
+  it('mengontrol highlight chart distribusi agar MUI chart tidak menerima state undefined', () => {
+    renderView();
+
+    const charts = screen.getAllByTestId('finance-pie-chart');
+    expect(charts.length).toBeGreaterThan(0);
+
+    for (const chart of charts) {
+      expect(chart).toHaveAttribute('data-highlighted-item', 'null');
+      expect(chart).toHaveAttribute('data-has-on-highlight-change', 'true');
+      expect(chart).toHaveAttribute('data-series-id', 'expense-distribution');
+    }
   });
 
   it('menampilkan 4 input field BFA ketika dialog dibuka', () => {

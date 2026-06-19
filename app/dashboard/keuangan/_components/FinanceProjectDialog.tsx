@@ -167,7 +167,7 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
               size="small"
               placeholder="05-06-2026"
               error={!startDateValid}
-              helperText={!startDateValid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+              helperText={!startDateValid ? 'Format tanggal harus dd-MM-yyyy' : ''}
             />
           </Grid>
 
@@ -180,7 +180,7 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
               size="small"
               placeholder="05-06-2026"
               error={!endDateValid}
-              helperText={!endDateValid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+              helperText={!endDateValid ? 'Format tanggal harus dd-MM-yyyy' : ''}
             />
           </Grid>
         </Grid>

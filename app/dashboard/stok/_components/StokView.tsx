@@ -552,7 +552,7 @@ export default function StokView({
                 value={formatDateInputValue(mutFromDate)}
                 onChange={(e) => setMutFromDate(normalizeDateInputValue(e.target.value))}
                 error={mutFromDateInvalid}
-                helperText={mutFromDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+                helperText={mutFromDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
                 placeholder="05-06-2026"
                 sx={{ minWidth: 170 }}
               />
@@ -562,7 +562,7 @@ export default function StokView({
                 value={formatDateInputValue(mutToDate)}
                 onChange={(e) => setMutToDate(normalizeDateInputValue(e.target.value))}
                 error={mutToDateInvalid}
-                helperText={mutToDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+                helperText={mutToDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
                 placeholder="05-06-2026"
                 sx={{ minWidth: 170 }}
               />
@@ -739,7 +739,7 @@ export default function StokView({
                         onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                         fullWidth
                         error={!!batchForm.formState.errors.tanggalPanen}
-                        helperText={batchForm.formState.errors.tanggalPanen?.message || 'Format: dd-MM-yyyy'}
+                        helperText={batchForm.formState.errors.tanggalPanen?.message || ''}
                         placeholder="05-06-2026"
                       />
                     )} />
@@ -811,7 +811,7 @@ export default function StokView({
                         onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                         fullWidth
                         error={!!batchForm.formState.errors.estimasiKadaluarsa}
-                        helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. Format: dd-MM-yyyy'}
+                        helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. '}
                         placeholder="05-06-2026"
                       />
                     )} />
@@ -851,7 +851,7 @@ export default function StokView({
                       onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                       fullWidth
                       error={!!batchForm.formState.errors.tanggalPanen}
-                      helperText={batchForm.formState.errors.tanggalPanen?.message || 'Format: dd-MM-yyyy'}
+                      helperText={batchForm.formState.errors.tanggalPanen?.message || ''}
                       placeholder="05-06-2026"
                     />
                   )} />
@@ -923,7 +923,7 @@ export default function StokView({
                       onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                       fullWidth
                       error={!!batchForm.formState.errors.estimasiKadaluarsa}
-                      helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. Format: dd-MM-yyyy'}
+                      helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. '}
                       placeholder="05-06-2026"
                     />
                   )} />
@@ -1054,7 +1054,7 @@ export default function StokView({
                     onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                     fullWidth
                     error={!!stockOutForm.formState.errors.tanggal}
-                    helperText={stockOutForm.formState.errors.tanggal?.message || 'Format: dd-MM-yyyy'}
+                    helperText={stockOutForm.formState.errors.tanggal?.message || ''}
                     placeholder="05-06-2026"
                   />
                 )} />
@@ -1152,7 +1152,7 @@ export default function StokView({
                   onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
                   fullWidth
                   error={!!stockOutForm.formState.errors.tanggal}
-                  helperText={stockOutForm.formState.errors.tanggal?.message || 'Format: dd-MM-yyyy'}
+                  helperText={stockOutForm.formState.errors.tanggal?.message || ''}
                   placeholder="05-06-2026"
                 />
               )} />

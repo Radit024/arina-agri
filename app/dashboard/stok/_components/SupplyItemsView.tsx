@@ -287,7 +287,7 @@ export default function SupplyItemsView({ items, loading, onAddItem, onAddMutati
             size="small"
             fullWidth
             error={mutTanggalInvalid}
-            helperText={mutTanggalInvalid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+            helperText={mutTanggalInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
             placeholder="05-06-2026"
           />
           <TextField

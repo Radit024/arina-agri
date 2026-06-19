@@ -13,6 +13,7 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { useState, useEffect } from 'react';
 
+import { formatDateInputValue, isValidDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject'>;
@@ -46,8 +47,13 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const startDateValid = isValidDateInputValue(form.startDate);
+  const endDateValid = isValidDateInputValue(form.endDate);
+
   const handleSubmit = async () => {
-    if (!form.name.trim() || !form.commodity.trim()) return;
+    if (!form.name.trim() || !form.commodity.trim() || !startDateValid || !endDateValid) return;
+    const startDate = normalizeDateInputValue(form.startDate);
+    const endDate = normalizeDateInputValue(form.endDate);
     setSubmitting(true);
     try {
       await financeProject.createProject({
@@ -56,8 +62,8 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
         landArea: Number(form.landArea) || 1,
         landAreaUnit: form.landAreaUnit.trim() || 'Ha',
         seasonLabel: form.seasonLabel.trim(),
-        startDate: form.startDate,
-        endDate: form.endDate,
+        startDate,
+        endDate,
         status: form.status,
       });
     } finally {
@@ -155,24 +161,26 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="Tanggal Mulai"
-              type="date"
-              value={form.startDate}
-              onChange={(e) => set('startDate', e.target.value)}
+              value={formatDateInputValue(form.startDate)}
+              onChange={(e) => set('startDate', normalizeDateInputValue(e.target.value))}
               fullWidth
               size="small"
-              slotProps={{ inputLabel: { shrink: true } }}
+              placeholder="05-06-2026"
+              error={!startDateValid}
+              helperText={!startDateValid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
             />
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               label="Tanggal Selesai"
-              type="date"
-              value={form.endDate}
-              onChange={(e) => set('endDate', e.target.value)}
+              value={formatDateInputValue(form.endDate)}
+              onChange={(e) => set('endDate', normalizeDateInputValue(e.target.value))}
               fullWidth
               size="small"
-              slotProps={{ inputLabel: { shrink: true } }}
+              placeholder="05-06-2026"
+              error={!endDateValid}
+              helperText={!endDateValid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
             />
           </Grid>
         </Grid>
@@ -190,7 +198,7 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={submitting || !form.name.trim() || !form.commodity.trim()}
+          disabled={submitting || !form.name.trim() || !form.commodity.trim() || !startDateValid || !endDateValid}
           sx={{ borderRadius: 2 }}
         >
           {submitting ? 'Menyimpan...' : 'Buat Proyek'}

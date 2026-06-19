@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import type { TransactionDraft, DraftErrors } from '@/controllers/keuangan/useTransactionBatchController';
+import { formatDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 
 interface Props {
   draft: TransactionDraft;
@@ -57,16 +58,15 @@ export default function TransactionEntryForm({
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
-            type="date"
             label="Tanggal"
-            value={draft.tanggal}
-            onChange={(e) => onFieldChange('tanggal', e.target.value)}
+            value={formatDateInputValue(draft.tanggal)}
+            onChange={(e) => onFieldChange('tanggal', normalizeDateInputValue(e.target.value))}
             fullWidth
             size="small"
             required
             error={!!errors.tanggal}
-            helperText={errors.tanggal}
-            slotProps={{ inputLabel: { shrink: true } }}
+            helperText={errors.tanggal || 'Format: dd-MM-yyyy'}
+            placeholder="05-06-2026"
           />
         </Grid>
       </Grid>

@@ -147,6 +147,7 @@ describe('KalenderView', () => {
 
     expect(screen.getByRole('dialog', { name: 'Tambah Jadwal Kegiatan' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Tanggal dan waktu jadwal' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('31-05-2026')).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/[🌿💧🚿🌶📝📅]/u);
     expect(container.querySelectorAll('[data-touch-target="44"]').length).toBeGreaterThanOrEqual(6);
     expect(screen.getByRole('button', { name: 'Batal' })).toBeInTheDocument();

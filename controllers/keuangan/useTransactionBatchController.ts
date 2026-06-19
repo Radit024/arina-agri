@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
+import { isValidDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiTransaction } from '@/lib/api';
 import type { RabItem } from '@/lib/finance/rabTypes';
 
@@ -51,22 +52,11 @@ function parseQuantityNumber(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function isValidDateInput(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return (
-    date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
-  );
-}
-
 function validateDraft(draft: TransactionDraft): DraftErrors {
   const errors: DraftErrors = {};
   if (!draft.kategori.trim()) errors.kategori = 'Kategori wajib dipilih';
   if (!draft.tanggal) errors.tanggal = 'Tanggal wajib diisi';
-  else if (!isValidDateInput(draft.tanggal)) errors.tanggal = 'Format tanggal tidak valid';
+  else if (!isValidDateInputValue(draft.tanggal)) errors.tanggal = 'Format tanggal harus dd-MM-yyyy';
 
   const nominalNum = parseCurrencyNumber(draft.nominal);
   if (!draft.nominal || nominalNum <= 0) errors.nominal = 'Nominal harus lebih dari 0';
@@ -156,11 +146,12 @@ export function useTransactionBatchController(
     setDrafts((prev) =>
       prev.map((d) => {
         if (d.id !== id) return d;
-        const updated = { ...d, [field]: value };
+        const nextValue = field === 'tanggal' ? normalizeDateInputValue(value) : value;
+        const updated = { ...d, [field]: nextValue };
 
         if (field === 'volume' || field === 'hargaSatuan') {
-          const vol = parseQuantityNumber(field === 'volume' ? value : d.volume);
-          const harga = parseCurrencyNumber(field === 'hargaSatuan' ? value : d.hargaSatuan);
+          const vol = parseQuantityNumber(field === 'volume' ? nextValue : d.volume);
+          const harga = parseCurrencyNumber(field === 'hargaSatuan' ? nextValue : d.hargaSatuan);
           if (vol > 0 && harga > 0) {
             updated.nominal = formatNumber(String(Math.round(vol * harga)));
           }
@@ -269,7 +260,7 @@ export function useTransactionBatchController(
         jenis: draft.jenis,
         kategori: draft.kategori,
         nominal: parseCurrencyNumber(draft.nominal),
-        tanggal: draft.tanggal,
+        tanggal: normalizeDateInputValue(draft.tanggal),
         keterangan: draft.keterangan,
         projectId: rabLink?.projectId ?? getProjectId(),
         rabCategoryId: rabLink?.rabCategoryId ?? null,

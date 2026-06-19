@@ -7,6 +7,7 @@ import { useTranslations, useMessages } from 'next-intl';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import type { ApiCalendarEvent } from '@/lib/api';
+import { normalizeDateInputValue } from '@/lib/formatters';
 import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
 import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_lib/eventSchema';
 
@@ -78,10 +79,11 @@ export default function KalenderController() {
   };
 
   const onSubmit = async (data: EventFormData) => {
+    const payload = { ...data, tanggal: normalizeDateInputValue(data.tanggal) };
     if (editingEventId) {
-      await updateEvent(editingEventId, data);
+      await updateEvent(editingEventId, payload);
     } else {
-      await addEvent(data);
+      await addEvent(payload);
     }
     setDialogOpen(false);
   };

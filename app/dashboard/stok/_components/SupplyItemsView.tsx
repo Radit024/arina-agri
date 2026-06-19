@@ -19,7 +19,7 @@ import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
-import { formatRupiah } from '@/lib/formatters';
+import { formatDateInputValue, formatRupiah, isValidDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
 
 interface SupplyItemsViewProps {
@@ -75,14 +75,14 @@ export default function SupplyItemsView({ items, loading, onAddItem, onAddMutati
   };
 
   const handleAddMutation = async () => {
-    if (!mutationItemId || !mutJumlah || Number(mutJumlah) <= 0) return;
+    if (!mutationItemId || !mutJumlah || Number(mutJumlah) <= 0 || !isValidDateInputValue(mutTanggal)) return;
     setMutSubmitting(true);
     const ok = await onAddMutation({
       itemId: mutationItemId,
       tipe: mutTipe,
       jumlah: Number(mutJumlah),
       hargaSatuan: mutHarga ? Number(mutHarga) : undefined,
-      tanggal: mutTanggal,
+      tanggal: normalizeDateInputValue(mutTanggal),
       keterangan: mutKeterangan.trim() || undefined,
     });
     if (ok) {
@@ -102,6 +102,7 @@ export default function SupplyItemsView({ items, loading, onAddItem, onAddMutati
   }
 
   const mutationItem = items.find((i) => i.id === mutationItemId) ?? null;
+  const mutTanggalInvalid = mutTanggal ? !isValidDateInputValue(mutTanggal) : true;
 
   return (
     <Box>
@@ -281,11 +282,13 @@ export default function SupplyItemsView({ items, loading, onAddItem, onAddMutati
           />
           <TextField
             label={t('supply.fields.tanggal')}
-            value={mutTanggal}
-            onChange={(e) => setMutTanggal(e.target.value)}
+            value={formatDateInputValue(mutTanggal)}
+            onChange={(e) => setMutTanggal(normalizeDateInputValue(e.target.value))}
             size="small"
             fullWidth
-            type="date"
+            error={mutTanggalInvalid}
+            helperText={mutTanggalInvalid ? 'Format tanggal harus dd-MM-yyyy' : 'Format: dd-MM-yyyy'}
+            placeholder="05-06-2026"
           />
           <TextField
             label={t('supply.fields.catatan')}
@@ -299,7 +302,7 @@ export default function SupplyItemsView({ items, loading, onAddItem, onAddMutati
           <Button
             variant="contained"
             onClick={handleAddMutation}
-            disabled={!mutJumlah || Number(mutJumlah) <= 0 || mutSubmitting}
+            disabled={!mutJumlah || Number(mutJumlah) <= 0 || mutTanggalInvalid || mutSubmitting}
             sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
           >
             {mutSubmitting ? 'Menyimpan...' : t('supply.addMutation')}

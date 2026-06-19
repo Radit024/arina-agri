@@ -175,7 +175,9 @@ export function useTransactionBatchController(
     });
   };
 
-  const expandDraft = (id: string) => setExpandedDraftId(id);
+  const expandDraft = (id: string) => {
+    setExpandedDraftId((current) => (current === id ? null : id));
+  };
 
   const addDraft = () => {
     const activeDraft = drafts.find((d) => d.id === expandedDraftId);

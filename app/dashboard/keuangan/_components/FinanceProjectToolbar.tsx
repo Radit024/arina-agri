@@ -65,7 +65,7 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             disabled
             sx={{ borderRadius: 8 }}
           >
-            Import Excel Nonaktif
+            Import Excel
           </Button>
 
           <Button
@@ -101,9 +101,6 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             {rab.importError}
           </Typography>
         )}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-          Import Excel sementara dinonaktifkan. Gunakan tambah item RAB manual untuk sementara.
-        </Typography>
         {financeExport.exportError && (
           <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
             {financeExport.exportError}

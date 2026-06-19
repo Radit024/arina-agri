@@ -173,12 +173,14 @@ export default function KeuanganView({
   bulanOptions,
   getBulanLabel,
   displayedTransactions,
+  financeAccess,
   financeTab,
   setFinanceTab,
   financeProject,
   rab,
   financeReports,
   financeExport,
+  handleOpenFinanceReportDialog,
   transactionBatch,
   transactionMaster,
   searchQuery,
@@ -212,6 +214,10 @@ export default function KeuanganView({
   const someSelected =
     selectedTxIds.length > 0 && !allVisibleSelected;
   const hasDistributionData = finalPieData.some((item) => item.id !== t('distribution.empty'));
+  const financeInputDisabled = !financeAccess.canInputFinance;
+  const ledgerEmptyMessage = financeAccess.hasSelectedProject
+    ? t('ledger.empty')
+    : 'Buat proyek terlebih dahulu untuk mulai mencatat transaksi.';
   const ledgerHeaderCellSx = {
     backgroundColor: 'background.paper',
     fontWeight: 800,
@@ -247,11 +253,12 @@ export default function KeuanganView({
       />
 
       <FinanceProjectToolbar
+        financeAccess={financeAccess}
         financeProject={financeProject}
         rab={rab}
         financeExport={financeExport}
         reportLoading={reportLoading}
-        onOpenPdfReport={() => setAiDialogOpen(true)}
+        onOpenPdfReport={handleOpenFinanceReportDialog}
       />
 
       <Tabs
@@ -486,7 +493,10 @@ export default function KeuanganView({
                     id="btn-catat-transaksi"
                     variant="contained"
                     startIcon={<AddCircleIcon />}
-                    onClick={transactionBatch.openForCreate}
+                    disabled={financeInputDisabled}
+                    onClick={() => {
+                      if (!financeInputDisabled) transactionBatch.openForCreate();
+                    }}
                     sx={{ display: { xs: 'none', md: 'inline-flex' }, borderRadius: 8, whiteSpace: 'nowrap' }}
                   >
                     {t('buttons.addTransaction')}
@@ -540,7 +550,7 @@ export default function KeuanganView({
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
                       <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                       <Typography variant="body2" color="text.secondary">
-                        {t('ledger.empty')}
+                        {ledgerEmptyMessage}
                       </Typography>
                     </Box>
                   ) : (
@@ -660,7 +670,10 @@ export default function KeuanganView({
                     data-guide-target="finance-add-transaction-mobile"
                     color="primary" 
                     aria-label="add" 
-                    onClick={transactionBatch.openForCreate}
+                    disabled={financeInputDisabled}
+                    onClick={() => {
+                      if (!financeInputDisabled) transactionBatch.openForCreate();
+                    }}
                     sx={{ position: 'fixed', bottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', md: 84 }, right: 24, zIndex: 1000 }}
                   >
                     <AddCircleIcon />
@@ -753,9 +766,18 @@ export default function KeuanganView({
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                             <Typography variant="body2" color="text.secondary">
-                              {t('ledger.empty')}
+                              {ledgerEmptyMessage}
                             </Typography>
-                            <Button data-guide-target="finance-add-transaction-empty" size="small" variant="outlined" onClick={transactionBatch.openForCreate} sx={{ mt: 1, borderRadius: 8 }}>
+                            <Button
+                              data-guide-target="finance-add-transaction-empty"
+                              size="small"
+                              variant="outlined"
+                              disabled={financeInputDisabled}
+                              onClick={() => {
+                                if (!financeInputDisabled) transactionBatch.openForCreate();
+                              }}
+                              sx={{ mt: 1, borderRadius: 8 }}
+                            >
                               {t('ledger.addFirst')}
                             </Button>
                           </Box>

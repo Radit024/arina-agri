@@ -16,19 +16,30 @@ export function useFinanceExportController({
   transactions,
   startMonth,
   endMonth,
+  canExport,
+  hasProjectData,
 }: {
   project: ApiFinanceProject | null;
   rabItems: RabItem[];
   transactions: FinanceTransactionForReport[];
   startMonth: string;
   endMonth: string;
+  canExport?: boolean;
+  hasProjectData?: boolean;
 }) {
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
   const handleExportFinanceWorkbook = async () => {
     if (!project) {
-      setExportError('Pilih proyek terlebih dahulu');
+      setExportError('Buat atau pilih proyek terlebih dahulu');
+      return;
+    }
+
+    const effectiveHasProjectData = hasProjectData ?? (rabItems.length > 0 || transactions.length > 0);
+    const effectiveCanExport = canExport ?? effectiveHasProjectData;
+    if (!effectiveCanExport || !effectiveHasProjectData) {
+      setExportError('Tambahkan transaksi atau RAB sebelum export laporan');
       return;
     }
 

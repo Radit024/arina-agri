@@ -86,24 +86,47 @@ export function useKeuanganController() {
   const rab = useRabController(financeProject.selectedProject);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
+  const projectScopedTransactions = useMemo(() => {
+    const selectedProjectId = financeProject.selectedProject?.id;
+    if (!selectedProjectId) return transactions;
+    return transactions.filter((tx) => tx.projectId === selectedProjectId);
+  }, [financeProject.selectedProject?.id, transactions]);
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
   });
+  const hasSelectedProject = Boolean(financeProject.selectedProject);
+  const hasProjectData = hasSelectedProject && (projectScopedTransactions.length > 0 || rab.items.length > 0);
+  const financeAccess = {
+    hasSelectedProject,
+    hasProjectData,
+    canInputFinance: hasSelectedProject,
+    canExportFinance: hasSelectedProject && hasProjectData,
+  };
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions: financeReports.reportTransactions,
     startMonth: financeReports.reportStartMonth,
     endMonth: financeReports.reportEndMonth,
+    canExport: financeAccess.canExportFinance,
+    hasProjectData: financeAccess.hasProjectData,
   });
-
-  const projectScopedTransactions = useMemo(() => {
-    const selectedProjectId = financeProject.selectedProject?.id;
-    if (!selectedProjectId) return transactions;
-    return transactions.filter((tx) => tx.projectId === selectedProjectId);
-  }, [financeProject.selectedProject?.id, transactions]);
+  const guardedTransactionBatch = {
+    ...transactionBatch,
+    openForCreate: () => {
+      if (!financeAccess.canInputFinance) {
+        setSnackbar({
+          open: true,
+          message: 'Buat atau pilih proyek terlebih dahulu',
+          severity: 'error',
+        });
+        return;
+      }
+      transactionBatch.openForCreate();
+    },
+  };
 
   useEffect(() => {
     const results = transactionBatch.submitResults;
@@ -196,8 +219,29 @@ export function useKeuanganController() {
     setAiReportQuota({ month: currentMonth, used: quotaThisMonth + 1 });
   };
 
+  const getFinanceExportBlockedMessage = () => {
+    if (!financeAccess.hasSelectedProject) return 'Buat atau pilih proyek terlebih dahulu';
+    if (!financeAccess.hasProjectData) return 'Tambahkan transaksi atau RAB sebelum export laporan';
+    return null;
+  };
+
+  const handleOpenFinanceReportDialog = () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+    setAiDialogOpen(true);
+  };
+
   // ─── Generate PDF (manual, tanpa AI) ──────────────────────────
   const handleGeneratePdfManual = async () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+
     setReportLoading(true);
     setReportError(null);
     try {
@@ -219,6 +263,12 @@ export function useKeuanganController() {
 
   // ─── Generate PDF (dengan AI Saran) ────────────────────────────
   const handleGeneratePdfAI = async () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+
     if (aiQuotaRemaining <= 0) return;
     setReportLoading(true);
     setReportError(null);
@@ -439,6 +489,7 @@ export function useKeuanganController() {
     handleBepHppInputChange,
     getBepHppInputDisplayValue,
     aiQuotaRemaining,
+    handleOpenFinanceReportDialog,
     handleGeneratePdfManual,
     handleGeneratePdfAI,
     monthFilteredTransactions,
@@ -455,11 +506,12 @@ export function useKeuanganController() {
     bulanOptions,
     getBulanLabel,
     displayedTransactions,
+    financeAccess,
     financeProject,
     rab,
     financeReports,
     financeExport,
-    transactionBatch,
+    transactionBatch: guardedTransactionBatch,
     transactionMaster,
     searchQuery,
     setSearchQuery,

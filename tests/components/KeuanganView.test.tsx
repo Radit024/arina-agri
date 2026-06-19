@@ -31,6 +31,18 @@ const transaction: ApiTransaction = {
   updatedAt: '2026-06-05T00:00:00.000Z',
 };
 
+const financeProject = {
+  id: 'project-padi-1',
+  name: 'Padi 1 Ha',
+  commodity: 'Padi',
+  landArea: 1,
+  landAreaUnit: 'Ha',
+  seasonLabel: 'Musim Tanam 2026',
+  startDate: '2026-06-01',
+  endDate: '2026-09-30',
+  status: 'active' as const,
+};
+
 const labels: Record<string, string> = {
   title: 'Manajemen Keuangan',
   subtitle: 'Pantau arus kas kebun Anda',
@@ -210,6 +222,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     handleBepHppInputChange: vi.fn(),
     getBepHppInputDisplayValue: (value) => (value === 0 ? '' : String(value)),
     aiQuotaRemaining: 3,
+    handleOpenFinanceReportDialog: vi.fn(),
     handleGeneratePdfManual: vi.fn(),
     handleGeneratePdfAI: vi.fn(),
     transactionBatch: makeTransactionBatch() as KeuanganViewProps['transactionBatch'],
@@ -228,6 +241,12 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bulanOptions: ['2026-06'],
     getBulanLabel: () => 'Juni 2026',
     displayedTransactions: [transaction],
+    financeAccess: {
+      hasSelectedProject: true,
+      hasProjectData: true,
+      canInputFinance: true,
+      canExportFinance: true,
+    },
     financeTab: 'buku-besar',
     setFinanceTab: vi.fn(),
     financeProject: {
@@ -437,5 +456,94 @@ describe('KeuanganView', () => {
 
     expect(getComputedStyle(generateAiButton).backgroundColor).toBe('rgb(82, 183, 136)');
     expect(getComputedStyle(generateAiButton).color).toBe('rgb(255, 255, 255)');
+  });
+
+  it('menonaktifkan input dan export ketika belum ada proyek', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      displayedTransactions: [],
+      financeAccess: {
+        hasSelectedProject: false,
+        hasProjectData: false,
+        canInputFinance: false,
+        canExportFinance: false,
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    expect(screen.getByRole('button', { name: 'Catat Transaksi' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
+    expect(screen.getAllByText('Buat proyek terlebih dahulu untuk mulai mencatat transaksi.').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Tambah transaksi pertama' })).toBeDisabled();
+    expect(openForCreate).not.toHaveBeenCalled();
+  });
+
+  it('mengaktifkan input tetapi menonaktifkan export ketika proyek belum punya data', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      displayedTransactions: [],
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: false,
+        canInputFinance: true,
+        canExportFinance: false,
+      },
+      financeProject: {
+        projects: [financeProject],
+        activeProjects: [financeProject],
+        loading: false,
+        error: null,
+        backendOnline: true,
+        reload: vi.fn(),
+        createProject: vi.fn(),
+        updateProject: vi.fn(),
+        deleteProject: vi.fn(),
+        selectedProjectId: financeProject.id,
+        setSelectedProjectId: vi.fn(),
+        selectedProject: financeProject,
+        projectDialogOpen: false,
+        setProjectDialogOpen: vi.fn(),
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const addButton = screen.getByRole('button', { name: 'Catat Transaksi' });
+    expect(addButton).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
+
+    fireEvent.click(addButton);
+    expect(openForCreate).toHaveBeenCalled();
+  });
+
+  it('mengaktifkan export ketika proyek sudah punya transaksi atau RAB', () => {
+    renderView({
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: true,
+        canInputFinance: true,
+        canExportFinance: true,
+      },
+      financeProject: {
+        projects: [financeProject],
+        activeProjects: [financeProject],
+        loading: false,
+        error: null,
+        backendOnline: true,
+        reload: vi.fn(),
+        createProject: vi.fn(),
+        updateProject: vi.fn(),
+        deleteProject: vi.fn(),
+        selectedProjectId: financeProject.id,
+        setSelectedProjectId: vi.fn(),
+        selectedProject: financeProject,
+        projectDialogOpen: false,
+        setProjectDialogOpen: vi.fn(),
+      },
+    });
+
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeEnabled();
   });
 });

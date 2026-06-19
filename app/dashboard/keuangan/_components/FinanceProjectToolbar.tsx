@@ -16,11 +16,11 @@ import Typography from '@mui/material/Typography';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import FinanceProjectDialog from './FinanceProjectDialog';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
+type Props = Pick<UseKeuanganControllerResult, 'financeAccess' | 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
   onOpenPdfReport: () => void;
 };
 
-export default function FinanceProjectToolbar({ financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
+export default function FinanceProjectToolbar({ financeAccess, financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
   return (
     <>
       <Box
@@ -72,7 +72,7 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             data-guide-target="finance-export"
             variant="contained"
             startIcon={<DownloadIcon />}
-            disabled={!financeProject.selectedProject || financeExport.exportLoading}
+            disabled={!financeAccess.canExportFinance || financeExport.exportLoading}
             onClick={financeExport.handleExportFinanceWorkbook}
             sx={{ borderRadius: 8 }}
           >
@@ -83,7 +83,7 @@ export default function FinanceProjectToolbar({ financeProject, rab, financeExpo
             data-guide-target="finance-export-pdf"
             variant="outlined"
             startIcon={<PictureAsPdfIcon />}
-            disabled={reportLoading}
+            disabled={!financeAccess.canExportFinance || reportLoading}
             onClick={onOpenPdfReport}
             sx={{ borderRadius: 8 }}
           >

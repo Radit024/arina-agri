@@ -90,6 +90,16 @@ function hasLedgerInputDetails(tx: LedgerTransaction) {
   return tx.volume != null || Boolean(tx.satuan) || tx.hargaSatuan != null;
 }
 
+function formatLedgerInputSummary(tx: LedgerTransaction) {
+  const quantity = formatLedgerQuantity(tx.volume);
+  const quantityWithUnit = quantity === '-' && !tx.satuan
+    ? ''
+    : `${quantity}${tx.satuan ? ` ${tx.satuan}` : ''}`;
+  const unitPrice = tx.hargaSatuan == null ? '' : formatRupiah(tx.hargaSatuan);
+  const parts = [quantityWithUnit, unitPrice].filter(Boolean);
+  return parts.length > 0 ? parts.join(' x ') : '-';
+}
+
 function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
   const palette = theme.palette[intent];
   const isDarkMode = theme.palette.mode === 'dark';
@@ -680,12 +690,12 @@ export default function KeuanganView({
                   </Fab>
               </Box>
 
-              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflow: 'auto' }}>
-                <Table size="medium" stickyHeader sx={{ minWidth: 1080 }}>
+              <TableContainer sx={{ display: { xs: 'none', md: 'block' }, maxHeight: { xs: 500, lg: 700 }, overflowX: 'hidden', overflowY: 'auto' }}>
+                <Table size="medium" stickyHeader sx={{ width: '100%', tableLayout: 'fixed' }}>
                   <TableHead>
                     <TableRow>
                       {/* Select all checkbox */}
-                      <TableCell padding="checkbox" sx={{ backgroundColor: 'background.paper' }}>
+                      <TableCell padding="checkbox" sx={{ backgroundColor: 'background.paper', width: 44 }}>
                         <Checkbox
                           size="small"
                           checked={allVisibleSelected}
@@ -702,7 +712,7 @@ export default function KeuanganView({
                           disabled={displayedTransactions.length === 0}
                         />
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 110 }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '12%' }}>
                         <TableSortLabel
                           active={sortColumn === 'tanggal'}
                           direction={sortColumn === 'tanggal' ? sortDir : 'asc'}
@@ -712,7 +722,7 @@ export default function KeuanganView({
                           {t('ledger.columns.date')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 120 }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '10%' }}>
                         <TableSortLabel
                           active={sortColumn === 'jenis'}
                           direction={sortColumn === 'jenis' ? sortDir : 'asc'}
@@ -722,7 +732,7 @@ export default function KeuanganView({
                           {t('ledger.columns.type')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 150 }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '16%' }}>
                         <TableSortLabel
                           active={sortColumn === 'kategori'}
                           direction={sortColumn === 'kategori' ? sortDir : 'asc'}
@@ -732,16 +742,10 @@ export default function KeuanganView({
                           {t('ledger.columns.category')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 90 }}>
-                        {t('ledger.columns.quantity')}
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
+                        Input
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 90 }}>
-                        {t('ledger.columns.unit')}
-                      </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 145 }}>
-                        {t('ledger.columns.unitPrice')}
-                      </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, minWidth: 140 }}>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '14%' }}>
                         <TableSortLabel
                           active={sortColumn === 'nominal'}
                           direction={sortColumn === 'nominal' ? sortDir : 'asc'}
@@ -751,10 +755,10 @@ export default function KeuanganView({
                           {t('ledger.columns.value')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, minWidth: 220 }}>
-                        {t('ledger.columns.note')}
+                      <TableCell sx={{ ...ledgerHeaderCellSx }}>
+                        Detail / Catatan
                       </TableCell>
-                      <TableCell align="right" sx={ledgerHeaderCellSx}>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: 84 }}>
                         {t('ledger.columns.action')}
                       </TableCell>
                     </TableRow>
@@ -762,7 +766,7 @@ export default function KeuanganView({
                   <TableBody>
                     {displayedTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} align="center" sx={{ py: 8 }}>
+                        <TableCell colSpan={8} align="center" sx={{ py: 8 }}>
                           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                             <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                             <Typography variant="body2" color="text.secondary">
@@ -812,19 +816,15 @@ export default function KeuanganView({
                                 }}
                               />
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 150 }}>
-                              {tx.kategori}
-                            </TableCell>
-                            <TableCell align="right" sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                              {formatLedgerQuantity(tx.volume)}
-                            </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 120 }}>
+                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 0 }}>
                               <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-                                {tx.satuan || '-'}
+                                {tx.kategori}
                               </Typography>
                             </TableCell>
-                            <TableCell align="right" sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                              {tx.hargaSatuan == null ? '-' : formatRupiah(tx.hargaSatuan)}
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
+                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
+                                {formatLedgerInputSummary(tx)}
+                              </Typography>
                             </TableCell>
                             <TableCell
                               align="right"
@@ -837,7 +837,7 @@ export default function KeuanganView({
                             >
                               {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', maxWidth: 240 }}>
+                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
                               <Typography variant="caption" noWrap sx={{ display: 'block' }}>
                                 {tx.keterangan || '-'}
                               </Typography>

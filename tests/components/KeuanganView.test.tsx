@@ -378,6 +378,7 @@ describe('KeuanganView', () => {
   it('menampilkan rincian input transaksi pada ledger', () => {
     renderView();
 
+    expect(screen.getByRole('columnheader', { name: 'Input' })).toBeInTheDocument();
     expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);

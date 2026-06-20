@@ -980,7 +980,7 @@
   },
   "Auth": {
     "login": {
-      "title": "Selamat Datang Kembali! 👋",
+      "title": "Selamat Datang Kembali!",
       "subtitle": "Silakan masuk ke akun Anda untuk melanjutkan.",
       "email": "Alamat Email",
       "password": "Kata Sandi",

@@ -87,7 +87,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
             </Box>
             <Button
               variant="contained"
-              color="success"
+              color="primary"
               startIcon={<AddCircleIcon />}
               onClick={rab.openRabItemDialog}
               sx={{
@@ -97,7 +97,8 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
                 boxShadow: 'none',
                 whiteSpace: 'nowrap',
                 width: { xs: '100%', sm: 'auto' },
-                '&:hover': { boxShadow: 'none' },
+                bgcolor: 'primary.main',
+                '&:hover': { bgcolor: 'primary.dark', boxShadow: 'none' },
               }}
             >
               Tambah Item RAB

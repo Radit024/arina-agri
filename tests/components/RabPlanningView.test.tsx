@@ -114,6 +114,8 @@ describe('RabPlanningView', () => {
     const addButton = screen.getByRole('button', { name: /Tambah Item RAB/i });
     expect(addButton).toBeInTheDocument();
     expect(addButton).toHaveClass('MuiButton-contained');
+    expect(addButton).toHaveClass('MuiButton-colorPrimary');
+    expect(addButton).not.toHaveClass('MuiButton-colorSuccess');
     fireEvent.click(addButton);
     expect(openRabItemDialog).toHaveBeenCalledTimes(1);
     closedView.unmount();

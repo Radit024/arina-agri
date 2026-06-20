@@ -248,7 +248,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bfaBepRupiah: null,
     bfaProyeksiLaba: null,
     bfaLayak: false,
-    finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }],
+    finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0', percentage: 0 }],
     finalPieColors: ['#e2e8f0'],
     bulanOptions: ['2026-06'],
     getBulanLabel: () => 'Juni 2026',
@@ -494,6 +494,29 @@ describe('KeuanganView', () => {
       expect(chart).toHaveAttribute('data-has-on-highlight-change', 'true');
       expect(chart).toHaveAttribute('data-series-id', 'expense-distribution');
     }
+  });
+
+  it('meluruskan panel distribusi dengan buku besar dan menampilkan persentase pengeluaran', () => {
+    renderView({
+      isMobile: false,
+      finalPieData: [
+        { id: 'Pupuk', value: 75_000, label: 'Pupuk', color: '#16a34a', percentage: 75 },
+        { id: 'Pestisida', value: 25_000, label: 'Pestisida', color: '#dc2626', percentage: 25 },
+      ],
+      finalPieColors: ['#16a34a', '#dc2626'],
+    });
+
+    const ledgerCard = screen.getByTestId('finance-ledger-card');
+    const distributionCard = screen.getByTestId('finance-distribution-card');
+    expect(ledgerCard).toHaveAttribute('data-finance-card-align', 'ledger');
+    expect(distributionCard).toHaveAttribute('data-finance-card-align', 'ledger');
+
+    const distribution = within(distributionCard);
+    expect(distribution.getByText('Pupuk')).toBeInTheDocument();
+    expect(distribution.getByText(/75,0%/)).toBeInTheDocument();
+    expect(distribution.getByText(/Rp\s*75\.000/)).toBeInTheDocument();
+    expect(distribution.getByText('Pestisida')).toBeInTheDocument();
+    expect(distribution.getByText(/25,0%/)).toBeInTheDocument();
   });
 
   it('menampilkan 4 input field BFA ketika dialog dibuka', () => {

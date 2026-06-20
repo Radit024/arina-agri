@@ -83,9 +83,19 @@ const ledgerQuantityFormatter = new Intl.NumberFormat('id-ID', {
   maximumFractionDigits: 2,
 });
 
+const distributionPercentageFormatter = new Intl.NumberFormat('id-ID', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
 function formatLedgerQuantity(value: number | null | undefined) {
   if (value == null || !Number.isFinite(value)) return '-';
   return ledgerQuantityFormatter.format(value);
+}
+
+function formatDistributionPercentage(value: number) {
+  if (!Number.isFinite(value)) return '0,0%';
+  return `${distributionPercentageFormatter.format(value)}%`;
 }
 
 function hasLedgerInputDetails(tx: LedgerTransaction) {
@@ -228,6 +238,62 @@ export default function KeuanganView({
   const someSelected =
     selectedTxIds.length > 0 && !allVisibleSelected;
   const hasDistributionData = finalPieData.some((item) => item.id !== t('distribution.empty'));
+  const renderDistributionBreakdown = (maxHeight: number) => {
+    if (!hasDistributionData) return null;
+
+    return (
+      <Box
+        sx={{
+          width: '100%',
+          maxHeight,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          pr: 0.5,
+        }}
+      >
+        {finalPieData.map((item) => (
+          <Box
+            key={item.id}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '10px minmax(0, 1fr) auto',
+              alignItems: 'center',
+              columnGap: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              px: 1,
+              py: 0.75,
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Box
+              aria-hidden
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                bgcolor: item.color,
+              }}
+            />
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 800, color: 'text.primary' }}>
+                {item.label}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatRupiah(item.value)}
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.primary' }}>
+              {formatDistributionPercentage(item.percentage)}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+    );
+  };
   const financeInputDisabled = !financeAccess.canInputFinance;
   const ledgerEmptyMessage = financeAccess.hasSelectedProject
     ? t('ledger.empty')
@@ -393,7 +459,12 @@ export default function KeuanganView({
         <Box sx={{ flex: 1, display: 'flex', gap: 2, alignItems: 'stretch', minHeight: 0 }}>
         {/* ─── Buku Besar Transaksi ─── */}
         <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
-          <Card data-guide-target="finance-ledger" sx={{ height: '100%', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column' }}>
+          <Card
+            data-guide-target="finance-ledger"
+            data-testid="finance-ledger-card"
+            data-finance-card-align="ledger"
+            sx={{ height: '100%', minHeight: 0, width: '100%', display: 'flex', flexDirection: 'column' }}
+          >
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -921,6 +992,8 @@ export default function KeuanganView({
         </Box>
 
           <Card
+            data-testid="finance-distribution-card"
+            data-finance-card-align="ledger"
             sx={{
               width: { md: 300, lg: 330 },
               flexShrink: 0,
@@ -932,7 +1005,7 @@ export default function KeuanganView({
           >
             <CardHeader
               title={
-                <Typography variant="subtitle1" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+                <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
                   {t('distribution.title')}
                 </Typography>
               }
@@ -946,34 +1019,37 @@ export default function KeuanganView({
                   <CloseIcon fontSize="small" />
                 </IconButton>
               }
-              sx={{ pb: 0 }}
+              sx={{ pb: 1 }}
             />
-            <CardContent sx={{ pt: 0, flex: 1, minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <PieChart
-                series={[
-                  {
-                    id: EXPENSE_DISTRIBUTION_SERIES_ID,
-                    data: finalPieData,
-                    innerRadius: 48,
-                    outerRadius: 88,
-                    paddingAngle: hasDistributionData ? 4 : 0,
-                    cornerRadius: 5,
-                    highlightScope: { fade: 'global', highlight: 'item' },
-                    faded: { innerRadius: 40, additionalRadius: -10, color: 'gray' },
-                  },
-                ]}
-                colors={finalPieColors}
-                highlightedItem={distributionHighlightedItem}
-                onHighlightChange={(item) => setDistributionHighlightedItem(item)}
-                width={300}
-                height={240}
-                slotProps={{
-                  legend: {
-                    direction: 'horizontal',
-                    position: { vertical: 'bottom', horizontal: 'center' },
-                  },
-                }}
-              />
+            <CardContent sx={{ pt: 0, px: 2, pb: 2, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1.5 }}>
+              <Box sx={{ flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <PieChart
+                  series={[
+                    {
+                      id: EXPENSE_DISTRIBUTION_SERIES_ID,
+                      data: finalPieData,
+                      innerRadius: 48,
+                      outerRadius: 84,
+                      paddingAngle: hasDistributionData ? 4 : 0,
+                      cornerRadius: 5,
+                      highlightScope: { fade: 'global', highlight: 'item' },
+                      faded: { innerRadius: 40, additionalRadius: -10, color: 'gray' },
+                    },
+                  ]}
+                  colors={finalPieColors}
+                  highlightedItem={distributionHighlightedItem}
+                  onHighlightChange={(item) => setDistributionHighlightedItem(item)}
+                  width={300}
+                  height={210}
+                  slotProps={{
+                    legend: {
+                      direction: 'horizontal',
+                      position: { vertical: 'bottom', horizontal: 'center' },
+                    },
+                  }}
+                />
+              </Box>
+              {renderDistributionBreakdown(180)}
             </CardContent>
           </Card>
         </Box>
@@ -995,7 +1071,7 @@ export default function KeuanganView({
               </IconButton>
             </Box>
           </DialogTitle>
-          <DialogContent sx={{ pt: '8px !important', display: 'flex', justifyContent: 'center' }}>
+          <DialogContent sx={{ pt: '8px !important', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <PieChart
               series={[
                 {
@@ -1021,6 +1097,9 @@ export default function KeuanganView({
                 },
               }}
             />
+            <Box sx={{ width: '100%', maxWidth: 360 }}>
+              {renderDistributionBreakdown(240)}
+            </Box>
           </DialogContent>
         </Dialog>
       </Box>

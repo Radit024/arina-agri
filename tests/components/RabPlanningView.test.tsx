@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -48,6 +48,8 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
     error: null,
     backendOnline: true,
     createCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    deleteCategory: vi.fn(),
     createItem: vi.fn(),
     updateItem: vi.fn(),
     deleteItem: vi.fn(),
@@ -74,6 +76,15 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
     },
     rabItemPlannedTotal: 200000,
     rabItemSubmitting: false,
+    rabCategoryOptions: ['Saprodi', 'Tenaga Kerja', 'Transport Panen'],
+    rabCategoryDialogOpen: false,
+    setRabCategoryDialogOpen: vi.fn(),
+    rabCategoryDialogItems: [],
+    rabCategoryDeleteError: null,
+    setRabCategoryDeleteError: vi.fn(),
+    addRabCategory: vi.fn(),
+    renameRabCategory: vi.fn(),
+    deleteRabCategory: vi.fn(),
     updateRabItemDraftField: vi.fn(),
     openRabItemDialog: vi.fn(),
     closeRabItemDialog: vi.fn(),
@@ -124,7 +135,8 @@ describe('RabPlanningView', () => {
 
     const dialog = screen.getByRole('dialog', { name: /Tambah Item RAB/i });
     expect(within(dialog).getByRole('combobox', { name: /Jenis RAB/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('textbox', { name: /Kategori RAB/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('combobox', { name: /Kategori RAB/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /Kelola Kategori RAB/i })).toBeInTheDocument();
     expect(within(dialog).getByRole('textbox', { name: /Nama Item/i })).toBeInTheDocument();
     expect(within(dialog).getByRole('spinbutton', { name: /Volume/i })).toBeInTheDocument();
     expect(within(dialog).getByRole('textbox', { name: /Satuan/i })).toBeInTheDocument();
@@ -134,14 +146,37 @@ describe('RabPlanningView', () => {
     fireEvent.change(within(dialog).getByRole('textbox', { name: /Alias \/ Kata Kunci/i }), {
       target: { value: 'urea, pupuk subsidi' },
     });
+    fireEvent.click(within(dialog).getByRole('button', { name: /Kelola Kategori RAB/i }));
 
     expect(within(dialog).getByText('Total Rencana')).toBeInTheDocument();
     expect(within(dialog).getByText(/Rp\s*200\.000/)).toBeInTheDocument();
     expect(updateRabItemDraftField).toHaveBeenCalledWith('aliases', 'urea, pupuk subsidi');
+    expect(rab.setRabCategoryDialogOpen).toHaveBeenCalledWith(true);
 
     fireEvent.submit(within(dialog).getByTestId('rab-item-form'));
 
     expect(submitRabItemDraft).toHaveBeenCalledTimes(1);
     expect(rab.closeRabItemDialog).not.toHaveBeenCalled();
+  });
+
+  it('opens a custom RAB category manager from the item form', async () => {
+    const addRabCategory = vi.fn(async () => null);
+    renderView({
+      rabCategoryDialogOpen: true,
+      rabCategoryDialogItems: [{ id: 'cat-saprodi', nama: 'Saprodi' }],
+      addRabCategory,
+    });
+
+    const manager = screen.getByRole('dialog', { name: /Kelola Kategori RAB Pengeluaran/i });
+    expect(within(manager).getByText('Saprodi')).toBeInTheDocument();
+
+    fireEvent.change(within(manager).getByPlaceholderText('Nama baru...'), {
+      target: { value: 'Transport Panen' },
+    });
+    fireEvent.click(within(manager).getByRole('button', { name: /Tambah/i }));
+
+    await waitFor(() => {
+      expect(addRabCategory).toHaveBeenCalledWith('Transport Panen');
+    });
   });
 });

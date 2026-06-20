@@ -20,6 +20,7 @@ import Typography from '@mui/material/Typography';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import { formatMonthYear, formatRupiah } from '@/lib/formatters';
+import MasterDataDialog from '@/app/dashboard/stok/_components/MasterDataDialog';
 import RabItemForm from './RabItemForm';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'>;
@@ -169,14 +170,28 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
           )}
           <RabItemForm
             draft={rab.rabItemDraft}
+            categoryOptions={rab.rabCategoryOptions}
             plannedTotal={rab.rabItemPlannedTotal}
             submitting={rab.rabItemSubmitting}
             onFieldChange={rab.updateRabItemDraftField}
+            onOpenCategoryDialog={() => rab.setRabCategoryDialogOpen(true)}
             onCancel={rab.closeRabItemDialog}
             onSubmit={rab.submitRabItemDraft}
           />
         </DialogContent>
       </Dialog>
+
+      <MasterDataDialog
+        open={rab.rabCategoryDialogOpen}
+        onClose={() => rab.setRabCategoryDialogOpen(false)}
+        title={`Kelola Kategori RAB ${rab.rabItemDraft.type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`}
+        items={rab.rabCategoryDialogItems}
+        onAdd={rab.addRabCategory}
+        onRename={rab.renameRabCategory}
+        onDelete={rab.deleteRabCategory}
+        deleteError={rab.rabCategoryDeleteError}
+        onClearDeleteError={() => rab.setRabCategoryDeleteError(null)}
+      />
     </>
   );
 }

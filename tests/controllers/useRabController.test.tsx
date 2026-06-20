@@ -22,10 +22,14 @@ const project: ApiFinanceProject = {
 };
 
 const createCategory = vi.fn();
+const updateCategory = vi.fn();
+const deleteCategory = vi.fn();
 const createItem = vi.fn();
 
 beforeEach(() => {
   createCategory.mockReset();
+  updateCategory.mockReset();
+  deleteCategory.mockReset();
   createItem.mockReset();
   createCategory.mockResolvedValue({
     id: 'cat-saprodi',
@@ -44,6 +48,8 @@ beforeEach(() => {
     error: null,
     backendOnline: true,
     createCategory,
+    updateCategory,
+    deleteCategory,
     createItem,
     updateItem: vi.fn(),
     deleteItem: vi.fn(),
@@ -85,5 +91,72 @@ describe('useRabController', () => {
         aliases: ['urea', 'pupuk nitrogen'],
       }),
     );
+  });
+
+  it('provides selectable preset and custom RAB category options per type', () => {
+    vi.mocked(useRabItems).mockReturnValue({
+      categories: [
+        {
+          id: 'cat-transport',
+          projectId: project.id,
+          name: 'Transport Panen',
+          type: 'expense',
+          sortOrder: 2,
+        },
+      ],
+      items: [],
+      imports: [],
+      loading: false,
+      error: null,
+      backendOnline: true,
+      createCategory,
+      updateCategory,
+      deleteCategory,
+      createItem,
+      updateItem: vi.fn(),
+      deleteItem: vi.fn(),
+      replaceRab: vi.fn(),
+      reload: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useRabController(project));
+
+    expect(result.current.rabCategoryOptions).toEqual(
+      expect.arrayContaining(['Saprodi', 'Tenaga Kerja', 'Transport Panen']),
+    );
+
+    act(() => {
+      result.current.updateRabItemDraftField('type', 'income');
+    });
+
+    expect(result.current.rabItemDraft.categoryName).toBe('Penjualan Hasil Panen');
+    expect(result.current.rabCategoryOptions).toEqual(
+      expect.arrayContaining(['Penjualan Hasil Panen', 'Jasa', 'Lainnya']),
+    );
+    expect(result.current.rabCategoryOptions).not.toContain('Transport Panen');
+  });
+
+  it('adds a custom category for the current RAB type and selects it', async () => {
+    createCategory.mockResolvedValue({
+      id: 'cat-transport',
+      projectId: project.id,
+      name: 'Transport Panen',
+      type: 'expense',
+      sortOrder: 1,
+    });
+
+    const { result } = renderHook(() => useRabController(project));
+
+    await act(async () => {
+      await result.current.addRabCategory('Transport Panen');
+    });
+
+    expect(createCategory).toHaveBeenCalledWith({
+      projectId: project.id,
+      name: 'Transport Panen',
+      type: 'expense',
+      sortOrder: 1,
+    });
+    expect(result.current.rabItemDraft.categoryName).toBe('Transport Panen');
   });
 });

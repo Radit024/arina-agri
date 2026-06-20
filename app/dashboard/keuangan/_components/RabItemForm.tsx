@@ -3,12 +3,18 @@
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SaveIcon from '@mui/icons-material/Save';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 import type {
   RabItemFormDraft,
@@ -18,21 +24,28 @@ import { formatRupiah } from '@/lib/formatters';
 
 interface Props {
   draft: RabItemFormDraft;
+  categoryOptions: string[];
   plannedTotal: number;
   submitting: boolean;
   onFieldChange: (field: RabItemFormField, value: string) => void;
+  onOpenCategoryDialog: () => void;
   onCancel: () => void;
   onSubmit: () => void;
 }
 
 export default function RabItemForm({
   draft,
+  categoryOptions,
   plannedTotal,
   submitting,
   onFieldChange,
+  onOpenCategoryDialog,
   onCancel,
   onSubmit,
 }: Props) {
+  const categoryLabelId = 'rab-item-category-label';
+  const categorySelectId = 'rab-item-category';
+
   return (
     <Box
       component="form"
@@ -59,16 +72,35 @@ export default function RabItemForm({
           </TextField>
         </Grid>
         <Grid size={{ xs: 12, sm: 7 }}>
-          <TextField
-            name="categoryName"
-            label="Kategori RAB"
-            value={draft.categoryName}
-            onChange={(event) => onFieldChange('categoryName', event.target.value)}
-            fullWidth
-            size="small"
-            required
-            placeholder="Contoh: Saprodi, Tenaga Kerja, Penjualan"
-          />
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+            <FormControl fullWidth size="small" required>
+              <InputLabel id={categoryLabelId}>Kategori RAB</InputLabel>
+              <Select
+                id={categorySelectId}
+                labelId={categoryLabelId}
+                name="categoryName"
+                label="Kategori RAB"
+                value={draft.categoryName}
+                onChange={(event) => onFieldChange('categoryName', event.target.value)}
+              >
+                {categoryOptions.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>Pilih kategori yang tersedia atau kelola kategori custom.</FormHelperText>
+            </FormControl>
+            <IconButton
+              size="small"
+              onClick={onOpenCategoryDialog}
+              title="Kelola Kategori RAB"
+              aria-label="Kelola Kategori RAB"
+              sx={{ mt: 0.5, flexShrink: 0 }}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </Grid>
       </Grid>
 

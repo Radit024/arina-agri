@@ -7,10 +7,8 @@ import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -18,37 +16,15 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import type { FormEvent } from 'react';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import { formatMonthYear, formatRupiah } from '@/lib/formatters';
+import RabItemForm from './RabItemForm';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'>;
 
 export default function RabPlanningView({ financeProject, rab }: Props) {
-  const submitRabItem = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const volume = Number(formData.get('volume') || 0);
-    const unitPrice = Number(formData.get('unitPrice') || 0);
-    try {
-      await rab.addRabItem({
-        categoryName: String(formData.get('categoryName') || ''),
-        type: String(formData.get('type') || 'expense') === 'income' ? 'income' : 'expense',
-        name: String(formData.get('name') || ''),
-        volume,
-        unit: String(formData.get('unit') || ''),
-        unitPrice,
-        plannedCashMonth: String(formData.get('plannedCashMonth') || '') || undefined,
-      });
-      rab.setRabItemDialogOpen(false);
-    } catch {
-      // Error message is stored in the RAB controller for the view to render.
-    }
-  };
-
   if (!financeProject.selectedProject) {
     return (
       <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -93,7 +69,16 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
 
       <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <CardContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              mb: 2,
+            }}
+          >
             <Box>
               <Typography variant="h6" sx={{ fontWeight: 800 }}>RAB Proyek</Typography>
               <Typography variant="body2" color="text.secondary">
@@ -102,14 +87,20 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
             </Box>
             <Button
               variant="contained"
+              color="success"
               startIcon={<AddCircleIcon />}
-              onClick={() => {
-                rab.setRabItemError(null);
-                rab.setRabItemDialogOpen(true);
+              onClick={rab.openRabItemDialog}
+              sx={{
+                borderRadius: 8,
+                textTransform: 'none',
+                fontWeight: 800,
+                boxShadow: 'none',
+                whiteSpace: 'nowrap',
+                width: { xs: '100%', sm: 'auto' },
+                '&:hover': { boxShadow: 'none' },
               }}
-              sx={{ borderRadius: 8 }}
             >
-              Tambah Item
+              Tambah Item RAB
             </Button>
           </Box>
 
@@ -154,31 +145,36 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         </CardContent>
       </Card>
 
-      <Dialog open={rab.rabItemDialogOpen} onClose={() => rab.setRabItemDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Tambah Item RAB</DialogTitle>
-        <Box component="form" onSubmit={submitRabItem}>
-          <DialogContent sx={{ display: 'grid', gap: 2 }}>
-            {rab.rabItemError && (
-              <Alert severity="error" onClose={() => rab.setRabItemError(null)}>
-                {rab.rabItemError}
-              </Alert>
-            )}
-            <TextField name="categoryName" label="Kategori" defaultValue="Saprodi" required />
-            <TextField name="type" label="Jenis" select defaultValue="expense">
-              <MenuItem value="expense">Pengeluaran</MenuItem>
-              <MenuItem value="income">Pendapatan</MenuItem>
-            </TextField>
-            <TextField name="name" label="Nama Item" required />
-            <TextField name="volume" label="Volume" type="number" defaultValue={1} required />
-            <TextField name="unit" label="Satuan" defaultValue="Unit" required />
-            <TextField name="unitPrice" label="Harga Satuan" type="number" defaultValue={0} required />
-            <TextField name="plannedCashMonth" label="Bulan Kas" placeholder="2026-08" />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => rab.setRabItemDialogOpen(false)}>Batal</Button>
-            <Button type="submit" variant="contained">Simpan</Button>
-          </DialogActions>
-        </Box>
+      <Dialog
+        open={rab.rabItemDialogOpen}
+        onClose={rab.closeRabItemDialog}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: 4 } } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography component="span" variant="h6" sx={{ display: 'block', fontFamily: 'var(--font-sora)', fontWeight: 800, lineHeight: 1.2 }}>
+            Tambah Item RAB
+          </Typography>
+          <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            Lengkapi rencana supaya transaksi Buku Besar lebih mudah dicocokkan.
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pt: '12px !important' }}>
+          {rab.rabItemError && (
+            <Alert severity="error" onClose={() => rab.setRabItemError(null)} sx={{ mb: 2, borderRadius: 2 }}>
+              {rab.rabItemError}
+            </Alert>
+          )}
+          <RabItemForm
+            draft={rab.rabItemDraft}
+            plannedTotal={rab.rabItemPlannedTotal}
+            submitting={rab.rabItemSubmitting}
+            onFieldChange={rab.updateRabItemDraftField}
+            onCancel={rab.closeRabItemDialog}
+            onSubmit={rab.submitRabItemDraft}
+          />
+        </DialogContent>
       </Dialog>
     </>
   );

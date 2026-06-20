@@ -23,6 +23,7 @@ import type { UseTransactionBatchControllerResult } from '@/controllers/keuangan
 import type { UseTransactionMasterControllerResult } from '@/controllers/keuangan/useTransactionMasterController';
 import TransactionConfirmView from './TransactionConfirmView';
 import TransactionDraftCard from './TransactionDraftCard';
+import TransactionEditForm from './TransactionEditForm';
 
 interface Props {
   batch: UseTransactionBatchControllerResult;
@@ -55,6 +56,7 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
     goToConfirm,
     goBackToInput,
     submitAll,
+    submitEdit,
     rabSuggestion,
   } = batch;
 
@@ -80,9 +82,15 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
   } = master;
 
   const activeStepIndex = stage === 'input' ? 0 : 1;
+  const isEditing = Boolean(editingTransactionId);
+  const editDraft = drafts[0];
 
   const handleSubmit = () => {
     submitAll(() => selectedProjectId);
+  };
+
+  const handleEditSubmit = () => {
+    submitEdit(() => selectedProjectId);
   };
 
   return (
@@ -119,7 +127,7 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {editingTransactionId
-                    ? 'Perbarui atau tambah transaksi baru'
+                    ? 'Perbarui data transaksi terpilih'
                     : 'Bisa tambah lebih dari satu sekaligus'}
                 </Typography>
               </Box>
@@ -137,14 +145,15 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
             </IconButton>
           </Box>
 
-          {/* Stepper */}
-          <Stepper activeStep={activeStepIndex} sx={{ mt: 2, mb: 0.5 }}>
-            {STEPS.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
+          {!isEditing && (
+            <Stepper activeStep={activeStepIndex} sx={{ mt: 2, mb: 0.5 }}>
+              {STEPS.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          )}
         </DialogTitle>
 
         <DialogContent sx={{ pt: '12px !important' }}>
@@ -154,7 +163,23 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
             </Alert>
           )}
 
-          {stage === 'input' && (
+          {isEditing && editDraft && (
+            <TransactionEditForm
+              draft={editDraft}
+              kategoriList={allKategori(editDraft.jenis)}
+              satuanList={allSatuan}
+              errors={draftErrors[editDraft.id] ?? {}}
+              submitting={submitting}
+              onFieldChange={(field, value) => updateDraftField(editDraft.id, field, value)}
+              onOpenKategoriDialog={() => setKategoriDialogOpen(true)}
+              onOpenSatuanDialog={() => setSatuanDialogOpen(true)}
+              onCancel={requestClose}
+              onSubmit={handleEditSubmit}
+              rabSuggestion={rabSuggestion}
+            />
+          )}
+
+          {!isEditing && stage === 'input' && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {drafts.map((draft, index) => {
                 const isExpanded = draft.id === expandedDraftId;
@@ -207,7 +232,7 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
             </Box>
           )}
 
-          {stage === 'confirm' && (
+          {!isEditing && stage === 'confirm' && (
             <TransactionConfirmView
               drafts={drafts}
               submitting={submitting}

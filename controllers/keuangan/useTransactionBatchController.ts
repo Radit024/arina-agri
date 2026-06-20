@@ -10,6 +10,7 @@ export type TransactionDraft = {
   id: string;
   jenis: 'pengeluaran' | 'pendapatan';
   kategori: string;
+  projectId?: string | null;
   volume: string;
   satuan: string;
   hargaSatuan: string;
@@ -80,6 +81,7 @@ function draftFromTransaction(tx: ApiTransaction): TransactionDraft {
     id: tx._id,
     jenis: tx.jenis,
     kategori: tx.kategori,
+    projectId: tx.projectId ?? null,
     volume: tx.volume != null ? String(tx.volume) : '',
     satuan: tx.satuan ?? '',
     hargaSatuan,
@@ -248,6 +250,27 @@ export function useTransactionBatchController(
     };
   };
 
+  const buildTransactionPayload = (
+    draft: TransactionDraft,
+    getProjectId: () => string | undefined
+  ): Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> => {
+    const rabLink = getRabLinkForDraft(draft);
+
+    return {
+      jenis: draft.jenis,
+      kategori: draft.kategori,
+      nominal: parseCurrencyNumber(draft.nominal),
+      tanggal: normalizeDateInputValue(draft.tanggal),
+      keterangan: draft.keterangan,
+      projectId: rabLink?.projectId ?? draft.projectId ?? getProjectId(),
+      rabCategoryId: rabLink?.rabCategoryId ?? null,
+      rabItemId: rabLink?.rabItemId ?? null,
+      volume: draft.volume ? parseQuantityNumber(draft.volume) : null,
+      satuan: draft.satuan || null,
+      hargaSatuan: draft.hargaSatuan ? parseCurrencyNumber(draft.hargaSatuan) : null,
+    };
+  };
+
   const submitAll = async (getProjectId: () => string | undefined) => {
     setSubmitting(true);
     let success = 0;
@@ -256,21 +279,7 @@ export function useTransactionBatchController(
     for (let i = 0; i < drafts.length; i++) {
       const draft = drafts[i];
       const isEditDraft = i === 0 && editingTransactionId !== null;
-      const rabLink = getRabLinkForDraft(draft);
-
-      const payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> = {
-        jenis: draft.jenis,
-        kategori: draft.kategori,
-        nominal: parseCurrencyNumber(draft.nominal),
-        tanggal: normalizeDateInputValue(draft.tanggal),
-        keterangan: draft.keterangan,
-        projectId: rabLink?.projectId ?? getProjectId(),
-        rabCategoryId: rabLink?.rabCategoryId ?? null,
-        rabItemId: rabLink?.rabItemId ?? null,
-        volume: draft.volume ? parseQuantityNumber(draft.volume) : null,
-        satuan: draft.satuan || null,
-        hargaSatuan: draft.hargaSatuan ? parseCurrencyNumber(draft.hargaSatuan) : null,
-      };
+      const payload = buildTransactionPayload(draft, getProjectId);
 
       try {
         if (isEditDraft && editingTransactionId) {
@@ -292,6 +301,41 @@ export function useTransactionBatchController(
     }
 
     return { success, failed };
+  };
+
+  const submitEdit = async (getProjectId: () => string | undefined) => {
+    const draft = drafts[0];
+    if (!editingTransactionId || !draft) {
+      const results = { success: 0, failed: 1 };
+      setSubmitResults(results);
+      return results;
+    }
+
+    const errors = validateDraft(draft);
+    if (Object.keys(errors).length > 0) {
+      setDraftErrors({ [draft.id]: errors });
+      setExpandedDraftId(draft.id);
+      setStage('input');
+      return { success: 0, failed: 1 };
+    }
+
+    setSubmitting(true);
+    setDraftErrors({});
+    setSubmitResults(null);
+
+    try {
+      await updateTransaction(editingTransactionId, buildTransactionPayload(draft, getProjectId));
+      const results = { success: 1, failed: 0 };
+      setSubmitResults(results);
+      closeDialog();
+      return results;
+    } catch {
+      const results = { success: 0, failed: 1 };
+      setSubmitResults(results);
+      return results;
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const expandedDraft = drafts.find((d) => d.id === expandedDraftId);
@@ -332,6 +376,7 @@ export function useTransactionBatchController(
     goToConfirm,
     goBackToInput,
     submitAll,
+    submitEdit,
     rabSuggestion,
     getRabLinkForDraft,
   };

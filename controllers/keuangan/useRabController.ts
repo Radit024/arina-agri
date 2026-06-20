@@ -18,6 +18,45 @@ export interface RabItemDraft {
   aliases?: string[];
 }
 
+export interface RabItemFormDraft {
+  categoryName: string;
+  type: RabEntryType;
+  name: string;
+  volume: string;
+  unit: string;
+  unitPrice: string;
+  plannedCashMonth: string;
+  aliases: string;
+}
+
+export type RabItemFormField = keyof RabItemFormDraft;
+
+function createRabItemFormDraft(): RabItemFormDraft {
+  return {
+    categoryName: 'Saprodi',
+    type: 'expense',
+    name: '',
+    volume: '1',
+    unit: 'Unit',
+    unitPrice: '',
+    plannedCashMonth: '',
+    aliases: '',
+  };
+}
+
+function parseNumberInput(value: string) {
+  const parsed = Number(value.trim().replace(',', '.'));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseAliasesInput(value: string) {
+  const aliases = value
+    .split(/[,;\n]/)
+    .map((alias) => alias.trim())
+    .filter(Boolean);
+  return aliases.length > 0 ? aliases : undefined;
+}
+
 function validateRabItemDraft(draft: RabItemDraft) {
   if (!draft.categoryName.trim()) return 'Kategori RAB wajib diisi';
   if (!draft.name.trim()) return 'Nama item RAB wajib diisi';
@@ -41,6 +80,8 @@ export function useRabController(project: ApiFinanceProject | null) {
   const importLoading = false;
   const [importError, setImportError] = useState<string | null>(null);
   const [rabItemError, setRabItemError] = useState<string | null>(null);
+  const [rabItemDraft, setRabItemDraft] = useState<RabItemFormDraft>(createRabItemFormDraft);
+  const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
 
   const totals = useMemo(
     () => ({
@@ -50,6 +91,26 @@ export function useRabController(project: ApiFinanceProject | null) {
     }),
     [rabState.items],
   );
+
+  const rabItemPlannedTotal = useMemo(
+    () => parseNumberInput(rabItemDraft.volume) * parseNumberInput(rabItemDraft.unitPrice),
+    [rabItemDraft.unitPrice, rabItemDraft.volume],
+  );
+
+  const updateRabItemDraftField = (field: RabItemFormField, value: string) => {
+    setRabItemDraft((current) => ({ ...current, [field]: value }));
+    setRabItemError(null);
+  };
+
+  const openRabItemDialog = () => {
+    setRabItemDraft(createRabItemFormDraft());
+    setRabItemError(null);
+    setRabItemDialogOpen(true);
+  };
+
+  const closeRabItemDialog = () => {
+    setRabItemDialogOpen(false);
+  };
 
   const addRabItem = async (draft: RabItemDraft) => {
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
@@ -89,6 +150,26 @@ export function useRabController(project: ApiFinanceProject | null) {
     });
   };
 
+  const submitRabItemDraft = async () => {
+    setRabItemSubmitting(true);
+    try {
+      await addRabItem({
+        categoryName: rabItemDraft.categoryName,
+        type: rabItemDraft.type,
+        name: rabItemDraft.name,
+        volume: parseNumberInput(rabItemDraft.volume),
+        unit: rabItemDraft.unit,
+        unitPrice: parseNumberInput(rabItemDraft.unitPrice),
+        plannedCashMonth: rabItemDraft.plannedCashMonth.trim() || undefined,
+        aliases: parseAliasesInput(rabItemDraft.aliases),
+      });
+      setRabItemDialogOpen(false);
+      setRabItemDraft(createRabItemFormDraft());
+    } finally {
+      setRabItemSubmitting(false);
+    }
+  };
+
   const importRabFile = async (file: File) => {
     void file;
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
@@ -108,8 +189,15 @@ export function useRabController(project: ApiFinanceProject | null) {
     setImportError,
     rabItemError,
     setRabItemError,
+    rabItemDraft,
+    rabItemPlannedTotal,
+    rabItemSubmitting,
+    updateRabItemDraftField,
+    openRabItemDialog,
+    closeRabItemDialog,
     totals,
     addRabItem,
+    submitRabItemDraft,
     importRabFile,
   };
 }

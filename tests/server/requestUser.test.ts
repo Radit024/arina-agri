@@ -53,18 +53,28 @@ describe('resolveRequestUserId', () => {
     expect(listUsers).not.toHaveBeenCalled();
   });
 
-  it('uses an existing Supabase auth user for the development mock token when no dev id is configured', async () => {
+  it('uses the encoded local development user id from a development mock token', async () => {
+    Object.assign(process.env, { NODE_ENV: 'development' });
+    const userId = await resolveRequestUserId(
+      makeRequest('Bearer mock-token:22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(userId).toBe('22222222-2222-4222-8222-222222222222');
+    expect(listUsers).not.toHaveBeenCalled();
+  });
+
+  it('does not map the legacy development mock token to a real Supabase auth user', async () => {
     Object.assign(process.env, { NODE_ENV: 'development' });
     listUsers.mockResolvedValue({
       data: {
-        users: [{ id: '22222222-2222-4222-8222-222222222222' }],
+        users: [{ id: '33333333-3333-4333-8333-333333333333' }],
       },
       error: null,
     });
     const userId = await resolveRequestUserId(makeRequest('Bearer mock-token'));
 
-    expect(userId).toBe('22222222-2222-4222-8222-222222222222');
-    expect(listUsers).toHaveBeenCalledWith({ page: 1, perPage: 1 });
+    expect(userId).toBe('00000000-0000-4000-8000-000000000001');
+    expect(listUsers).not.toHaveBeenCalled();
   });
 
   it('returns null when no token is present', async () => {

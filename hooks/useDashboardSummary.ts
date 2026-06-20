@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DashboardSummary } from '@/lib/dashboard/summary';
-import { DEVELOPMENT_ACCESS_TOKEN } from '@/lib/devAuth';
+import { buildDevelopmentAccessToken, readLocalDevelopmentUserId } from '@/lib/devAuth';
 
 interface DashboardSummaryParams {
   adm4?: string;
@@ -39,8 +39,9 @@ export function buildDashboardSummaryHeaders(accessToken?: string | null): Recor
     return { Authorization: `Bearer ${token}` };
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    return { Authorization: `Bearer ${DEVELOPMENT_ACCESS_TOKEN}` };
+  const localUserId = readLocalDevelopmentUserId();
+  if (localUserId) {
+    return { Authorization: `Bearer ${buildDevelopmentAccessToken(localUserId)}` };
   }
 
   return {};

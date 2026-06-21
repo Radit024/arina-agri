@@ -9,31 +9,6 @@ export interface Transaction {
   keterangan: string;
 }
 
-export interface WeatherData {
-  suhu: number;
-  kelembapan: number;
-  curahHujan: number;
-  kecepatanAngin: number;
-  kondisi: 'cerah' | 'berawan' | 'hujan' | 'gerimis';
-  lokasi: string;
-}
-
-export interface WeatherForecast {
-  tanggal: string;
-  suhuMin: number;
-  suhuMax: number;
-  kondisi: 'cerah' | 'berawan' | 'hujan' | 'gerimis';
-  curahHujan: number;
-}
-
-export interface WeatherAlert {
-  id: string;
-  tanggal: string;
-  jenisPeringatan: string;
-  pesan: string;
-  status: 'terkirim' | 'gagal';
-}
-
 export interface CalendarEvent {
   id: string;
   judul: string;
@@ -141,49 +116,6 @@ export const kategoriChartData = [
 ];
 
 // ─── Weather Mock Data ────────────────────────────────────────────
-
-export const currentWeather: WeatherData = {
-  suhu: 24,
-  kelembapan: 78,
-  curahHujan: 12,
-  kecepatanAngin: 8,
-  kondisi: 'gerimis',
-  lokasi: 'Lokasi belum dipilih',
-};
-
-export const weatherForecast: WeatherForecast[] = [
-  { tanggal: '2026-04-18', suhuMin: 22, suhuMax: 28, kondisi: 'gerimis', curahHujan: 12 },
-  { tanggal: '2026-04-19', suhuMin: 21, suhuMax: 27, kondisi: 'hujan', curahHujan: 28 },
-  { tanggal: '2026-04-20', suhuMin: 22, suhuMax: 29, kondisi: 'hujan', curahHujan: 18 },
-  { tanggal: '2026-04-21', suhuMin: 23, suhuMax: 30, kondisi: 'berawan', curahHujan: 4 },
-  { tanggal: '2026-04-22', suhuMin: 24, suhuMax: 31, kondisi: 'cerah', curahHujan: 0 },
-  { tanggal: '2026-04-23', suhuMin: 23, suhuMax: 30, kondisi: 'cerah', curahHujan: 0 },
-  { tanggal: '2026-04-24', suhuMin: 22, suhuMax: 29, kondisi: 'berawan', curahHujan: 5 },
-];
-
-export const weatherAlerts: WeatherAlert[] = [
-  {
-    id: '1',
-    tanggal: '2026-04-17',
-    jenisPeringatan: 'Hujan Lebat',
-    pesan: '⚠️ Prakiraan hujan lebat di Malang. Tunda pemupukan dan penyemprotan pestisida.',
-    status: 'terkirim',
-  },
-  {
-    id: '2',
-    tanggal: '2026-04-15',
-    jenisPeringatan: 'Angin Kencang',
-    pesan: '💨 Kecepatan angin 15 km/jam. Pastikan tiang bambu dan paranet sudah diperkuat.',
-    status: 'terkirim',
-  },
-  {
-    id: '3',
-    tanggal: '2026-04-13',
-    jenisPeringatan: 'Suhu Tinggi',
-    pesan: '🌡️ Suhu mencapai 33°C. Intensifkan penyiraman pagi dan sore hari.',
-    status: 'gagal',
-  },
-];
 
 // ─── Calendar Events Mock Data ────────────────────────────────────
 

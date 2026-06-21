@@ -52,8 +52,8 @@ describe('BMKG weather routes', () => {
 
   it('matches BMKG warning RSS items by province title when CAP links use opaque detail codes', async () => {
     const rss = `<?xml version="1.0"?><rss><channel>
-      <item><title>Hujan Lebat disertai Petir di Sulawesi Tengah</title><link>https://www.bmkg.go.id/alerts/nowcast/id/CSG20260601004_alert.xml</link><description>Paleleh Barat</description></item>
-      <item><title>Hujan Lebat disertai Petir di Jawa Timur</title><link>https://www.bmkg.go.id/alerts/nowcast/id/CJT20260601007_alert.xml</link><description>Dau, Lowokwaru</description></item>
+      <item><title>Peringatan Dini Cuaca Sulawesi Tengah</title><link>https://www.bmkg.go.id/alerts/nowcast/id/CSG20260601004_alert.xml</link><description>Paleleh Barat</description></item>
+      <item><title>Peringatan Dini Cuaca Jawa Timur</title><link>https://www.bmkg.go.id/alerts/nowcast/id/CJT20260601007_alert.xml</link><description>Dau, Lowokwaru</description></item>
     </channel></rss>`;
     const cap = `<?xml version="1.0"?><alert><identifier>id-jatim</identifier><info><event>Hujan Lebat</event><severity>Severe</severity><urgency>Immediate</urgency><certainty>Likely</certainty><headline>Alert Jawa Timur</headline><description>Hujan lebat di wilayah Jawa Timur</description><area><areaDesc>Dau; Lowokwaru</areaDesc></area></info></alert>`;
     const fetchMock = vi.fn()

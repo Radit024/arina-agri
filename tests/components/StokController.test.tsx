@@ -31,7 +31,7 @@ vi.mock('next-intl', async () => {
 vi.mock('@/hooks/useWeatherRiskSignal', () => ({
   useWeatherRiskSignal: vi.fn(() => ({
     planningNote: '',
-    riskNote: 'Peringatan BMKG: Hujan Lebat disertai Petir di Jawa Timur',
+    riskNote: 'Peringatan BMKG: Contoh peringatan uji',
     warningMessage: '',
   })),
 }));

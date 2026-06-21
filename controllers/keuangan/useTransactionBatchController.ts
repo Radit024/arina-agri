@@ -252,23 +252,30 @@ export function useTransactionBatchController(
 
   const buildTransactionPayload = (
     draft: TransactionDraft,
-    getProjectId: () => string | undefined
+    getProjectId: () => string | undefined,
+    options: { applyRabSuggestion?: boolean } = {}
   ): Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> => {
-    const rabLink = getRabLinkForDraft(draft);
+    const applyRabSuggestion = options.applyRabSuggestion ?? true;
+    const rabLink = applyRabSuggestion ? getRabLinkForDraft(draft) : null;
 
-    return {
+    const payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> = {
       jenis: draft.jenis,
       kategori: draft.kategori,
       nominal: parseCurrencyNumber(draft.nominal),
       tanggal: normalizeDateInputValue(draft.tanggal),
       keterangan: draft.keterangan,
       projectId: rabLink?.projectId ?? draft.projectId ?? getProjectId(),
-      rabCategoryId: rabLink?.rabCategoryId ?? null,
-      rabItemId: rabLink?.rabItemId ?? null,
       volume: draft.volume ? parseQuantityNumber(draft.volume) : null,
       satuan: draft.satuan || null,
       hargaSatuan: draft.hargaSatuan ? parseCurrencyNumber(draft.hargaSatuan) : null,
     };
+
+    if (applyRabSuggestion) {
+      payload.rabCategoryId = rabLink?.rabCategoryId ?? null;
+      payload.rabItemId = rabLink?.rabItemId ?? null;
+    }
+
+    return payload;
   };
 
   const submitAll = async (getProjectId: () => string | undefined) => {
@@ -279,7 +286,7 @@ export function useTransactionBatchController(
     for (let i = 0; i < drafts.length; i++) {
       const draft = drafts[i];
       const isEditDraft = i === 0 && editingTransactionId !== null;
-      const payload = buildTransactionPayload(draft, getProjectId);
+      const payload = buildTransactionPayload(draft, getProjectId, { applyRabSuggestion: !isEditDraft });
 
       try {
         if (isEditDraft && editingTransactionId) {
@@ -324,7 +331,10 @@ export function useTransactionBatchController(
     setSubmitResults(null);
 
     try {
-      await updateTransaction(editingTransactionId, buildTransactionPayload(draft, getProjectId));
+      await updateTransaction(
+        editingTransactionId,
+        buildTransactionPayload(draft, getProjectId, { applyRabSuggestion: false }),
+      );
       const results = { success: 1, failed: 0 };
       setSubmitResults(results);
       closeDialog();

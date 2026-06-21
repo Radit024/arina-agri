@@ -11,7 +11,14 @@ import type {
   DbTransactionCategory,
   DbTransactionSatuan,
 } from '@/lib/supabase';
-import type { FinanceProject, RabCategory, RabItem } from '@/lib/finance/rabTypes';
+import type {
+  CashFlowComparison,
+  FinanceProject,
+  FinanceTransactionForReport,
+  IncomeStatementComparison,
+  RabCategory,
+  RabItem,
+} from '@/lib/finance/rabTypes';
 import type {
   BmkgForecastResponse,
   BmkgWeatherWarning,
@@ -1292,13 +1299,11 @@ export const aiApi = {
     totalPengeluaran: number;
     labaBersih: number;
     userName?: string;
-    transactions: Array<{
-      jenis: string;
-      kategori: string;
-      nominal: number;
-      tanggal: string;
-      keterangan?: string;
-    }>;
+    project?: FinanceProject | null;
+    rabItems?: RabItem[];
+    transactions: FinanceTransactionForReport[];
+    incomeStatementComparison?: IncomeStatementComparison;
+    cashFlowComparison?: CashFlowComparison;
   }) =>
     apiFetch<{ analysis: string; model: string }>('/api/ai/financial-report', payload),
 };

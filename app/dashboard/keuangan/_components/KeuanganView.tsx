@@ -1497,7 +1497,7 @@ export default function KeuanganView({
               fullWidth
               startIcon={<DownloadIcon />}
               onClick={handleGeneratePdfManual}
-              disabled={reportLoading || monthFilteredTransactions.length === 0}
+              disabled={reportLoading || !financeAccess.canExportFinance}
               sx={{ borderRadius: 8 }}
             >
               {t('reportDialog.manual.button')}
@@ -1542,7 +1542,7 @@ export default function KeuanganView({
               fullWidth
               startIcon={<AutoFixHighIcon />}
               onClick={handleGeneratePdfAI}
-              disabled={reportLoading || aiQuotaRemaining <= 0 || monthFilteredTransactions.length === 0}
+              disabled={reportLoading || aiQuotaRemaining <= 0 || !financeAccess.canExportFinance}
               sx={(theme) => ({
                 borderRadius: 8,
                 bgcolor: theme.palette.mode === 'dark' ? 'primary.main' : 'text.primary',

@@ -32,7 +32,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         <CardContent>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>Belum ada proyek</Typography>
           <Typography variant="body2" color="text.secondary">
-            Buat proyek atau import Excel untuk mulai menyusun rencana anggaran biaya.
+            Buat proyek untuk mulai menyusun rencana anggaran biaya.
           </Typography>
         </CardContent>
       </Card>

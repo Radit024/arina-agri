@@ -120,6 +120,30 @@ export function useKeuanganController() {
     canExport: financeAccess.canExportFinance,
     hasProjectData: financeAccess.hasProjectData,
   });
+  const reportPeriodeLabel = financeReports.reportStartMonth === financeReports.reportEndMonth
+    ? getPeriodeLabel(financeReports.reportStartMonth)
+    : `${getPeriodeLabel(financeReports.reportStartMonth)} - ${getPeriodeLabel(financeReports.reportEndMonth)}`;
+  const reportPeriodKey = financeReports.reportStartMonth === financeReports.reportEndMonth
+    ? financeReports.reportStartMonth
+    : `${financeReports.reportStartMonth}_sd_${financeReports.reportEndMonth}`;
+  const reportTotals = useMemo(() => {
+    let reportTotalPendapatan = 0;
+    let reportTotalPengeluaran = 0;
+
+    financeReports.reportTransactions.forEach((transaction) => {
+      if (transaction.jenis === 'pendapatan') {
+        reportTotalPendapatan += transaction.nominal;
+      } else if (transaction.jenis === 'pengeluaran') {
+        reportTotalPengeluaran += transaction.nominal;
+      }
+    });
+
+    return {
+      totalPendapatan: reportTotalPendapatan,
+      totalPengeluaran: reportTotalPengeluaran,
+      labaBersih: reportTotalPendapatan - reportTotalPengeluaran,
+    };
+  }, [financeReports.reportTransactions]);
   const guardedTransactionBatch = {
     ...transactionBatch,
     openForCreate: () => {
@@ -283,12 +307,16 @@ export function useKeuanganController() {
     setReportError(null);
     try {
       await generatePdfReport({
-        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
-        periodeLabel: filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan),
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
-        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        periode: reportPeriodKey,
+        periodeLabel: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
       });
     } catch {
@@ -310,29 +338,30 @@ export function useKeuanganController() {
     setReportLoading(true);
     setReportError(null);
     try {
-      const periodeLabel = filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan);
       const result = await aiApi.generateFinancialReport({
-        periode: periodeLabel,
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
+        periode: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        transactions: monthFilteredTransactions.map((tx) => ({
-          jenis: tx.jenis,
-          kategori: tx.kategori,
-          nominal: tx.nominal,
-          tanggal: tx.tanggal,
-          keterangan: tx.keterangan,
-        })),
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
       });
       consumeAiQuota();
       await generatePdfReport({
-        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
-        periodeLabel,
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
-        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        periode: reportPeriodKey,
+        periodeLabel: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
         aiAnalysis: result.analysis,
       });

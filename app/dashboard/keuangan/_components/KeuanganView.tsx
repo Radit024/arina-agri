@@ -40,6 +40,7 @@ import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import DonutLargeIcon from '@mui/icons-material/DonutLarge';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import LinkIcon from '@mui/icons-material/Link';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -63,6 +64,7 @@ import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
+import RabTransactionLinkDialog from './RabTransactionLinkDialog';
 import RabPlanningView from './RabPlanningView';
 import TransactionBatchDialog from './TransactionBatchDialog';
 
@@ -200,6 +202,7 @@ export default function KeuanganView({
   setFinanceTab,
   financeProject,
   rab,
+  rabTransactionLink,
   financeReports,
   financeExport,
   handleOpenFinanceReportDialog,
@@ -238,13 +241,16 @@ export default function KeuanganView({
   const someSelected =
     selectedTxIds.length > 0 && !allVisibleSelected;
   const hasDistributionData = finalPieData.some((item) => item.id !== t('distribution.empty'));
-  const renderDistributionBreakdown = (maxHeight: number) => {
+  const renderDistributionBreakdown = (maxHeight?: number) => {
     if (!hasDistributionData) return null;
 
     return (
       <Box
+        data-finance-distribution-breakdown={maxHeight ? 'compact' : 'fill'}
         sx={{
           width: '100%',
+          flex: maxHeight ? '0 0 auto' : 1,
+          minHeight: 0,
           maxHeight,
           overflowY: 'auto',
           display: 'flex',
@@ -328,6 +334,11 @@ export default function KeuanganView({
   const ledgerValueLabelMatch = ledgerValueColumnLabel.match(/^(.*?)\s*(\([^)]*\))$/);
   const ledgerValueLabel = ledgerValueLabelMatch?.[1] ?? ledgerValueColumnLabel;
   const ledgerValueUnit = ledgerValueLabelMatch?.[2] ?? '';
+  const getRabLinkLabel = (tx: LedgerTransaction) => {
+    const linkedRabItem = rabTransactionLink.getLinkedRabItem(tx);
+    if (linkedRabItem) return `RAB: ${linkedRabItem.name}`;
+    return tx.rabItemId ? 'RAB tersambung' : null;
+  };
   const financePanelSx = {
     flex: 1,
     display: 'flex',
@@ -633,6 +644,15 @@ export default function KeuanganView({
                   </Button>
                   <Button
                     size="small"
+                    variant="outlined"
+                    startIcon={<LinkIcon />}
+                    onClick={() => rabTransactionLink.openForTransactions(selectedTxIds)}
+                    sx={{ borderRadius: 2, textTransform: 'none', bgcolor: 'background.paper' }}
+                  >
+                    Hubungkan RAB
+                  </Button>
+                  <Button
+                    size="small"
                     variant="contained"
                     color="error"
                     startIcon={<DeleteSweepIcon />}
@@ -732,10 +752,38 @@ export default function KeuanganView({
                               &quot;{tx.keterangan}&quot;
                             </Typography>
                           )}
+                          {getRabLinkLabel(tx) && (
+                            <Chip
+                              icon={<LinkIcon />}
+                              label={getRabLinkLabel(tx)}
+                              size="small"
+                              sx={{
+                                alignSelf: 'flex-start',
+                                borderRadius: 1.5,
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: 'primary.dark',
+                                fontWeight: 700,
+                                '& .MuiChip-icon': { color: 'primary.main' },
+                              }}
+                            />
+                          )}
 
                           {/* Row 4: Action Footer Buttons */}
                           <Divider sx={{ my: 0.5 }} />
                           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                            <IconButton
+                              data-touch-target="44"
+                              size="small"
+                              aria-label={`Hubungkan RAB transaksi ${tx.kategori}`}
+                              onClick={() => rabTransactionLink.openForTransactions([tx._id])}
+                              sx={(theme) => ({
+                                width: 44,
+                                height: 44,
+                                ...financeActionIconButtonSx(theme, 'primary'),
+                              })}
+                            >
+                              <LinkIcon fontSize="small" />
+                            </IconButton>
                             <IconButton
                               data-touch-target="44"
                               size="small"
@@ -943,40 +991,70 @@ export default function KeuanganView({
                               {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </TableCell>
                             <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0, overflow: 'hidden' }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                                <Typography variant="caption" noWrap sx={{ display: 'block', flex: 1, minWidth: 0 }}>
-                                  {tx.keterangan || '-'}
-                                </Typography>
-                                {isSelected && (
-                                  <Box
-                                    onClick={(e) => e.stopPropagation()}
-                                    sx={{ display: 'inline-flex', gap: 0.5, flexShrink: 0 }}
-                                  >
-                                    <IconButton
-                                      size="small"
-                                      aria-label={`Edit transaksi ${tx.kategori}`}
-                                      onClick={() => transactionBatch.openForEdit(tx)}
-                                      sx={(theme) => ({
-                                        width: 34,
-                                        height: 34,
-                                        ...financeActionIconButtonSx(theme, 'primary'),
-                                      })}
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, minWidth: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                  <Typography variant="caption" noWrap sx={{ display: 'block', flex: 1, minWidth: 0 }}>
+                                    {tx.keterangan || '-'}
+                                  </Typography>
+                                  {isSelected && (
+                                    <Box
+                                      onClick={(e) => e.stopPropagation()}
+                                      sx={{ display: 'inline-flex', gap: 0.5, flexShrink: 0 }}
                                     >
-                                      <EditOutlinedIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      aria-label={`Hapus transaksi ${tx.kategori}`}
-                                      onClick={() => handleDelete(tx._id)}
-                                      sx={(theme) => ({
-                                        width: 34,
-                                        height: 34,
-                                        ...financeActionIconButtonSx(theme, 'error'),
-                                      })}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Box>
+                                      <IconButton
+                                        size="small"
+                                        aria-label={`Hubungkan RAB transaksi ${tx.kategori}`}
+                                        onClick={() => rabTransactionLink.openForTransactions([tx._id])}
+                                        sx={(theme) => ({
+                                          width: 34,
+                                          height: 34,
+                                          ...financeActionIconButtonSx(theme, 'primary'),
+                                        })}
+                                      >
+                                        <LinkIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        aria-label={`Edit transaksi ${tx.kategori}`}
+                                        onClick={() => transactionBatch.openForEdit(tx)}
+                                        sx={(theme) => ({
+                                          width: 34,
+                                          height: 34,
+                                          ...financeActionIconButtonSx(theme, 'primary'),
+                                        })}
+                                      >
+                                        <EditOutlinedIcon fontSize="small" />
+                                      </IconButton>
+                                      <IconButton
+                                        size="small"
+                                        aria-label={`Hapus transaksi ${tx.kategori}`}
+                                        onClick={() => handleDelete(tx._id)}
+                                        sx={(theme) => ({
+                                          width: 34,
+                                          height: 34,
+                                          ...financeActionIconButtonSx(theme, 'error'),
+                                        })}
+                                      >
+                                        <DeleteIcon fontSize="small" />
+                                      </IconButton>
+                                    </Box>
+                                  )}
+                                </Box>
+                                {getRabLinkLabel(tx) && (
+                                  <Chip
+                                    icon={<LinkIcon />}
+                                    label={getRabLinkLabel(tx)}
+                                    size="small"
+                                    sx={{
+                                      alignSelf: 'flex-start',
+                                      height: 22,
+                                      borderRadius: 1.5,
+                                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                      color: 'primary.dark',
+                                      fontWeight: 700,
+                                      '& .MuiChip-icon': { color: 'primary.main' },
+                                    }}
+                                  />
                                 )}
                               </Box>
                             </TableCell>
@@ -994,10 +1072,11 @@ export default function KeuanganView({
           <Card
             data-testid="finance-distribution-card"
             data-finance-card-align="ledger"
+            data-finance-card-fill-bottom="true"
             sx={{
               width: { md: 300, lg: 330 },
               flexShrink: 0,
-              height: '100%',
+              alignSelf: 'stretch',
               minHeight: 0,
               display: { xs: 'none', md: distributionPanelOpen ? 'flex' : 'none' },
               flexDirection: 'column',
@@ -1049,7 +1128,7 @@ export default function KeuanganView({
                   }}
                 />
               </Box>
-              {renderDistributionBreakdown(180)}
+              {renderDistributionBreakdown()}
             </CardContent>
           </Card>
         </Box>
@@ -1139,6 +1218,7 @@ export default function KeuanganView({
         master={transactionMaster}
         selectedProjectId={financeProject.selectedProject?.id}
       />
+      <RabTransactionLinkDialog link={rabTransactionLink} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog

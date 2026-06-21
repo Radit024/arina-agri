@@ -1,8 +1,6 @@
 'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DownloadIcon from '@mui/icons-material/Download';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -19,6 +17,32 @@ import FinanceProjectDialog from './FinanceProjectDialog';
 type Props = Pick<UseKeuanganControllerResult, 'financeAccess' | 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
   onOpenPdfReport: () => void;
 };
+
+function ExcelLogoIcon() {
+  return (
+    <Box
+      component="img"
+      src="/icons/excel-logo.svg"
+      alt=""
+      aria-hidden="true"
+      data-testid="finance-export-excel-logo"
+      sx={{ width: 22, height: 22, display: 'block' }}
+    />
+  );
+}
+
+function PdfLogoIcon() {
+  return (
+    <Box
+      component="img"
+      src="/icons/pdf-logo.svg"
+      alt=""
+      aria-hidden="true"
+      data-testid="finance-export-pdf-logo"
+      sx={{ width: 22, height: 22, display: 'block' }}
+    />
+  );
+}
 
 export default function FinanceProjectToolbar({ financeAccess, financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
   return (
@@ -70,8 +94,8 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
 
           <Button
             data-guide-target="finance-export"
-            variant="contained"
-            startIcon={<DownloadIcon />}
+            variant="outlined"
+            startIcon={<ExcelLogoIcon />}
             disabled={!financeAccess.canExportFinance || financeExport.exportLoading}
             onClick={financeExport.handleExportFinanceWorkbook}
             sx={{ borderRadius: 8 }}
@@ -82,7 +106,7 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
           <Button
             data-guide-target="finance-export-pdf"
             variant="outlined"
-            startIcon={<PictureAsPdfIcon />}
+            startIcon={<PdfLogoIcon />}
             disabled={!financeAccess.canExportFinance || reportLoading}
             onClick={onOpenPdfReport}
             sx={{ borderRadius: 8 }}

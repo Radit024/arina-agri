@@ -16,6 +16,7 @@ import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
 import { useRabController } from './useRabController';
+import { useRabTransactionLinkController } from './useRabTransactionLinkController';
 import { useTransactionBatchController } from './useTransactionBatchController';
 import { useTransactionMasterController } from './useTransactionMasterController';
 
@@ -86,11 +87,17 @@ export function useKeuanganController() {
   const rab = useRabController(financeProject.selectedProject);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
+  const clearSelectionTxs = () => setSelectedTxIds([]);
   const projectScopedTransactions = useMemo(() => {
     const selectedProjectId = financeProject.selectedProject?.id;
     if (!selectedProjectId) return transactions;
     return transactions.filter((tx) => tx.projectId === selectedProjectId);
   }, [financeProject.selectedProject?.id, transactions]);
+  const rabTransactionLink = useRabTransactionLinkController({
+    rabItems: rab.items,
+    transactions: projectScopedTransactions,
+    updateTransaction,
+  });
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
@@ -125,6 +132,38 @@ export function useKeuanganController() {
         return;
       }
       transactionBatch.openForCreate();
+    },
+  };
+  const guardedRabTransactionLink = {
+    ...rabTransactionLink,
+    openForTransactions: (ids: string[]) => {
+      if (!financeAccess.canInputFinance) {
+        setSnackbar({
+          open: true,
+          message: 'Buat atau pilih proyek terlebih dahulu',
+          severity: 'error',
+        });
+        return;
+      }
+      rabTransactionLink.openForTransactions(ids);
+    },
+    linkToRabItem: async (item: Parameters<typeof rabTransactionLink.linkToRabItem>[0]) => {
+      const results = await rabTransactionLink.linkToRabItem(item);
+      if (results.failed === 0 && results.success > 0) {
+        clearSelectionTxs();
+        setSnackbar({
+          open: true,
+          message: `${results.success} transaksi berhasil dihubungkan ke RAB`,
+          severity: 'success',
+        });
+      } else if (results.failed > 0) {
+        setSnackbar({
+          open: true,
+          message: `${results.failed} transaksi gagal dihubungkan ke RAB`,
+          severity: 'error',
+        });
+      }
+      return results;
     },
   };
 
@@ -163,8 +202,6 @@ export function useKeuanganController() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
-
-  const clearSelectionTxs = () => setSelectedTxIds([]);
 
   const handleBulkDeleteConfirm = async () => {
     const count = selectedTxIds.length;
@@ -509,6 +546,7 @@ export function useKeuanganController() {
     financeAccess,
     financeProject,
     rab,
+    rabTransactionLink: guardedRabTransactionLink,
     financeReports,
     financeExport,
     transactionBatch: guardedTransactionBatch,

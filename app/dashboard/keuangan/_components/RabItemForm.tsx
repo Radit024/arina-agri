@@ -89,7 +89,6 @@ export default function RabItemForm({
                   </MenuItem>
                 ))}
               </Select>
-              <FormHelperText>Pilih kategori yang tersedia atau kelola kategori custom.</FormHelperText>
             </FormControl>
             <IconButton
               size="small"

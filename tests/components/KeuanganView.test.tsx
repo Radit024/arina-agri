@@ -5,6 +5,7 @@ import type { ComponentProps } from 'react';
 
 import KeuanganView from '@/app/dashboard/keuangan/_components/KeuanganView';
 import type { ApiTransaction } from '@/lib/api';
+import type { RabItem } from '@/lib/finance/rabTypes';
 import { darkTheme } from '@/lib/theme';
 
 vi.mock('next/dynamic', () => ({
@@ -52,6 +53,22 @@ const financeProject = {
   startDate: '2026-06-01',
   endDate: '2026-09-30',
   status: 'active' as const,
+};
+
+const rabItem: RabItem = {
+  id: 'rab-pupuk',
+  projectId: financeProject.id,
+  categoryId: 'rab-cat-saprodi',
+  categoryName: 'Saprodi',
+  type: 'expense',
+  name: 'Pupuk Urea',
+  volume: 10,
+  unit: 'karung',
+  unitPrice: 200000,
+  plannedTotal: 2000000,
+  plannedCashMonth: '2026-06',
+  aliases: ['urea'],
+  sortOrder: 1,
 };
 
 const labels: Record<string, string> = {
@@ -206,6 +223,25 @@ function makeTransactionMaster() {
   };
 }
 
+function makeRabTransactionLink(overrides: Record<string, unknown> = {}) {
+  return {
+    dialogOpen: false,
+    targetTransactionIds: [],
+    targetTransactions: [],
+    targetRabType: null,
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    submitting: false,
+    linkError: null,
+    filteredRabOptions: [],
+    openForTransactions: vi.fn(),
+    closeDialog: vi.fn(),
+    linkToRabItem: vi.fn(async () => ({ success: 0, failed: 0 })),
+    getLinkedRabItem: vi.fn(() => null),
+    ...overrides,
+  };
+}
+
 function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganViewProps> }) {
   const activeTheme = overrides.theme ?? theme;
 
@@ -330,6 +366,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       submitRabItemDraft: vi.fn(),
       importRabFile: vi.fn(),
     },
+    rabTransactionLink: makeRabTransactionLink() as KeuanganViewProps['rabTransactionLink'],
     financeReports: {
       reportTransactions: [],
       reportStartMonth: '2026-06',
@@ -483,6 +520,55 @@ describe('KeuanganView', () => {
     expect(toggleSelectTx).not.toHaveBeenCalled();
   });
 
+  it('menampilkan tombol hubungkan RAB pada bar transaksi terpilih', () => {
+    const openForTransactions = vi.fn();
+
+    renderView({
+      isMobile: false,
+      selectedTxIds: [transaction._id],
+      rabTransactionLink: makeRabTransactionLink({
+        openForTransactions,
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hubungkan RAB' }));
+
+    expect(openForTransactions).toHaveBeenCalledWith([transaction._id]);
+  });
+
+  it('menampilkan daftar RAB yang bisa dipilih pada dialog hubungkan RAB', () => {
+    const linkToRabItem = vi.fn(async () => ({ success: 1, failed: 0 }));
+
+    renderView({
+      rabTransactionLink: makeRabTransactionLink({
+        dialogOpen: true,
+        targetTransactionIds: [transaction._id],
+        targetTransactions: [transaction],
+        targetRabType: 'expense',
+        filteredRabOptions: [{ item: rabItem, isSuggested: true }],
+        linkToRabItem,
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    expect(screen.getByRole('heading', { name: 'Hubungkan RAB' })).toBeInTheDocument();
+    expect(screen.getByText('Pupuk Urea')).toBeInTheDocument();
+    expect(screen.getByText('Disarankan')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hubungkan RAB Pupuk Urea' }));
+    expect(linkToRabItem).toHaveBeenCalledWith(rabItem);
+  });
+
+  it('menampilkan badge RAB pada transaksi yang sudah terhubung', () => {
+    renderView({
+      displayedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
+      rabTransactionLink: makeRabTransactionLink({
+        getLinkedRabItem: vi.fn(() => rabItem),
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    expect(screen.getAllByText('RAB: Pupuk Urea').length).toBeGreaterThan(0);
+  });
+
   it('mengontrol highlight chart distribusi agar MUI chart tidak menerima state undefined', () => {
     renderView();
 
@@ -510,6 +596,8 @@ describe('KeuanganView', () => {
     const distributionCard = screen.getByTestId('finance-distribution-card');
     expect(ledgerCard).toHaveAttribute('data-finance-card-align', 'ledger');
     expect(distributionCard).toHaveAttribute('data-finance-card-align', 'ledger');
+    expect(distributionCard).toHaveAttribute('data-finance-card-fill-bottom', 'true');
+    expect(distributionCard.querySelector('[data-finance-distribution-breakdown="fill"]')).toBeInTheDocument();
 
     const distribution = within(distributionCard);
     expect(distribution.getByText('Pupuk')).toBeInTheDocument();
@@ -675,7 +763,13 @@ describe('KeuanganView', () => {
       },
     });
 
-    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeEnabled();
+    const exportExcelButton = screen.getByRole('button', { name: 'Export Excel' });
+    const exportReportButton = screen.getByRole('button', { name: 'Export Laporan' });
+    expect(exportExcelButton).toBeEnabled();
+    expect(exportExcelButton).toHaveClass('MuiButton-outlined');
+    expect(within(exportExcelButton).getByTestId('finance-export-excel-logo')).toHaveAttribute('src', '/icons/excel-logo.svg');
+    expect(exportReportButton).toBeEnabled();
+    expect(exportReportButton).toHaveClass('MuiButton-outlined');
+    expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
   });
 });

@@ -132,6 +132,27 @@ describe('buildWeatherSignal', () => {
     });
   });
 
+  it('does not show province-only BMKG warnings for a specific selected location', () => {
+    expect(buildWeatherSignal({
+      warnings: [
+        {
+          event: 'Hujan Lebat dan Petir',
+          headline: 'Hujan Lebat disertai Petir di Jawa Timur',
+          description: 'Detail provinsi',
+          affectedAreas: ['Jawa Timur'],
+        },
+      ],
+      forecast: {
+        current: { temperatureC: 20, condition: 'cerah', humidityPercent: 90 },
+        days: [{ date: '2026-06-23', totalRainfallMm: 0 }],
+      },
+      locationLabel: 'Merjosari, Kec. Lowokwaru, Kota Malang, Jawa Timur',
+    })).toEqual({
+      currentWeather: { temperatureC: 20, condition: 'cerah', humidityPercent: 90 },
+      weatherBannerMessage: undefined,
+    });
+  });
+
   it('uses the BMKG warning that matches the selected weather location', () => {
     expect(buildWeatherSignal({
       warnings: [

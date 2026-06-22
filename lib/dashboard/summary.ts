@@ -282,16 +282,33 @@ function normalizeWarningArea(value: string) {
     .trim();
 }
 
+function getNormalizedLocationParts(locationLabel: string) {
+  return locationLabel
+    .split(',')
+    .map(normalizeWarningArea)
+    .filter(Boolean);
+}
+
+function isLikelyProvincePart(parts: string[], index: number) {
+  if (parts.length < 3 || index !== parts.length - 1) return false;
+  return !/^(desa|kelurahan|kecamatan|kabupaten|kota)\b/.test(parts[index]);
+}
+
+function warningAreaMatchesLocationPart(area: string, part: string) {
+  return part === area || part.endsWith(` ${area}`) || area.endsWith(` ${part}`);
+}
+
 export function warningMatchesLocation(warning: DashboardWeatherWarningLike, locationLabel?: string) {
   const affectedAreas = warning.affectedAreas?.map(normalizeWarningArea).filter(Boolean) ?? [];
   if (!locationLabel?.trim() || affectedAreas.length === 0) return false;
 
-  const normalizedLocation = normalizeWarningArea(locationLabel);
-  if (!normalizedLocation) return false;
+  const locationParts = getNormalizedLocationParts(locationLabel);
+  if (locationParts.length === 0) return false;
 
-  return affectedAreas.some((area) =>
-    normalizedLocation.includes(area) || area.includes(normalizedLocation)
-  );
+  return affectedAreas.some((area) => locationParts.some((part, index) => {
+    if (isLikelyProvincePart(locationParts, index)) return false;
+    return warningAreaMatchesLocationPart(area, part);
+  }));
 }
 
 export function filterWeatherWarningsByLocation<TWarning extends DashboardWeatherWarningLike>(

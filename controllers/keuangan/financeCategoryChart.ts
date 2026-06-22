@@ -27,6 +27,7 @@ export interface FinanceExpensePiePoint {
   value: number;
   label: string;
   color: string;
+  percentage: number;
 }
 
 export function buildFinanceExpensePieData({
@@ -60,19 +61,26 @@ export function buildFinanceExpensePieData({
       value: (existing?.value ?? 0) + transaction.nominal,
       label,
       color: existing?.color ?? color,
+      percentage: 0,
     });
   }
 
   const data = Array.from(totals.values()).filter((item) => item.value > 0);
   if (data.length === 0) {
     return {
-      data: [{ id: emptyLabel, value: 1, label: emptyLabel, color: '#e2e8f0' }],
+      data: [{ id: emptyLabel, value: 1, label: emptyLabel, color: '#e2e8f0', percentage: 0 }],
       colors: ['#e2e8f0'],
     };
   }
 
+  const totalExpense = data.reduce((sum, item) => sum + item.value, 0);
+  const dataWithPercentages = data.map((item) => ({
+    ...item,
+    percentage: totalExpense > 0 ? (item.value / totalExpense) * 100 : 0,
+  }));
+
   return {
-    data,
-    colors: data.map((item) => item.color),
+    data: dataWithPercentages,
+    colors: dataWithPercentages.map((item) => item.color),
   };
 }

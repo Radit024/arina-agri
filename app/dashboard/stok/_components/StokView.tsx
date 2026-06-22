@@ -43,7 +43,7 @@ import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
-import { formatRupiah, formatDateShort } from '@/lib/formatters';
+import { formatDateInputValue, formatDateShort, formatRupiah, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation, ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
 import MasterDataDialog from './MasterDataDialog';
 import SupplyItemsView from './SupplyItemsView';
@@ -146,7 +146,9 @@ interface StokViewProps {
   loading: boolean;
   mutFilter: string;
   mutFromDate: string;
+  mutFromDateInvalid: boolean;
   mutToDate: string;
+  mutToDateInvalid: boolean;
   onBatchSubmit: SubmitHandler<BatchFormOutput>;
   onStockOutSubmit: SubmitHandler<StockOutFormOutput>;
   openAddBatch: () => void;
@@ -203,7 +205,9 @@ export default function StokView({
   loading,
   mutFilter,
   mutFromDate,
+  mutFromDateInvalid,
   mutToDate,
+  mutToDateInvalid,
   onBatchSubmit,
   onStockOutSubmit,
   openAddBatch,
@@ -543,24 +547,26 @@ export default function StokView({
                 </Select>
               </FormControl>
               <TextField
-                type="date"
                 label="Dari Tanggal"
                 size="small"
-                value={mutFromDate}
-                onChange={(e) => setMutFromDate(e.target.value)}
-                sx={{ minWidth: 150 }}
-                slotProps={{ inputLabel: { shrink: true } }}
+                value={formatDateInputValue(mutFromDate)}
+                onChange={(e) => setMutFromDate(normalizeDateInputValue(e.target.value))}
+                error={mutFromDateInvalid}
+                helperText={mutFromDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
+                placeholder="05-06-2026"
+                sx={{ minWidth: 170 }}
               />
               <TextField
-                type="date"
                 label="Sampai Tanggal"
                 size="small"
-                value={mutToDate}
-                onChange={(e) => setMutToDate(e.target.value)}
-                sx={{ minWidth: 150 }}
-                slotProps={{ inputLabel: { shrink: true } }}
+                value={formatDateInputValue(mutToDate)}
+                onChange={(e) => setMutToDate(normalizeDateInputValue(e.target.value))}
+                error={mutToDateInvalid}
+                helperText={mutToDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
+                placeholder="05-06-2026"
+                sx={{ minWidth: 170 }}
               />
-              <Button variant="contained" size="small" onClick={onApplyDateFilter} sx={{ height: 40, borderRadius: 2, px: 2 }}>
+              <Button variant="contained" size="small" onClick={onApplyDateFilter} disabled={mutFromDateInvalid || mutToDateInvalid} sx={{ height: 40, borderRadius: 2, px: 2 }}>
                 Terapkan
               </Button>
               {(mutFromDate || mutToDate) && (
@@ -726,7 +732,16 @@ export default function StokView({
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12 }}>
                     <Controller name="tanggalPanen" control={batchForm.control} render={({ field }) => (
-                      <TextField {...field} type="date" label={t('dialogs.fields.date')} fullWidth error={!!batchForm.formState.errors.tanggalPanen} slotProps={{ inputLabel: { shrink: true } }} />
+                      <TextField
+                        {...field}
+                        label={t('dialogs.fields.date')}
+                        value={formatDateInputValue(field.value ?? '')}
+                        onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                        fullWidth
+                        error={!!batchForm.formState.errors.tanggalPanen}
+                        helperText={batchForm.formState.errors.tanggalPanen?.message || ''}
+                        placeholder="05-06-2026"
+                      />
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
@@ -789,7 +804,16 @@ export default function StokView({
                   )}
                   <Grid size={{ xs: 12 }}>
                     <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                      <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal masuk" slotProps={{ inputLabel: { shrink: true } }} />
+                      <TextField
+                        {...field}
+                        label={t('dialogs.fields.expiry')}
+                        value={formatDateInputValue(field.value ?? '')}
+                        onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                        fullWidth
+                        error={!!batchForm.formState.errors.estimasiKadaluarsa}
+                        helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. '}
+                        placeholder="05-06-2026"
+                      />
                     )} />
                   </Grid>
                   <Grid size={{ xs: 12 }}>
@@ -820,7 +844,16 @@ export default function StokView({
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <Controller name="tanggalPanen" control={batchForm.control} render={({ field }) => (
-                    <TextField {...field} type="date" label={t('dialogs.fields.date')} fullWidth error={!!batchForm.formState.errors.tanggalPanen} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField
+                      {...field}
+                      label={t('dialogs.fields.date')}
+                      value={formatDateInputValue(field.value ?? '')}
+                      onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                      fullWidth
+                      error={!!batchForm.formState.errors.tanggalPanen}
+                      helperText={batchForm.formState.errors.tanggalPanen?.message || ''}
+                      placeholder="05-06-2026"
+                    />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
@@ -883,7 +916,16 @@ export default function StokView({
                 )}
                 <Grid size={{ xs: 12 }}>
                   <Controller name="estimasiKadaluarsa" control={batchForm.control} render={({ field }) => (
-                    <TextField {...field} type="date" label={t('dialogs.fields.expiry')} fullWidth error={!!batchForm.formState.errors.estimasiKadaluarsa} helperText="Terisi otomatis +14 hari dari tanggal masuk" slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField
+                      {...field}
+                      label={t('dialogs.fields.expiry')}
+                      value={formatDateInputValue(field.value ?? '')}
+                      onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                      fullWidth
+                      error={!!batchForm.formState.errors.estimasiKadaluarsa}
+                      helperText={batchForm.formState.errors.estimasiKadaluarsa?.message || 'Terisi otomatis +14 hari dari tanggal masuk. '}
+                      placeholder="05-06-2026"
+                    />
                   )} />
                 </Grid>
                 <Grid size={{ xs: 12 }}>
@@ -948,7 +990,11 @@ export default function StokView({
                 <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
                   <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
                     <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
-                    <Select {...field} label={t('dialogs.fields.batch')}>
+                    <Select
+                      {...field}
+                      label={t('dialogs.fields.batch')}
+                      value={activeBatches.some((batch) => batch._id === field.value) ? field.value : ''}
+                    >
                       {activeBatches.map((b) => (
                         <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
                       ))}
@@ -1005,7 +1051,16 @@ export default function StokView({
                   />
                 )} />
                 <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
-                  <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                  <TextField
+                    {...field}
+                    label={t('dialogs.fields.transDate')}
+                    value={formatDateInputValue(field.value ?? '')}
+                    onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                    fullWidth
+                    error={!!stockOutForm.formState.errors.tanggal}
+                    helperText={stockOutForm.formState.errors.tanggal?.message || ''}
+                    placeholder="05-06-2026"
+                  />
                 )} />
                 <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
                   <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />
@@ -1038,7 +1093,11 @@ export default function StokView({
               <Controller name="batchId" control={stockOutForm.control} render={({ field }) => (
                 <FormControl fullWidth error={!!stockOutForm.formState.errors.batchId}>
                   <InputLabel>{t('dialogs.fields.batch')}</InputLabel>
-                  <Select {...field} label={t('dialogs.fields.batch')}>
+                  <Select
+                    {...field}
+                    label={t('dialogs.fields.batch')}
+                    value={activeBatches.some((batch) => batch._id === field.value) ? field.value : ''}
+                  >
                     {activeBatches.map((b) => (
                       <MenuItem key={b._id} value={b._id}>{b.batchCode} — {b.stokTersisa} kg</MenuItem>
                     ))}
@@ -1094,7 +1153,16 @@ export default function StokView({
                 />
               )} />
               <Controller name="tanggal" control={stockOutForm.control} render={({ field }) => (
-                <TextField {...field} type="date" label={t('dialogs.fields.transDate')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField
+                  {...field}
+                  label={t('dialogs.fields.transDate')}
+                  value={formatDateInputValue(field.value ?? '')}
+                  onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                  fullWidth
+                  error={!!stockOutForm.formState.errors.tanggal}
+                  helperText={stockOutForm.formState.errors.tanggal?.message || ''}
+                  placeholder="05-06-2026"
+                />
               )} />
               <Controller name="catatan" control={stockOutForm.control} render={({ field }) => (
                 <TextField {...field} label={t('dialogs.fields.note')} multiline rows={2} fullWidth />

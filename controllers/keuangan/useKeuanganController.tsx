@@ -1,40 +1,24 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useTheme } from '@mui/material/styles';
-import { useCallback,useMemo,useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { z } from 'zod';
-
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { aiApi } from '@/lib/api';
-import { generatePdfReport,getPeriodeLabel } from '@/lib/pdfReport';
+import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
 
 import { useTransactions } from '@/hooks/useTransactions';
-import type { ApiTransaction } from '@/lib/api';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { useFinanceExportController } from './useFinanceExportController';
-import { useFinanceLedgerController } from './useFinanceLedgerController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
 import { useRabController } from './useRabController';
-
-const transactionSchema = z.object({
-  jenis: z.enum(['pengeluaran', 'pendapatan'], { message: 'type' }),
-  kategori: z.string().min(1, 'category'),
-  nominal: z.string().min(1, 'amount').refine(
-    (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
-    'amountPositive'
-  ),
-  tanggal: z.string().min(1, 'date'),
-  keterangan: z.string().optional(),
-});
-
-type TransactionFormData = z.infer<typeof transactionSchema>;
+import { useRabTransactionLinkController } from './useRabTransactionLinkController';
+import { useTransactionBatchController } from './useTransactionBatchController';
+import { useTransactionMasterController } from './useTransactionMasterController';
 
 type BepHppInputs = {
   totalBiaya: number;
@@ -82,10 +66,7 @@ export function useKeuanganController() {
     { month: '', used: 0 }
   );
   const [bepHppDialogOpen, setBepHppDialogOpen] = useState(false);
-  const [txDialogOpen, setTxDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [txSubmitting, setTxSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -93,120 +74,132 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'export'>('buku-besar');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis'>('tanggal');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<TransactionFormData>({
-    resolver: zodResolver(transactionSchema.extend({
-      jenis: z.enum(['pengeluaran', 'pendapatan'], { message: t('validation.type') }),
-      kategori: z.string().min(1, t('validation.category')),
-      nominal: z.string().min(1, t('validation.amount')).refine(
-        (v) => !isNaN(Number(v.replace(/\./g, ''))) && Number(v.replace(/\./g, '')) > 0,
-        t('validation.amountPositive')
-      ),
-      tanggal: z.string().min(1, t('validation.date')),
-    })),
-    defaultValues: {
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: new Date().toISOString().split('T')[0],
-      keterangan: '',
-    },
-  });
-
-  const selectedJenis = useWatch({ control, name: 'jenis' });
-  const selectedKategori = useWatch({ control, name: 'kategori' }) ?? '';
-  const selectedKeterangan = useWatch({ control, name: 'keterangan' }) ?? '';
   const financeProject = useFinanceProjectController();
   const rab = useRabController(financeProject.selectedProject);
-  const financeLedger = useFinanceLedgerController({
+  const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
+  const transactionMaster = useTransactionMasterController();
+  const clearSelectionTxs = () => setSelectedTxIds([]);
+  const projectScopedTransactions = useMemo(() => {
+    const selectedProjectId = financeProject.selectedProject?.id;
+    if (!selectedProjectId) return transactions;
+    return transactions.filter((tx) => tx.projectId === selectedProjectId);
+  }, [financeProject.selectedProject?.id, transactions]);
+  const rabTransactionLink = useRabTransactionLinkController({
     rabItems: rab.items,
-    selectedJenis,
-    selectedKategori,
-    selectedKeterangan,
+    transactions: projectScopedTransactions,
+    updateTransaction,
   });
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
   });
+  const hasSelectedProject = Boolean(financeProject.selectedProject);
+  const hasProjectData = hasSelectedProject && (projectScopedTransactions.length > 0 || rab.items.length > 0);
+  const financeAccess = {
+    hasSelectedProject,
+    hasProjectData,
+    canInputFinance: hasSelectedProject,
+    canExportFinance: hasSelectedProject && hasProjectData,
+  };
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions: financeReports.reportTransactions,
     startMonth: financeReports.reportStartMonth,
     endMonth: financeReports.reportEndMonth,
+    canExport: financeAccess.canExportFinance,
+    hasProjectData: financeAccess.hasProjectData,
   });
+  const reportPeriodeLabel = financeReports.reportStartMonth === financeReports.reportEndMonth
+    ? getPeriodeLabel(financeReports.reportStartMonth)
+    : `${getPeriodeLabel(financeReports.reportStartMonth)} - ${getPeriodeLabel(financeReports.reportEndMonth)}`;
+  const reportPeriodKey = financeReports.reportStartMonth === financeReports.reportEndMonth
+    ? financeReports.reportStartMonth
+    : `${financeReports.reportStartMonth}_sd_${financeReports.reportEndMonth}`;
+  const reportTotals = useMemo(() => {
+    let reportTotalPendapatan = 0;
+    let reportTotalPengeluaran = 0;
 
-  const kategoriFiltered = useMemo(
-    () =>
-      selectedJenis === 'pendapatan'
-        ? [t('categories.harvestSales'), t('categories.service'), t('categories.other')]
-        : [t('categories.fertilizer'), t('categories.pesticide'), t('categories.labor'), t('categories.irrigation'), t('categories.tools'), t('categories.other')],
-    [selectedJenis, t]
-  );
-
-  const openAddDialog = () => {
-    setEditingId(null);
-    reset({
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: new Date().toISOString().split('T')[0],
-      keterangan: '',
-    });
-    setTxDialogOpen(true);
-  };
-
-  const handleEdit = (tx: ApiTransaction) => {
-    setEditingId(tx._id);
-    reset({
-      jenis: tx.jenis,
-      kategori: tx.kategori,
-      nominal: tx.nominal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'),
-      tanggal: tx.tanggal,
-      keterangan: tx.keterangan,
-    });
-    setTxDialogOpen(true);
-  };
-
-  const onSubmit = async (data: TransactionFormData) => {
-    const bestRabItem = financeLedger.rabSuggestions[0]?.item;
-    const txData: Parameters<typeof addTransaction>[0] = {
-      jenis: data.jenis,
-      kategori: data.kategori,
-      nominal: Number(data.nominal.replace(/\./g, '')),
-      tanggal: data.tanggal,
-      keterangan: data.keterangan || '',
-    };
-    if (financeProject.selectedProject) {
-      txData.projectId = financeProject.selectedProject.id;
-    }
-    if (bestRabItem) {
-      txData.projectId = bestRabItem.projectId;
-      txData.rabCategoryId = bestRabItem.categoryId;
-      txData.rabItemId = bestRabItem.id;
-    }
-
-    setTxSubmitting(true);
-    try {
-      if (editingId) {
-        await updateTransaction(editingId, txData);
-        setSnackbar({ open: true, message: 'Transaksi berhasil diperbarui', severity: 'success' });
-      } else {
-        await addTransaction(txData);
-        setSnackbar({ open: true, message: 'Transaksi berhasil dicatat', severity: 'success' });
+    financeReports.reportTransactions.forEach((transaction) => {
+      if (transaction.jenis === 'pendapatan') {
+        reportTotalPendapatan += transaction.nominal;
+      } else if (transaction.jenis === 'pengeluaran') {
+        reportTotalPengeluaran += transaction.nominal;
       }
-      setTxDialogOpen(false);
-      setEditingId(null);
-    } catch {
-      setSnackbar({ open: true, message: 'Gagal menyimpan transaksi', severity: 'error' });
-    } finally {
-      setTxSubmitting(false);
-    }
+    });
+
+    return {
+      totalPendapatan: reportTotalPendapatan,
+      totalPengeluaran: reportTotalPengeluaran,
+      labaBersih: reportTotalPendapatan - reportTotalPengeluaran,
+    };
+  }, [financeReports.reportTransactions]);
+  const guardedTransactionBatch = {
+    ...transactionBatch,
+    openForCreate: () => {
+      if (!financeAccess.canInputFinance) {
+        setSnackbar({
+          open: true,
+          message: 'Buat atau pilih proyek terlebih dahulu',
+          severity: 'error',
+        });
+        return;
+      }
+      transactionBatch.openForCreate();
+    },
   };
+  const guardedRabTransactionLink = {
+    ...rabTransactionLink,
+    openForTransactions: (ids: string[]) => {
+      if (!financeAccess.canInputFinance) {
+        setSnackbar({
+          open: true,
+          message: 'Buat atau pilih proyek terlebih dahulu',
+          severity: 'error',
+        });
+        return;
+      }
+      rabTransactionLink.openForTransactions(ids);
+    },
+    linkToRabItem: async (item: Parameters<typeof rabTransactionLink.linkToRabItem>[0]) => {
+      const results = await rabTransactionLink.linkToRabItem(item);
+      if (results.failed === 0 && results.success > 0) {
+        clearSelectionTxs();
+        setSnackbar({
+          open: true,
+          message: `${results.success} transaksi berhasil dihubungkan ke RAB`,
+          severity: 'success',
+        });
+      } else if (results.failed > 0) {
+        setSnackbar({
+          open: true,
+          message: `${results.failed} transaksi gagal dihubungkan ke RAB`,
+          severity: 'error',
+        });
+      }
+      return results;
+    },
+  };
+
+  useEffect(() => {
+    const results = transactionBatch.submitResults;
+    if (!results) return;
+    if (results.failed === 0) {
+      setSnackbar({ open: true, message: `${results.success} transaksi berhasil disimpan`, severity: 'success' });
+    } else {
+      setSnackbar({ open: true, message: `${results.success} berhasil, ${results.failed} gagal`, severity: 'error' });
+    }
+  }, [transactionBatch.submitResults]);
 
   const handleDelete = async (id: string) => {
     setDeleteConfirmId(id);
@@ -219,10 +212,29 @@ export function useKeuanganController() {
     setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
   };
 
-  const handleNominalChange = (value: string, onChange: (v: string) => void) => {
-    const raw = value.replace(/\D/g, '');
-    const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    onChange(formatted);
+  const toggleSort = (col: typeof sortColumn) => {
+    if (sortColumn === col) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(col);
+      setSortDir('asc');
+    }
+  };
+
+  const toggleSelectTx = (id: string) => {
+    setSelectedTxIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    const count = selectedTxIds.length;
+    for (const id of selectedTxIds) {
+      await deleteTransaction(id);
+    }
+    clearSelectionTxs();
+    setBulkDeleteConfirm(false);
+    setSnackbar({ open: true, message: `${count} transaksi berhasil dihapus`, severity: 'success' });
   };
 
   const handleBepHppInputChange = useCallback((field: keyof BepHppInputs, rawValue: string) => {
@@ -259,81 +271,6 @@ export function useKeuanganController() {
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
-  const handleExportExcel = async () => {
-    const [ExcelJS, { saveAs }] = await Promise.all([
-      import('exceljs').then(m => m.default),
-      import('file-saver'),
-    ]);
-
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Buku Keuangan');
-
-    // Add Title
-    worksheet.mergeCells('A1:E1');
-    const titleCell = worksheet.getCell('A1');
-    titleCell.value = t('excel.reportTitle');
-    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
-    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF16A34A' } };
-    titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-
-    worksheet.addRow([]); // Empty row
-
-    // Add Headers
-    const headerRow = worksheet.addRow([
-      t('ledger.columns.date'), 
-      t('ledger.columns.category'), 
-      t('ledger.columns.note'), 
-      t('ledger.columns.type'), 
-      t('ledger.columns.value')
-    ]);
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF3B82F6' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'center' };
-      cell.border = {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' }
-      };
-    });
-
-    // Add Data
-    transactions.forEach((tx) => {
-      const row = worksheet.addRow([
-        tx.tanggal,
-        tx.kategori,
-        tx.keterangan || '-',
-        tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense'),
-        tx.nominal
-      ]);
-      row.eachCell((cell, colNumber) => {
-        cell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' }
-        };
-        if (colNumber === 5) {
-          cell.numFmt = '"Rp"#,##0';
-        }
-      });
-    });
-
-    // Adjust column widths
-    worksheet.columns = [
-      { width: 15 },
-      { width: 25 },
-      { width: 40 },
-      { width: 15 },
-      { width: 20 }
-    ];
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `${t('excel.filename')}_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
-
   // ─── AI Quota helpers ──────────────────────────────────────────
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quotaThisMonth = aiReportQuota.month === currentMonth ? aiReportQuota.used : 0;
@@ -343,18 +280,43 @@ export function useKeuanganController() {
     setAiReportQuota({ month: currentMonth, used: quotaThisMonth + 1 });
   };
 
+  const getFinanceExportBlockedMessage = () => {
+    if (!financeAccess.hasSelectedProject) return 'Buat atau pilih proyek terlebih dahulu';
+    if (!financeAccess.hasProjectData) return 'Tambahkan transaksi atau RAB sebelum export laporan';
+    return null;
+  };
+
+  const handleOpenFinanceReportDialog = () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+    setAiDialogOpen(true);
+  };
+
   // ─── Generate PDF (manual, tanpa AI) ──────────────────────────
   const handleGeneratePdfManual = async () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+
     setReportLoading(true);
     setReportError(null);
     try {
       await generatePdfReport({
-        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
-        periodeLabel: filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan),
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
-        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        periode: reportPeriodKey,
+        periodeLabel: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
       });
     } catch {
@@ -366,33 +328,40 @@ export function useKeuanganController() {
 
   // ─── Generate PDF (dengan AI Saran) ────────────────────────────
   const handleGeneratePdfAI = async () => {
+    const blockedMessage = getFinanceExportBlockedMessage();
+    if (blockedMessage) {
+      setReportError(blockedMessage);
+      return;
+    }
+
     if (aiQuotaRemaining <= 0) return;
     setReportLoading(true);
     setReportError(null);
     try {
-      const periodeLabel = filterBulan === 'semua' ? t('filters.allMonths') : getPeriodeLabel(filterBulan);
       const result = await aiApi.generateFinancialReport({
-        periode: periodeLabel,
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
+        periode: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        transactions: monthFilteredTransactions.map((tx) => ({
-          jenis: tx.jenis,
-          kategori: tx.kategori,
-          nominal: tx.nominal,
-          tanggal: tx.tanggal,
-          keterangan: tx.keterangan,
-        })),
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
       });
       consumeAiQuota();
       await generatePdfReport({
-        periode: filterBulan === 'semua' ? 'semua' : filterBulan,
-        periodeLabel,
-        totalPendapatan,
-        totalPengeluaran,
-        labaBersih,
-        transactions: monthFilteredTransactions.map(tx => ({ ...tx, id: tx._id })),
+        periode: reportPeriodKey,
+        periodeLabel: reportPeriodeLabel,
+        totalPendapatan: reportTotals.totalPendapatan,
+        totalPengeluaran: reportTotals.totalPengeluaran,
+        labaBersih: reportTotals.labaBersih,
+        project: financeProject.selectedProject,
+        rabItems: rab.items,
+        transactions: financeReports.reportTransactions,
+        incomeStatementComparison: financeReports.incomeStatementComparison,
+        cashFlowComparison: financeReports.cashFlowComparison,
         userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
         aiAnalysis: result.analysis,
       });
@@ -403,7 +372,7 @@ export function useKeuanganController() {
     }
   };
 
-  const monthFilteredTransactions = transactions.filter((tx) =>
+  const monthFilteredTransactions = projectScopedTransactions.filter((tx) =>
     filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
   );
 
@@ -507,12 +476,12 @@ export function useKeuanganController() {
     () =>
       Array.from(
         new Set(
-          transactions
+          projectScopedTransactions
             .map((t) => t.tanggal.slice(0, 7))
             .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
         )
       ).sort((a, b) => a.localeCompare(b)),
-    [transactions]
+    [projectScopedTransactions]
   );
 
   const getBulanLabel = (bulanKey: string) => {
@@ -524,11 +493,40 @@ export function useKeuanganController() {
     return `${BULAN_LABELS[monthIndex]} ${tahun}`;
   };
 
-  // Filtered table data
-  const displayedTransactions = useMemo(
-    () => monthFilteredTransactions.filter((t) => (filterJenis === 'semua' || t.jenis === filterJenis)),
-    [monthFilteredTransactions, filterJenis]
-  );
+  useEffect(() => {
+    if (filterBulan !== 'semua' && !bulanOptions.includes(filterBulan)) {
+      setFilterBulan('semua');
+    }
+  }, [bulanOptions, filterBulan, setFilterBulan]);
+
+  // Filtered + searched + sorted table data
+  const displayedTransactions = useMemo(() => {
+    let result = monthFilteredTransactions.filter(
+      (tx) => filterJenis === 'semua' || tx.jenis === filterJenis
+    );
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (tx) =>
+          tx.kategori.toLowerCase().includes(q) ||
+          String(tx.volume ?? '').includes(q) ||
+          (tx.satuan ?? '').toLowerCase().includes(q) ||
+          String(tx.hargaSatuan ?? '').includes(q) ||
+          String(tx.nominal ?? '').includes(q) ||
+          (tx.keterangan ?? '').toLowerCase().includes(q)
+      );
+    }
+
+    return [...result].sort((a, b) => {
+      let cmp = 0;
+      if (sortColumn === 'tanggal') cmp = a.tanggal.localeCompare(b.tanggal);
+      else if (sortColumn === 'kategori') cmp = a.kategori.localeCompare(b.kategori);
+      else if (sortColumn === 'nominal') cmp = a.nominal - b.nominal;
+      else if (sortColumn === 'jenis') cmp = a.jenis.localeCompare(b.jenis);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [monthFilteredTransactions, filterJenis, searchQuery, sortColumn, sortDir]);
 
   return {
     t,
@@ -540,10 +538,6 @@ export function useKeuanganController() {
     setReportError,
     bepHppDialogOpen,
     setBepHppDialogOpen,
-    txDialogOpen,
-    setTxDialogOpen,
-    editingId,
-    setEditingId,
     deleteConfirmId,
     setDeleteConfirmId,
     snackbar,
@@ -556,22 +550,12 @@ export function useKeuanganController() {
     setFinanceTab,
     theme,
     isMobile,
-    control,
-    handleSubmit,
-    errors,
-    selectedJenis,
-    kategoriFiltered,
-    openAddDialog,
-    handleEdit,
-    onSubmit,
-    txSubmitting,
     handleDelete,
     handleConfirmDelete,
-    handleNominalChange,
     handleBepHppInputChange,
     getBepHppInputDisplayValue,
-    handleExportExcel,
     aiQuotaRemaining,
+    handleOpenFinanceReportDialog,
     handleGeneratePdfManual,
     handleGeneratePdfAI,
     monthFilteredTransactions,
@@ -588,11 +572,25 @@ export function useKeuanganController() {
     bulanOptions,
     getBulanLabel,
     displayedTransactions,
+    financeAccess,
     financeProject,
     rab,
-    financeLedger,
+    rabTransactionLink: guardedRabTransactionLink,
     financeReports,
     financeExport,
+    transactionBatch: guardedTransactionBatch,
+    transactionMaster,
+    searchQuery,
+    setSearchQuery,
+    sortColumn,
+    sortDir,
+    toggleSort,
+    selectedTxIds,
+    toggleSelectTx,
+    clearSelectionTxs,
+    bulkDeleteConfirm,
+    setBulkDeleteConfirm,
+    handleBulkDeleteConfirm,
   };
 }
 

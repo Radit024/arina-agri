@@ -268,6 +268,18 @@
           "value": "{temp}°C · {cond}",
           "subtitle": "Kelembapan {hum}%"
         }
+      },
+      "financeScope": {
+        "label": "Scope Keuangan",
+        "allProjects": "Semua Project",
+        "unknownProject": "Project Tidak Dikenal",
+        "performance": {
+          "title": "Performa Project Bulan Ini",
+          "subheader": "Urutan berdasarkan laba bersih bulan berjalan",
+          "rank": "Peringkat {rank}",
+          "flow": "Masuk {income} / Keluar {expense}",
+          "transactions": "{count} transaksi"
+        }
       }
     },
     "weatherBanner": {
@@ -297,11 +309,13 @@
       },
       "trend": {
         "title": "Tren Keuangan",
-        "subheader": "Pengeluaran vs Pendapatan (6 bulan terakhir)"
+        "subheader": "Pengeluaran vs Pendapatan (6 bulan terakhir)",
+        "subheaderScoped": "{scope} - Pengeluaran vs Pendapatan (6 bulan terakhir)"
       },
       "category": {
         "title": "Kategori Pengeluaran",
-        "subheader": "Bulan {month} {year}"
+        "subheader": "Bulan {month} {year}",
+        "subheaderScoped": "{scope} - Bulan {month} {year}"
       }
     }
   },
@@ -475,9 +489,12 @@
       "columns": {
         "date": "Tanggal",
         "category": "Kategori",
+        "quantity": "Volume",
+        "unit": "Satuan",
+        "unitPrice": "Harga Satuan",
         "note": "Detail / Catatan",
-        "type": "Tipe",
-        "value": "Nilai (Rp)",
+        "type": "Jenis",
+        "value": "Nominal (Rp)",
         "action": "Opsi"
       },
       "empty": "Belum ada Catatan transaksi.",
@@ -963,7 +980,7 @@
   },
   "Auth": {
     "login": {
-      "title": "Selamat Datang Kembali! 👋",
+      "title": "Selamat Datang Kembali!",
       "subtitle": "Silakan masuk ke akun Anda untuk melanjutkan.",
       "email": "Alamat Email",
       "password": "Kata Sandi",
@@ -975,6 +992,7 @@
       "processing": "Memproses...",
       "preparingDashboard": "Menyiapkan dashboard...",
       "formLabel": "Form login",
+      "localLogin": "Masuk mode lokal",
       "error": {
         "invalid": "Email atau password salah. Silakan coba lagi.",
         "failed": "Gagal masuk. Periksa email dan password Anda."

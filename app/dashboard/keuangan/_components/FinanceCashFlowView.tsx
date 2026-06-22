@@ -11,19 +11,19 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
-import { formatRupiah } from '@/lib/formatters';
+import { formatMonthYear, formatRupiah } from '@/lib/formatters';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeReports'>;
 
 export default function FinanceCashFlowView({ financeReports }: Props) {
   return (
-    <Card>
-      <CardContent>
+    <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <CardContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Arus Kas Rencana vs Aktual</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Periode {financeReports.reportStartMonth} sampai {financeReports.reportEndMonth}.
+          Periode {formatMonthYear(financeReports.reportStartMonth)} sampai {formatMonthYear(financeReports.reportEndMonth)}.
         </Typography>
-        <TableContainer>
+        <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -40,7 +40,7 @@ export default function FinanceCashFlowView({ financeReports }: Props) {
             <TableBody>
               {financeReports.cashFlowComparison.rows.map((row) => (
                 <TableRow key={row.month}>
-                  <TableCell>{row.month}</TableCell>
+                  <TableCell>{formatMonthYear(row.month)}</TableCell>
                   <TableCell align="right">{formatRupiah(row.plannedInflow)}</TableCell>
                   <TableCell align="right">{formatRupiah(row.actualInflow)}</TableCell>
                   <TableCell align="right">{formatRupiah(row.plannedOutflow)}</TableCell>

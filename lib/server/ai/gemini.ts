@@ -1,4 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { formatMonthYear } from '@/lib/formatters';
+import type {
+  CashFlowComparison,
+  FinanceProject,
+  FinanceTransactionForReport,
+  IncomeStatementComparison,
+  RabItem,
+} from '@/lib/finance/rabTypes';
 import type { BmkgWeatherWarning } from '@/lib/server/weather/bmkgTypes';
 
 function getClient() {
@@ -142,21 +150,54 @@ export async function generateGeminiReply({
   return text.trim();
 }
 
-interface FinancialReportTransaction {
-  jenis: 'pengeluaran' | 'pendapatan';
-  kategori: string;
-  nominal: number;
-  tanggal: string;
-  keterangan?: string;
-}
-
 interface FinancialReportData {
   periode: string;
   totalPendapatan: number;
   totalPengeluaran: number;
   labaBersih: number;
-  transactions?: FinancialReportTransaction[];
+  project?: FinanceProject | null;
+  rabItems?: RabItem[];
+  transactions?: FinanceTransactionForReport[];
+  incomeStatementComparison?: IncomeStatementComparison;
+  cashFlowComparison?: CashFlowComparison;
   userName?: string;
+}
+
+function formatFinancialRp(value: number) {
+  return `Rp ${Math.abs(value).toLocaleString('id-ID')}`;
+}
+
+function formatSignedFinancialRp(value: number) {
+  if (value === 0) return 'Rp 0';
+  return `${value > 0 ? '+ ' : '- '}${formatFinancialRp(value)}`;
+}
+
+function formatFinancialPercent(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return '-';
+  return `${(value * 100).toLocaleString('id-ID', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+function financialStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    belum_ada_realisasi: 'Belum ada realisasi',
+    sesuai_rencana: 'Sesuai rencana',
+    hemat: 'Hemat',
+    over_budget: 'Over budget',
+    di_atas_target: 'Di atas target',
+    di_bawah_target: 'Di bawah target',
+  };
+  return labels[status] ?? status;
+}
+
+function formatLimitedRows<T>(rows: T[], formatter: (row: T, index: number) => string, maxRows = 25) {
+  const visibleRows = rows.slice(0, maxRows).map(formatter);
+  if (rows.length > maxRows) {
+    visibleRows.push(`- Ditampilkan ${maxRows} dari ${rows.length} baris, prioritaskan item terbesar/berisiko saat memberi rekomendasi.`);
+  }
+  return visibleRows;
 }
 
 export async function generateFinancialAnalysis({ reportData }: { reportData: FinancialReportData }) {
@@ -168,7 +209,18 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
   const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   const model = client.getGenerativeModel({ model: modelName });
 
-  const { periode, totalPendapatan, totalPengeluaran, labaBersih, transactions, userName } = reportData;
+  const {
+    periode,
+    totalPendapatan,
+    totalPengeluaran,
+    labaBersih,
+    project,
+    rabItems,
+    transactions,
+    incomeStatementComparison,
+    cashFlowComparison,
+    userName,
+  } = reportData;
 
   const pengeluaranPerKategori: Record<string, number> = {};
   const pendapatanPerKategori: Record<string, number> = {};
@@ -183,22 +235,83 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
     });
   }
 
-  const formatRp = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
-
   const farmerName = userName ? userName : 'Petani';
+  const plannedIncome = incomeStatementComparison?.summary.plannedIncome
+    ?? rabItems?.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.plannedTotal, 0)
+    ?? 0;
+  const plannedExpense = incomeStatementComparison?.summary.plannedExpense
+    ?? rabItems?.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.plannedTotal, 0)
+    ?? 0;
+  const plannedProfit = incomeStatementComparison?.summary.plannedProfit ?? (plannedIncome - plannedExpense);
 
   const dataContext = [
     `NAMA PETANI / PEMILIK AKUN: ${farmerName}`,
     `PERIODE LAPORAN: ${periode}`,
-    `TOTAL PENDAPATAN: ${formatRp(totalPendapatan)}`,
-    `TOTAL PENGELUARAN: ${formatRp(totalPengeluaran)}`,
-    `LABA/RUGI BERSIH: ${formatRp(Math.abs(labaBersih))} (${labaBersih >= 0 ? 'LABA' : 'RUGI'})`,
+    `TOTAL PENDAPATAN: ${formatFinancialRp(totalPendapatan)}`,
+    `TOTAL PENGELUARAN: ${formatFinancialRp(totalPengeluaran)}`,
+    `LABA/RUGI BERSIH: ${formatFinancialRp(Math.abs(labaBersih))} (${labaBersih >= 0 ? 'LABA' : 'RUGI'})`,
+    '',
+    'PROYEK USAHA TANI:',
+    project
+      ? `- ${project.name} | Komoditas: ${project.commodity} | Luas: ${project.landArea} ${project.landAreaUnit} | Musim: ${project.seasonLabel}`
+      : '- Data proyek tidak tersedia.',
+    project?.startDate || project?.endDate
+      ? `- Rentang proyek: ${project.startDate || '-'} sampai ${project.endDate || '-'}`
+      : '- Rentang proyek tidak tersedia.',
+    '',
+    'RINGKASAN RENCANA VS AKTUAL:',
+    `- Pendapatan rencana: ${formatFinancialRp(plannedIncome)} | Pendapatan aktual: ${formatFinancialRp(totalPendapatan)} | Selisih: ${formatSignedFinancialRp(totalPendapatan - plannedIncome)}`,
+    `- Pengeluaran rencana: ${formatFinancialRp(plannedExpense)} | Pengeluaran aktual: ${formatFinancialRp(totalPengeluaran)} | Selisih: ${formatSignedFinancialRp(totalPengeluaran - plannedExpense)}`,
+    `- Laba/rugi rencana: ${formatSignedFinancialRp(plannedProfit)} | Laba/rugi aktual: ${formatSignedFinancialRp(labaBersih)} | Selisih: ${formatSignedFinancialRp(labaBersih - plannedProfit)}`,
+    '',
+    'RENCANA ANGGARAN BIAYA (RAB):',
+    ...(rabItems && rabItems.length > 0
+      ? formatLimitedRows(rabItems, (item) => [
+          `- ${item.type === 'income' ? 'Pendapatan' : 'Pengeluaran'}`,
+          `${item.categoryName ?? item.categoryId} / ${item.name}`,
+          `${item.volume} ${item.unit} x ${formatFinancialRp(item.unitPrice)}`,
+          `Total rencana ${formatFinancialRp(item.plannedTotal)}`,
+          `Bulan kas ${item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}`,
+        ].join(' | '))
+      : ['- Belum ada item RAB.']),
+    '',
+    'LAPORAN LABA RUGI RENCANA VS AKTUAL:',
+    ...(incomeStatementComparison
+      ? [
+          `- Ringkasan: Rencana pendapatan ${formatFinancialRp(incomeStatementComparison.summary.plannedIncome)}, aktual ${formatFinancialRp(incomeStatementComparison.summary.actualIncome)}; rencana pengeluaran ${formatFinancialRp(incomeStatementComparison.summary.plannedExpense)}, aktual ${formatFinancialRp(incomeStatementComparison.summary.actualExpense)}; selisih laba ${formatSignedFinancialRp(incomeStatementComparison.summary.profitVariance)} (${formatFinancialPercent(incomeStatementComparison.summary.profitVariancePercent)}).`,
+          ...formatLimitedRows(incomeStatementComparison.rows, (row) => [
+            `- ${row.categoryName} / ${row.itemName}`,
+            row.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
+            `Rencana ${formatFinancialRp(row.planned)}`,
+            `Aktual ${formatFinancialRp(row.actual)}`,
+            `Selisih ${formatSignedFinancialRp(row.variance)} (${formatFinancialPercent(row.variancePercent)})`,
+            `Status: ${financialStatusLabel(row.status)}`,
+          ].join(' | ')),
+        ]
+      : ['- Data perbandingan laba rugi tidak tersedia.']),
+    '',
+    'ARUS KAS RENCANA VS AKTUAL:',
+    ...(cashFlowComparison
+      ? [
+          `- Ringkasan: kas masuk rencana ${formatFinancialRp(cashFlowComparison.summary.plannedInflow)}, aktual ${formatFinancialRp(cashFlowComparison.summary.actualInflow)}; kas keluar rencana ${formatFinancialRp(cashFlowComparison.summary.plannedOutflow)}, aktual ${formatFinancialRp(cashFlowComparison.summary.actualOutflow)}; selisih bersih ${formatSignedFinancialRp(cashFlowComparison.summary.variance)} (${formatFinancialPercent(cashFlowComparison.summary.variancePercent)}).`,
+          ...formatLimitedRows(cashFlowComparison.rows, (row) => [
+            `- ${formatMonthYear(row.month)}`,
+            `Masuk rencana ${formatFinancialRp(row.plannedInflow)}`,
+            `Masuk aktual ${formatFinancialRp(row.actualInflow)}`,
+            `Keluar rencana ${formatFinancialRp(row.plannedOutflow)}`,
+            `Keluar aktual ${formatFinancialRp(row.actualOutflow)}`,
+            `Bersih rencana ${formatSignedFinancialRp(row.plannedNet)}`,
+            `Bersih aktual ${formatSignedFinancialRp(row.actualNet)}`,
+            `Selisih ${formatSignedFinancialRp(row.variance)}`,
+          ].join(' | ')),
+        ]
+      : ['- Data perbandingan arus kas tidak tersedia.']),
     '',
     'RINCIAN PENGELUARAN PER KATEGORI:',
-    ...Object.entries(pengeluaranPerKategori).map(([k, v]) => `- ${k}: ${formatRp(v)}`),
+    ...Object.entries(pengeluaranPerKategori).map(([k, v]) => `- ${k}: ${formatFinancialRp(v)}`),
     '',
     'RINCIAN PENDAPATAN PER KATEGORI:',
-    ...Object.entries(pendapatanPerKategori).map(([k, v]) => `- ${k}: ${formatRp(v)}`),
+    ...Object.entries(pendapatanPerKategori).map(([k, v]) => `- ${k}: ${formatFinancialRp(v)}`),
     '',
     `TOTAL TRANSAKSI: ${transactions?.length || 0} transaksi (${transactions?.filter((t) => t.jenis === 'pengeluaran').length || 0} pengeluaran, ${transactions?.filter((t) => t.jenis === 'pendapatan').length || 0} pendapatan)`,
   ].join('\n');
@@ -210,7 +323,7 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
     'DATA KEUANGAN YANG PERLU DIANALISIS:',
     dataContext,
     '',
-    'Berikan analisis dan rekomendasi berdasarkan data di atas.',
+    'Berikan analisis dan rekomendasi berdasarkan data di atas; rekomendasi wajib mempertimbangkan deviasi RAB vs aktual, item over budget/hemat, dan bulan arus kas yang paling berisiko.',
   ].join('\n');
 
   const result = await model.generateContent(mergedPrompt);

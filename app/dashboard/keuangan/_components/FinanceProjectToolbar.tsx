@@ -1,7 +1,6 @@
 'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import DownloadIcon from '@mui/icons-material/Download';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,104 +12,127 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import FinanceProjectDialog from './FinanceProjectDialog';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab' | 'financeExport'>;
+type Props = Pick<UseKeuanganControllerResult, 'financeAccess' | 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
+  onOpenPdfReport: () => void;
+};
 
-export default function FinanceProjectToolbar({ financeProject, rab, financeExport }: Props) {
-  const createSampleProject = () => {
-    const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const endDate = new Date(now.getFullYear(), now.getMonth() + 4, 0).toISOString().slice(0, 10);
-    void financeProject.createProject({
-      name: 'Padi 1 Ha MT 3',
-      commodity: 'Padi',
-      landArea: 1,
-      landAreaUnit: 'Ha',
-      seasonLabel: 'MT 3',
-      startDate,
-      endDate,
-      status: 'active',
-    });
-  };
-
+function ExcelLogoIcon() {
   return (
     <Box
-      sx={{
-        mb: 2,
-        p: 2,
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
-        <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 260 } }}>
-          <InputLabel>Proyek RAB</InputLabel>
-          <Select
-            label="Proyek RAB"
-            value={financeProject.selectedProjectId ?? ''}
-            onChange={(event) => financeProject.setSelectedProjectId(event.target.value || null)}
+      component="img"
+      src="/icons/excel-logo.svg"
+      alt=""
+      aria-hidden="true"
+      data-testid="finance-export-excel-logo"
+      sx={{ width: 22, height: 22, display: 'block' }}
+    />
+  );
+}
+
+function PdfLogoIcon() {
+  return (
+    <Box
+      component="img"
+      src="/icons/pdf-logo.svg"
+      alt=""
+      aria-hidden="true"
+      data-testid="finance-export-pdf-logo"
+      sx={{ width: 22, height: 22, display: 'block' }}
+    />
+  );
+}
+
+export default function FinanceProjectToolbar({ financeAccess, financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
+  return (
+    <>
+      <Box
+        sx={{
+          mb: 2,
+          p: 2,
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 260 } }}>
+            <InputLabel>Proyek </InputLabel>
+            <Select
+              label="Proyek"
+              value={financeProject.selectedProjectId ?? ''}
+              onChange={(event) => financeProject.setSelectedProjectId(event.target.value || null)}
+            >
+              {financeProject.projects.length === 0 && <MenuItem value="">Belum ada proyek</MenuItem>}
+              {financeProject.projects.map((project) => (
+                <MenuItem key={project.id} value={project.id}>
+                  {project.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button
+            variant="outlined"
+            startIcon={<AddCircleIcon />}
+            onClick={() => financeProject.setProjectDialogOpen(true)}
+            sx={{ borderRadius: 8 }}
           >
-            {financeProject.projects.length === 0 && <MenuItem value="">Belum ada proyek</MenuItem>}
-            {financeProject.projects.map((project) => (
-              <MenuItem key={project.id} value={project.id}>
-                {project.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            Buat Proyek
+          </Button>
 
-        <Button variant="outlined" startIcon={<AddCircleIcon />} onClick={createSampleProject} sx={{ borderRadius: 8 }}>
-          Buat Proyek RAB
-        </Button>
+          <Button
+            variant="outlined"
+            startIcon={<UploadFileIcon />}
+            disabled
+            sx={{ borderRadius: 8 }}
+          >
+            Import Excel
+          </Button>
 
-        <Button
-          component="label"
-          variant="outlined"
-          startIcon={<UploadFileIcon />}
-          disabled={!financeProject.selectedProject}
-          sx={{ borderRadius: 8 }}
-        >
-          Import Excel
-          <input
-            hidden
-            type="file"
-            accept=".xlsx"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void rab.importRabFile(file);
-              event.currentTarget.value = '';
-            }}
-          />
-        </Button>
+          <Button
+            data-guide-target="finance-export"
+            variant="outlined"
+            startIcon={<ExcelLogoIcon />}
+            disabled={!financeAccess.canExportFinance || financeExport.exportLoading}
+            onClick={financeExport.handleExportFinanceWorkbook}
+            sx={{ borderRadius: 8 }}
+          >
+            Export Excel
+          </Button>
 
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          disabled={!financeProject.selectedProject || financeExport.exportLoading}
-          onClick={financeExport.handleExportFinanceWorkbook}
-          sx={{ borderRadius: 8 }}
-        >
-          Export Excel
-        </Button>
-      </Stack>
+          <Button
+            data-guide-target="finance-export-pdf"
+            variant="outlined"
+            startIcon={<PdfLogoIcon />}
+            disabled={!financeAccess.canExportFinance || reportLoading}
+            onClick={onOpenPdfReport}
+            sx={{ borderRadius: 8 }}
+          >
+            Export Laporan
+          </Button>
+        </Stack>
 
-      {!financeProject.backendOnline && (
-        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
-          Data RAB memakai penyimpanan lokal sampai tabel Supabase tersedia.
-        </Typography>
-      )}
-      {rab.importError && (
-        <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
-          {rab.importError}
-        </Typography>
-      )}
-      {financeExport.exportError && (
-        <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
-          {financeExport.exportError}
-        </Typography>
-      )}
-    </Box>
+        {!financeProject.backendOnline && (
+          <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
+            Data RAB memakai penyimpanan lokal sampai tabel Supabase tersedia.
+          </Typography>
+        )}
+        {rab.importError && (
+          <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
+            {rab.importError}
+          </Typography>
+        )}
+        {financeExport.exportError && (
+          <Typography variant="caption" color="error.main" sx={{ display: 'block', mt: 1 }}>
+            {financeExport.exportError}
+          </Typography>
+        )}
+      </Box>
+
+      <FinanceProjectDialog financeProject={financeProject} />
+    </>
   );
 }

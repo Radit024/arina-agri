@@ -29,7 +29,6 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
@@ -56,7 +55,7 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { openGuide } = useGuide();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
@@ -342,7 +341,7 @@ export default function Sidebar() {
               <ListItem disablePadding>
                 <ListItemButton
                   onClick={async () => {
-                    await supabase.auth.signOut();
+                    await signOut();
                     router.push('/');
                   }}
                   sx={(theme) => ({

@@ -18,9 +18,10 @@ const copy: Record<string, string> = {
   processing: 'Memproses...',
   preparingDashboard: 'Menyiapkan dashboard...',
   formLabel: 'Form login',
+  localLogin: 'Masuk mode lokal',
 };
 
-function LoginViewHarness() {
+function LoginViewHarness({ localLoginEnabled = false }: { localLoginEnabled?: boolean }) {
   const form = useForm<LoginForm>({
     defaultValues: { email: '', password: '' },
   });
@@ -32,7 +33,10 @@ function LoginViewHarness() {
       errors={{}}
       googleLoading={false}
       handleGoogleSignIn={vi.fn()}
+      handleLocalSignIn={vi.fn()}
       handleSubmit={form.handleSubmit}
+      localLoading={false}
+      localLoginEnabled={localLoginEnabled}
       loading={false}
       onSubmit={vi.fn()}
       redirecting
@@ -50,5 +54,15 @@ describe('LoginView loading transition', () => {
     expect(screen.getByRole('form', { name: /login/i })).toHaveAttribute('aria-busy', 'true');
     expect(screen.getAllByText('Menyiapkan dashboard...').length).toBeGreaterThan(0);
     expect(screen.getByRole('progressbar', { name: /menyiapkan dashboard/i })).toBeInTheDocument();
+  });
+
+  it('shows the local login action only when enabled', () => {
+    const { rerender } = render(<LoginViewHarness />);
+
+    expect(screen.queryByRole('button', { name: 'Masuk mode lokal' })).not.toBeInTheDocument();
+
+    rerender(<LoginViewHarness localLoginEnabled />);
+
+    expect(screen.getByRole('button', { name: 'Masuk mode lokal' })).toBeInTheDocument();
   });
 });

@@ -22,10 +22,12 @@ export function useLoginController() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [loginRedirecting, setLoginRedirecting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, startLocalSession } = useAuth();
   const redirecting = loginRedirecting || (!authLoading && Boolean(user));
+  const localLoginEnabled = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
     router.prefetch('/dashboard');
@@ -82,13 +84,32 @@ export function useLoginController() {
     }
   };
 
+  const handleLocalSignIn = async () => {
+    if (!localLoginEnabled) return;
+
+    setLocalLoading(true);
+    setError(null);
+    try {
+      await startLocalSession();
+      setLoginRedirecting(true);
+      router.replace('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('error.failed'));
+      setLoginRedirecting(false);
+      setLocalLoading(false);
+    }
+  };
+
   return {
     control: form.control,
     error,
     errors: form.formState.errors,
     googleLoading,
     handleGoogleSignIn,
+    handleLocalSignIn,
     handleSubmit: form.handleSubmit,
+    localLoading,
+    localLoginEnabled,
     loading,
     onSubmit,
     redirecting,

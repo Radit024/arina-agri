@@ -79,6 +79,43 @@ export function useRabItems(projectId: string | null) {
     return created;
   };
 
+  const updateCategory = async (id: string, payload: Partial<ApiRabCategory>) => {
+    const applyCategoryUpdate = (category: ApiRabCategory) =>
+      category.id === id ? { ...category, ...payload } : category;
+    const applyItemCategoryName = (item: ApiRabItem, category: ApiRabCategory) =>
+      item.categoryId === id ? { ...item, categoryName: category.name } : item;
+
+    if (backendOnline && user) {
+      const updated = await rabApi.updateCategory(id, payload);
+      setCategories((prev) => prev.map((category) => (category.id === id ? updated : category)));
+      setItems((prev) => prev.map((item) => applyItemCategoryName(item, updated)));
+      return updated;
+    }
+
+    const nextCategories = localState.categories.map((category) => {
+      const next = applyCategoryUpdate(category);
+      return next;
+    });
+    const updatedCategory = nextCategories.find((category) => category.id === id) ?? null;
+    const nextItems = updatedCategory
+      ? localState.items.map((item) => applyItemCategoryName(item, updatedCategory))
+      : localState.items;
+    syncLocalState({ ...localState, categories: nextCategories, items: nextItems });
+    return updatedCategory;
+  };
+
+  const deleteCategory = async (id: string) => {
+    if (backendOnline && user) {
+      await rabApi.deleteCategory(id);
+      setCategories((prev) => prev.filter((category) => category.id !== id));
+      return;
+    }
+    syncLocalState({
+      ...localState,
+      categories: localState.categories.filter((category) => category.id !== id),
+    });
+  };
+
   const createItem = async (payload: Omit<ApiRabItem, 'id'>) => {
     if (backendOnline && user) {
       const created = await rabApi.createItem(payload);
@@ -113,51 +150,7 @@ export function useRabItems(projectId: string | null) {
     syncLocalState({ ...localState, items: localState.items.filter((item) => item.id !== id) });
   };
 
-  const replaceRab = async (next: { categories: ApiRabCategory[]; items: ApiRabItem[]; imports?: ApiRabImport[] }) => {
-    if (backendOnline && user) {
-      await Promise.all(categories.map((category) => rabApi.deleteCategory(category.id)));
-
-      const createdCategories = await Promise.all(
-        next.categories.map((category) =>
-          rabApi.createCategory({
-            projectId: category.projectId,
-            name: category.name,
-            type: category.type,
-            sortOrder: category.sortOrder,
-          }),
-        ),
-      );
-      const categoryByOriginalId = new Map(next.categories.map((category, index) => [category.id, createdCategories[index]]));
-      const categoryByName = new Map(createdCategories.map((category) => [`${category.type}:${category.name}`, category]));
-      const createdItems = await Promise.all(
-        next.items.map((item) => {
-          const category = categoryByOriginalId.get(item.categoryId)
-            ?? categoryByName.get(`${item.type}:${item.categoryName ?? ''}`)
-            ?? createdCategories.find((candidate) => candidate.type === item.type)
-            ?? createdCategories[0];
-          return rabApi.createItem({
-            projectId: item.projectId,
-            categoryId: category?.id ?? item.categoryId,
-            categoryName: category?.name ?? item.categoryName,
-            type: item.type,
-            name: item.name,
-            volume: item.volume,
-            unit: item.unit,
-            unitPrice: item.unitPrice,
-            plannedTotal: item.plannedTotal,
-            plannedCashMonth: item.plannedCashMonth,
-            aliases: item.aliases,
-            sortOrder: item.sortOrder,
-          });
-        }),
-      );
-
-      setCategories(createdCategories);
-      setItems(createdItems);
-      setImports(next.imports ?? imports);
-      return;
-    }
-
+  const replaceRab = (next: { categories: ApiRabCategory[]; items: ApiRabItem[]; imports?: ApiRabImport[] }) => {
     syncLocalState({
       categories: next.categories,
       items: next.items,
@@ -173,6 +166,8 @@ export function useRabItems(projectId: string | null) {
     error,
     backendOnline,
     createCategory,
+    updateCategory,
+    deleteCategory,
     createItem,
     updateItem,
     deleteItem,

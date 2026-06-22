@@ -9,6 +9,7 @@ import { useStok, computeExpiryDate } from '@/hooks/useStok';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSupplyItems } from '@/hooks/useSupplyItems';
 import StokView from '@/app/dashboard/stok/_components/StokView';
+import { isValidDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 import {
   batchSchema,
   stockOutSchema,
@@ -49,11 +50,17 @@ export default function StokController() {
 
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     resolver: zodResolver(batchSchema.extend({
-      tanggalPanen: z.string().min(1, t('dialogs.validation.required')),
+      tanggalPanen: z
+        .string()
+        .min(1, t('dialogs.validation.required'))
+        .refine((value) => !value || isValidDateInputValue(value), 'Format tanggal harus dd-MM-yyyy'),
       beratMasuk: z.coerce.number().min(0.1, t('dialogs.validation.minWeight')),
       hargaModal: z.coerce.number().min(1, t('dialogs.validation.required')),
       hargaJual: z.coerce.number().min(1, t('dialogs.validation.required')),
-      estimasiKadaluarsa: z.string().min(1, t('dialogs.validation.required')),
+      estimasiKadaluarsa: z
+        .string()
+        .min(1, t('dialogs.validation.required'))
+        .refine((value) => !value || isValidDateInputValue(value), 'Format tanggal harus dd-MM-yyyy'),
     })),
     defaultValues: {
       tanggalPanen: new Date().toISOString().split('T')[0],
@@ -71,7 +78,10 @@ export default function StokController() {
     resolver: zodResolver(stockOutSchema.extend({
       batchId: z.string().min(1, t('dialogs.validation.selectBatch')),
       berat: z.coerce.number().min(0.1, t('dialogs.validation.minWeight')),
-      tanggal: z.string().min(1, t('dialogs.validation.required')),
+      tanggal: z
+        .string()
+        .min(1, t('dialogs.validation.required'))
+        .refine((value) => !value || isValidDateInputValue(value), 'Format tanggal harus dd-MM-yyyy'),
     })),
     defaultValues: {
       batchId: '',
@@ -86,9 +96,11 @@ export default function StokController() {
   const watchedTanggalPanen = useWatch({ control: batchForm.control, name: 'tanggalPanen' });
   useEffect(() => {
     if (!watchedTanggalPanen) return;
+    const normalizedTanggalPanen = normalizeDateInputValue(watchedTanggalPanen);
+    if (!isValidDateInputValue(normalizedTanggalPanen)) return;
     const current = batchForm.getValues('estimasiKadaluarsa');
     if (!current) {
-      batchForm.setValue('estimasiKadaluarsa', computeExpiryDate(watchedTanggalPanen));
+      batchForm.setValue('estimasiKadaluarsa', computeExpiryDate(normalizedTanggalPanen));
     }
   }, [watchedTanggalPanen, batchForm]);
 
@@ -175,15 +187,21 @@ export default function StokController() {
   };
 
   const onBatchSubmit = async (data: BatchFormOutput) => {
-    await addBatch({ ...data, catatan: data.catatan ?? '' });
+    await addBatch({
+      ...data,
+      tanggalPanen: normalizeDateInputValue(data.tanggalPanen),
+      estimasiKadaluarsa: normalizeDateInputValue(data.estimasiKadaluarsa),
+      catatan: data.catatan ?? '',
+    });
     setBatchDialogOpen(false);
   };
 
   const onStockOutSubmit = async (data: StockOutFormOutput) => {
+    const tanggal = normalizeDateInputValue(data.tanggal);
     await stockOut(data.batchId, {
       berat: data.berat,
       tujuan: data.tujuan,
-      tanggal: data.tanggal,
+      tanggal,
       catatan: data.catatan || '',
       namaPembeli: data.namaPembeli?.trim() || undefined,
       hargaRealisasi: data.hargaRealisasi || undefined,
@@ -197,7 +215,7 @@ export default function StokController() {
         jenis: 'pendapatan',
         kategori: 'Penjualan Panen',
         nominal,
-        tanggal: data.tanggal,
+        tanggal,
         keterangan: `Penjualan ${data.berat} kg ${batch?.batchCode ?? ''} ke ${data.namaPembeli?.trim() || data.tujuan}`,
       });
     }
@@ -217,10 +235,12 @@ export default function StokController() {
   };
 
   const handleApplyDateFilter = () => {
+    if (mutFromDate && !isValidDateInputValue(mutFromDate)) return;
+    if (mutToDate && !isValidDateInputValue(mutToDate)) return;
     refreshMutations({
       grade: mutFilter !== 'semua' ? mutFilter : undefined,
-      from: mutFromDate || undefined,
-      to: mutToDate || undefined,
+      from: mutFromDate ? normalizeDateInputValue(mutFromDate) : undefined,
+      to: mutToDate ? normalizeDateInputValue(mutToDate) : undefined,
     });
   };
 
@@ -237,6 +257,8 @@ export default function StokController() {
   const filteredMutations = mutFilter === 'semua'
     ? mutations
     : mutations.filter((m) => m.batchCode.includes(`-${mutFilter}`));
+  const mutFromDateInvalid = mutFromDate ? !isValidDateInputValue(mutFromDate) : false;
+  const mutToDateInvalid = mutToDate ? !isValidDateInputValue(mutToDate) : false;
 
   return (
     <StokView
@@ -250,7 +272,9 @@ export default function StokController() {
       loading={loading}
       mutFilter={mutFilter}
       mutFromDate={mutFromDate}
+      mutFromDateInvalid={mutFromDateInvalid}
       mutToDate={mutToDate}
+      mutToDateInvalid={mutToDateInvalid}
       onBatchSubmit={onBatchSubmit}
       onStockOutSubmit={onStockOutSubmit}
       openAddBatch={openAddBatch}

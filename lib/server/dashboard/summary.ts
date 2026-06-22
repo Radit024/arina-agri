@@ -6,9 +6,11 @@ import { mockTransactions } from '@/lib/mockData';
 import { DEVELOPMENT_USER_ID } from '@/lib/devAuth';
 import { buildLatestRegionAveragePriceKpi } from '@/lib/commodityPriceRegions';
 import {
+  buildDashboardProjectPerformance,
   buildDashboardMetrics,
   buildWeatherSignal,
   getDashboardDateWindow,
+  type DashboardFinanceProjectOption,
   type DashboardPricePoint,
   type DashboardSummary,
   type DashboardSummaryTransaction,
@@ -20,6 +22,22 @@ const PRICE_ROWS_LIMIT = 30 * 50;
 interface CommodityPriceRow extends DashboardPricePoint {
   location: string;
   created_at: string;
+}
+
+interface DashboardTransactionRow {
+  jenis: 'pengeluaran' | 'pendapatan';
+  kategori: string;
+  nominal: number;
+  tanggal: string;
+  project_id?: string | null;
+}
+
+interface DashboardFinanceProjectRow {
+  id: string;
+  name: string;
+  commodity: string;
+  season_label: string;
+  status: 'draft' | 'active' | 'archived';
 }
 
 function buildDevTransactions(now: Date): DashboardSummaryTransaction[] {
@@ -39,12 +57,23 @@ export function buildDevDashboardSummary({
   now?: Date;
 } = {}): DashboardSummary {
   const metrics = buildDashboardMetrics(buildDevTransactions(now), now);
+  const projectPerformance = buildDashboardProjectPerformance({
+    transactions: buildDevTransactions(now),
+    projects: [],
+    now,
+  });
 
   return {
     generatedAt: now.toISOString(),
     kpi: metrics.kpi,
     trend: metrics.trend,
     category: metrics.category,
+    financeScope: {
+      selectedProjectId: null,
+      selectedProjectName: 'Semua Project',
+      projects: [],
+      projectPerformance,
+    },
     price: {
       todayPrice: null,
       yesterdayPrice: null,
@@ -92,11 +121,13 @@ async function loadWeather(adm4?: string, locationLabel?: string) {
 export async function getDashboardSummary({
   userId,
   adm4,
+  financeProjectId,
   locationLabel,
   now = new globalThis.Date(),
 }: {
   userId: string;
   adm4?: string;
+  financeProjectId?: string;
   locationLabel?: string;
   now?: Date;
 }): Promise<DashboardSummary> {
@@ -166,14 +197,41 @@ export async function getDashboardSummary({
 
   const dateWindow = getDashboardDateWindow(now);
 
-  const transactionsPromise = supabase
+  const projectsPromise = supabase
+    .from('finance_projects')
+    .select('id,name,commodity,season_label,status')
+    .eq('user_id', userId)
+    .neq('status', 'archived')
+    .order('start_date', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  const { data: projectsData, error: projectsError } = await projectsPromise;
+  if (projectsError) throw new Error(projectsError.message);
+
+  const projects: DashboardFinanceProjectOption[] = ((projectsData ?? []) as DashboardFinanceProjectRow[]).map((project) => ({
+    id: project.id,
+    name: project.name,
+    commodity: project.commodity,
+    seasonLabel: project.season_label,
+    status: project.status,
+  }));
+  const selectedProject = financeProjectId
+    ? projects.find((project) => project.id === financeProjectId) ?? null
+    : null;
+  const effectiveProjectId = selectedProject?.id;
+
+  let transactionsQuery = supabase
     .from('transactions')
-    .select('jenis,kategori,nominal,tanggal')
+    .select('jenis,kategori,nominal,tanggal,project_id')
     .eq('user_id', userId)
     .gte('tanggal', dateWindow.from)
     .lte('tanggal', dateWindow.to)
     .order('tanggal', { ascending: false })
     .order('created_at', { ascending: false });
+
+  if (effectiveProjectId) {
+    transactionsQuery = transactionsQuery.eq('project_id', effectiveProjectId);
+  }
 
   const pricesPromise = supabase
     .from('commodity_prices')
@@ -190,7 +248,7 @@ export async function getDashboardSummary({
     .limit(NEWS_LIMIT);
 
   const [transactionsResult, pricesResult, newsResult, weather] = await Promise.all([
-    transactionsPromise,
+    transactionsQuery,
     pricesPromise,
     newsPromise,
     loadWeather(adm4, locationLabel),
@@ -200,15 +258,28 @@ export async function getDashboardSummary({
   if (pricesResult.error) throw new Error(pricesResult.error.message);
   if (newsResult.error) throw new Error(newsResult.error.message);
 
-  const transactions = (transactionsResult.data || []) as DashboardSummaryTransaction[];
+  const transactions = ((transactionsResult.data || []) as DashboardTransactionRow[]).map((transaction) => ({
+    jenis: transaction.jenis,
+    kategori: transaction.kategori,
+    nominal: transaction.nominal,
+    tanggal: transaction.tanggal,
+    projectId: transaction.project_id ?? null,
+  }));
   const prices = (pricesResult.data || []) as CommodityPriceRow[];
   const metrics = buildDashboardMetrics(transactions, now);
+  const projectPerformance = buildDashboardProjectPerformance({ transactions, projects, now });
 
   return {
     generatedAt: now.toISOString(),
     kpi: metrics.kpi,
     trend: metrics.trend,
     category: metrics.category,
+    financeScope: {
+      selectedProjectId: effectiveProjectId ?? null,
+      selectedProjectName: selectedProject?.name ?? 'Semua Project',
+      projects,
+      projectPerformance,
+    },
     price: buildLatestRegionAveragePriceKpi(prices),
     weather,
     news: {

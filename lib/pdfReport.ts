@@ -1,9 +1,16 @@
 /**
- * Laporan Keuangan PDF Generator untuk Arina Agri
- * Menggunakan jsPDF + jspdf-autotable
+ * Laporan Keuangan PDF Generator untuk Arina Agri.
+ * Menggunakan jsPDF + jspdf-autotable.
  */
 
-import type { Transaction } from '@/lib/mockData';
+import { formatDateLong, formatMonthYear } from '@/lib/formatters';
+import type {
+  CashFlowComparison,
+  FinanceProject,
+  FinanceTransactionForReport,
+  IncomeStatementComparison,
+  RabItem,
+} from '@/lib/finance/rabTypes';
 
 const BULAN_LABELS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -24,9 +31,26 @@ export interface ReportData {
   totalPendapatan: number;
   totalPengeluaran: number;
   labaBersih: number;
-  transactions: Transaction[];
+  project?: FinanceProject | null;
+  rabItems?: RabItem[];
+  transactions: FinanceTransactionForReport[];
+  incomeStatementComparison?: IncomeStatementComparison;
+  cashFlowComparison?: CashFlowComparison;
   userName?: string;
   aiAnalysis?: string;
+}
+
+type PdfTableColumnStyle = {
+  cellWidth?: number | 'auto' | 'wrap';
+  halign?: 'left' | 'center' | 'right';
+  fontStyle?: 'normal' | 'bold' | 'italic' | 'bolditalic';
+};
+
+export interface PdfReportTable {
+  title: string;
+  head: string[][];
+  body: string[][];
+  columnStyles?: Record<number, PdfTableColumnStyle>;
 }
 
 interface JsPdfWithAutoTable {
@@ -41,7 +65,175 @@ interface JsPdfWithPageCount {
   };
 }
 
-// Helper to load SVG logo and convert to PNG data URL
+function formatReportRp(value: number) {
+  return `Rp ${Math.abs(value).toLocaleString('id-ID')}`;
+}
+
+function formatSignedReportRp(value: number) {
+  if (value === 0) return 'Rp 0';
+  return `${value > 0 ? '+ ' : '- '}${formatReportRp(value)}`;
+}
+
+function formatReportPercent(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return '-';
+  return `${(value * 100).toLocaleString('id-ID', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, string> = {
+    belum_ada_realisasi: 'Belum ada realisasi',
+    sesuai_rencana: 'Sesuai rencana',
+    hemat: 'Hemat',
+    over_budget: 'Over budget',
+    di_atas_target: 'Di atas target',
+    di_bawah_target: 'Di bawah target',
+  };
+  return labels[status] ?? status;
+}
+
+export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
+  const tables: PdfReportTable[] = [];
+  const incomeStatement = data.incomeStatementComparison;
+  const cashFlow = data.cashFlowComparison;
+  const rabItems = data.rabItems ?? [];
+  const sortedTransactions = [...data.transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+
+  tables.push({
+    title: 'RENCANA ANGGARAN BIAYA (RAB)',
+    head: [['Jenis', 'Kategori', 'Item', 'Volume', 'Satuan', 'Harga Satuan', 'Total Rencana', 'Bulan Kas']],
+    body: rabItems.length > 0
+      ? rabItems.map((item) => [
+          item.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
+          item.categoryName ?? item.categoryId,
+          item.name,
+          String(item.volume),
+          item.unit,
+          formatReportRp(item.unitPrice),
+          formatReportRp(item.plannedTotal),
+          item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-',
+        ])
+      : [['Belum ada item RAB', '', '', '', '', '', '', '']],
+    columnStyles: {
+      3: { halign: 'right' },
+      5: { halign: 'right' },
+      6: { halign: 'right' },
+    },
+  });
+
+  tables.push({
+    title: 'CATATAN TRANSAKSI HARIAN',
+    head: [['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan', 'Pengeluaran', 'Pemasukan', 'Item RAB']],
+    body: sortedTransactions.length > 0
+      ? sortedTransactions.map((tx) => [
+          formatDateLong(tx.tanggal),
+          tx.keterangan || tx.kategori,
+          tx.volume == null ? '' : String(tx.volume),
+          tx.satuan ?? '',
+          tx.hargaSatuan == null ? '' : formatReportRp(tx.hargaSatuan),
+          tx.jenis === 'pengeluaran' ? formatReportRp(tx.nominal) : '-',
+          tx.jenis === 'pendapatan' ? formatReportRp(tx.nominal) : '-',
+          tx.rabItemId ?? '-',
+        ])
+      : [['Belum ada transaksi harian', '', '', '', '', '', '', '']],
+    columnStyles: {
+      2: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right' },
+      6: { halign: 'right' },
+    },
+  });
+
+  if (incomeStatement) {
+    tables.push({
+      title: 'LAPORAN LABA RUGI',
+      head: [['Kategori', 'Item', 'Jenis', 'Rencana', 'Aktual', 'Selisih', '% Selisih', 'Status']],
+      body: incomeStatement.rows.length > 0
+        ? incomeStatement.rows.map((row) => [
+            row.categoryName,
+            row.itemName,
+            row.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
+            formatReportRp(row.planned),
+            formatReportRp(row.actual),
+            formatSignedReportRp(row.variance),
+            formatReportPercent(row.variancePercent),
+            statusLabel(row.status),
+          ])
+        : [['Belum ada data laba rugi', '', '', '', '', '', '', '']],
+      columnStyles: {
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        6: { halign: 'right' },
+      },
+    });
+  }
+
+  if (cashFlow) {
+    tables.push({
+      title: 'ARUS KAS',
+      head: [['Bulan', 'Kas Masuk Rencana', 'Kas Masuk Aktual', 'Kas Keluar Rencana', 'Kas Keluar Aktual', 'Bersih Rencana', 'Bersih Aktual', 'Selisih']],
+      body: cashFlow.rows.length > 0
+        ? cashFlow.rows.map((row) => [
+            formatMonthYear(row.month),
+            formatReportRp(row.plannedInflow),
+            formatReportRp(row.actualInflow),
+            formatReportRp(row.plannedOutflow),
+            formatReportRp(row.actualOutflow),
+            formatSignedReportRp(row.plannedNet),
+            formatSignedReportRp(row.actualNet),
+            formatSignedReportRp(row.variance),
+          ])
+        : [['Belum ada data arus kas', '', '', '', '', '', '', '']],
+      columnStyles: {
+        1: { halign: 'right' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        6: { halign: 'right' },
+        7: { halign: 'right' },
+      },
+    });
+  }
+
+  if (incomeStatement) {
+    tables.push({
+      title: 'PERBANDINGAN RENCANA VS AKTUAL',
+      head: [['Metric', 'Rencana', 'Aktual', 'Selisih']],
+      body: [
+        [
+          'Pendapatan',
+          formatReportRp(incomeStatement.summary.plannedIncome),
+          formatReportRp(incomeStatement.summary.actualIncome),
+          formatSignedReportRp(incomeStatement.summary.actualIncome - incomeStatement.summary.plannedIncome),
+        ],
+        [
+          'Pengeluaran',
+          formatReportRp(incomeStatement.summary.plannedExpense),
+          formatReportRp(incomeStatement.summary.actualExpense),
+          formatSignedReportRp(incomeStatement.summary.actualExpense - incomeStatement.summary.plannedExpense),
+        ],
+        [
+          'Laba/Rugi',
+          formatSignedReportRp(incomeStatement.summary.plannedProfit),
+          formatSignedReportRp(incomeStatement.summary.actualProfit),
+          formatSignedReportRp(incomeStatement.summary.profitVariance),
+        ],
+      ],
+      columnStyles: {
+        1: { halign: 'right' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+      },
+    });
+  }
+
+  return tables;
+}
+
 const getLogoDataUrl = (): Promise<string> => {
   return new Promise((resolve) => {
     try {
@@ -53,12 +245,12 @@ const getLogoDataUrl = (): Promise<string> => {
         canvas.width = img.width || 200;
         canvas.height = img.height || 200;
         const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } else {
+        if (!ctx) {
           resolve('');
+          return;
         }
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
       };
       img.onerror = () => resolve('');
     } catch {
@@ -67,25 +259,32 @@ const getLogoDataUrl = (): Promise<string> => {
   });
 };
 
+function normalizePdfText(value: string) {
+  return value
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[^\x00-\x7F]/g, '');
+}
+
 export async function generatePdfReport(data: ReportData): Promise<void> {
-  // Dynamic import so jsPDF does not affect SSR
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
   const logoDataUrl = await getLogoDataUrl();
-
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const marginX = 14;
-
-  const formatRp = (n: number) =>
-    `Rp ${Math.abs(n).toLocaleString('id-ID')}`;
+  const contentW = pageW - marginX * 2;
   const today = new Date().toLocaleDateString('id-ID', {
-    day: '2-digit', month: 'long', year: 'numeric',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
   });
 
-  // ── Header (Clean Modern Design) ─────────────────────────────────
-  // Top green accent line
+  const formatRp = (value: number) => `Rp ${Math.abs(value).toLocaleString('id-ID')}`;
+
   doc.setFillColor(22, 163, 74);
   doc.rect(0, 0, pageW, 5, 'F');
 
@@ -94,7 +293,6 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
   }
 
   const titleX = marginX + (logoDataUrl ? 24 : 0);
-  
   doc.setTextColor(6, 78, 59);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
@@ -103,292 +301,211 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
-  doc.text('Arina Agri — Platform Pencatatan Pertanian', titleX, 25);
-  
+  doc.text('Arina Agri - Platform Pencatatan Pertanian', titleX, 25);
+
   doc.setFontSize(9);
   doc.setTextColor(150, 150, 150);
   doc.text(`Dicetak: ${today}`, pageW - marginX, 25, { align: 'right' });
 
-  // Thin separator line
   doc.setDrawColor(226, 232, 240);
   doc.line(marginX, 34, pageW - marginX, 34);
 
-  // ── Meta info ───────────────────────────────────────────────────
   let y = 44;
 
-  doc.setTextColor(50, 50, 50);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text('PERIODE', marginX, y);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`: ${data.periodeLabel}`, marginX + 25, y);
-
-  if (data.userName) {
-    y += 7;
+  const renderMetaRow = (label: string, value: string) => {
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('PETANI', marginX, y);
+    doc.text(label, marginX, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(`: ${data.userName}`, marginX + 25, y);
+    doc.text(`: ${value}`, marginX + 27, y);
+    y += 7;
+  };
+
+  renderMetaRow('PERIODE', data.periodeLabel);
+  if (data.userName) renderMetaRow('PETANI', data.userName);
+  if (data.project) {
+    renderMetaRow('PROYEK', data.project.name);
+    renderMetaRow('KOMODITAS', `${data.project.commodity} - ${data.project.landArea} ${data.project.landAreaUnit}`);
+    renderMetaRow('MUSIM', data.project.seasonLabel);
   }
 
-  // ── Ringkasan Keuangan ──────────────────────────────────────────
-  y += 12;
+  y += 5;
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(15, 23, 42); // slate-900
+  doc.setTextColor(15, 23, 42);
   doc.text('RINGKASAN KEUANGAN', marginX, y);
 
   y += 6;
   const boxW = (pageW - marginX * 2 - 8) / 3;
-
-  // Income box
-  doc.setFillColor(240, 253, 244);
-  doc.setDrawColor(187, 247, 208); // green-200
-  doc.roundedRect(marginX, y, boxW, 22, 3, 3, 'FD');
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(22, 163, 74);
-  doc.text('TOTAL PEMASUKAN', marginX + 4, y + 7);
-  doc.setFontSize(12);
-  doc.text(formatRp(data.totalPendapatan), marginX + 4, y + 16);
-
-  // Expense box
-  const box2X = marginX + boxW + 4;
-  doc.setFillColor(254, 242, 242);
-  doc.setDrawColor(254, 202, 202); // red-200
-  doc.roundedRect(box2X, y, boxW, 22, 3, 3, 'FD');
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(220, 38, 38);
-  doc.text('TOTAL PENGELUARAN', box2X + 4, y + 7);
-  doc.setFontSize(12);
-  doc.text(formatRp(data.totalPengeluaran), box2X + 4, y + 16);
-
-  // Net profit/loss box
-  const box3X = marginX + boxW * 2 + 8;
   const isProfit = data.labaBersih >= 0;
-  doc.setFillColor(isProfit ? 240 : 254, isProfit ? 253 : 242, isProfit ? 244 : 242);
-  doc.setDrawColor(isProfit ? 187 : 254, isProfit ? 247 : 202, isProfit ? 208 : 202);
-  doc.roundedRect(box3X, y, boxW, 22, 3, 3, 'FD');
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(isProfit ? 22 : 220, isProfit ? 163 : 38, isProfit ? 74 : 38);
-  doc.text(isProfit ? 'LABA BERSIH' : 'RUGI BERSIH', box3X + 4, y + 7);
-  doc.setFontSize(12);
-  doc.text(formatRp(data.labaBersih), box3X + 4, y + 16);
-
-  // ── Tabel Transaksi ─────────────────────────────────────────────
-  y += 32;
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(15, 23, 42);
-  doc.text('RINCIAN TRANSAKSI', marginX, y);
-
-  const sortedTx = [...data.transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-
-  autoTable(doc, {
-    startY: y + 4,
-    head: [['Tanggal', 'Kategori', 'Keterangan', 'Jenis', 'Nominal']],
-    body: sortedTx.map((tx) => [
-      tx.tanggal,
-      tx.kategori,
-      tx.keterangan || '—',
-      tx.jenis === 'pendapatan' ? 'Pemasukan' : 'Pengeluaran',
-      (tx.jenis === 'pendapatan' ? '+ ' : '- ') + formatRp(tx.nominal),
-    ]),
-    styles: { fontSize: 8.5, cellPadding: 4, font: 'helvetica', lineColor: [226, 232, 240], lineWidth: 0.1 },
-    headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: 'bold', halign: 'left' },
-    alternateRowStyles: { fillColor: [250, 252, 253] },
-    columnStyles: {
-      0: { cellWidth: 24 },
-      1: { cellWidth: 28 },
-      2: { cellWidth: 'auto' },
-      3: { cellWidth: 26 },
-      4: { cellWidth: 38, halign: 'right', fontStyle: 'bold' },
+  const cards = [
+    {
+      label: 'TOTAL PEMASUKAN',
+      value: formatRp(data.totalPendapatan),
+      x: marginX,
+      fill: [240, 253, 244] as const,
+      border: [187, 247, 208] as const,
+      text: [22, 163, 74] as const,
     },
-    didParseCell: (hookData) => {
-      if (hookData.column.index === 4 && hookData.section === 'body') {
-        const val = hookData.cell.raw as string;
-        if (val.startsWith('+')) {
-          hookData.cell.styles.textColor = [22, 163, 74];
-        } else {
-          hookData.cell.styles.textColor = [220, 38, 38];
-        }
-      }
+    {
+      label: 'TOTAL PENGELUARAN',
+      value: formatRp(data.totalPengeluaran),
+      x: marginX + boxW + 4,
+      fill: [254, 242, 242] as const,
+      border: [254, 202, 202] as const,
+      text: [220, 38, 38] as const,
     },
+    {
+      label: isProfit ? 'LABA BERSIH' : 'RUGI BERSIH',
+      value: formatRp(data.labaBersih),
+      x: marginX + boxW * 2 + 8,
+      fill: isProfit ? ([240, 253, 244] as const) : ([254, 242, 242] as const),
+      border: isProfit ? ([187, 247, 208] as const) : ([254, 202, 202] as const),
+      text: isProfit ? ([22, 163, 74] as const) : ([220, 38, 38] as const),
+    },
+  ];
+
+  cards.forEach((card) => {
+    doc.setFillColor(card.fill[0], card.fill[1], card.fill[2]);
+    doc.setDrawColor(card.border[0], card.border[1], card.border[2]);
+    doc.roundedRect(card.x, y, boxW, 22, 3, 3, 'FD');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(card.text[0], card.text[1], card.text[2]);
+    doc.text(card.label, card.x + 4, y + 7);
+    doc.setFontSize(12);
+    doc.text(card.value, card.x + 4, y + 16);
   });
 
-  // ── AI Analysis (jika ada) ──────────────────────────────────────
-  if (data.aiAnalysis) {
-    const finalY = ((doc as unknown as JsPdfWithAutoTable).lastAutoTable?.finalY ?? 0) + 14;
+  y += 32;
 
-    if (finalY + 20 > doc.internal.pageSize.getHeight() - 20) {
-      doc.addPage();
+  buildPdfReportTables(data).forEach((table, tableIndex) => {
+    if (tableIndex > 0) {
+      y = ((doc as unknown as JsPdfWithAutoTable).lastAutoTable?.finalY ?? y) + 11;
     }
 
-    let currentY = finalY > doc.internal.pageSize.getHeight() - 40 ? 20 : finalY;
+    if (y + 24 > pageH - 18) {
+      doc.addPage();
+      y = 20;
+    }
 
-    // AI Section Header with light green background
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(table.title, marginX, y);
+
+    autoTable(doc, {
+      startY: y + 4,
+      head: table.head,
+      body: table.body,
+      margin: { left: marginX, right: marginX },
+      styles: {
+        font: 'helvetica',
+        fontSize: 7.2,
+        cellPadding: 2.2,
+        overflow: 'linebreak',
+        lineColor: [226, 232, 240],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [241, 245, 249],
+        textColor: [15, 23, 42],
+        fontStyle: 'bold',
+        halign: 'left',
+      },
+      alternateRowStyles: { fillColor: [250, 252, 253] },
+      columnStyles: table.columnStyles,
+      didParseCell: (hookData) => {
+        if (hookData.section !== 'body') return;
+        const rawValue = String(hookData.cell.raw ?? '');
+        if (rawValue.startsWith('+')) {
+          hookData.cell.styles.textColor = [22, 163, 74];
+        }
+        if (rawValue.startsWith('-')) {
+          hookData.cell.styles.textColor = [220, 38, 38];
+        }
+      },
+    });
+  });
+
+  if (data.aiAnalysis) {
+    let currentY = ((doc as unknown as JsPdfWithAutoTable).lastAutoTable?.finalY ?? y) + 14;
+    if (currentY + 20 > pageH - 20) {
+      doc.addPage();
+      currentY = 20;
+    }
+
     doc.setFillColor(240, 253, 244);
     doc.setDrawColor(187, 247, 208);
-    doc.roundedRect(marginX, currentY - 5, pageW - marginX * 2, 10, 2, 2, 'FD');
-
+    doc.roundedRect(marginX, currentY - 5, contentW, 10, 2, 2, 'FD');
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(22, 163, 74);
     doc.text('ANALISIS & REKOMENDASI AI', marginX + 3, currentY + 1.5);
-
     currentY += 12;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(51, 65, 85); // slate-700
 
-    // Custom Markdown-like Parser for jsPDF
     const rawLines = data.aiAnalysis.split('\n');
-    const pageH = doc.internal.pageSize.getHeight();
-
-    for (let i = 0; i < rawLines.length; i++) {
-      let line = rawLines[i].trim();
-      
-      // Skip empty lines or horizontal rules
+    rawLines.forEach((rawLine) => {
+      let line = normalizePdfText(rawLine.trim());
       if (!line || line.match(/^[-*_]{3,}$/)) {
         currentY += 2;
-        continue;
+        return;
       }
 
-      let isHeading = false;
-      let isBullet = false;
-      let bulletChar = '';
-
-      // Detect Headings
-      const strippedLine = line.replace(/\*\*/g, '');
-      if (strippedLine.match(/^#{1,3}\s/)) {
-        isHeading = true;
-        line = strippedLine.replace(/^#{1,3}\s/, '');
-      } else if (line.match(/^\*\*.*?\*\*$/)) {
-        isHeading = true;
-        line = strippedLine;
-      } else if (strippedLine.match(/^[A-Z0-9\s&()\-.,]+$/) && strippedLine.length > 5 && /[A-Z]/.test(strippedLine)) {
-        isHeading = true;
-        line = strippedLine;
-      }
-
-      // Detect Bullets / Lists (only if not a heading)
-      if (!isHeading) {
-        if (line.match(/^[-*]\s/)) {
-          isBullet = true;
-          bulletChar = '•';
-          line = line.replace(/^[-*]\s/, '');
-        } else if (line.match(/^\d+\.\s/)) {
-          isBullet = true;
-          bulletChar = line.match(/^\d+\.\s/)?.[0] ?? '';
-          line = line.replace(/^\d+\.\s/, '');
-        }
-      }
-
-      // Clean unsupported unicode
+      const isHeading = line.match(/^#{1,3}\s/) || line.match(/^\*\*.*\*\*$/);
+      const isBullet = !isHeading && (line.match(/^[-*]\s/) || line.match(/^\d+\.\s/));
       line = line
-        .replace(/“|”/g, '"')
-        .replace(/‘|’/g, "'")
-        .replace(/—/g, '-')
-        .replace(/[^\x00-\x7F]/g, ''); // Stick to basic ASCII for standard fonts
+        .replace(/^#{1,3}\s/, '')
+        .replace(/^\*\*(.*)\*\*$/, '$1')
+        .replace(/^[-*]\s/, '')
+        .replace(/^\d+\.\s/, '')
+        .replace(/\*\*/g, '');
 
-      // Helper to render text with inline bold segments
-      const renderRichLine = (textStr: string, xPos: number, yPos: number, maxWidth: number) => {
-        // Split by ** markers
-        const segments = textStr.split(/(\*\*.*?\*\*)/g);
-        let currentX = xPos;
-        let currentY = yPos;
-        const normalFontSize = 9;
-        
-        // We need to handle internal wrapping if a single line is too long
-        // Simplest: use doc.splitTextToSize on a clean version to find wrap points
-        const cleanText = textStr.replace(/\*\*/g, '');
-        doc.splitTextToSize(cleanText, maxWidth);
-        
-        // This is a simplified rich text wrapper
-        // It's hard to perfectly map segments to wrapped lines, 
-        // so we'll just render each segment and manually wrap if currentX > xPos + maxWidth
-        
-        doc.setFontSize(normalFontSize);
-        
-        segments.forEach(segment => {
-          if (!segment) return;
-          
-          const isBold = segment.startsWith('**') && segment.endsWith('**');
-          const cleanSegment = isBold ? segment.slice(2, -2) : segment;
-          
-          doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-          
-          // Split segment into words to handle wrapping
-          const words = cleanSegment.split(/(\s+)/);
-          
-          words.forEach(word => {
-            const wordWidth = doc.getTextWidth(word);
-            
-            if (currentX + wordWidth > xPos + maxWidth && currentX > xPos) {
-              currentX = xPos;
-              currentY += 4.5;
-              if (currentY > pageH - 20) {
-                doc.addPage();
-                currentY = 20;
-              }
-            }
-            
-            doc.text(word, currentX, currentY);
-            currentX += wordWidth;
-          });
-        });
-        
-        return currentY + 4.5;
-      };
+      const indent = isBullet ? 5 : 0;
+      const maxWidth = contentW - indent;
+      const splitLines = doc.splitTextToSize(line, maxWidth) as string[];
 
-      // Render Line
       if (isHeading) {
-        currentY += 6; // Add top spacing for heading
+        currentY += 4;
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(22, 163, 74); // green-600
         doc.setFontSize(10);
-        
-        const splitLines = doc.splitTextToSize(line.replace(/\*\*/g, ''), pageW - marginX * 2);
-        for (let j = 0; j < splitLines.length; j++) {
-          if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
-          doc.text(splitLines[j], marginX, currentY);
-          currentY += 5;
-        }
-        currentY += 1; // Add bottom spacing
+        doc.setTextColor(22, 163, 74);
       } else {
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(51, 65, 85); // slate-700
         doc.setFontSize(9);
-        
-        const indent = isBullet ? (bulletChar.length > 1 ? 8 : 5) : 0;
-        
-        if (isBullet) {
-          if (currentY > pageH - 20) { doc.addPage(); currentY = 20; }
-          doc.setFont('helvetica', 'bold');
-          doc.text(bulletChar.trim(), marginX, currentY);
-          currentY = renderRichLine(line, marginX + indent, currentY, pageW - marginX * 2 - indent);
-        } else {
-          currentY = renderRichLine(line, marginX, currentY, pageW - marginX * 2);
-        }
-        currentY += 1.5; // Add paragraph spacing
+        doc.setTextColor(51, 65, 85);
       }
-    }
+
+      splitLines.forEach((splitLine, lineIndex) => {
+        if (currentY > pageH - 20) {
+          doc.addPage();
+          currentY = 20;
+        }
+        if (isBullet && lineIndex === 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('-', marginX, currentY);
+          doc.setFont('helvetica', 'normal');
+        }
+        doc.text(splitLine, marginX + indent, currentY);
+        currentY += isHeading ? 5 : 4.5;
+      });
+
+      currentY += isHeading ? 1 : 1.5;
+    });
   }
 
-  // ── Footer ──────────────────────────────────────────────────────
   const pageCount = (doc as unknown as JsPdfWithPageCount).internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
+  for (let i = 1; i <= pageCount; i += 1) {
     doc.setPage(i);
     const footerY = doc.internal.pageSize.getHeight() - 10;
     doc.setFontSize(8);
-    doc.setTextColor(148, 163, 184); // slate-400
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184);
     doc.text('Laporan dibuat secara otomatis oleh Arina Agri', marginX, footerY);
     doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginX, footerY, { align: 'right' });
   }
 
-  // ── Save ─────────────────────────────────────────────────────────
   const fileName = `Laporan_Keuangan_Arina_${data.periode.replace('-', '_')}_${Date.now()}.pdf`;
   doc.save(fileName);
 }

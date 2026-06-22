@@ -46,8 +46,8 @@ describe('buildFinanceExpensePieData', () => {
     });
 
     expect(result.data).toEqual([
-      { id: 'Pupuk', value: 50_000, label: 'Pupuk', color: '#16a34a' },
-      { id: 'Transport', value: 25_000, label: 'Transport', color: '#0f766e' },
+      { id: 'Pupuk', value: 50_000, label: 'Pupuk', color: '#16a34a', percentage: 66.66666666666666 },
+      { id: 'Transport', value: 25_000, label: 'Transport', color: '#0f766e', percentage: 33.33333333333333 },
     ]);
     expect(result.colors).toEqual(['#16a34a', '#0f766e']);
   });
@@ -60,7 +60,7 @@ describe('buildFinanceExpensePieData', () => {
       emptyLabel: 'Kosong',
     });
 
-    expect(result.data).toEqual([{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }]);
+    expect(result.data).toEqual([{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0', percentage: 0 }]);
     expect(result.colors).toEqual(['#e2e8f0']);
   });
 });

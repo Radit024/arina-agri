@@ -38,6 +38,7 @@ vi.mock('@/context/AuthContext', () => ({
       email: 'budi@example.com',
       user_metadata: { full_name: 'Budi Santoso' },
     },
+    signOut: vi.fn(),
   }),
 }));
 

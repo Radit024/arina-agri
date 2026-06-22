@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 import SupplyItemsView from '@/app/dashboard/stok/_components/SupplyItemsView';
@@ -63,6 +63,20 @@ describe('SupplyItemsView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Catat Masuk/Keluar' }));
     // Dialog opens — the Jumlah field should be visible
     expect(screen.getByLabelText(/Jumlah/)).toBeInTheDocument();
+  });
+
+  it('menormalisasi tanggal mutasi dari dd-MM-yyyy sebelum submit', async () => {
+    const onAddMutation = vi.fn().mockResolvedValue(true);
+    wrap(<SupplyItemsView items={[mockItem]} loading={false} onAddItem={vi.fn()} onAddMutation={onAddMutation} t={translate} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Catat Masuk/Keluar' }));
+    fireEvent.change(screen.getByLabelText(/Jumlah/), { target: { value: '10' } });
+    fireEvent.change(screen.getByLabelText('Tanggal'), { target: { value: '05-06-2026' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Catat Masuk/Keluar' }).slice(-1)[0]);
+
+    await waitFor(() => expect(onAddMutation).toHaveBeenCalledWith(expect.objectContaining({
+      tanggal: '2026-06-05',
+    })));
   });
 
   it('membuka dialog tambah item ketika tombol Tambah Item diklik', () => {

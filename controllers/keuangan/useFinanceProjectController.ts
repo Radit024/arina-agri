@@ -6,6 +6,41 @@ import { useFinanceProjects } from '@/hooks/useFinanceProjects';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import type { ApiFinanceProject } from '@/lib/api';
 
+type FinanceProjectSelectionInput = {
+  activeProjects: ApiFinanceProject[];
+  loading: boolean;
+  projects: ApiFinanceProject[];
+  selectedProjectId: string | null;
+};
+
+export function resolveFinanceProjectSelection({
+  activeProjects,
+  loading,
+  projects,
+  selectedProjectId,
+}: FinanceProjectSelectionInput) {
+  const selectedProject = selectedProjectId
+    ? projects.find((project) => project.id === selectedProjectId) ?? null
+    : null;
+
+  if (loading) {
+    return {
+      nextSelectedProjectId: selectedProjectId,
+      selectedProject,
+      selectedProjectId: selectedProject?.id ?? null,
+    };
+  }
+
+  const fallbackProjectId = activeProjects[0]?.id ?? null;
+  const nextSelectedProjectId = selectedProject ? selectedProject.id : fallbackProjectId;
+
+  return {
+    nextSelectedProjectId,
+    selectedProject,
+    selectedProjectId: selectedProject?.id ?? null,
+  };
+}
+
 export function useFinanceProjectController() {
   const projectState = useFinanceProjects();
   const [selectedProjectId, setSelectedProjectId] = useLocalStorage<string | null>(
@@ -14,16 +49,22 @@ export function useFinanceProjectController() {
   );
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (!selectedProjectId && projectState.activeProjects.length > 0) {
-      setSelectedProjectId(projectState.activeProjects[0].id);
-    }
-  }, [projectState.activeProjects, selectedProjectId, setSelectedProjectId]);
-
-  const selectedProject = useMemo(
-    () => projectState.projects.find((project) => project.id === selectedProjectId) ?? null,
-    [projectState.projects, selectedProjectId],
+  const selection = useMemo(
+    () => resolveFinanceProjectSelection({
+      activeProjects: projectState.activeProjects,
+      loading: projectState.loading,
+      projects: projectState.projects,
+      selectedProjectId,
+    }),
+    [projectState.activeProjects, projectState.loading, projectState.projects, selectedProjectId],
   );
+
+  useEffect(() => {
+    if (projectState.loading) return;
+    if (selection.nextSelectedProjectId !== selectedProjectId) {
+      setSelectedProjectId(selection.nextSelectedProjectId);
+    }
+  }, [projectState.loading, selectedProjectId, selection.nextSelectedProjectId, setSelectedProjectId]);
 
   const createProject = async (payload: Omit<ApiFinanceProject, 'id' | 'createdAt' | 'updatedAt'>) => {
     const created = await projectState.createProject(payload);
@@ -34,9 +75,9 @@ export function useFinanceProjectController() {
 
   return {
     ...projectState,
-    selectedProjectId,
+    selectedProjectId: selection.selectedProjectId,
     setSelectedProjectId,
-    selectedProject,
+    selectedProject: selection.selectedProject,
     projectDialogOpen,
     setProjectDialogOpen,
     createProject,

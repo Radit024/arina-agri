@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { DEVELOPMENT_ACCESS_TOKEN, DEVELOPMENT_USER_ID } from '@/lib/devAuth';
+import { buildDevelopmentAccessToken, readLocalDevelopmentUserId } from '@/lib/devAuth';
 import type {
   DbFinanceProject,
   DbHarvestBatch,
@@ -8,8 +8,17 @@ import type {
   DbRabItem,
   DbStockMutation,
   DbTransaction,
+  DbTransactionCategory,
+  DbTransactionSatuan,
 } from '@/lib/supabase';
-import type { FinanceProject, RabCategory, RabItem } from '@/lib/finance/rabTypes';
+import type {
+  CashFlowComparison,
+  FinanceProject,
+  FinanceTransactionForReport,
+  IncomeStatementComparison,
+  RabCategory,
+  RabItem,
+} from '@/lib/finance/rabTypes';
 import type {
   BmkgForecastResponse,
   BmkgWeatherWarning,
@@ -48,6 +57,11 @@ export type ApiFinanceProject = FinanceProject;
 export type ApiRabCategory = RabCategory;
 
 export type ApiRabItem = RabItem;
+
+export interface ApiTransactionCategory {
+  id: string;
+  nama: string;
+}
 
 export interface ApiRabImport {
   id: string;
@@ -444,9 +458,8 @@ async function resolveCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) return user;
 
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    return { id: DEVELOPMENT_USER_ID };
-  }
+  const localUserId = readLocalDevelopmentUserId();
+  if (localUserId) return { id: localUserId };
 
   return null;
 }
@@ -458,8 +471,9 @@ async function buildCurrentAuthHeaders(): Promise<Record<string, string>> {
     return { Authorization: `Bearer ${session.access_token}` };
   }
 
-  if (process.env.NODE_ENV === 'development') {
-    return { Authorization: `Bearer ${DEVELOPMENT_ACCESS_TOKEN}` };
+  const localUserId = readLocalDevelopmentUserId();
+  if (localUserId) {
+    return { Authorization: `Bearer ${buildDevelopmentAccessToken(localUserId)}` };
   }
 
   return {};
@@ -530,9 +544,12 @@ async function authenticatedJsonRequest<T>(endpoint: string, init: { method: str
 
 export const transactionApi = {
   getAll: async (): Promise<ApiTransaction[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
+      .eq('user_id', user.id)
       .order('tanggal', { ascending: false })
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
@@ -567,6 +584,8 @@ export const transactionApi = {
   },
 
   update: async (id: string, payload: Partial<ApiTransaction>): Promise<ApiTransaction> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: DbTransactionUpdate = {};
     if (payload.jenis !== undefined) update.jenis = payload.jenis;
     if (payload.kategori !== undefined) update.kategori = payload.kategori;
@@ -585,6 +604,7 @@ export const transactionApi = {
       .from('transactions')
       .update(update)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -592,7 +612,9 @@ export const transactionApi = {
   },
 
   delete: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase.from('transactions').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     return null;
   },
@@ -636,6 +658,8 @@ export const financeProjectApi = {
   },
 
   update: async (id: string, payload: Partial<ApiFinanceProject>): Promise<ApiFinanceProject> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (payload.name !== undefined) update.name = payload.name;
     if (payload.commodity !== undefined) update.commodity = payload.commodity;
@@ -650,6 +674,7 @@ export const financeProjectApi = {
       .from('finance_projects')
       .update(update)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -657,7 +682,9 @@ export const financeProjectApi = {
   },
 
   delete: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('finance_projects').delete().eq('id', id);
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase.from('finance_projects').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     return null;
   },
@@ -665,10 +692,12 @@ export const financeProjectApi = {
 
 export const rabApi = {
   getByProject: async (projectId: string): Promise<{ categories: ApiRabCategory[]; items: ApiRabItem[]; imports: ApiRabImport[] }> => {
+    const user = await resolveCurrentUser();
+    if (!user) return { categories: [], items: [], imports: [] };
     const [categoryResult, itemResult, importResult] = await Promise.all([
-      supabase.from('rab_categories').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
-      supabase.from('rab_items').select('*').eq('project_id', projectId).order('sort_order', { ascending: true }),
-      supabase.from('rab_imports').select('*').eq('project_id', projectId).order('created_at', { ascending: false }),
+      supabase.from('rab_categories').select('*').eq('project_id', projectId).eq('user_id', user.id).order('sort_order', { ascending: true }),
+      supabase.from('rab_items').select('*').eq('project_id', projectId).eq('user_id', user.id).order('sort_order', { ascending: true }),
+      supabase.from('rab_imports').select('*').eq('project_id', projectId).eq('user_id', user.id).order('created_at', { ascending: false }),
     ]);
     if (categoryResult.error) throw new Error(categoryResult.error.message);
     if (itemResult.error) throw new Error(itemResult.error.message);
@@ -703,17 +732,21 @@ export const rabApi = {
   },
 
   updateCategory: async (id: string, payload: Partial<ApiRabCategory>): Promise<ApiRabCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (payload.name !== undefined) update.name = payload.name;
     if (payload.type !== undefined) update.type = payload.type;
     if (payload.sortOrder !== undefined) update.sort_order = payload.sortOrder;
-    const { data, error } = await supabase.from('rab_categories').update(update).eq('id', id).select().single();
+    const { data, error } = await supabase.from('rab_categories').update(update).eq('id', id).eq('user_id', user.id).select().single();
     if (error) throw new Error(error.message);
     return mapRabCategory(data as DbRabCategory);
   },
 
   deleteCategory: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('rab_categories').delete().eq('id', id);
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase.from('rab_categories').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     return null;
   },
@@ -744,6 +777,8 @@ export const rabApi = {
   },
 
   updateItem: async (id: string, payload: Partial<ApiRabItem>): Promise<ApiRabItem> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
     if (payload.categoryId !== undefined) update.category_id = payload.categoryId;
     if (payload.name !== undefined) update.name = payload.name;
@@ -756,13 +791,15 @@ export const rabApi = {
     if (payload.aliases !== undefined) update.aliases = payload.aliases;
     if (payload.sortOrder !== undefined) update.sort_order = payload.sortOrder;
 
-    const { data, error } = await supabase.from('rab_items').update(update).eq('id', id).select().single();
+    const { data, error } = await supabase.from('rab_items').update(update).eq('id', id).eq('user_id', user.id).select().single();
     if (error) throw new Error(error.message);
     return mapRabItem(data as DbRabItem);
   },
 
   deleteItem: async (id: string): Promise<null> => {
-    const { error } = await supabase.from('rab_items').delete().eq('id', id);
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase.from('rab_items').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw new Error(error.message);
     return null;
   },
@@ -828,24 +865,37 @@ export const profileApi = {
 
 export const stokApi = {
   getAll: async (): Promise<ApiHarvestBatch[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
     const { data, error } = await supabase
       .from('harvest_batches')
       .select('*')
+      .eq('user_id', user.id)
       .order('tanggal_panen', { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []).map(mapBatch);
   },
 
   getSummary: async (): Promise<StokSummary> => {
+    const user = await resolveCurrentUser();
+    if (!user) {
+      return {
+        totalStokSiapJual: 0,
+        stokTerjualMingguIni: 0,
+        estimasiNilaiStok: 0,
+        batchHampirKadaluarsa: 0,
+      };
+    }
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const fromDate = oneWeekAgo.toISOString().split('T')[0];
 
     const [batchResult, mutResult] = await Promise.all([
-      supabase.from('harvest_batches').select('*'),
+      supabase.from('harvest_batches').select('*').eq('user_id', user.id),
       supabase
         .from('stock_mutations')
         .select('berat')
+        .eq('user_id', user.id)
         .eq('tipe', 'keluar')
         .gte('tanggal', fromDate),
     ]);
@@ -866,9 +916,12 @@ export const stokApi = {
   },
 
   getMutations: async (params?: { grade?: string; from?: string; to?: string }): Promise<ApiStockMutation[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
     let query = supabase
       .from('stock_mutations')
       .select('*, harvest_batches!inner(grade)')
+      .eq('user_id', user.id)
       .order('tanggal', { ascending: false });
     if (params?.from) query = query.gte('tanggal', params.from);
     if (params?.to) query = query.lte('tanggal', params.to);
@@ -884,7 +937,10 @@ export const stokApi = {
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
 
-    const { count } = await supabase.from('harvest_batches').select('*', { count: 'exact', head: true });
+    const { count } = await supabase
+      .from('harvest_batches')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id);
     const batchCode = `BATCH-${String((count ?? 0) + 1).padStart(3, '0')}-${payload.grade}`;
     const status = computeStatus(payload.beratMasuk, payload.beratMasuk, payload.estimasiKadaluarsa);
 
@@ -923,6 +979,8 @@ export const stokApi = {
   },
 
   update: async (id: string, payload: Partial<ApiHarvestBatch>): Promise<ApiHarvestBatch> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const update: DbHarvestBatchUpdate = {};
     if (payload.tanggalPanen !== undefined) update.tanggal_panen = payload.tanggalPanen;
     if (payload.grade !== undefined) update.grade = payload.grade;
@@ -940,6 +998,7 @@ export const stokApi = {
       .from('harvest_batches')
       .update(update)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -947,10 +1006,13 @@ export const stokApi = {
   },
 
   closeBatch: async (id: string): Promise<ApiHarvestBatch> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
     const { data, error } = await supabase
       .from('harvest_batches')
       .update({ status: 'habis', updated_at: new Date().toISOString() })
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -962,7 +1024,7 @@ export const stokApi = {
     if (!user) throw new Error('Belum login');
 
     const { data: batchRow, error: fetchErr } = await supabase
-      .from('harvest_batches').select('*').eq('id', batchId).single();
+      .from('harvest_batches').select('*').eq('id', batchId).eq('user_id', user.id).single();
     if (fetchErr) throw new Error(fetchErr.message);
     const batch = mapBatch(batchRow);
 
@@ -977,6 +1039,7 @@ export const stokApi = {
       .from('harvest_batches')
       .update({ stok_tersisa: newStok, status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', batchId)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (updateErr) throw new Error(updateErr.message);
@@ -1236,13 +1299,11 @@ export const aiApi = {
     totalPengeluaran: number;
     labaBersih: number;
     userName?: string;
-    transactions: Array<{
-      jenis: string;
-      kategori: string;
-      nominal: number;
-      tanggal: string;
-      keterangan?: string;
-    }>;
+    project?: FinanceProject | null;
+    rabItems?: RabItem[];
+    transactions: FinanceTransactionForReport[];
+    incomeStatementComparison?: IncomeStatementComparison;
+    cashFlowComparison?: CashFlowComparison;
   }) =>
     apiFetch<{ analysis: string; model: string }>('/api/ai/financial-report', payload),
 };
@@ -1305,5 +1366,113 @@ export const locationApi = {
     search.set('lat', String(params.lat));
     search.set('lon', String(params.lon));
     return apiGet<LocationSearchResult>(`/api/location/reverse?${search.toString()}`);
+  },
+};
+
+// ─── Transaction Category API ─────────────────────────────────────
+export const transactionCategoryApi = {
+  getAll: async (): Promise<ApiTransactionCategory[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: DbTransactionCategory) => ({ id: row.id, nama: row.nama }));
+  },
+
+  create: async (nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionCategory;
+    return { id: row.id, nama: row.nama };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_categories')
+      .update({ nama })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionCategory;
+    return { id: row.id, nama: row.nama };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase
+      .from('finance_transaction_categories')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) throw new Error(error.message);
+  },
+};
+
+// ─── Transaction Satuan API ───────────────────────────────────────
+export const transactionSatuanApi = {
+  getAll: async (): Promise<ApiTransactionCategory[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((row: DbTransactionSatuan) => ({ id: row.id, nama: row.nama }));
+  },
+
+  create: async (nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .insert({ user_id: user.id, nama })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionSatuan;
+    return { id: row.id, nama: row.nama };
+  },
+
+  update: async (id: string, nama: string): Promise<ApiTransactionCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('finance_transaction_satuans')
+      .update({ nama })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const row = data as DbTransactionSatuan;
+    return { id: row.id, nama: row.nama };
+  },
+
+  delete: async (id: string): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { error } = await supabase
+      .from('finance_transaction_satuans')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) throw new Error(error.message);
   },
 };

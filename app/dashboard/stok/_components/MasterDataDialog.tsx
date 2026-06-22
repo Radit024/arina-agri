@@ -104,7 +104,7 @@ export default function MasterDataDialog({
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
+        <Typography component="span" variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
         <IconButton size="small" onClick={handleClose}>
           <CloseIcon fontSize="small" />
         </IconButton>

@@ -14,6 +14,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import GoogleIcon from '@mui/icons-material/Google';
+import ComputerOutlinedIcon from '@mui/icons-material/ComputerOutlined';
 import AuthShell from '@/components/auth/AuthShell';
 import type { LoginForm } from '@/controllers/login/useLoginController';
 import { softBg, softText } from '@/lib/themeColors';
@@ -26,7 +27,10 @@ interface LoginViewProps {
   errors: FieldErrors<LoginForm>;
   googleLoading: boolean;
   handleGoogleSignIn: () => void;
+  handleLocalSignIn: () => void;
   handleSubmit: UseFormHandleSubmit<LoginForm>;
+  localLoading: boolean;
+  localLoginEnabled: boolean;
   loading: boolean;
   onSubmit: SubmitHandler<LoginForm>;
   redirecting: boolean;
@@ -41,7 +45,10 @@ export default function LoginView({
   errors,
   googleLoading,
   handleGoogleSignIn,
+  handleLocalSignIn,
   handleSubmit,
+  localLoading,
+  localLoginEnabled,
   loading,
   onSubmit,
   redirecting,
@@ -49,7 +56,7 @@ export default function LoginView({
   t,
   togglePassword,
 }: LoginViewProps) {
-  const busy = loading || googleLoading || redirecting;
+  const busy = loading || googleLoading || localLoading || redirecting;
   const submitLabel = redirecting ? t('preparingDashboard') : t('processing');
 
   return (
@@ -204,6 +211,21 @@ export default function LoginView({
         >
           {googleLoading ? t('processing') : t('google')}
         </Button>
+
+        {localLoginEnabled && (
+          <Button
+            type="button"
+            variant="text"
+            size="large"
+            fullWidth
+            onClick={handleLocalSignIn}
+            disabled={busy}
+            startIcon={localLoading ? <CircularProgress size={18} color="inherit" /> : <ComputerOutlinedIcon />}
+            sx={{ py: 1.25, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '0.95rem' }}
+          >
+            {localLoading ? t('processing') : t('localLogin')}
+          </Button>
+        )}
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">

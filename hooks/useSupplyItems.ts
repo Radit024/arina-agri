@@ -93,7 +93,8 @@ export function useSupplyItems() {
       await supabase
         .from('supply_items')
         .update({ stok_saat_ini: newStok, updated_at: new Date().toISOString() })
-        .eq('id', payload.itemId);
+        .eq('id', payload.itemId)
+        .eq('user_id', user.id);
     }
 
     await fetchItems();
@@ -102,7 +103,7 @@ export function useSupplyItems() {
 
   const deleteItem = useCallback(async (id: string): Promise<boolean> => {
     if (!user) return false;
-    const { error: err } = await supabase.from('supply_items').delete().eq('id', id);
+    const { error: err } = await supabase.from('supply_items').delete().eq('id', id).eq('user_id', user.id);
     if (err) { setError(err.message); return false; }
     await fetchItems();
     return true;

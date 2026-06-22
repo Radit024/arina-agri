@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 
+import { formatDateLong, formatMonthYear } from '@/lib/formatters';
 import {
   buildCashFlowComparison,
   buildIncomeStatementComparison,
@@ -19,6 +20,7 @@ const INCOME_FILL = 'FFDCFCE7';
 const EXPENSE_FILL = 'FFFFEDD5';
 const COMPARISON_FILL = 'FFDBEAFE';
 const BORDER_COLOR = 'FFCBD5E1';
+const IGNORED_RAB_SUMMARY_ROW_PATTERN = /total|keuntungan|hpp|bep|ratio|bagi hasil/i;
 
 export interface ParsedRabWorkbook {
   project: FinanceProject;
@@ -145,13 +147,13 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       return;
     }
 
-    if (description && marker && Number.isNaN(Number(marker)) && !/total|keuntungan|hpp|bep|ratio|bagi hasil/i.test(description)) {
+    if (description && marker && Number.isNaN(Number(marker)) && !IGNORED_RAB_SUMMARY_ROW_PATTERN.test(description)) {
       currentCategory = description;
       currentType = /pendapatan|penerimaan/i.test(description) ? 'income' : currentType;
       return;
     }
 
-    if (!description || /total|keuntungan|hpp|bep|ratio|bagi hasil/i.test(normalizedDescription)) return;
+    if (!description || IGNORED_RAB_SUMMARY_ROW_PATTERN.test(normalizedDescription)) return;
     if (volume === 0 && unitPrice === 0 && plannedTotal === 0) return;
 
     const type: RabEntryType = currentType === 'income' || /penerimaan|penjualan/i.test(description) ? 'income' : 'expense';
@@ -236,7 +238,7 @@ function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabIte
       item.unit,
       item.unitPrice,
       { formula: plannedTotalFormula(rowNumber), result: item.plannedTotal },
-      item.plannedCashMonth ?? '-',
+      item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-',
     ];
     applyCurrency(sheet.getCell(rowNumber, 5));
     applyCurrency(sheet.getCell(rowNumber, 6));
@@ -268,7 +270,7 @@ function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, tra
   transactions.forEach((transaction, index) => {
     const rowNumber = index + 5;
     sheet.getRow(rowNumber).values = [
-      transaction.tanggal,
+      formatDateLong(transaction.tanggal),
       transaction.keterangan || transaction.kategori,
       transaction.volume ?? '',
       transaction.satuan ?? '',
@@ -326,7 +328,7 @@ function writeIncomeStatementSheet(sheet: ExcelJS.Worksheet, project: FinancePro
 function writeCashFlowSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[], startMonth: string, endMonth: string) {
   applyTitle(sheet, 'ARUS KAS RENCANA', project.name);
   const months = buildMonthRange(startMonth, endMonth);
-  sheet.getRow(4).values = ['Deskripsi', ...months, 'Total'];
+  sheet.getRow(4).values = ['Deskripsi', ...months.map(formatMonthYear), 'Total'];
   applyHeader(sheet.getRow(4));
 
   const rows = [
@@ -412,7 +414,7 @@ function writeComparisonSheet(
   cashFlow.rows.forEach((row, index) => {
     const rowNumber = cashStart + index + 1;
     sheet.getRow(rowNumber).values = [
-      row.month,
+      formatMonthYear(row.month),
       row.plannedInflow,
       row.actualInflow,
       row.plannedOutflow,

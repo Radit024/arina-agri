@@ -1,16 +1,27 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 
 import KeuanganView from '@/app/dashboard/keuangan/_components/KeuanganView';
 import type { ApiTransaction } from '@/lib/api';
+import type { RabItem } from '@/lib/finance/rabTypes';
 import { darkTheme } from '@/lib/theme';
 
 vi.mock('next/dynamic', () => ({
-  default: () => function DynamicChartStub() {
-    return <div data-testid="finance-pie-chart" />;
+  default: () => function DynamicChartStub(props: { highlightedItem?: unknown; onHighlightChange?: unknown; series?: Array<{ id?: string }> }) {
+    const highlightedItemState = Object.prototype.hasOwnProperty.call(props, 'highlightedItem')
+      ? props.highlightedItem === null ? 'null' : 'set'
+      : 'missing';
+
+    return (
+      <div
+        data-testid="finance-pie-chart"
+        data-highlighted-item={highlightedItemState}
+        data-has-on-highlight-change={typeof props.onHighlightChange === 'function' ? 'true' : 'false'}
+        data-series-id={props.series?.[0]?.id ?? ''}
+      />
+    );
   },
 }));
 
@@ -18,23 +29,46 @@ const theme = createTheme();
 
 type KeuanganViewProps = ComponentProps<typeof KeuanganView>;
 
-type TransactionFormData = {
-  jenis: 'pengeluaran' | 'pendapatan';
-  kategori: string;
-  nominal: string;
-  tanggal: string;
-  keterangan?: string;
-};
-
 const transaction: ApiTransaction = {
   _id: 'tx-1',
   jenis: 'pengeluaran',
   kategori: 'pupuk',
   nominal: 50000,
   tanggal: '2026-06-05',
-  keterangan: '',
+  keterangan: 'Pembelian urea',
+  volume: 2,
+  satuan: 'kg',
+  hargaSatuan: 25000,
   createdAt: '2026-06-05T00:00:00.000Z',
   updatedAt: '2026-06-05T00:00:00.000Z',
+};
+
+const financeProject = {
+  id: 'project-padi-1',
+  name: 'Padi 1 Ha',
+  commodity: 'Padi',
+  landArea: 1,
+  landAreaUnit: 'Ha',
+  seasonLabel: 'Musim Tanam 2026',
+  startDate: '2026-06-01',
+  endDate: '2026-09-30',
+  status: 'active' as const,
+};
+
+const rabItem: RabItem = {
+  id: 'rab-pupuk',
+  projectId: financeProject.id,
+  categoryId: 'rab-cat-saprodi',
+  categoryName: 'Saprodi',
+  type: 'expense',
+  name: 'Pupuk Urea',
+  volume: 10,
+  unit: 'karung',
+  unitPrice: 200000,
+  plannedTotal: 2000000,
+  plannedCashMonth: '2026-06',
+  aliases: ['urea'],
+  sortOrder: 1,
 };
 
 const labels: Record<string, string> = {
@@ -56,9 +90,12 @@ const labels: Record<string, string> = {
   'ledger.addFirst': 'Tambah transaksi pertama',
   'ledger.columns.date': 'Tanggal',
   'ledger.columns.category': 'Kategori',
+  'ledger.columns.quantity': 'Volume',
+  'ledger.columns.unit': 'Satuan',
+  'ledger.columns.unitPrice': 'Harga Satuan',
   'ledger.columns.note': 'Catatan',
   'ledger.columns.type': 'Jenis',
-  'ledger.columns.value': 'Nominal',
+  'ledger.columns.value': 'Nominal (Rp)',
   'ledger.columns.action': 'Aksi',
   'summary.title': 'Ringkasan',
   'summary.totalIncome': 'Total Pemasukan',
@@ -133,16 +170,79 @@ function translate(key: string, values?: Record<string, unknown>) {
   );
 }
 
+function makeTransactionBatch(overrides: Record<string, unknown> = {}) {
+  return {
+    dialogOpen: false,
+    drafts: [],
+    expandedDraftId: null,
+    stage: 'input' as const,
+    submitting: false,
+    editingTransactionId: null,
+    draftErrors: {},
+    closeConfirmOpen: false,
+    submitResults: null,
+    openForCreate: vi.fn(),
+    openForEdit: vi.fn(),
+    requestClose: vi.fn(),
+    closeDialog: vi.fn(),
+    setCloseConfirmOpen: vi.fn(),
+    updateDraftField: vi.fn(),
+    expandDraft: vi.fn(),
+    addDraft: vi.fn(),
+    removeDraft: vi.fn(),
+    goToConfirm: vi.fn(),
+    goBackToInput: vi.fn(),
+    submitAll: vi.fn(),
+    submitEdit: vi.fn(),
+    rabSuggestion: null,
+    getRabLinkForDraft: vi.fn(),
+    ...overrides,
+  };
+}
+
+function makeTransactionMaster() {
+  return {
+    customKategori: [],
+    customSatuan: [],
+    kategoriDialogOpen: false,
+    setKategoriDialogOpen: vi.fn(),
+    satuanDialogOpen: false,
+    setSatuanDialogOpen: vi.fn(),
+    deleteKategoriError: null,
+    setDeleteKategoriError: vi.fn(),
+    deleteSatuanError: null,
+    setDeleteSatuanError: vi.fn(),
+    allKategori: vi.fn(() => [] as string[]),
+    allSatuan: [] as string[],
+    addKategori: vi.fn(),
+    renameKategori: vi.fn(),
+    deleteKategori: vi.fn(),
+    addSatuan: vi.fn(),
+    renameSatuan: vi.fn(),
+    deleteSatuan: vi.fn(),
+  };
+}
+
+function makeRabTransactionLink(overrides: Record<string, unknown> = {}) {
+  return {
+    dialogOpen: false,
+    targetTransactionIds: [],
+    targetTransactions: [],
+    targetRabType: null,
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    submitting: false,
+    linkError: null,
+    filteredRabOptions: [],
+    openForTransactions: vi.fn(),
+    closeDialog: vi.fn(),
+    linkToRabItem: vi.fn(async () => ({ success: 0, failed: 0 })),
+    getLinkedRabItem: vi.fn(() => null),
+    ...overrides,
+  };
+}
+
 function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganViewProps> }) {
-  const form = useForm<TransactionFormData>({
-    defaultValues: {
-      jenis: 'pengeluaran',
-      kategori: '',
-      nominal: '',
-      tanggal: '2026-06-06',
-      keterangan: '',
-    },
-  });
   const activeTheme = overrides.theme ?? theme;
 
   const props: KeuanganViewProps = {
@@ -155,10 +255,6 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setReportError: vi.fn(),
     bepHppDialogOpen: false,
     setBepHppDialogOpen: vi.fn(),
-    txDialogOpen: false,
-    setTxDialogOpen: vi.fn(),
-    editingId: null,
-    setEditingId: vi.fn(),
     deleteConfirmId: null,
     setDeleteConfirmId: vi.fn(),
     snackbar: { open: false, message: '', severity: 'success' },
@@ -169,24 +265,16 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setFilterJenis: vi.fn(),
     theme: activeTheme,
     isMobile: true,
-    control: form.control,
-    handleSubmit: form.handleSubmit,
-    errors: form.formState.errors,
-    selectedJenis: 'pengeluaran',
-    kategoriFiltered: ['Pupuk', 'Pestisida', 'Lainnya'],
-    openAddDialog: vi.fn(),
-    handleEdit: vi.fn(),
-    onSubmit: vi.fn(),
-    txSubmitting: false,
     handleDelete: vi.fn(),
     handleConfirmDelete: vi.fn(),
-    handleNominalChange: vi.fn(),
     handleBepHppInputChange: vi.fn(),
     getBepHppInputDisplayValue: (value) => (value === 0 ? '' : String(value)),
-    handleExportExcel: vi.fn(),
     aiQuotaRemaining: 3,
+    handleOpenFinanceReportDialog: vi.fn(),
     handleGeneratePdfManual: vi.fn(),
     handleGeneratePdfAI: vi.fn(),
+    transactionBatch: makeTransactionBatch() as KeuanganViewProps['transactionBatch'],
+    transactionMaster: makeTransactionMaster() as KeuanganViewProps['transactionMaster'],
     monthFilteredTransactions: [transaction],
     totalPendapatan: 0,
     totalPengeluaran: transaction.nominal,
@@ -196,11 +284,17 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bfaBepRupiah: null,
     bfaProyeksiLaba: null,
     bfaLayak: false,
-    finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0' }],
+    finalPieData: [{ id: 'Kosong', value: 1, label: 'Kosong', color: '#e2e8f0', percentage: 0 }],
     finalPieColors: ['#e2e8f0'],
     bulanOptions: ['2026-06'],
     getBulanLabel: () => 'Juni 2026',
     displayedTransactions: [transaction],
+    financeAccess: {
+      hasSelectedProject: true,
+      hasProjectData: true,
+      canInputFinance: true,
+      canExportFinance: true,
+    },
     financeTab: 'buku-besar',
     setFinanceTab: vi.fn(),
     financeProject: {
@@ -228,6 +322,8 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       backendOnline: false,
       reload: vi.fn(),
       createCategory: vi.fn(),
+      updateCategory: vi.fn(),
+      deleteCategory: vi.fn(),
       createItem: vi.fn(),
       updateItem: vi.fn(),
       deleteItem: vi.fn(),
@@ -239,13 +335,38 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       importLoading: false,
       importError: null,
       setImportError: vi.fn(),
+      rabItemError: null,
+      setRabItemError: vi.fn(),
+      rabItemDraft: {
+        categoryName: 'Saprodi',
+        type: 'expense',
+        name: '',
+        volume: '1',
+        unit: 'Unit',
+        unitPrice: '',
+        plannedCashMonth: '',
+        aliases: '',
+      },
+      rabItemPlannedTotal: 0,
+      rabItemSubmitting: false,
+      rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
+      rabCategoryDialogOpen: false,
+      setRabCategoryDialogOpen: vi.fn(),
+      rabCategoryDialogItems: [],
+      rabCategoryDeleteError: null,
+      setRabCategoryDeleteError: vi.fn(),
+      addRabCategory: vi.fn(async () => null),
+      renameRabCategory: vi.fn(),
+      deleteRabCategory: vi.fn(),
+      updateRabItemDraftField: vi.fn(),
+      openRabItemDialog: vi.fn(),
+      closeRabItemDialog: vi.fn(),
       totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
       addRabItem: vi.fn(),
+      submitRabItemDraft: vi.fn(),
       importRabFile: vi.fn(),
     },
-    financeLedger: {
-      rabSuggestions: [],
-    },
+    rabTransactionLink: makeRabTransactionLink() as KeuanganViewProps['rabTransactionLink'],
     financeReports: {
       reportTransactions: [],
       reportStartMonth: '2026-06',
@@ -283,6 +404,17 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       setExportError: vi.fn(),
       handleExportFinanceWorkbook: vi.fn(),
     },
+    searchQuery: '',
+    setSearchQuery: vi.fn(),
+    sortColumn: 'tanggal' as const,
+    sortDir: 'desc' as const,
+    toggleSort: vi.fn(),
+    selectedTxIds: [],
+    toggleSelectTx: vi.fn(),
+    clearSelectionTxs: vi.fn(),
+    bulkDeleteConfirm: false,
+    setBulkDeleteConfirm: vi.fn(),
+    handleBulkDeleteConfirm: vi.fn(),
     ...overrides,
   };
 
@@ -298,10 +430,31 @@ function renderView(overrides: Partial<KeuanganViewProps> = {}) {
 }
 
 describe('KeuanganView', () => {
+  it('membuat seluruh panel tab keuangan mengisi tinggi konten', () => {
+    const panels: Array<[KeuanganViewProps['financeTab'], string, string]> = [
+      ['buku-besar', 'finance-panel-buku-besar', 'Buku Besar Transaksi'],
+      ['rab', 'finance-panel-rab', 'Belum ada proyek'],
+      ['laba-rugi', 'finance-panel-laba-rugi', 'Laba Rugi Rencana vs Aktual'],
+      ['arus-kas', 'finance-panel-arus-kas', 'Arus Kas Rencana vs Aktual'],
+    ];
+
+    for (const [financeTab, testId, visibleTitle] of panels) {
+      const { unmount } = renderView({ financeTab });
+
+      expect(screen.getByTestId(testId)).toHaveAttribute('data-finance-fill-height', 'true');
+      expect(screen.getByText(visibleTitle)).toBeInTheDocument();
+
+      unmount();
+    }
+  });
+
   it('keeps mobile edit and delete actions visible on each transaction card', () => {
-    const handleEdit = vi.fn();
+    const openForEdit = vi.fn();
     const handleDelete = vi.fn();
-    renderView({ handleEdit, handleDelete });
+    renderView({
+      handleDelete,
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
@@ -312,8 +465,146 @@ describe('KeuanganView', () => {
     fireEvent.click(editButton);
     fireEvent.click(deleteButton);
 
-    expect(handleEdit).toHaveBeenCalledWith(transaction);
+    expect(openForEdit).toHaveBeenCalledWith(transaction);
     expect(handleDelete).toHaveBeenCalledWith(transaction._id);
+  });
+
+  it('menampilkan rincian input transaksi pada ledger', () => {
+    renderView();
+
+    expect(screen.getByRole('columnheader', { name: 'Input' })).toBeInTheDocument();
+    expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Harga Satuan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
+    expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
+  });
+
+  it('menampilkan tombol aksi desktop hanya ketika transaksi dipilih', () => {
+    const openForEdit = vi.fn();
+    const handleDelete = vi.fn();
+    const toggleSelectTx = vi.fn();
+
+    const { unmount } = renderView({
+      isMobile: false,
+      handleDelete,
+      toggleSelectTx,
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const table = screen.getByRole('table');
+    expect(within(table).queryByRole('columnheader', { name: 'Aksi' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Edit transaksi pupuk' })).not.toBeInTheDocument();
+    expect(within(table).queryByRole('button', { name: 'Hapus transaksi pupuk' })).not.toBeInTheDocument();
+
+    unmount();
+    renderView({
+      isMobile: false,
+      handleDelete,
+      toggleSelectTx,
+      selectedTxIds: [transaction._id],
+      transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const selectedTable = screen.getByRole('table');
+    const editButton = within(selectedTable).getByRole('button', { name: 'Edit transaksi pupuk' });
+    const deleteButton = within(selectedTable).getByRole('button', { name: 'Hapus transaksi pupuk' });
+
+    fireEvent.click(editButton);
+    fireEvent.click(deleteButton);
+
+    expect(openForEdit).toHaveBeenCalledWith(transaction);
+    expect(handleDelete).toHaveBeenCalledWith(transaction._id);
+    expect(toggleSelectTx).not.toHaveBeenCalled();
+  });
+
+  it('menampilkan tombol hubungkan RAB pada bar transaksi terpilih', () => {
+    const openForTransactions = vi.fn();
+
+    renderView({
+      isMobile: false,
+      selectedTxIds: [transaction._id],
+      rabTransactionLink: makeRabTransactionLink({
+        openForTransactions,
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hubungkan RAB' }));
+
+    expect(openForTransactions).toHaveBeenCalledWith([transaction._id]);
+  });
+
+  it('menampilkan daftar RAB yang bisa dipilih pada dialog hubungkan RAB', () => {
+    const linkToRabItem = vi.fn(async () => ({ success: 1, failed: 0 }));
+
+    renderView({
+      rabTransactionLink: makeRabTransactionLink({
+        dialogOpen: true,
+        targetTransactionIds: [transaction._id],
+        targetTransactions: [transaction],
+        targetRabType: 'expense',
+        filteredRabOptions: [{ item: rabItem, isSuggested: true }],
+        linkToRabItem,
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    expect(screen.getByRole('heading', { name: 'Hubungkan RAB' })).toBeInTheDocument();
+    expect(screen.getByText('Pupuk Urea')).toBeInTheDocument();
+    expect(screen.getByText('Disarankan')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hubungkan RAB Pupuk Urea' }));
+    expect(linkToRabItem).toHaveBeenCalledWith(rabItem);
+  });
+
+  it('menampilkan badge RAB pada transaksi yang sudah terhubung', () => {
+    renderView({
+      displayedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
+      rabTransactionLink: makeRabTransactionLink({
+        getLinkedRabItem: vi.fn(() => rabItem),
+      }) as KeuanganViewProps['rabTransactionLink'],
+    });
+
+    expect(screen.getAllByText('RAB: Pupuk Urea').length).toBeGreaterThan(0);
+  });
+
+  it('mengontrol highlight chart distribusi agar MUI chart tidak menerima state undefined', () => {
+    renderView();
+
+    const charts = screen.getAllByTestId('finance-pie-chart');
+    expect(charts.length).toBeGreaterThan(0);
+
+    for (const chart of charts) {
+      expect(chart).toHaveAttribute('data-highlighted-item', 'null');
+      expect(chart).toHaveAttribute('data-has-on-highlight-change', 'true');
+      expect(chart).toHaveAttribute('data-series-id', 'expense-distribution');
+    }
+  });
+
+  it('meluruskan panel distribusi dengan buku besar dan menampilkan persentase pengeluaran', () => {
+    renderView({
+      isMobile: false,
+      finalPieData: [
+        { id: 'Pupuk', value: 75_000, label: 'Pupuk', color: '#16a34a', percentage: 75 },
+        { id: 'Pestisida', value: 25_000, label: 'Pestisida', color: '#dc2626', percentage: 25 },
+      ],
+      finalPieColors: ['#16a34a', '#dc2626'],
+    });
+
+    const ledgerCard = screen.getByTestId('finance-ledger-card');
+    const distributionCard = screen.getByTestId('finance-distribution-card');
+    expect(ledgerCard).toHaveAttribute('data-finance-card-align', 'ledger');
+    expect(distributionCard).toHaveAttribute('data-finance-card-align', 'ledger');
+    expect(distributionCard).toHaveAttribute('data-finance-card-fill-bottom', 'true');
+    expect(distributionCard.querySelector('[data-finance-distribution-breakdown="fill"]')).toBeInTheDocument();
+
+    const distribution = within(distributionCard);
+    expect(distribution.getByText('Pupuk')).toBeInTheDocument();
+    expect(distribution.getByText(/75,0%/)).toBeInTheDocument();
+    expect(distribution.getByText(/Rp\s*75\.000/)).toBeInTheDocument();
+    expect(distribution.getByText('Pestisida')).toBeInTheDocument();
+    expect(distribution.getByText(/25,0%/)).toBeInTheDocument();
   });
 
   it('menampilkan 4 input field BFA ketika dialog dibuka', () => {
@@ -369,14 +660,14 @@ describe('KeuanganView', () => {
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
-    const reportButton = screen.getByRole('button', { name: 'Laporan Keuangan' });
+    const reportButton = screen.getByRole('button', { name: 'Export Laporan' });
 
     expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
     expect(getComputedStyle(editButton).color).toBe('rgb(255, 255, 255)');
     expect(getComputedStyle(deleteButton).backgroundColor).toBe('rgba(212, 131, 106, 0.24)');
     expect(getComputedStyle(deleteButton).color).toBe('rgb(212, 131, 106)');
-    expect(getComputedStyle(reportButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
-    expect(getComputedStyle(reportButton).color).toBe('rgb(255, 255, 255)');
+    expect(reportButton).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Perhitungan HPP & BEP' })).not.toBeInTheDocument();
 
     unmount();
     renderView({ theme: darkTheme, aiDialogOpen: true });
@@ -385,5 +676,100 @@ describe('KeuanganView', () => {
 
     expect(getComputedStyle(generateAiButton).backgroundColor).toBe('rgb(82, 183, 136)');
     expect(getComputedStyle(generateAiButton).color).toBe('rgb(255, 255, 255)');
+  });
+
+  it('menonaktifkan input dan export ketika belum ada proyek', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      displayedTransactions: [],
+      financeAccess: {
+        hasSelectedProject: false,
+        hasProjectData: false,
+        canInputFinance: false,
+        canExportFinance: false,
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    expect(screen.getByRole('button', { name: 'Catat Transaksi' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
+    expect(screen.getAllByText('Buat proyek terlebih dahulu untuk mulai mencatat transaksi.').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Tambah transaksi pertama' })).toBeDisabled();
+    expect(openForCreate).not.toHaveBeenCalled();
+  });
+
+  it('mengaktifkan input tetapi menonaktifkan export ketika proyek belum punya data', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      displayedTransactions: [],
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: false,
+        canInputFinance: true,
+        canExportFinance: false,
+      },
+      financeProject: {
+        projects: [financeProject],
+        activeProjects: [financeProject],
+        loading: false,
+        error: null,
+        backendOnline: true,
+        reload: vi.fn(),
+        createProject: vi.fn(),
+        updateProject: vi.fn(),
+        deleteProject: vi.fn(),
+        selectedProjectId: financeProject.id,
+        setSelectedProjectId: vi.fn(),
+        selectedProject: financeProject,
+        projectDialogOpen: false,
+        setProjectDialogOpen: vi.fn(),
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const addButton = screen.getByRole('button', { name: 'Catat Transaksi' });
+    expect(addButton).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
+
+    fireEvent.click(addButton);
+    expect(openForCreate).toHaveBeenCalled();
+  });
+
+  it('mengaktifkan export ketika proyek sudah punya transaksi atau RAB', () => {
+    renderView({
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: true,
+        canInputFinance: true,
+        canExportFinance: true,
+      },
+      financeProject: {
+        projects: [financeProject],
+        activeProjects: [financeProject],
+        loading: false,
+        error: null,
+        backendOnline: true,
+        reload: vi.fn(),
+        createProject: vi.fn(),
+        updateProject: vi.fn(),
+        deleteProject: vi.fn(),
+        selectedProjectId: financeProject.id,
+        setSelectedProjectId: vi.fn(),
+        selectedProject: financeProject,
+        projectDialogOpen: false,
+        setProjectDialogOpen: vi.fn(),
+      },
+    });
+
+    const exportExcelButton = screen.getByRole('button', { name: 'Export Excel' });
+    const exportReportButton = screen.getByRole('button', { name: 'Export Laporan' });
+    expect(exportExcelButton).toBeEnabled();
+    expect(exportExcelButton).toHaveClass('MuiButton-outlined');
+    expect(within(exportExcelButton).getByTestId('finance-export-excel-logo')).toHaveAttribute('src', '/icons/excel-logo.svg');
+    expect(exportReportButton).toBeEnabled();
+    expect(exportReportButton).toHaveClass('MuiButton-outlined');
+    expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
   });
 });

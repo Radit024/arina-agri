@@ -29,7 +29,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import { formatDateLong } from '@/lib/formatters';
+import { formatDateInputValue, formatDateLong, normalizeDateInputValue } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 import type { ApiCalendarEvent } from '@/lib/api';
 import type { EventFormData } from '../_lib/eventSchema';
@@ -406,7 +406,17 @@ export default function KalenderView({
               }}
             >
               <Controller name="tanggal" control={control} render={({ field }) => (
-                <TextField {...field} type="date" label={t('dialog.fields.date')} error={!!errors.tanggal} helperText={errors.tanggal?.message} fullWidth required slotProps={{ inputLabel: { shrink: true } }} />
+                <TextField
+                  {...field}
+                  label={t('dialog.fields.date')}
+                  value={formatDateInputValue(field.value ?? '')}
+                  onChange={(event) => field.onChange(normalizeDateInputValue(event.target.value))}
+                  error={!!errors.tanggal}
+                  helperText={errors.tanggal?.message || ''}
+                  fullWidth
+                  required
+                  placeholder="05-06-2026"
+                />
               )} />
               <Controller name="waktu" control={control} render={({ field }) => (
                 <TextField {...field} type="time" label={t('dialog.fields.timeOptional')} fullWidth slotProps={{ inputLabel: { shrink: true } }} />

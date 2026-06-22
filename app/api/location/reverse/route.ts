@@ -31,9 +31,20 @@ interface BmkgLocationMetadata extends Coordinates {
   name: string;
 }
 
+interface BmkgVillageCandidate {
+  district?: WilayahItem;
+  village: WilayahItem;
+}
+
+interface NearestBmkgVillageCandidate extends BmkgVillageCandidate {
+  distance: number;
+}
+
 const WILAYAH_API_BASE_URL = 'https://wilayah.id/api';
 const BMKG_FORECAST_API_URL = 'https://api.bmkg.go.id/publik/prakiraan-cuaca';
 const NEAREST_BMKG_LOOKUP_CONCURRENCY = 6;
+const NEAREST_BMKG_REGIONAL_VILLAGE_LIMIT = Number(process.env.NEAREST_BMKG_REGIONAL_VILLAGE_LIMIT || 500);
+const BMKG_LOCATION_METADATA_TIMEOUT_MS = Number(process.env.BMKG_LOCATION_METADATA_TIMEOUT_MS || 3000);
 const bmkgLocationMetadataCache = new Map<string, BmkgLocationMetadata>();
 const bmkgLocationMetadataRequests = new Map<string, Promise<BmkgLocationMetadata | null>>();
 
@@ -83,16 +94,46 @@ function normalizeStrictName(value: string) {
     .trim();
 }
 
-function matchWilayahItem(items: WilayahItem[], candidates: Array<string | undefined>) {
+function matchWilayahItems(items: WilayahItem[], candidates: Array<string | undefined>) {
   const cleanCandidates = uniqueParts(candidates);
   const strictCandidates = new Set(cleanCandidates.map((candidate) => normalizeStrictName(candidate)).filter(Boolean));
-  const strictMatch = items.find((item) => strictCandidates.has(normalizeStrictName(item.name)));
-  if (strictMatch) return strictMatch;
+  const strictMatches = items.filter((item) => strictCandidates.has(normalizeStrictName(item.name)));
+  if (strictMatches.length) return strictMatches;
 
   const normalizedCandidates = new Set(cleanCandidates.map((candidate) => normalizeName(candidate)).filter(Boolean));
-  if (!normalizedCandidates.size) return null;
+  if (!normalizedCandidates.size) return [];
 
-  return items.find((item) => normalizedCandidates.has(normalizeName(item.name))) || null;
+  return items.filter((item) => normalizedCandidates.has(normalizeName(item.name)));
+}
+
+function matchWilayahItem(items: WilayahItem[], candidates: Array<string | undefined>) {
+  return matchWilayahItems(items, candidates)[0] || null;
+}
+
+function prioritizeWilayahItems(items: WilayahItem[], preferred: WilayahItem | WilayahItem[]) {
+  const preferredItems = Array.isArray(preferred) ? preferred : [preferred];
+  const seen = new Set<string>();
+  return [
+    ...preferredItems,
+    ...items,
+  ].filter((item) => {
+    if (seen.has(item.code)) return false;
+    seen.add(item.code);
+    return true;
+  });
+}
+
+async function findVillageAcrossDistricts(districts: WilayahItem[], candidates: Array<string | undefined>) {
+  const cleanCandidates = uniqueParts(candidates);
+  if (!cleanCandidates.length) return null;
+
+  for (const district of districts) {
+    const villages = await fetchWilayah(`villages/${district.code}.json`);
+    const village = matchWilayahItem(villages, cleanCandidates);
+    if (village) return { district, village };
+  }
+
+  return null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -126,6 +167,20 @@ async function fetchWilayah(path: string) {
     .filter((item): item is WilayahItem => Boolean(item.code && item.name));
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function toTitleCase(str: string) {
   return str
     .toLowerCase()
@@ -148,10 +203,14 @@ function getBmkgRawLocation(raw: unknown) {
 
 async function fetchBmkgLocationMetadata(village: WilayahItem): Promise<BmkgLocationMetadata | null> {
   try {
-    const response = await fetch(`${BMKG_FORECAST_API_URL}?adm4=${encodeURIComponent(village.code)}`, {
-      cache: 'no-store',
-      headers: { Accept: 'application/json' },
-    });
+    const response = await fetchWithTimeout(
+      `${BMKG_FORECAST_API_URL}?adm4=${encodeURIComponent(village.code)}`,
+      {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      },
+      BMKG_LOCATION_METADATA_TIMEOUT_MS,
+    );
     if (!response.ok) return null;
 
     const raw = await response.json();
@@ -235,22 +294,94 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-async function findNearestBmkgVillage(villages: WilayahItem[], coordinates: Coordinates) {
-  const candidates = await mapWithConcurrency(villages, NEAREST_BMKG_LOOKUP_CONCURRENCY, async (village) => {
-    const metadata = await getBmkgLocationMetadata(village);
+async function findNearestBmkgVillageCandidate(
+  candidates: BmkgVillageCandidate[],
+  coordinates: Coordinates,
+  maxCandidates = candidates.length,
+) {
+  const candidateSlice = candidates.slice(0, Math.max(0, maxCandidates));
+  const rankedCandidates = await mapWithConcurrency(candidateSlice, NEAREST_BMKG_LOOKUP_CONCURRENCY, async (candidate) => {
+    const metadata = await getBmkgLocationMetadata(candidate.village);
     if (!metadata) return null;
 
     return {
-      village,
+      ...candidate,
       distance: distanceKm(coordinates, metadata),
     };
   });
 
-  const nearest = candidates
-    .filter((candidate): candidate is { village: WilayahItem; distance: number } => Boolean(candidate))
+  return rankedCandidates
+    .filter((candidate): candidate is NearestBmkgVillageCandidate => Boolean(candidate))
     .sort((a, b) => a.distance - b.distance)[0];
+}
 
+async function findNearestBmkgVillage(villages: WilayahItem[], coordinates: Coordinates) {
+  const nearest = await findNearestBmkgVillageCandidate(
+    villages.map((village) => ({ village })),
+    coordinates,
+  );
   return nearest?.village || null;
+}
+
+async function getVillageCandidatesAcrossDistricts(districts: WilayahItem[]) {
+  const districtVillageGroups = await mapWithConcurrency(districts, NEAREST_BMKG_LOOKUP_CONCURRENCY, async (district) => {
+    const villages = await fetchWilayah(`villages/${district.code}.json`);
+    return villages.map((village) => ({ district, village }));
+  });
+
+  return districtVillageGroups.flat();
+}
+
+async function findNearestBmkgVillageAcrossDistricts(districts: WilayahItem[], coordinates: Coordinates) {
+  const candidates = await getVillageCandidatesAcrossDistricts(districts);
+  return findNearestBmkgVillageCandidate(
+    candidates,
+    coordinates,
+    NEAREST_BMKG_REGIONAL_VILLAGE_LIMIT,
+  );
+}
+
+async function findNearestBmkgVillageAcrossRegencies(regencies: WilayahItem[], coordinates: Coordinates) {
+  let nearest: (NearestBmkgVillageCandidate & { regency: WilayahItem }) | null = null;
+
+  for (const regency of regencies) {
+    const districts = await fetchWilayah(`districts/${regency.code}.json`);
+    const candidate = await findNearestBmkgVillageAcrossDistricts(districts, coordinates);
+    if (!candidate?.district) continue;
+
+    if (!nearest || candidate.distance < nearest.distance) {
+      nearest = {
+        ...candidate,
+        regency,
+      };
+    }
+  }
+
+  return nearest;
+}
+
+function createResolvedBmkgLocation(
+  province: WilayahItem,
+  regency: WilayahItem,
+  district: WilayahItem,
+  village: WilayahItem,
+) {
+  const districtName = district.name.toUpperCase().startsWith('KECAMATAN')
+    ? toTitleCase(district.name)
+    : `Kec. ${toTitleCase(district.name)}`;
+
+  const regencyName = toTitleCase(regency.name);
+  const provinceName = toTitleCase(province.name);
+
+  const detail = uniqueParts([districtName, regencyName, provinceName]).join(', ');
+  const villageName = toTitleCase(village.name);
+
+  return {
+    adm4: village.code,
+    label: uniqueParts([villageName, detail]).join(', '),
+    name: villageName,
+    detail,
+  };
 }
 
 async function resolveBmkgLocation(
@@ -270,52 +401,66 @@ async function resolveBmkgLocation(
   if (!province) return null;
 
   const regencies = await fetchWilayah(`regencies/${province.code}.json`);
-  const regency = matchWilayahItem(regencies, [
+  const regencyCandidates = [
     address.county,
     address.city,
     address.municipality,
     address.state_district,
     ...displayParts,
-  ]);
-  if (!regency) return null;
+  ];
+  const matchedRegencies = matchWilayahItems(regencies, regencyCandidates);
+  const regenciesToTry = matchedRegencies.length
+    ? prioritizeWilayahItems(regencies, matchedRegencies)
+    : regencies;
+  if (!regenciesToTry.length) return null;
 
-  const districts = await fetchWilayah(`districts/${regency.code}.json`);
-  const district = matchWilayahItem(districts, [
+  const districtCandidates = [
     address.city_district,
     address.district,
     address.suburb,
     address.town,
     ...displayParts,
-  ]);
-  if (!district) return null;
-
-  const villages = await fetchWilayah(`villages/${district.code}.json`);
-  const village = matchWilayahItem(villages, [
+  ];
+  const hasDistrictHint = uniqueParts([address.city_district, address.district]).length > 0;
+  const villageCandidates = [
     address.village,
     address.hamlet,
     address.neighbourhood,
     address.suburb,
     displayParts[0],
     query,
-  ]) || (coordinates ? await findNearestBmkgVillage(villages, coordinates) : null);
-  if (!village) return null;
+  ];
 
-  const districtName = district.name.toUpperCase().startsWith('KECAMATAN')
-    ? toTitleCase(district.name)
-    : `Kec. ${toTitleCase(district.name)}`;
+  for (const regency of regenciesToTry) {
+    const districts = await fetchWilayah(`districts/${regency.code}.json`);
+    let district = matchWilayahItem(districts, districtCandidates);
+    let village: WilayahItem | null = null;
 
-  const regencyName = toTitleCase(regency.name);
-  const provinceName = toTitleCase(province.name);
+    if (district) {
+      const villages = await fetchWilayah(`villages/${district.code}.json`);
+      village = matchWilayahItem(villages, villageCandidates)
+        || (coordinates ? await findNearestBmkgVillage(villages, coordinates) : null);
+    } else if (!hasDistrictHint) {
+      const crossDistrictMatch = await findVillageAcrossDistricts(districts, villageCandidates);
+      if (crossDistrictMatch) {
+        district = crossDistrictMatch.district;
+        village = crossDistrictMatch.village;
+      }
+    }
 
-  const detail = uniqueParts([districtName, regencyName, provinceName]).join(', ');
-  const villageName = toTitleCase(village.name);
+    if (!district || !village) continue;
 
-  return {
-    adm4: village.code,
-    label: uniqueParts([villageName, detail]).join(', '),
-    name: villageName,
-    detail,
-  };
+    return createResolvedBmkgLocation(province, regency, district, village);
+  }
+
+  if (coordinates && matchedRegencies.length) {
+    const nearest = await findNearestBmkgVillageAcrossRegencies(matchedRegencies, coordinates);
+    if (nearest?.district) {
+      return createResolvedBmkgLocation(province, nearest.regency, nearest.district, nearest.village);
+    }
+  }
+
+  return null;
 }
 
 async function normalizeLocationResult(item: NominatimSearchResult, query: string) {

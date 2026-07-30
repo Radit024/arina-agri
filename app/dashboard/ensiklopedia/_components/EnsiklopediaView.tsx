@@ -535,7 +535,7 @@ export default function EnsiklopediaView({
                           color: 'text.primary',
                           px: 0.75,
                           py: 0.25,
-                          borderRadius: 1,
+                          borderRadius: '8px',
                           fontFamily: 'monospace',
                           fontSize: '0.88em'
                         },
@@ -558,7 +558,7 @@ export default function EnsiklopediaView({
                           maxWidth: '100%',
                           overflowX: 'auto',
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
-                          borderRadius: 2,
+                          borderRadius: '8px',
                           p: 1.5,
                           mb: 1.6,
                           lineHeight: 1.55,

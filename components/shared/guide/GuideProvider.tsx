@@ -65,8 +65,8 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
     const requestId = pendingOpenRequestRef.current + 1;
     pendingOpenRequestRef.current = requestId;
 
-    void waitForGuideInitialTarget(nextGuide).then(() => {
-      if (pendingOpenRequestRef.current !== requestId) return;
+    void waitForGuideInitialTarget(nextGuide, { timeoutMs: 4000 }).then((ready) => {
+      if (pendingOpenRequestRef.current !== requestId || !ready) return;
 
       setActiveGuide(nextGuide);
       setIsOpen(true);

@@ -163,7 +163,11 @@ export default function CuacaView({
           size={{ xs: 12, lg: 8 }}
           sx={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}
         >
-          <Card data-guide-target="weather-current" sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+          <Card
+            data-guide-target="weather-current"
+            data-guide-loading={weatherLoading && !forecastData ? 'true' : undefined}
+            sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}
+          >
             {isRainy && (
               <Box className="weather-rain-layer" aria-hidden>
                 {Array.from({ length: 16 }).map((_, i) => (

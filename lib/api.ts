@@ -548,30 +548,10 @@ export const transactionApi = {
   },
 
   create: async (payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiTransaction> => {
-    const user = await resolveCurrentUser();
-    if (!user) throw new Error('Belum login');
-    const insertPayload: Record<string, unknown> = {
-      user_id: user.id,
-      jenis: payload.jenis,
-      kategori: payload.kategori,
-      nominal: payload.nominal,
-      tanggal: payload.tanggal,
-      keterangan: payload.keterangan ?? '',
-    };
-    if (payload.projectId) insertPayload.project_id = payload.projectId;
-    if (payload.rabCategoryId) insertPayload.rab_category_id = payload.rabCategoryId;
-    if (payload.rabItemId) insertPayload.rab_item_id = payload.rabItemId;
-    if (payload.volume !== undefined && payload.volume !== null) insertPayload.volume = payload.volume;
-    if (payload.satuan) insertPayload.satuan = payload.satuan;
-    if (payload.hargaSatuan !== undefined && payload.hargaSatuan !== null) insertPayload.harga_satuan = payload.hargaSatuan;
-
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(insertPayload)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return mapTx(data);
+    return authenticatedJsonRequest<ApiTransaction>('/api/finance/transactions', {
+      method: 'POST',
+      body: payload,
+    });
   },
 
   update: async (id: string, payload: Partial<ApiTransaction>): Promise<ApiTransaction> => {

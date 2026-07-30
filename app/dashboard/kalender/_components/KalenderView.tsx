@@ -269,9 +269,8 @@ export default function KalenderView({
             <CardHeader title={<Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 600 }}>{t('upcomingTitle')}</Typography>} subheader={t('next7Days')} />
             <CardContent sx={{ pt: 0 }}>
               {upcomingEvents.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body2" color="text.secondary">{t('emptyUpcoming')}</Typography>
-                  <Button data-guide-target="calendar-add-schedule" data-touch-target="44" size="small" sx={{ mt: 1, minHeight: 44 }} onClick={() => openAddDialog()}>+ {t('addSchedule')}</Button>
+                <Box data-guide-target="calendar-add-schedule" sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body2" color="text.secondary">{t('emptyUpcomingHint')}</Typography>
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>

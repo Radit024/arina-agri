@@ -8,6 +8,7 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { aiApi } from '@/lib/api';
 import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
+import { trackPageView } from '@/lib/analytics/trackPageView';
 
 import { useTransactions } from '@/hooks/useTransactions';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -47,7 +48,11 @@ export function useKeuanganController() {
     tCommon('months.october'), tCommon('months.november'), tCommon('months.december')
   ];
   const { user } = useAuth();
-  
+
+  useEffect(() => {
+    void trackPageView('keuangan');
+  }, []);
+
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   
   const bepKey = `arina-bfa-inputs-${user?.id || 'guest'}`;

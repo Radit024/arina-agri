@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations, useMessages } from 'next-intl';
@@ -8,6 +8,7 @@ import { useCalendar } from '@/hooks/useCalendar';
 import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import type { ApiCalendarEvent } from '@/lib/api';
 import { normalizeDateInputValue } from '@/lib/formatters';
+import { trackPageView } from '@/lib/analytics/trackPageView';
 import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
 import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_lib/eventSchema';
 
@@ -21,6 +22,11 @@ type CalendarMessages = {
 
 export default function KalenderController() {
   const t = useTranslations('Calendar');
+
+  useEffect(() => {
+    void trackPageView('kalender');
+  }, []);
+
   const messages = useMessages() as CalendarMessages;
   const { events, loading, error, addEvent, updateEvent, deleteEvent, reload } = useCalendar();
   const { warningMessage: weatherWarningMessage, planningNote: weatherPlanningNote } = useWeatherRiskSignal('calendar');

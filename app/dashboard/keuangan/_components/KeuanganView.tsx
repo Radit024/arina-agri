@@ -117,22 +117,15 @@ function formatLedgerInputSummary(tx: LedgerTransaction) {
 function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
   const palette = theme.palette[intent];
   const isDarkMode = theme.palette.mode === 'dark';
-  const isPrimaryAction = intent === 'primary';
-  const foreground = isDarkMode && isPrimaryAction
-    ? theme.palette.common.white
-    : isDarkMode
-      ? palette.main
-      : palette.dark;
-  const backgroundOpacity = isDarkMode
-    ? isPrimaryAction ? 0.28 : 0.24
-    : 0.12;
+  const foreground = isDarkMode ? palette.contrastText : palette.dark;
+  const backgroundOpacity = isDarkMode ? 0.85 : 0.12;
 
   return {
     borderRadius: 2,
     color: foreground,
-    bgcolor: alpha(palette.main, backgroundOpacity),
+    bgcolor: isDarkMode ? palette.main : alpha(palette.main, backgroundOpacity),
     border: '1px solid',
-    borderColor: alpha(foreground, isDarkMode ? 0.42 : 0.24),
+    borderColor: alpha(isDarkMode ? palette.main : foreground, isDarkMode ? 0.6 : 0.24),
     transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow', 'color'], {
       duration: theme.transitions.duration.shortest,
     }),

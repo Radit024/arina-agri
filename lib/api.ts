@@ -905,48 +905,10 @@ export const stokApi = {
   },
 
   create: async (payload: Omit<ApiHarvestBatch, '_id' | 'batchCode' | 'stokTersisa' | 'status' | 'createdAt' | 'updatedAt'>): Promise<ApiHarvestBatch> => {
-    const user = await resolveCurrentUser();
-    if (!user) throw new Error('Belum login');
-
-    const { count } = await supabase
-      .from('harvest_batches')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-    const batchCode = `BATCH-${String((count ?? 0) + 1).padStart(3, '0')}-${payload.grade}`;
-    const status = computeStatus(payload.beratMasuk, payload.beratMasuk, payload.estimasiKadaluarsa);
-
-    const { data, error } = await supabase
-      .from('harvest_batches')
-      .insert({
-        user_id: user.id,
-        batch_code: batchCode,
-        tanggal_panen: payload.tanggalPanen,
-        grade: payload.grade,
-        berat_masuk: payload.beratMasuk,
-        stok_tersisa: payload.beratMasuk,
-        harga_modal: payload.hargaModal,
-        harga_jual: payload.hargaJual,
-        lokasi_penyimpanan: payload.lokasiPenyimpanan,
-        estimasi_kadaluarsa: payload.estimasiKadaluarsa,
-        catatan: payload.catatan ?? '',
-        status,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-
-    // Record stock-in mutation
-    await supabase.from('stock_mutations').insert({
-      user_id: user.id,
-      batch_id: data.id,
-      batch_code: batchCode,
-      tipe: 'masuk',
-      berat: payload.beratMasuk,
-      tanggal: payload.tanggalPanen,
-      catatan: 'Stok awal masuk gudang',
+    return authenticatedJsonRequest<ApiHarvestBatch>('/api/stok/batches', {
+      method: 'POST',
+      body: payload,
     });
-
-    return mapBatch(data);
   },
 
   update: async (id: string, payload: Partial<ApiHarvestBatch>): Promise<ApiHarvestBatch> => {

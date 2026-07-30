@@ -99,6 +99,7 @@ export default function EnsiklopediaView({
       }}
     >
 
+      {/* Header custom (bukan PageHeader): halaman ini adalah chat shell sticky, bukan halaman data biasa. */}
       {/* Minimal Header */}
       <Box
         sx={{

@@ -15,6 +15,8 @@ import {
   pageTitleSx,
 } from '@/lib/ui/dashboardDesign';
 
+// Konvensi: judul halaman TIDAK memakai ikon (lihat panduan-perbaikan-arina.md #1.4). Prop `icon` di bawah
+// dipertahankan untuk kasus non-judul (mis. status/meta), bukan untuk dekorasi judul.
 export interface PageHeaderProps {
   title: string;
   subtitle?: ReactNode;

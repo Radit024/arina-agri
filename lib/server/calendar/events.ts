@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
+import { recordEvent } from '@/lib/analytics/recordEvent';
 import type { ApiCalendarEvent } from '@/lib/api';
 
 const EVENT_SELECT = 'id,title,date,category,description,created_at,updated_at,completed';
@@ -150,6 +151,13 @@ export async function handleCalendarEventsPost(request: Request) {
       .single();
 
     if (error) throw error;
+
+    await recordEvent({
+      userId: auth.userId,
+      feature: 'kalender',
+      eventType: 'action',
+      eventName: 'calendar_event_created',
+    });
 
     return jsonNoStore({ success: true, data: mapEvent(data as CalendarEventRow) });
   } catch (error) {

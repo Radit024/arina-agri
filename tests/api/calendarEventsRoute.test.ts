@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const from = vi.fn();
 const resolveRequestUserId = vi.fn();
+const recordEvent = vi.fn();
 
 vi.mock('@/lib/server/auth/requestUser', () => ({
   resolveRequestUserId: (request: Request) => resolveRequestUserId(request),
@@ -9,6 +10,10 @@ vi.mock('@/lib/server/auth/requestUser', () => ({
 
 vi.mock('@/lib/server/supabaseAdmin', () => ({
   getSupabaseAdmin: () => ({ from }),
+}));
+
+vi.mock('@/lib/analytics/recordEvent', () => ({
+  recordEvent: (input: unknown) => recordEvent(input),
 }));
 
 const eventRow = {
@@ -26,6 +31,7 @@ describe('calendar events route', () => {
   beforeEach(() => {
     from.mockReset();
     resolveRequestUserId.mockReset();
+    recordEvent.mockReset();
   });
 
   it('returns 401 when authorization is missing', async () => {
@@ -100,6 +106,12 @@ describe('calendar events route', () => {
       judul: 'Pemupukan blok A',
       tanggal: '2026-06-01',
       waktu: '',
+    });
+    expect(recordEvent).toHaveBeenCalledWith({
+      userId: '00000000-0000-4000-8000-000000000001',
+      feature: 'kalender',
+      eventType: 'action',
+      eventName: 'calendar_event_created',
     });
   });
 

@@ -705,7 +705,7 @@ export default function EnsiklopediaView({
 
           {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
           {hasUserMessages && (
-            <Box sx={{ mb: 1.5, maxWidth: '100%', overflow: 'hidden', position: 'relative' }}>
+            <Box sx={{ mb: 1.5, maxWidth: '100%', overflow: 'hidden', position: 'relative', display: 'flex', justifyContent: 'center' }}>
               <Box
                 data-guide-target="ai-quick-prompts"
                 sx={{

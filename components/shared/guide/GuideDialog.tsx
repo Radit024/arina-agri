@@ -49,9 +49,9 @@ interface RefreshTargetOptions {
 }
 
 const SPOTLIGHT_PADDING = 6;
-const CARD_GAP = 12;
-const VIEWPORT_MARGIN = 14;
-const ESTIMATED_CARD_HEIGHT = 228;
+const CARD_GAP = 16;
+const VIEWPORT_MARGIN = 20;
+const ESTIMATED_CARD_HEIGHT = 260;
 const MAX_CARD_WIDTH = 348;
 
 function clamp(value: number, min: number, max: number) {
@@ -602,10 +602,12 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
             <Box
               sx={{
                 pt: 1.75,
+                pb: 0.25,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 1,
+                rowGap: 1.25,
                 flexWrap: 'wrap',
               }}
             >

@@ -114,6 +114,32 @@ describe('stok batches route', () => {
     });
   });
 
+  it('returns 500 and does not record an event when the batch insert fails', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
+
+    const countSelect = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ count: 0 }) }));
+    const batchSingle = vi.fn().mockResolvedValue({ data: null, error: { message: 'insert failed' } });
+    const batchSelect = vi.fn(() => ({ single: batchSingle }));
+    const batchInsert = vi.fn(() => ({ select: batchSelect }));
+
+    from.mockImplementation((table: string) => {
+      if (table === 'harvest_batches') {
+        return { select: countSelect, insert: batchInsert };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { POST } = await import('@/app/api/stok/batches/route');
+    const response = await POST(new Request('http://localhost/api/stok/batches', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: JSON.stringify(validPayload()),
+    }));
+
+    expect(response.status).toBe(500);
+    expect(recordEvent).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for an invalid payload', async () => {
     resolveRequestUserId.mockResolvedValue('user-1');
     const { POST } = await import('@/app/api/stok/batches/route');

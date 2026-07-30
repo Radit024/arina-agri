@@ -118,7 +118,7 @@ function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = '
   const palette = theme.palette[intent];
   const isDarkMode = theme.palette.mode === 'dark';
   const foreground = isDarkMode ? palette.contrastText : palette.dark;
-  const backgroundOpacity = isDarkMode ? 0.85 : 0.12;
+  const backgroundOpacity = 0.12;
 
   return {
     borderRadius: 2,

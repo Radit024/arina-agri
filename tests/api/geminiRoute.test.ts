@@ -81,4 +81,21 @@ describe('gemini route', () => {
       eventName: 'chat_message_sent',
     });
   });
+
+  it('still returns the AI reply when resolving the user id for analytics throws', async () => {
+    resolveRequestUserId.mockRejectedValue(new Error('missing supabase credentials'));
+    generateGeminiReply.mockResolvedValue('Balasan AI meski analytics gagal');
+    const { POST } = await import('@/app/api/ai/gemini/route');
+
+    const response = await POST(new Request('http://localhost/api/ai/gemini', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: JSON.stringify({ prompt: 'Kapan waktu tanam cabai?' }),
+    }));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(json.data.reply).toBe('Balasan AI meski analytics gagal');
+    expect(recordEvent).not.toHaveBeenCalled();
+  });
 });

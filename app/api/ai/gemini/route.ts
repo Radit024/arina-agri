@@ -87,13 +87,17 @@ export async function POST(request: Request) {
 
     const reply = await generateGeminiReply({ prompt, context, userName, weatherContext });
 
-    const userId = await resolveRequestUserId(request);
-    await recordEvent({
-      userId,
-      feature: 'ai_chat',
-      eventType: 'action',
-      eventName: 'chat_message_sent',
-    });
+    try {
+      const userId = await resolveRequestUserId(request);
+      await recordEvent({
+        userId,
+        feature: 'ai_chat',
+        eventType: 'action',
+        eventName: 'chat_message_sent',
+      });
+    } catch (analyticsError) {
+      console.error('[Gemini Analytics] Gagal mencatat usage event:', analyticsError);
+    }
 
     return NextResponse.json({
       success: true,

@@ -282,7 +282,7 @@ export default function MobileBottomNav() {
           variant="filled"
           role="status"
           aria-live="polite"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
+          sx={{ borderRadius: 2, fontWeight: 600, width: '100%' }}
         >
           {t('featureUnavailable')}
         </Alert>

@@ -90,6 +90,29 @@ describe('finance transactions route', () => {
     });
   });
 
+  it('returns 500 and does not record an event when the insert fails', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
+    const single = vi.fn().mockResolvedValue({ data: null, error: { message: 'insert failed' } });
+    const select = vi.fn(() => ({ single }));
+    const insert = vi.fn(() => ({ select }));
+    from.mockReturnValue({ insert });
+    const { POST } = await import('@/app/api/finance/transactions/route');
+
+    const response = await POST(new Request('http://localhost/api/finance/transactions', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: JSON.stringify({
+        jenis: 'pengeluaran',
+        kategori: 'Pupuk',
+        nominal: 150000,
+        tanggal: '2026-07-30',
+      }),
+    }));
+
+    expect(response.status).toBe(500);
+    expect(recordEvent).not.toHaveBeenCalled();
+  });
+
   it('returns 400 for an invalid payload', async () => {
     resolveRequestUserId.mockResolvedValue('user-1');
     const { POST } = await import('@/app/api/finance/transactions/route');

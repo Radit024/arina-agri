@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -243,7 +243,7 @@ export default function Sidebar() {
           {navItems.map((item) => {
             const active = isActive(item.path);
             const divider = item.sectionStart && isOpen ? (
-              <Divider key={`divider-${item.path}`} sx={{ my: 1, mx: 1 }} />
+              <Divider key={`divider-${item.path}`} component="li" sx={{ my: 2, mx: 1 }} />
             ) : null;
             const navButton = (
               <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
@@ -297,10 +297,10 @@ export default function Sidebar() {
 
             if (isOpen) {
               return (
-                <Box key={`group-${item.path}`}>
+                <Fragment key={item.path}>
                   {divider}
                   {navButton}
-                </Box>
+                </Fragment>
               );
             }
 

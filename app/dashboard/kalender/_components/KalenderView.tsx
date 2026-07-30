@@ -310,7 +310,11 @@ export default function KalenderView({
                           </Box>
                         </Typography>
                         {ev.catatan && (
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 0.5, display: 'block', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word' }}
+                          >
                             {ev.catatan}
                           </Typography>
                         )}

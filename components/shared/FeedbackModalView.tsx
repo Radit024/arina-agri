@@ -437,6 +437,7 @@ export default function FeedbackModalView({
         autoHideDuration={6000}
         onClose={onCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ minWidth: { xs: 'calc(100vw - 32px)', sm: 420 } }}
       >
         <Alert onClose={onCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}

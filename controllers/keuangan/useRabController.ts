@@ -103,6 +103,7 @@ export function useRabController(
 ) {
   const rabState = useRabItems(project?.id ?? null);
   const [rabItemDialogOpen, setRabItemDialogOpen] = useState(false);
+  const [editingRabItemId, setEditingRabItemId] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -111,6 +112,11 @@ export function useRabController(
   const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
   const [rabCategoryDialogOpen, setRabCategoryDialogOpen] = useState(false);
   const [rabCategoryDeleteError, setRabCategoryDeleteError] = useState<string | null>(null);
+  const [rabSearchQuery, setRabSearchQuery] = useState('');
+  const [rabFilterJenis, setRabFilterJenis] = useState<'semua' | RabEntryType>('semua');
+  const [selectedRabItemIds, setSelectedRabItemIds] = useState<string[]>([]);
+  const [rabBulkDeleteConfirm, setRabBulkDeleteConfirm] = useState(false);
+  const [rabItemDeleteError, setRabItemDeleteError] = useState<string | null>(null);
 
   const totals = useMemo(
     () => ({
@@ -125,6 +131,31 @@ export function useRabController(
     () => parseNumberInput(rabItemDraft.volume) * parseNumberInput(rabItemDraft.unitPrice),
     [rabItemDraft.unitPrice, rabItemDraft.volume],
   );
+
+  const filteredRabItems = useMemo(() => {
+    let result = rabState.items.filter(
+      (item) => rabFilterJenis === 'semua' || item.type === rabFilterJenis,
+    );
+
+    if (rabSearchQuery.trim()) {
+      const q = rabSearchQuery.toLowerCase().trim();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          (item.categoryName ?? '').toLowerCase().includes(q) ||
+          item.unit.toLowerCase().includes(q) ||
+          item.aliases.some((alias) => alias.toLowerCase().includes(q)),
+      );
+    }
+
+    return result;
+  }, [rabState.items, rabFilterJenis, rabSearchQuery]);
+
+  const toggleSelectRabItem = (id: string) => {
+    setSelectedRabItemIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
+  };
+
+  const clearRabItemSelection = () => setSelectedRabItemIds([]);
 
   const rabCategoryOptions = useMemo(
     () =>
@@ -159,12 +190,30 @@ export function useRabController(
 
   const openRabItemDialog = () => {
     setRabItemDraft(createRabItemFormDraft());
+    setEditingRabItemId(null);
+    setRabItemError(null);
+    setRabItemDialogOpen(true);
+  };
+
+  const openRabItemEditDialog = (item: RabItem) => {
+    setRabItemDraft({
+      categoryName: item.categoryName ?? getDefaultRabCategoryName(item.type),
+      type: item.type,
+      name: item.name,
+      volume: String(item.volume),
+      unit: item.unit,
+      unitPrice: String(item.unitPrice),
+      plannedCashMonth: item.plannedCashMonth ?? '',
+      aliases: item.aliases.join(', '),
+    });
+    setEditingRabItemId(item.id);
     setRabItemError(null);
     setRabItemDialogOpen(true);
   };
 
   const closeRabItemDialog = () => {
     setRabItemDialogOpen(false);
+    setEditingRabItemId(null);
   };
 
   const addRabCategory = async (name: string) => {
@@ -262,10 +311,46 @@ export function useRabController(
     });
   };
 
+  const updateRabItem = async (id: string, draft: RabItemDraft) => {
+    if (!project) throw new Error('Pilih proyek terlebih dahulu');
+    const validationError = validateRabItemDraft(draft);
+    if (validationError) {
+      setRabItemError(validationError);
+      throw new Error(validationError);
+    }
+    setRabItemError(null);
+
+    const categoryName = draft.categoryName.trim();
+    const itemName = draft.name.trim();
+    const unit = draft.unit.trim();
+    const existingCategory = rabState.categories.find(
+      (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
+    );
+    const category = existingCategory ?? await rabState.createCategory({
+      projectId: project.id,
+      name: categoryName,
+      type: draft.type,
+      sortOrder: rabState.categories.length + 1,
+    });
+
+    return rabState.updateItem(id, {
+      categoryId: category.id,
+      categoryName: category.name,
+      type: draft.type,
+      name: itemName,
+      volume: draft.volume,
+      unit,
+      unitPrice: draft.unitPrice,
+      plannedTotal: draft.volume * draft.unitPrice,
+      plannedCashMonth: draft.plannedCashMonth,
+      aliases: draft.aliases ?? [itemName],
+    });
+  };
+
   const submitRabItemDraft = async () => {
     setRabItemSubmitting(true);
     try {
-      await addRabItem({
+      const draft: RabItemDraft = {
         categoryName: rabItemDraft.categoryName,
         type: rabItemDraft.type,
         name: rabItemDraft.name,
@@ -274,12 +359,36 @@ export function useRabController(
         unitPrice: parseNumberInput(rabItemDraft.unitPrice),
         plannedCashMonth: rabItemDraft.plannedCashMonth.trim() || undefined,
         aliases: parseAliasesInput(rabItemDraft.aliases),
-      });
+      };
+      if (editingRabItemId) {
+        await updateRabItem(editingRabItemId, draft);
+      } else {
+        await addRabItem(draft);
+      }
       setRabItemDialogOpen(false);
+      setEditingRabItemId(null);
       setRabItemDraft(createRabItemFormDraft());
     } finally {
       setRabItemSubmitting(false);
     }
+  };
+
+  const deleteRabItem = async (id: string) => {
+    try {
+      await rabState.deleteItem(id);
+      setRabItemDeleteError(null);
+      setSelectedRabItemIds((prev) => prev.filter((itemId) => itemId !== id));
+    } catch (err) {
+      setRabItemDeleteError(err instanceof Error ? err.message : 'Gagal menghapus item RAB');
+    }
+  };
+
+  const handleBulkDeleteRabItems = async () => {
+    for (const id of selectedRabItemIds) {
+      await rabState.deleteItem(id);
+    }
+    setSelectedRabItemIds([]);
+    setRabBulkDeleteConfirm(false);
   };
 
   const importRabFile = async (file: File) => {
@@ -417,11 +526,28 @@ export function useRabController(
     deleteRabCategory,
     updateRabItemDraftField,
     openRabItemDialog,
+    openRabItemEditDialog,
     closeRabItemDialog,
+    editingRabItemId,
     totals,
     addRabItem,
+    updateRabItem,
+    deleteRabItem,
+    rabItemDeleteError,
+    setRabItemDeleteError,
     submitRabItemDraft,
     importRabFile,
+    filteredRabItems,
+    rabSearchQuery,
+    setRabSearchQuery,
+    rabFilterJenis,
+    setRabFilterJenis,
+    selectedRabItemIds,
+    toggleSelectRabItem,
+    clearRabItemSelection,
+    rabBulkDeleteConfirm,
+    setRabBulkDeleteConfirm,
+    handleBulkDeleteRabItems,
   };
 }
 

@@ -106,6 +106,22 @@ describe('RAB Excel helpers', () => {
     expect(parsed.items.map((item) => item.name.toLowerCase())).not.toContain('bagi hasil');
   });
 
+  it('does not confuse the "Harga Satuan" column header with the "Satuan" column', async () => {
+    const workbook = await buildSampleRabWorkbook();
+    const ledgerSheet = workbook.addWorksheet('2. Catatan Transaksi Harian');
+    ledgerSheet.getRow(4).values = ['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)'];
+    ledgerSheet.getRow(5).values = ['01 Ags', 'Pembelian benih padi', 25, 'Kg', 16_500, 412_500, '-'];
+
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.transactions).toEqual([
+      expect.objectContaining({
+        satuan: 'Kg',
+        hargaSatuan: 16_500,
+      }),
+    ]);
+  });
+
   it('builds export workbook with the expected five worksheets', async () => {
     const workbook = await buildFinanceExportWorkbook({
       project,

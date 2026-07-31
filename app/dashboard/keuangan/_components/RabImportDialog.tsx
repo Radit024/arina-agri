@@ -19,12 +19,24 @@ type Props = Pick<UseKeuanganControllerResult, 'rab'>;
 export default function RabImportDialog({ rab }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragActive, setIsDragActive] = useState(false);
 
   const handleClose = () => {
     if (rab.importLoading) return;
     setSelectedFile(null);
+    setIsDragActive(false);
     rab.setImportError(null);
     rab.setImportDialogOpen(false);
+  };
+
+  const applyFile = (file: File | null) => {
+    if (!file) return;
+    if (!/\.xlsx$/i.test(file.name)) {
+      rab.setImportError('Format file tidak didukung. Unggah file Excel (.xlsx).');
+      return;
+    }
+    setSelectedFile(file);
+    rab.setImportError(null);
   };
 
   const handleImport = async () => {
@@ -66,27 +78,40 @@ export default function RabImportDialog({ rab }: Props) {
           accept=".xlsx"
           hidden
           onChange={(event) => {
-            const file = event.target.files?.[0] ?? null;
-            setSelectedFile(file);
-            rab.setImportError(null);
+            applyFile(event.target.files?.[0] ?? null);
+            event.target.value = '';
           }}
         />
 
         <Box
           onClick={() => fileInputRef.current?.click()}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setIsDragActive(true);
+          }}
+          onDragLeave={(event) => {
+            event.preventDefault();
+            setIsDragActive(false);
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            setIsDragActive(false);
+            applyFile(event.dataTransfer.files?.[0] ?? null);
+          }}
           sx={{
             border: '1px dashed',
-            borderColor: 'divider',
+            borderColor: isDragActive ? 'success.main' : 'divider',
             borderRadius: 2,
             p: 3,
             textAlign: 'center',
             cursor: 'pointer',
-            bgcolor: 'action.hover',
+            bgcolor: isDragActive ? 'action.selected' : 'action.hover',
+            transition: 'border-color 0.15s ease, background-color 0.15s ease',
           }}
         >
-          <UploadFileIcon sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+          <UploadFileIcon sx={{ fontSize: 32, color: isDragActive ? 'success.main' : 'text.secondary', mb: 1 }} />
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
-            {selectedFile ? selectedFile.name : 'Klik untuk memilih file .xlsx'}
+            {selectedFile ? selectedFile.name : isDragActive ? 'Lepas file di sini' : 'Klik atau seret file .xlsx ke sini'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Item RAB baru akan ditambahkan ke item RAB yang sudah ada, bukan menggantikannya.

@@ -295,8 +295,11 @@ function findLedgerHeaderRow(sheet: ExcelJS.Worksheet): { headerRowNumber: numbe
       if (/tanggal/.test(text)) candidate.tanggal = colNumber;
       else if (/uraian|keterangan/.test(text)) candidate.keterangan = colNumber;
       else if (/volume/.test(text)) candidate.volume = colNumber;
-      else if (/satuan/.test(text)) candidate.satuan = colNumber;
+      // "Harga Satuan" also contains the word "satuan", so it must be checked
+      // before the plain /satuan/ match or the unit-price column gets mistaken
+      // for the unit column (and the real unit-price column is never detected).
       else if (/harga/.test(text)) candidate.hargaSatuan = colNumber;
+      else if (/satuan/.test(text)) candidate.satuan = colNumber;
       else if (/pengeluaran/.test(text)) candidate.pengeluaran = colNumber;
       else if (/pemasukan|penerimaan/.test(text)) candidate.pemasukan = colNumber;
     });

@@ -16,6 +16,7 @@ import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
+import { useLabaRugiActionsController } from './useLabaRugiActionsController';
 import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
 import { useTransactionBatchController } from './useTransactionBatchController';
@@ -109,6 +110,12 @@ export function useKeuanganController() {
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
+  });
+  const labaRugiActions = useLabaRugiActionsController({
+    rows: financeReports.incomeStatementComparison.rows,
+    rabItems: rab.items,
+    openRabItemEditDialog: rab.openRabItemEditDialog,
+    deleteRabItem: rab.deleteRabItem,
   });
   const hasSelectedProject = Boolean(financeProject.selectedProject);
   const hasProjectData = hasSelectedProject && (projectScopedTransactions.length > 0 || rab.items.length > 0);
@@ -603,6 +610,7 @@ export function useKeuanganController() {
     rab,
     rabTransactionLink: guardedRabTransactionLink,
     financeReports,
+    labaRugiActions,
     financeExport,
     transactionBatch: guardedTransactionBatch,
     transactionMaster,

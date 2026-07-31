@@ -66,6 +66,7 @@ import FinanceCashFlowView from './FinanceCashFlowView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
 import RabImportDialog from './RabImportDialog';
+import RabItemDialog from './RabItemDialog';
 import RabTransactionLinkDialog from './RabTransactionLinkDialog';
 import RabPlanningView from './RabPlanningView';
 import TransactionBatchDialog from './TransactionBatchDialog';
@@ -106,14 +107,10 @@ function hasLedgerInputDetails(tx: LedgerTransaction) {
   return tx.volume != null || Boolean(tx.satuan) || tx.hargaSatuan != null;
 }
 
-function formatLedgerInputSummary(tx: LedgerTransaction) {
+function formatLedgerQuantityWithUnit(tx: LedgerTransaction) {
   const quantity = formatLedgerQuantity(tx.volume);
-  const quantityWithUnit = quantity === '-' && !tx.satuan
-    ? ''
-    : `${quantity}${tx.satuan ? ` ${tx.satuan}` : ''}`;
-  const unitPrice = tx.hargaSatuan == null ? '' : formatRupiah(tx.hargaSatuan);
-  const parts = [quantityWithUnit, unitPrice].filter(Boolean);
-  return parts.length > 0 ? parts.join(' x ') : '-';
+  if (quantity === '-' && !tx.satuan) return '-';
+  return `${quantity}${tx.satuan ? ` ${tx.satuan}` : ''}`;
 }
 
 function financeActionIconButtonSx(theme: Theme, intent: FinanceActionIntent = 'primary') {
@@ -203,6 +200,7 @@ export default function KeuanganView({
   rab,
   rabTransactionLink,
   financeReports,
+  labaRugiActions,
   financeExport,
   handleOpenFinanceReportDialog,
   transactionBatch,
@@ -893,7 +891,10 @@ export default function KeuanganView({
                         </TableSortLabel>
                       </TableCell>
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
-                        Input
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                          <Box component="span">{t('ledger.columns.quantity')}</Box>
+                          <Box component="span">{t('ledger.columns.unitPrice')}</Box>
+                        </Box>
                       </TableCell>
                       <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
                         <TableSortLabel
@@ -984,9 +985,16 @@ export default function KeuanganView({
                               </Typography>
                             </TableCell>
                             <TableCell sx={{ ...ledgerRowCellSx, fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
-                              <Typography variant="caption" noWrap sx={{ display: 'block' }}>
-                                {formatLedgerInputSummary(tx)}
-                              </Typography>
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, minWidth: 0 }}>
+                                <Typography variant="caption" noWrap sx={{ display: 'block' }}>
+                                  {formatLedgerQuantityWithUnit(tx)}
+                                </Typography>
+                                {tx.hargaSatuan != null && (
+                                  <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 700, color: 'text.primary', flexShrink: 0 }}>
+                                    {formatRupiah(tx.hargaSatuan)}
+                                  </Typography>
+                                )}
+                              </Box>
                             </TableCell>
                             <TableCell
                               align="right"
@@ -1222,7 +1230,7 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceIncomeStatementView financeReports={financeReports} />
+          <FinanceIncomeStatementView financeReports={financeReports} labaRugiActions={labaRugiActions} />
         </Box>
       )}
       {financeTab === 'arus-kas' && (
@@ -1243,6 +1251,7 @@ export default function KeuanganView({
       />
       <RabTransactionLinkDialog link={rabTransactionLink} />
       <RabImportDialog rab={rab} />
+      <RabItemDialog rab={rab} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog

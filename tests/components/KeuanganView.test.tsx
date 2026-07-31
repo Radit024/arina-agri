@@ -200,6 +200,80 @@ function makeTransactionBatch(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeRab(overrides: Record<string, unknown> = {}) {
+  return {
+    categories: [],
+    items: [],
+    imports: [],
+    loading: false,
+    error: null,
+    backendOnline: false,
+    reload: vi.fn(),
+    createCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    deleteCategory: vi.fn(),
+    createItem: vi.fn(),
+    updateItem: vi.fn(),
+    deleteItem: vi.fn(),
+    replaceRab: vi.fn(),
+    rabItemDialogOpen: false,
+    setRabItemDialogOpen: vi.fn(),
+    importDialogOpen: false,
+    setImportDialogOpen: vi.fn(),
+    importLoading: false,
+    importError: null,
+    setImportError: vi.fn(),
+    rabItemError: null,
+    setRabItemError: vi.fn(),
+    rabItemDraft: {
+      categoryName: 'Saprodi',
+      type: 'expense',
+      name: '',
+      volume: '1',
+      unit: 'Unit',
+      unitPrice: '',
+      plannedCashMonth: '',
+      aliases: '',
+    },
+    rabItemPlannedTotal: 0,
+    rabItemSubmitting: false,
+    rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
+    rabCategoryDialogOpen: false,
+    setRabCategoryDialogOpen: vi.fn(),
+    rabCategoryDialogItems: [],
+    rabCategoryDeleteError: null,
+    setRabCategoryDeleteError: vi.fn(),
+    addRabCategory: vi.fn(async () => null),
+    renameRabCategory: vi.fn(),
+    deleteRabCategory: vi.fn(),
+    updateRabItemDraftField: vi.fn(),
+    openRabItemDialog: vi.fn(),
+    openRabItemEditDialog: vi.fn(),
+    closeRabItemDialog: vi.fn(),
+    editingRabItemId: null,
+    totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
+    addRabItem: vi.fn(),
+    updateRabItem: vi.fn(),
+    deleteRabItem: vi.fn(),
+    rabItemDeleteError: null,
+    setRabItemDeleteError: vi.fn(),
+    submitRabItemDraft: vi.fn(),
+    importRabFile: vi.fn(),
+    filteredRabItems: [],
+    rabSearchQuery: '',
+    setRabSearchQuery: vi.fn(),
+    rabFilterJenis: 'semua' as const,
+    setRabFilterJenis: vi.fn(),
+    selectedRabItemIds: [],
+    toggleSelectRabItem: vi.fn(),
+    clearRabItemSelection: vi.fn(),
+    rabBulkDeleteConfirm: false,
+    setRabBulkDeleteConfirm: vi.fn(),
+    handleBulkDeleteRabItems: vi.fn(),
+    ...overrides,
+  };
+}
+
 function makeTransactionMaster() {
   return {
     customKategori: [],
@@ -317,59 +391,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       projectDialogOpen: false,
       setProjectDialogOpen: vi.fn(),
     },
-    rab: {
-      categories: [],
-      items: [],
-      imports: [],
-      loading: false,
-      error: null,
-      backendOnline: false,
-      reload: vi.fn(),
-      createCategory: vi.fn(),
-      updateCategory: vi.fn(),
-      deleteCategory: vi.fn(),
-      createItem: vi.fn(),
-      updateItem: vi.fn(),
-      deleteItem: vi.fn(),
-      replaceRab: vi.fn(),
-      rabItemDialogOpen: false,
-      setRabItemDialogOpen: vi.fn(),
-      importDialogOpen: false,
-      setImportDialogOpen: vi.fn(),
-      importLoading: false,
-      importError: null,
-      setImportError: vi.fn(),
-      rabItemError: null,
-      setRabItemError: vi.fn(),
-      rabItemDraft: {
-        categoryName: 'Saprodi',
-        type: 'expense',
-        name: '',
-        volume: '1',
-        unit: 'Unit',
-        unitPrice: '',
-        plannedCashMonth: '',
-        aliases: '',
-      },
-      rabItemPlannedTotal: 0,
-      rabItemSubmitting: false,
-      rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
-      rabCategoryDialogOpen: false,
-      setRabCategoryDialogOpen: vi.fn(),
-      rabCategoryDialogItems: [],
-      rabCategoryDeleteError: null,
-      setRabCategoryDeleteError: vi.fn(),
-      addRabCategory: vi.fn(async () => null),
-      renameRabCategory: vi.fn(),
-      deleteRabCategory: vi.fn(),
-      updateRabItemDraftField: vi.fn(),
-      openRabItemDialog: vi.fn(),
-      closeRabItemDialog: vi.fn(),
-      totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
-      addRabItem: vi.fn(),
-      submitRabItemDraft: vi.fn(),
-      importRabFile: vi.fn(),
-    },
+    rab: makeRab() as KeuanganViewProps['rab'],
     rabTransactionLink: makeRabTransactionLink() as KeuanganViewProps['rabTransactionLink'],
     financeReports: {
       reportTransactions: [],
@@ -401,6 +423,23 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
           variancePercent: null,
         },
       },
+    },
+    labaRugiActions: {
+      filteredRows: [],
+      searchQuery: '',
+      setSearchQuery: vi.fn(),
+      filterJenis: 'semua' as const,
+      setFilterJenis: vi.fn(),
+      selectedItemIds: [],
+      toggleSelect: vi.fn(),
+      clearSelection: vi.fn(),
+      bulkDeleteConfirm: false,
+      setBulkDeleteConfirm: vi.fn(),
+      handleBulkDelete: vi.fn(),
+      editRow: vi.fn(),
+      deleteTargetRow: null,
+      setDeleteTargetRow: vi.fn(),
+      confirmDeleteRow: vi.fn(),
     },
     financeExport: {
       exportLoading: false,
@@ -476,7 +515,7 @@ describe('KeuanganView', () => {
   it('menampilkan rincian input transaksi pada ledger', () => {
     renderView();
 
-    expect(screen.getByRole('columnheader', { name: 'Input' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Volume Harga Satuan' })).toBeInTheDocument();
     expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);
@@ -484,6 +523,7 @@ describe('KeuanganView', () => {
     expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
     expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
+    expect(screen.getByText('2 kg')).toBeInTheDocument();
   });
 
   it('menampilkan tombol aksi desktop hanya ketika transaksi dipilih', () => {

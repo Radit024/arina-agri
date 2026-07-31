@@ -27,6 +27,7 @@ interface Props {
   categoryOptions: string[];
   plannedTotal: number;
   submitting: boolean;
+  submitLabel?: string;
   onFieldChange: (field: RabItemFormField, value: string) => void;
   onOpenCategoryDialog: () => void;
   onCancel: () => void;
@@ -38,6 +39,7 @@ export default function RabItemForm({
   categoryOptions,
   plannedTotal,
   submitting,
+  submitLabel,
   onFieldChange,
   onOpenCategoryDialog,
   onCancel,
@@ -241,7 +243,7 @@ export default function RabItemForm({
             '&:hover': { bgcolor: 'success.dark' },
           }}
         >
-          {submitting ? 'Menyimpan...' : 'Simpan Item'}
+          {submitting ? 'Menyimpan...' : (submitLabel ?? 'Simpan Item')}
         </Button>
       </Box>
     </Box>

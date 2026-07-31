@@ -98,8 +98,8 @@ Index: `(feature, created_at)`, `(user_id, created_at)`, `(event_name, created_a
 
 ### Growth & Retensi Pengguna
 
-- Total pengguna terdaftar (all-time), dari `profiles`.
-- Pengguna baru per hari/minggu/bulan dalam rentang filter, dari `profiles.created_at` (atau `auth.users.created_at`).
+- Total pengguna terdaftar (all-time), dari `auth.users` lewat Supabase Admin API (`auth.admin.listUsers`) — **bukan** dari tabel `profiles`. `profiles` baru terisi lazy saat user menyimpan sesuatu di halaman Pengaturan app utama, jadi tidak mencerminkan seluruh user terdaftar dan tidak selalu punya kolom `created_at`. Koreksi ini ditemukan setelah implementasi awal sempat memakai `profiles` dan gagal dengan error `column profiles.created_at does not exist` di lingkungan production.
+- Pengguna baru per hari/minggu/bulan dalam rentang filter, dari `auth.users.created_at` (sumber yang sama seperti di atas).
 - DAU / WAU / MAU: jumlah distinct `user_id` di `usage_events` dalam jendela 1 hari / 7 hari / 30 hari terakhir dari tanggal referensi.
 - Retensi week-over-week: % user yang aktif minggu ini yang juga aktif minggu sebelumnya.
 - Stickiness ratio: DAU rata-rata periode dibagi MAU periode yang sama.

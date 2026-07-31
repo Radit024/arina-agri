@@ -12,6 +12,7 @@ import type {
   RabCategory,
   RabEntryType,
   RabItem,
+  TransactionJenis,
 } from './rabTypes';
 
 const HEADER_FILL = 'FF166534';
@@ -22,10 +23,43 @@ const COMPARISON_FILL = 'FFDBEAFE';
 const BORDER_COLOR = 'FFCBD5E1';
 const IGNORED_RAB_SUMMARY_ROW_PATTERN = /total|keuntungan|hpp|bep|ratio|bagi hasil/i;
 
+const INDONESIAN_MONTH_ABBREVIATIONS: Record<string, string> = {
+  jan: '01',
+  feb: '02',
+  mar: '03',
+  apr: '04',
+  mei: '05',
+  may: '05',
+  jun: '06',
+  jul: '07',
+  ags: '08',
+  agu: '08',
+  agt: '08',
+  aug: '08',
+  sep: '09',
+  sept: '09',
+  okt: '10',
+  oct: '10',
+  nov: '11',
+  des: '12',
+  dec: '12',
+};
+
+export interface ParsedLedgerTransaction {
+  tanggal: string;
+  jenis: TransactionJenis;
+  keterangan: string;
+  nominal: number;
+  volume?: number;
+  satuan?: string;
+  hargaSatuan?: number;
+}
+
 export interface ParsedRabWorkbook {
   project: FinanceProject;
   categories: RabCategory[];
   items: RabItem[];
+  transactions: ParsedLedgerTransaction[];
 }
 
 export interface FinanceExportWorkbookInput {
@@ -131,6 +165,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
   const items: RabItem[] = [];
   let currentCategory = 'RAB';
   let currentType: RabEntryType = 'expense';
+  let skipSection = false;
 
   sheet.eachRow((row, rowNumber) => {
     const marker = getTextCellValue(row.getCell(1));
@@ -144,17 +179,28 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     if (/estimasi pendapatan|pendapatan|penerimaan/i.test(description) && volume === 0 && unitPrice === 0) {
       currentCategory = 'Pendapatan';
       currentType = 'income';
+      skipSection = false;
       return;
     }
 
-    if (description && marker && Number.isNaN(Number(marker)) && !IGNORED_RAB_SUMMARY_ROW_PATTERN.test(description)) {
+    if (description && marker && Number.isNaN(Number(marker))) {
+      if (IGNORED_RAB_SUMMARY_ROW_PATTERN.test(description)) {
+        // Section markers such as "BAGI HASIL" or "TOTAL BIAYA PRODUKSI" only summarize
+        // other sections; their child rows (e.g. profit-sharing splits) aren't RAB items.
+        skipSection = true;
+        return;
+      }
+      skipSection = false;
       currentCategory = description;
       currentType = /pendapatan|penerimaan/i.test(description) ? 'income' : currentType;
       return;
     }
 
+    if (skipSection) return;
     if (!description || IGNORED_RAB_SUMMARY_ROW_PATTERN.test(normalizedDescription)) return;
-    if (volume === 0 && unitPrice === 0 && plannedTotal === 0) return;
+    // Rows without a planned total are derivation helpers (e.g. "Produksi", "Harga pasar")
+    // that feed the real income row rather than standalone transactions.
+    if (plannedTotal === 0) return;
 
     const type: RabEntryType = currentType === 'income' || /penerimaan|penjualan/i.test(description) ? 'income' : 'expense';
     const categoryName = type === 'income' ? 'Pendapatan' : currentCategory;
@@ -201,7 +247,119 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     },
     categories: Array.from(categories.values()),
     items,
+    transactions: parseLedgerWorkbook(workbook),
   };
+}
+
+function parseIndonesianShortDate(text: string, referenceYear: number): string | null {
+  const match = /^(\d{1,2})\s*([A-Za-z]+)\.?$/.exec(text.trim());
+  if (!match) return null;
+  const day = match[1].padStart(2, '0');
+  const monthText = match[2].toLowerCase();
+  const month = INDONESIAN_MONTH_ABBREVIATIONS[monthText] ?? INDONESIAN_MONTH_ABBREVIATIONS[monthText.slice(0, 3)];
+  if (!month) return null;
+  return `${referenceYear}-${month}-${day}`;
+}
+
+function getDateCellIso(cell: ExcelJS.Cell, referenceYear: number): string | null {
+  const value = cell.value;
+  if (value instanceof Date) {
+    const year = value.getUTCFullYear();
+    const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(value.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  const text = getTextCellValue(cell);
+  if (!text) return null;
+  return parseIndonesianShortDate(text, referenceYear);
+}
+
+interface LedgerColumnMap {
+  tanggal: number;
+  keterangan: number;
+  volume?: number;
+  satuan?: number;
+  hargaSatuan?: number;
+  pengeluaran?: number;
+  pemasukan?: number;
+}
+
+function findLedgerHeaderRow(sheet: ExcelJS.Worksheet): { headerRowNumber: number; columns: LedgerColumnMap } | null {
+  let result: { headerRowNumber: number; columns: LedgerColumnMap } | null = null;
+
+  sheet.eachRow((row, rowNumber) => {
+    if (result) return;
+    const candidate: Partial<LedgerColumnMap> = {};
+    row.eachCell((cell, colNumber) => {
+      const text = getTextCellValue(cell).toLowerCase();
+      if (/tanggal/.test(text)) candidate.tanggal = colNumber;
+      else if (/uraian|keterangan/.test(text)) candidate.keterangan = colNumber;
+      else if (/volume/.test(text)) candidate.volume = colNumber;
+      else if (/satuan/.test(text)) candidate.satuan = colNumber;
+      else if (/harga/.test(text)) candidate.hargaSatuan = colNumber;
+      else if (/pengeluaran/.test(text)) candidate.pengeluaran = colNumber;
+      else if (/pemasukan|penerimaan/.test(text)) candidate.pemasukan = colNumber;
+    });
+    if (candidate.tanggal && candidate.keterangan) {
+      result = { headerRowNumber: rowNumber, columns: candidate as LedgerColumnMap };
+    }
+  });
+
+  return result;
+}
+
+export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerTransaction[] {
+  const sheet = workbook.worksheets.find((worksheet) => /catatan|transaksi harian|buku besar|ledger/i.test(worksheet.name))
+    ?? workbook.worksheets[1];
+  if (!sheet) return [];
+
+  const header = findLedgerHeaderRow(sheet);
+  if (!header) return [];
+  const { headerRowNumber, columns } = header;
+
+  let referenceYear = new Date().getFullYear();
+  for (let rowNumber = 1; rowNumber < headerRowNumber; rowNumber += 1) {
+    const text = getTextCellValue(sheet.getRow(rowNumber).getCell(1));
+    const yearMatch = /\b(20\d{2})\b/.exec(text);
+    if (yearMatch) {
+      referenceYear = Number(yearMatch[1]);
+      break;
+    }
+  }
+
+  const transactions: ParsedLedgerTransaction[] = [];
+
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber <= headerRowNumber) return;
+
+    const keterangan = getTextCellValue(row.getCell(columns.keterangan));
+    if (!keterangan) return;
+
+    const tanggal = getDateCellIso(row.getCell(columns.tanggal), referenceYear);
+    if (!tanggal) return;
+
+    const pengeluaran = columns.pengeluaran ? getNumericCellValue(row.getCell(columns.pengeluaran)) : 0;
+    const pemasukan = columns.pemasukan ? getNumericCellValue(row.getCell(columns.pemasukan)) : 0;
+    if (pengeluaran === 0 && pemasukan === 0) return;
+
+    const jenis: TransactionJenis = pemasukan > 0 ? 'pendapatan' : 'pengeluaran';
+    const nominal = jenis === 'pendapatan' ? pemasukan : pengeluaran;
+    const volume = columns.volume ? getNumericCellValue(row.getCell(columns.volume)) : 0;
+    const satuan = columns.satuan ? getTextCellValue(row.getCell(columns.satuan)) : '';
+    const hargaSatuan = columns.hargaSatuan ? getNumericCellValue(row.getCell(columns.hargaSatuan)) : 0;
+
+    transactions.push({
+      tanggal,
+      jenis,
+      keterangan,
+      nominal,
+      volume: volume || undefined,
+      satuan: satuan || undefined,
+      hargaSatuan: hargaSatuan || undefined,
+    });
+  });
+
+  return transactions;
 }
 
 export async function parseRabWorkbookFromArrayBuffer(buffer: ArrayBuffer) {

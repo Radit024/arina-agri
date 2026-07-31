@@ -31,6 +31,7 @@ type BepHppInputs = {
 
 
 const MAX_AI_REPORTS_PER_MONTH = 3;
+const LEDGER_PAGE_SIZE = 7;
 
 interface QuotaState {
   month: string; // format YYYY-MM
@@ -85,11 +86,12 @@ export function useKeuanganController() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [ledgerPage, setLedgerPage] = useState(1);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const financeProject = useFinanceProjectController();
-  const rab = useRabController(financeProject.selectedProject);
+  const rab = useRabController(financeProject.selectedProject, addTransaction);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
   const clearSelectionTxs = () => setSelectedTxIds([]);
@@ -533,6 +535,21 @@ export function useKeuanganController() {
     });
   }, [monthFilteredTransactions, filterJenis, searchQuery, sortColumn, sortDir]);
 
+  const ledgerTotalPages = Math.max(1, Math.ceil(displayedTransactions.length / LEDGER_PAGE_SIZE));
+
+  useEffect(() => {
+    setLedgerPage(1);
+  }, [filterBulan, filterJenis, searchQuery, sortColumn, sortDir]);
+
+  useEffect(() => {
+    if (ledgerPage > ledgerTotalPages) setLedgerPage(ledgerTotalPages);
+  }, [ledgerPage, ledgerTotalPages]);
+
+  const pagedTransactions = useMemo(
+    () => displayedTransactions.slice((ledgerPage - 1) * LEDGER_PAGE_SIZE, ledgerPage * LEDGER_PAGE_SIZE),
+    [displayedTransactions, ledgerPage],
+  );
+
   return {
     t,
     bepHppInputs,
@@ -577,6 +594,10 @@ export function useKeuanganController() {
     bulanOptions,
     getBulanLabel,
     displayedTransactions,
+    pagedTransactions,
+    ledgerPage,
+    setLedgerPage,
+    ledgerTotalPages,
     financeAccess,
     financeProject,
     rab,

@@ -86,7 +86,8 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
           <Button
             variant="outlined"
             startIcon={<UploadFileIcon />}
-            disabled
+            disabled={!financeProject.selectedProject}
+            onClick={() => rab.setImportDialogOpen(true)}
             sx={{ borderRadius: 8 }}
           >
             Import Excel

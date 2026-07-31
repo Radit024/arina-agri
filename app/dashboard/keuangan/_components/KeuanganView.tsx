@@ -17,6 +17,7 @@ import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Pagination from '@mui/material/Pagination';
 import Select from '@mui/material/Select';
 import { alpha, type Theme } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
@@ -64,6 +65,7 @@ import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
+import RabImportDialog from './RabImportDialog';
 import RabTransactionLinkDialog from './RabTransactionLinkDialog';
 import RabPlanningView from './RabPlanningView';
 import TransactionBatchDialog from './TransactionBatchDialog';
@@ -190,6 +192,10 @@ export default function KeuanganView({
   bulanOptions,
   getBulanLabel,
   displayedTransactions,
+  pagedTransactions,
+  ledgerPage,
+  setLedgerPage,
+  ledgerTotalPages,
   financeAccess,
   financeTab,
   setFinanceTab,
@@ -229,8 +235,8 @@ export default function KeuanganView({
   }, [searchOpen]);
 
   const allVisibleSelected =
-    displayedTransactions.length > 0 &&
-    displayedTransactions.every((tx) => selectedTxIds.includes(tx._id));
+    pagedTransactions.length > 0 &&
+    pagedTransactions.every((tx) => selectedTxIds.includes(tx._id));
   const someSelected =
     selectedTxIds.length > 0 && !allVisibleSelected;
   const hasDistributionData = finalPieData.some((item) => item.id !== t('distribution.empty'));
@@ -323,6 +329,7 @@ export default function KeuanganView({
     width: '100%',
     justifyContent: 'flex-end',
   };
+  const ledgerRowCellSx = { py: 2.5 };
   const ledgerValueColumnLabel = t('ledger.columns.value');
   const ledgerValueLabelMatch = ledgerValueColumnLabel.match(/^(.*?)\s*(\([^)]*\))$/);
   const ledgerValueLabel = ledgerValueLabelMatch?.[1] ?? ledgerValueColumnLabel;
@@ -668,7 +675,7 @@ export default function KeuanganView({
                       </Typography>
                     </Box>
                   ) : (
-                    displayedTransactions.map((tx) => (
+                    pagedTransactions.map((tx) => (
                       <Card key={tx._id} variant="outlined" sx={{ flexShrink: 0, borderRadius: 3, borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
                         <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                           {/* Row 1: Kategori & Status Badge */}
@@ -808,6 +815,17 @@ export default function KeuanganView({
                       </Card>
                     ))
                   )}
+                  {displayedTransactions.length > 0 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', flexShrink: 0, py: 1 }}>
+                      <Pagination
+                        count={ledgerTotalPages}
+                        page={ledgerPage}
+                        onChange={(_, value) => setLedgerPage(value)}
+                        size="small"
+                        color="primary"
+                      />
+                    </Box>
+                  )}
                   <Fab
                     data-guide-target="finance-add-transaction-mobile"
                     color="primary" 
@@ -836,12 +854,12 @@ export default function KeuanganView({
                             if (allVisibleSelected) {
                               clearSelectionTxs();
                             } else {
-                              displayedTransactions.forEach((tx) => {
+                              pagedTransactions.forEach((tx) => {
                                 if (!selectedTxIds.includes(tx._id)) toggleSelectTx(tx._id);
                               });
                             }
                           }}
-                          disabled={displayedTransactions.length === 0}
+                          disabled={pagedTransactions.length === 0}
                         />
                       </TableCell>
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '12%' }}>
@@ -932,7 +950,7 @@ export default function KeuanganView({
                         </TableCell>
                       </TableRow>
                     ) : (
-                      displayedTransactions.map((tx) => {
+                      pagedTransactions.map((tx) => {
                         const isSelected = selectedTxIds.includes(tx._id);
                         return (
                           <TableRow
@@ -941,13 +959,13 @@ export default function KeuanganView({
                             onClick={() => toggleSelectTx(tx._id)}
                             sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'rgba(0,0,0,0.018)' }, '&.Mui-selected': { bgcolor: (t) => alpha(t.palette.primary.main, 0.07) } }}
                           >
-                            <TableCell padding="checkbox" onClick={(e) => e.stopPropagation()}>
+                            <TableCell padding="checkbox" sx={ledgerRowCellSx} onClick={(e) => e.stopPropagation()}>
                               <Checkbox size="small" checked={isSelected} onChange={() => toggleSelectTx(tx._id)} />
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                            <TableCell sx={{ ...ledgerRowCellSx, fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
                               {formatDateLong(tx.tanggal)}
                             </TableCell>
-                            <TableCell>
+                            <TableCell sx={ledgerRowCellSx}>
                               <Chip
                                 label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
                                 size="small"
@@ -960,12 +978,12 @@ export default function KeuanganView({
                                 }}
                               />
                             </TableCell>
-                            <TableCell sx={{ fontWeight: 700, fontSize: '0.875rem', minWidth: 0 }}>
+                            <TableCell sx={{ ...ledgerRowCellSx, fontWeight: 700, fontSize: '0.875rem', minWidth: 0 }}>
                               <Typography variant="caption" noWrap sx={{ display: 'block' }}>
                                 {tx.kategori}
                               </Typography>
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
+                            <TableCell sx={{ ...ledgerRowCellSx, fontSize: '0.82rem', color: 'text.secondary', minWidth: 0 }}>
                               <Typography variant="caption" noWrap sx={{ display: 'block' }}>
                                 {formatLedgerInputSummary(tx)}
                               </Typography>
@@ -973,6 +991,7 @@ export default function KeuanganView({
                             <TableCell
                               align="right"
                               sx={{
+                                ...ledgerRowCellSx,
                                 fontWeight: 800,
                                 fontSize: '0.9rem',
                                 color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
@@ -983,7 +1002,7 @@ export default function KeuanganView({
                             >
                               {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
                             </TableCell>
-                            <TableCell sx={{ fontSize: '0.82rem', color: 'text.secondary', minWidth: 0, overflow: 'hidden' }}>
+                            <TableCell sx={{ ...ledgerRowCellSx, fontSize: '0.82rem', color: 'text.secondary', minWidth: 0, overflow: 'hidden' }}>
                               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, minWidth: 0 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
                                   <Typography variant="caption" noWrap sx={{ display: 'block', flex: 1, minWidth: 0 }}>
@@ -1058,6 +1077,17 @@ export default function KeuanganView({
                   </TableBody>
                 </Table>
               </TableContainer>
+              {displayedTransactions.length > 0 && (
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', flexShrink: 0, pt: 1.5 }}>
+                  <Pagination
+                    count={ledgerTotalPages}
+                    page={ledgerPage}
+                    onChange={(_, value) => setLedgerPage(value)}
+                    size="small"
+                    color="primary"
+                  />
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Box>
@@ -1212,6 +1242,7 @@ export default function KeuanganView({
         selectedProjectId={financeProject.selectedProject?.id}
       />
       <RabTransactionLinkDialog link={rabTransactionLink} />
+      <RabImportDialog rab={rab} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog

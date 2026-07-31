@@ -289,6 +289,10 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bulanOptions: ['2026-06'],
     getBulanLabel: () => 'Juni 2026',
     displayedTransactions: [transaction],
+    pagedTransactions: [transaction],
+    ledgerPage: 1,
+    setLedgerPage: vi.fn(),
+    ledgerTotalPages: 1,
     financeAccess: {
       hasSelectedProject: true,
       hasProjectData: true,
@@ -561,6 +565,7 @@ describe('KeuanganView', () => {
   it('menampilkan badge RAB pada transaksi yang sudah terhubung', () => {
     renderView({
       displayedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
+      pagedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
       rabTransactionLink: makeRabTransactionLink({
         getLinkedRabItem: vi.fn(() => rabItem),
       }) as KeuanganViewProps['rabTransactionLink'],
@@ -682,6 +687,7 @@ describe('KeuanganView', () => {
     const openForCreate = vi.fn();
     renderView({
       displayedTransactions: [],
+      pagedTransactions: [],
       financeAccess: {
         hasSelectedProject: false,
         hasProjectData: false,
@@ -703,6 +709,7 @@ describe('KeuanganView', () => {
     const openForCreate = vi.fn();
     renderView({
       displayedTransactions: [],
+      pagedTransactions: [],
       financeAccess: {
         hasSelectedProject: true,
         hasProjectData: false,
@@ -771,5 +778,30 @@ describe('KeuanganView', () => {
     expect(exportReportButton).toBeEnabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
+  });
+
+  it('memaginasi Buku Besar Transaksi menjadi 7 item per halaman', () => {
+    const allTransactions: ApiTransaction[] = Array.from({ length: 10 }, (_, index) => ({
+      ...transaction,
+      _id: `tx-${index + 1}`,
+      kategori: `kategori-${index + 1}`,
+    }));
+    const setLedgerPage = vi.fn();
+
+    renderView({
+      displayedTransactions: allTransactions,
+      pagedTransactions: allTransactions.slice(0, 7),
+      ledgerPage: 1,
+      setLedgerPage,
+      ledgerTotalPages: 2,
+    });
+
+    expect(screen.getByText('10 transaksi ditampilkan')).toBeInTheDocument();
+    expect(screen.getAllByText('kategori-1').length).toBeGreaterThan(0);
+    expect(screen.queryByText('kategori-8')).not.toBeInTheDocument();
+
+    const pageTwoButtons = screen.getAllByRole('button', { name: 'Go to page 2' });
+    fireEvent.click(pageTwoButtons[0]);
+    expect(setLedgerPage).toHaveBeenCalledWith(2);
   });
 });

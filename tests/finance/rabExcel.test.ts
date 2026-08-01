@@ -140,4 +140,17 @@ describe('RAB Excel helpers', () => {
     ]);
     expect(workbook.getWorksheet('Perbandingan Rencana vs Aktual')?.getCell('A1').value).toBe('PERBANDINGAN RENCANA VS AKTUAL');
   });
+
+  it('resolves the linked RAB item name (not its raw id) in the ledger sheet', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const ledgerSheet = workbook.getWorksheet('Catatan Transaksi Harian');
+    expect(ledgerSheet?.getCell('H5').value).toBe('Benih');
+  });
 });

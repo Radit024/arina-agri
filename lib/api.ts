@@ -744,7 +744,11 @@ export const rabApi = {
       .select()
       .single();
     if (error) throw new Error(error.message);
-    return mapRabItem(data as DbRabItem);
+    // rab_items has no category_name column, so mapRabItem only fills it in when
+    // given the joined category row (see getByProject). The caller already knows
+    // the category name here (it just resolved/created the category), so use that
+    // instead of leaving it undefined until the next full reload.
+    return { ...mapRabItem(data as DbRabItem), categoryName: payload.categoryName };
   },
 
   updateItem: async (id: string, payload: Partial<ApiRabItem>): Promise<ApiRabItem> => {
@@ -764,7 +768,9 @@ export const rabApi = {
 
     const { data, error } = await supabase.from('rab_items').update(update).eq('id', id).eq('user_id', user.id).select().single();
     if (error) throw new Error(error.message);
-    return mapRabItem(data as DbRabItem);
+    // Same reasoning as createItem: rab_items has no category_name column, so use
+    // whatever the caller already resolved instead of losing it until next reload.
+    return { ...mapRabItem(data as DbRabItem), categoryName: payload.categoryName };
   },
 
   deleteItem: async (id: string): Promise<null> => {

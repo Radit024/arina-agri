@@ -74,4 +74,19 @@ describe('RabImportDialog', () => {
 
     expect(rab.importRabFile).toHaveBeenCalledWith(file);
   });
+
+  it('shows a loading animation over the drop zone and disables interaction while importing', () => {
+    const rab = makeRab({ importLoading: true });
+    render(<RabImportDialog rab={rab} />);
+
+    expect(screen.getByText('Menyimpan item RAB dan transaksi, mohon tunggu.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Mengimpor/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Batal' })).toBeDisabled();
+
+    const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
+    const file = makeXlsxFile('should-be-ignored.xlsx');
+    fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
+
+    expect(screen.queryByText('should-be-ignored.xlsx')).not.toBeInTheDocument();
+  });
 });

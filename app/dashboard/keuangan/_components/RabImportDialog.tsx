@@ -84,10 +84,10 @@ export default function RabImportDialog({ rab }: Props) {
         />
 
         <Box
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !rab.importLoading && fileInputRef.current?.click()}
           onDragOver={(event) => {
             event.preventDefault();
-            setIsDragActive(true);
+            if (!rab.importLoading) setIsDragActive(true);
           }}
           onDragLeave={(event) => {
             event.preventDefault();
@@ -96,26 +96,58 @@ export default function RabImportDialog({ rab }: Props) {
           onDrop={(event) => {
             event.preventDefault();
             setIsDragActive(false);
-            applyFile(event.dataTransfer.files?.[0] ?? null);
+            if (!rab.importLoading) applyFile(event.dataTransfer.files?.[0] ?? null);
           }}
           sx={{
+            position: 'relative',
             border: '1px dashed',
             borderColor: isDragActive ? 'success.main' : 'divider',
             borderRadius: 2,
             p: 3,
             textAlign: 'center',
-            cursor: 'pointer',
+            cursor: rab.importLoading ? 'default' : 'pointer',
             bgcolor: isDragActive ? 'action.selected' : 'action.hover',
             transition: 'border-color 0.15s ease, background-color 0.15s ease',
+            overflow: 'hidden',
           }}
         >
-          <UploadFileIcon sx={{ fontSize: 32, color: isDragActive ? 'success.main' : 'text.secondary', mb: 1 }} />
-          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-            {selectedFile ? selectedFile.name : isDragActive ? 'Lepas file di sini' : 'Klik atau seret file .xlsx ke sini'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Item RAB baru akan ditambahkan ke item RAB yang sudah ada, bukan menggantikannya.
-          </Typography>
+          <Box
+            sx={{
+              opacity: rab.importLoading ? 0 : 1,
+              transition: 'opacity 0.15s ease',
+            }}
+          >
+            <UploadFileIcon sx={{ fontSize: 32, color: isDragActive ? 'success.main' : 'text.secondary', mb: 1 }} />
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {selectedFile ? selectedFile.name : isDragActive ? 'Lepas file di sini' : 'Klik atau seret file .xlsx ke sini'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Item RAB baru akan ditambahkan ke item RAB yang sudah ada, bukan menggantikannya.
+            </Typography>
+          </Box>
+
+          {rab.importLoading && (
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 1.5,
+                bgcolor: 'inherit',
+              }}
+            >
+              <CircularProgress size={32} thickness={4} sx={{ color: 'success.main' }} />
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                Mengimpor {selectedFile?.name}...
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Menyimpan item RAB dan transaksi, mohon tunggu.
+              </Typography>
+            </Box>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pt: 3 }}>

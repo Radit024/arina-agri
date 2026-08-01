@@ -423,10 +423,12 @@ function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabIte
   ];
 }
 
-function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, transactions: FinanceTransactionForReport[]) {
+function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, transactions: FinanceTransactionForReport[], rabItems: RabItem[]) {
   applyTitle(sheet, 'CATATAN TRANSAKSI HARIAN', project.name);
   sheet.getRow(4).values = ['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)', 'Item RAB'];
   applyHeader(sheet.getRow(4));
+
+  const rabItemNameById = new Map(rabItems.map((item) => [item.id, item.name]));
 
   transactions.forEach((transaction, index) => {
     const rowNumber = index + 5;
@@ -438,7 +440,7 @@ function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, tra
       transaction.hargaSatuan ?? '',
       transaction.jenis === 'pengeluaran' ? transaction.nominal : 0,
       transaction.jenis === 'pendapatan' ? transaction.nominal : 0,
-      transaction.rabItemId ?? '-',
+      (transaction.rabItemId && rabItemNameById.get(transaction.rabItemId)) || '-',
     ];
     applyCurrency(sheet.getCell(rowNumber, 5));
     applyCurrency(sheet.getCell(rowNumber, 6));
@@ -613,7 +615,7 @@ export async function buildFinanceExportWorkbook({
   workbook.created = new Date();
 
   writeRabSheet(workbook.addWorksheet('RAB'), project, rabItems);
-  writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions);
+  writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions, rabItems);
   writeIncomeStatementSheet(workbook.addWorksheet('Laporan Laba Rugi'), project, rabItems);
   writeCashFlowSheet(workbook.addWorksheet('Arus Kas'), project, rabItems, startMonth, endMonth);
   writeComparisonSheet(

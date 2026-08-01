@@ -635,6 +635,7 @@
     "upcomingTitle": "Jadwal Mendatang",
     "next7Days": "7 hari ke depan",
     "emptyUpcoming": "Belum ada jadwal mendatang",
+    "emptyUpcomingHint": "Belum ada jadwal kegiatan ke depan. Klik \"Tambah Jadwal\" untuk memulai.",
     "loading": "Memuat jadwal",
     "retry": "Coba lagi",
     "dialog": {

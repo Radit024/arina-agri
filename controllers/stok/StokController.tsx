@@ -5,6 +5,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslations } from 'next-intl';
+import { trackPageView } from '@/lib/analytics/trackPageView';
 import { useStok, computeExpiryDate } from '@/hooks/useStok';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSupplyItems } from '@/hooks/useSupplyItems';
@@ -21,6 +22,11 @@ import {
 
 export default function StokController() {
   const t = useTranslations('Stock');
+
+  useEffect(() => {
+    void trackPageView('stok');
+  }, []);
+
   const {
     batches, mutations, summary, loading, backendOnline, buyers,
     grades, locations,

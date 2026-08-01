@@ -49,9 +49,9 @@ interface RefreshTargetOptions {
 }
 
 const SPOTLIGHT_PADDING = 6;
-const CARD_GAP = 12;
-const VIEWPORT_MARGIN = 14;
-const ESTIMATED_CARD_HEIGHT = 228;
+const CARD_GAP = 16;
+const VIEWPORT_MARGIN = 20;
+const ESTIMATED_CARD_HEIGHT = 260;
 const MAX_CARD_WIDTH = 348;
 
 function clamp(value: number, min: number, max: number) {
@@ -455,7 +455,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
             width: spotlightRect.width,
             height: spotlightRect.height,
             transform: `translate3d(${spotlightRect.left}px, ${spotlightRect.top}px, 0)`,
-            borderRadius: 2,
+            borderRadius: '8px',
             border: '1px solid',
             borderColor: 'success.main',
             boxShadow: '0 0 0 4px rgba(34, 197, 94, 0.16), 0 10px 30px rgba(22, 163, 74, 0.18)',
@@ -480,7 +480,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
             transform: `translate3d(${popoverPosition.left}px, ${popoverPosition.top}px, 0)${popoverPosition.translateY ? ` translateY(${popoverPosition.translateY})` : ''}`,
             width: popoverPosition.width,
             maxWidth: 'calc(100vw - 32px)',
-            borderRadius: 2,
+            borderRadius: '24px',
             border: '1px solid',
             borderColor: 'divider',
             backgroundImage: 'none',
@@ -585,7 +585,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
               sx={{
                 borderLeft: '3px solid',
                 borderColor: 'success.main',
-                borderRadius: 1.5,
+                borderRadius: '8px',
                 px: 1.5,
                 py: 1.15,
                 bgcolor: 'rgba(22, 163, 74, 0.06)',
@@ -602,10 +602,12 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
             <Box
               sx={{
                 pt: 1.75,
+                pb: 0.25,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 1,
+                rowGap: 1.25,
                 flexWrap: 'wrap',
               }}
             >
@@ -624,7 +626,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
                   startIcon={<ChevronLeftIcon />}
                   onClick={() => setActiveStep((step) => Math.max(step - 1, 0))}
                   disabled={isFirstStep}
-                  sx={{ borderRadius: 1.5, fontWeight: 800, textTransform: 'none' }}
+                  sx={{ borderRadius: '8px', fontWeight: 800, textTransform: 'none' }}
                 >
                   {t('actions.back')}
                 </Button>
@@ -633,7 +635,7 @@ export default function GuideDialog({ guide, open, onClose }: GuideDialogProps) 
                   size="small"
                   endIcon={isLastStep ? undefined : <ChevronRightIcon />}
                   onClick={handleNext}
-                  sx={{ borderRadius: 1.5, fontWeight: 900, textTransform: 'none', boxShadow: 'none' }}
+                  sx={{ borderRadius: '8px', fontWeight: 900, textTransform: 'none', boxShadow: 'none' }}
                 >
                   {isLastStep ? t('actions.finish') : t('actions.next')}
                 </Button>

@@ -46,6 +46,8 @@ export function isReadyGuideTarget(element: HTMLElement) {
   if (!isVisibleGuideTarget(element)) return false;
   if (process.env.NODE_ENV === 'test') return true;
 
+  if (element.getAttribute('data-guide-loading') === 'true') return false;
+
   const rect = element.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
 }

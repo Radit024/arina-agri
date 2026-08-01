@@ -274,7 +274,7 @@ export default function MobileBottomNav() {
         autoHideDuration={3000}
         onClose={() => setShowUnavailableToast(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        sx={{ mb: { xs: '84px', md: 0 } }}
+        sx={{ minWidth: { xs: 'calc(100vw - 32px)', sm: 420 }, mb: { xs: '84px', md: 0 } }}
       >
         <Alert
           onClose={() => setShowUnavailableToast(false)}
@@ -282,7 +282,7 @@ export default function MobileBottomNav() {
           variant="filled"
           role="status"
           aria-live="polite"
-          sx={{ borderRadius: 2, fontWeight: 600 }}
+          sx={{ borderRadius: 2, fontWeight: 600, width: '100%' }}
         >
           {t('featureUnavailable')}
         </Alert>

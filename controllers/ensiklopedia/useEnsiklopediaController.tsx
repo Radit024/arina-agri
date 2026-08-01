@@ -7,6 +7,7 @@ import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 import { useTheme } from '@mui/material/styles';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { trackPageView } from '@/lib/analytics/trackPageView';
 import {
   buildGeminiHistoryPayload,
   buildHistorySession,
@@ -25,6 +26,11 @@ export function useEnsiklopediaController() {
 
   const theme = useTheme();
   const t = useTranslations('Encyclopedia');
+
+  useEffect(() => {
+    void trackPageView('ai_chat');
+  }, []);
+
   const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [diseaseModalOpen, setDiseaseModalOpen] = useState(false);

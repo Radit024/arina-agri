@@ -635,6 +635,7 @@
     "upcomingTitle": "Upcoming Schedule",
     "next7Days": "next 7 days",
     "emptyUpcoming": "No upcoming schedule",
+    "emptyUpcomingHint": "No upcoming schedule yet. Click \"Add Schedule\" to get started.",
     "loading": "Loading schedule",
     "retry": "Try again",
     "dialog": {

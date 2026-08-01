@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { generateGeminiReply } from '@/lib/server/ai/gemini';
 import { validateGeminiPayload } from '@/lib/server/ai/validators';
 import type { GeminiWeatherContext } from '@/lib/server/ai/gemini';
+import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
+import { recordEvent } from '@/lib/analytics/recordEvent';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -84,6 +86,18 @@ export async function POST(request: Request) {
     }
 
     const reply = await generateGeminiReply({ prompt, context, userName, weatherContext });
+
+    try {
+      const userId = await resolveRequestUserId(request);
+      await recordEvent({
+        userId,
+        feature: 'ai_chat',
+        eventType: 'action',
+        eventName: 'chat_message_sent',
+      });
+    } catch (analyticsError) {
+      console.error('[Gemini Analytics] Gagal mencatat usage event:', analyticsError);
+    }
 
     return NextResponse.json({
       success: true,

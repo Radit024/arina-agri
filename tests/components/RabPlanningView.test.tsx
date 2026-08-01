@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import RabPlanningView from '@/app/dashboard/keuangan/_components/RabPlanningView';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import type { RabItem } from '@/lib/finance/rabTypes';
 
 const theme = createTheme();
 
@@ -20,6 +21,37 @@ const selectedProject = {
   startDate: '2026-01-01',
   endDate: '2026-04-30',
   status: 'active' as const,
+};
+
+const pupukUrea: RabItem = {
+  id: 'rab-pupuk-urea',
+  projectId: selectedProject.id,
+  categoryId: 'cat-saprodi',
+  categoryName: 'Saprodi',
+  type: 'expense',
+  name: 'Pupuk Urea',
+  volume: 10,
+  unit: 'karung',
+  unitPrice: 20000,
+  plannedTotal: 200000,
+  plannedCashMonth: '2026-08',
+  aliases: ['urea'],
+  sortOrder: 1,
+};
+
+const penjualanPanen: RabItem = {
+  id: 'rab-penjualan',
+  projectId: selectedProject.id,
+  categoryId: 'cat-penjualan',
+  categoryName: 'Penjualan Hasil Panen',
+  type: 'income',
+  name: 'Penjualan Padi',
+  volume: 1000,
+  unit: 'kg',
+  unitPrice: 6500,
+  plannedTotal: 6_500_000,
+  aliases: ['penjualan padi'],
+  sortOrder: 2,
 };
 
 function makeFinanceProject(overrides: Partial<FinanceProject> = {}): FinanceProject {
@@ -40,9 +72,10 @@ function makeFinanceProject(overrides: Partial<FinanceProject> = {}): FinancePro
 }
 
 function makeRab(overrides: Partial<RabController> = {}): RabController {
+  const items = [pupukUrea, penjualanPanen];
   return {
     categories: [],
-    items: [],
+    items,
     imports: [],
     loading: false,
     error: null,
@@ -55,8 +88,9 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
     deleteItem: vi.fn(),
     replaceRab: vi.fn(),
     reload: vi.fn(),
-    rabItemDialogOpen: true,
+    rabItemDialogOpen: false,
     setRabItemDialogOpen: vi.fn(),
+    editingRabItemId: null,
     importDialogOpen: false,
     setImportDialogOpen: vi.fn(),
     importLoading: false,
@@ -67,16 +101,16 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
     rabItemDraft: {
       categoryName: 'Saprodi',
       type: 'expense',
-      name: 'Pupuk Urea',
-      volume: '10',
-      unit: 'karung',
-      unitPrice: '20000',
-      plannedCashMonth: '2026-08',
-      aliases: 'urea, pupuk nitrogen',
+      name: '',
+      volume: '1',
+      unit: 'Unit',
+      unitPrice: '',
+      plannedCashMonth: '',
+      aliases: '',
     },
-    rabItemPlannedTotal: 200000,
+    rabItemPlannedTotal: 0,
     rabItemSubmitting: false,
-    rabCategoryOptions: ['Saprodi', 'Tenaga Kerja', 'Transport Panen'],
+    rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
     rabCategoryDialogOpen: false,
     setRabCategoryDialogOpen: vi.fn(),
     rabCategoryDialogItems: [],
@@ -87,96 +121,133 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
     deleteRabCategory: vi.fn(),
     updateRabItemDraftField: vi.fn(),
     openRabItemDialog: vi.fn(),
+    openRabItemEditDialog: vi.fn(),
     closeRabItemDialog: vi.fn(),
-    totals: {
-      plannedIncome: 0,
-      plannedExpense: 0,
-      plannedProfit: 0,
-    },
+    totals: { plannedIncome: 6_500_000, plannedExpense: 200000, plannedProfit: 6_300_000 },
     addRabItem: vi.fn(),
+    updateRabItem: vi.fn(),
+    deleteRabItem: vi.fn(async () => {}),
+    rabItemDeleteError: null,
+    setRabItemDeleteError: vi.fn(),
     submitRabItemDraft: vi.fn(),
     importRabFile: vi.fn(),
+    filteredRabItems: items,
+    rabSearchQuery: '',
+    setRabSearchQuery: vi.fn(),
+    rabFilterJenis: 'semua',
+    setRabFilterJenis: vi.fn(),
+    selectedRabItemIds: [],
+    toggleSelectRabItem: vi.fn(),
+    clearRabItemSelection: vi.fn(),
+    rabBulkDeleteConfirm: false,
+    setRabBulkDeleteConfirm: vi.fn(),
+    handleBulkDeleteRabItems: vi.fn(),
     ...overrides,
   } as RabController;
 }
 
-function renderView(rabOverrides: Partial<RabController> = {}) {
+function renderView(rabOverrides: Partial<RabController> = {}, financeProjectOverrides: Partial<FinanceProject> = {}) {
   const rab = makeRab(rabOverrides);
+  const financeProject = makeFinanceProject(financeProjectOverrides);
   const view = render(
     <ThemeProvider theme={theme}>
-      <RabPlanningView financeProject={makeFinanceProject()} rab={rab} />
+      <RabPlanningView financeProject={financeProject} rab={rab} />
     </ThemeProvider>,
   );
-  return { rab, ...view };
+  return { rab, financeProject, ...view };
 }
 
 describe('RabPlanningView', () => {
-  it('uses a ledger-style add button and renders the complete RAB item form', () => {
-    const submitRabItemDraft = vi.fn();
-    const updateRabItemDraftField = vi.fn();
-    const openRabItemDialog = vi.fn();
-    const closedView = renderView({
-      rabItemDialogOpen: false,
-      openRabItemDialog,
-      submitRabItemDraft,
-      updateRabItemDraftField,
-    });
-
-    const addButton = screen.getByRole('button', { name: /Tambah Item RAB/i });
-    expect(addButton).toBeInTheDocument();
-    expect(addButton).toHaveClass('MuiButton-contained');
-    expect(addButton).toHaveClass('MuiButton-colorPrimary');
-    expect(addButton).not.toHaveClass('MuiButton-colorSuccess');
-    fireEvent.click(addButton);
-    expect(openRabItemDialog).toHaveBeenCalledTimes(1);
-    closedView.unmount();
-
-    const { rab } = renderView({ submitRabItemDraft, updateRabItemDraftField });
-
-    const dialog = screen.getByRole('dialog', { name: /Tambah Item RAB/i });
-    expect(within(dialog).getByRole('combobox', { name: /Jenis RAB/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('combobox', { name: /Kategori RAB/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /Kelola Kategori RAB/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('textbox', { name: /Nama Item/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('spinbutton', { name: /Volume/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('textbox', { name: /Satuan/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('spinbutton', { name: /Harga Satuan/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('textbox', { name: /Bulan Kas Rencana/i })).toBeInTheDocument();
-
-    fireEvent.change(within(dialog).getByRole('textbox', { name: /Alias \/ Kata Kunci/i }), {
-      target: { value: 'urea, pupuk subsidi' },
-    });
-    fireEvent.click(within(dialog).getByRole('button', { name: /Kelola Kategori RAB/i }));
-
-    expect(within(dialog).getByText('Total Rencana')).toBeInTheDocument();
-    expect(within(dialog).getByText(/Rp\s*200\.000/)).toBeInTheDocument();
-    expect(updateRabItemDraftField).toHaveBeenCalledWith('aliases', 'urea, pupuk subsidi');
-    expect(rab.setRabCategoryDialogOpen).toHaveBeenCalledWith(true);
-
-    fireEvent.submit(within(dialog).getByTestId('rab-item-form'));
-
-    expect(submitRabItemDraft).toHaveBeenCalledTimes(1);
-    expect(rab.closeRabItemDialog).not.toHaveBeenCalled();
+  it('shows an empty-project message when no project is selected', () => {
+    renderView({}, { selectedProject: null, selectedProjectId: null });
+    expect(screen.getByText('Belum ada proyek')).toBeInTheDocument();
   });
 
-  it('opens a custom RAB category manager from the item form', async () => {
-    const addRabCategory = vi.fn(async () => null);
+  it('opens the add-item dialog when the add button is clicked', () => {
+    const openRabItemDialog = vi.fn();
+    renderView({ openRabItemDialog });
+
+    fireEvent.click(screen.getByRole('button', { name: /Tambah Item RAB/i }));
+    expect(openRabItemDialog).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders RAB items and filters via the jenis dropdown and search box', () => {
+    const setRabFilterJenis = vi.fn();
+    const setRabSearchQuery = vi.fn();
+    renderView({ setRabFilterJenis, setRabSearchQuery });
+
+    expect(screen.getByText('Pupuk Urea')).toBeInTheDocument();
+    expect(screen.getByText('Penjualan Padi')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('Cari item atau kategori...'), { target: { value: 'urea' } });
+    expect(setRabSearchQuery).toHaveBeenCalledWith('urea');
+
+    fireEvent.mouseDown(screen.getByRole('combobox'));
+    fireEvent.click(screen.getByRole('option', { name: 'Pengeluaran' }));
+    expect(setRabFilterJenis).toHaveBeenCalledWith('expense');
+  });
+
+  it('reveals edit and delete actions when a row is selected, and edit opens the edit dialog', () => {
+    const toggleSelectRabItem = vi.fn();
+    const openRabItemEditDialog = vi.fn();
     renderView({
-      rabCategoryDialogOpen: true,
-      rabCategoryDialogItems: [{ id: 'cat-saprodi', nama: 'Saprodi' }],
-      addRabCategory,
+      toggleSelectRabItem,
+      openRabItemEditDialog,
+      selectedRabItemIds: ['rab-pupuk-urea'],
     });
 
-    const manager = screen.getByRole('dialog', { name: /Kelola Kategori RAB Pengeluaran/i });
-    expect(within(manager).getByText('Saprodi')).toBeInTheDocument();
+    const editButton = screen.getByRole('button', { name: 'Edit item RAB Pupuk Urea' });
+    fireEvent.click(editButton);
+    expect(openRabItemEditDialog).toHaveBeenCalledWith(pupukUrea);
 
-    fireEvent.change(within(manager).getByPlaceholderText('Nama baru...'), {
-      target: { value: 'Transport Panen' },
-    });
-    fireEvent.click(within(manager).getByRole('button', { name: /Tambah/i }));
+    expect(screen.queryByRole('button', { name: /Edit item RAB Penjualan Padi/i })).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(addRabCategory).toHaveBeenCalledWith('Transport Panen');
+  it('deletes a single item after confirming in the delete dialog', async () => {
+    const deleteRabItem = vi.fn(async () => {});
+    renderView({ selectedRabItemIds: ['rab-pupuk-urea'], deleteRabItem });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus item RAB Pupuk Urea' }));
+
+    const confirmDialog = await screen.findByRole('dialog', { name: /Hapus item RAB\?/i });
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: 'Hapus' }));
+
+    await waitFor(() => expect(deleteRabItem).toHaveBeenCalledWith('rab-pupuk-urea'));
+  });
+
+  it('shows a bulk-selection bar that opens the bulk delete confirmation', () => {
+    const setRabBulkDeleteConfirm = vi.fn();
+    renderView({
+      selectedRabItemIds: ['rab-pupuk-urea', 'rab-penjualan'],
+      setRabBulkDeleteConfirm,
     });
+
+    expect(screen.getByText('2 item dipilih')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Hapus 2/i }));
+    expect(setRabBulkDeleteConfirm).toHaveBeenCalledWith(true);
+  });
+
+  it('confirms the bulk delete from the confirmation dialog', async () => {
+    const handleBulkDeleteRabItems = vi.fn();
+    renderView({
+      selectedRabItemIds: ['rab-pupuk-urea', 'rab-penjualan'],
+      rabBulkDeleteConfirm: true,
+      handleBulkDeleteRabItems,
+    });
+
+    const bulkDialog = screen.getByRole('dialog', { name: /Hapus 2 item RAB\?/i });
+    fireEvent.click(within(bulkDialog).getByRole('button', { name: 'Hapus' }));
+    await waitFor(() => expect(handleBulkDeleteRabItems).toHaveBeenCalledTimes(1));
+  });
+
+  it('selects all filtered items via the header checkbox', () => {
+    const toggleSelectRabItem = vi.fn();
+    renderView({ toggleSelectRabItem });
+
+    const selectAllCheckbox = screen.getAllByRole('checkbox')[0];
+    fireEvent.click(selectAllCheckbox);
+
+    expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-pupuk-urea');
+    expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-penjualan');
   });
 });

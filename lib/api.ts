@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { buildDevelopmentAccessToken, readLocalDevelopmentUserId } from '@/lib/devAuth';
+import { computeStockBatchStatus as computeStatus } from '@/lib/stok/computeStatus';
 import type {
   DbFinanceProject,
   DbHarvestBatch,
@@ -444,16 +445,6 @@ function mapMutation(row: DbStockMutationWithSale): ApiStockMutation {
   };
 }
 
-function computeStatus(stokTersisa: number, beratMasuk: number, estimasiKadaluarsa: string): ApiHarvestBatch['status'] {
-  const now = new Date();
-  const kadaluarsa = new Date(estimasiKadaluarsa);
-  const daysLeft = Math.ceil((kadaluarsa.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (stokTersisa === 0) return 'habis';
-  if (daysLeft <= 3) return 'hampir_kadaluarsa';
-  if (stokTersisa < beratMasuk * 0.2) return 'menipis';
-  return 'aman';
-}
-
 async function resolveCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (user) return user;
@@ -557,30 +548,10 @@ export const transactionApi = {
   },
 
   create: async (payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiTransaction> => {
-    const user = await resolveCurrentUser();
-    if (!user) throw new Error('Belum login');
-    const insertPayload: Record<string, unknown> = {
-      user_id: user.id,
-      jenis: payload.jenis,
-      kategori: payload.kategori,
-      nominal: payload.nominal,
-      tanggal: payload.tanggal,
-      keterangan: payload.keterangan ?? '',
-    };
-    if (payload.projectId) insertPayload.project_id = payload.projectId;
-    if (payload.rabCategoryId) insertPayload.rab_category_id = payload.rabCategoryId;
-    if (payload.rabItemId) insertPayload.rab_item_id = payload.rabItemId;
-    if (payload.volume !== undefined && payload.volume !== null) insertPayload.volume = payload.volume;
-    if (payload.satuan) insertPayload.satuan = payload.satuan;
-    if (payload.hargaSatuan !== undefined && payload.hargaSatuan !== null) insertPayload.harga_satuan = payload.hargaSatuan;
-
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(insertPayload)
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-    return mapTx(data);
+    return authenticatedJsonRequest<ApiTransaction>('/api/finance/transactions', {
+      method: 'POST',
+      body: payload,
+    });
   },
 
   update: async (id: string, payload: Partial<ApiTransaction>): Promise<ApiTransaction> => {
@@ -773,7 +744,11 @@ export const rabApi = {
       .select()
       .single();
     if (error) throw new Error(error.message);
-    return mapRabItem(data as DbRabItem);
+    // rab_items has no category_name column, so mapRabItem only fills it in when
+    // given the joined category row (see getByProject). The caller already knows
+    // the category name here (it just resolved/created the category), so use that
+    // instead of leaving it undefined until the next full reload.
+    return { ...mapRabItem(data as DbRabItem), categoryName: payload.categoryName };
   },
 
   updateItem: async (id: string, payload: Partial<ApiRabItem>): Promise<ApiRabItem> => {
@@ -793,7 +768,9 @@ export const rabApi = {
 
     const { data, error } = await supabase.from('rab_items').update(update).eq('id', id).eq('user_id', user.id).select().single();
     if (error) throw new Error(error.message);
-    return mapRabItem(data as DbRabItem);
+    // Same reasoning as createItem: rab_items has no category_name column, so use
+    // whatever the caller already resolved instead of losing it until next reload.
+    return { ...mapRabItem(data as DbRabItem), categoryName: payload.categoryName };
   },
 
   deleteItem: async (id: string): Promise<null> => {
@@ -934,48 +911,10 @@ export const stokApi = {
   },
 
   create: async (payload: Omit<ApiHarvestBatch, '_id' | 'batchCode' | 'stokTersisa' | 'status' | 'createdAt' | 'updatedAt'>): Promise<ApiHarvestBatch> => {
-    const user = await resolveCurrentUser();
-    if (!user) throw new Error('Belum login');
-
-    const { count } = await supabase
-      .from('harvest_batches')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-    const batchCode = `BATCH-${String((count ?? 0) + 1).padStart(3, '0')}-${payload.grade}`;
-    const status = computeStatus(payload.beratMasuk, payload.beratMasuk, payload.estimasiKadaluarsa);
-
-    const { data, error } = await supabase
-      .from('harvest_batches')
-      .insert({
-        user_id: user.id,
-        batch_code: batchCode,
-        tanggal_panen: payload.tanggalPanen,
-        grade: payload.grade,
-        berat_masuk: payload.beratMasuk,
-        stok_tersisa: payload.beratMasuk,
-        harga_modal: payload.hargaModal,
-        harga_jual: payload.hargaJual,
-        lokasi_penyimpanan: payload.lokasiPenyimpanan,
-        estimasi_kadaluarsa: payload.estimasiKadaluarsa,
-        catatan: payload.catatan ?? '',
-        status,
-      })
-      .select()
-      .single();
-    if (error) throw new Error(error.message);
-
-    // Record stock-in mutation
-    await supabase.from('stock_mutations').insert({
-      user_id: user.id,
-      batch_id: data.id,
-      batch_code: batchCode,
-      tipe: 'masuk',
-      berat: payload.beratMasuk,
-      tanggal: payload.tanggalPanen,
-      catatan: 'Stok awal masuk gudang',
+    return authenticatedJsonRequest<ApiHarvestBatch>('/api/stok/batches', {
+      method: 'POST',
+      body: payload,
     });
-
-    return mapBatch(data);
   },
 
   update: async (id: string, payload: Partial<ApiHarvestBatch>): Promise<ApiHarvestBatch> => {

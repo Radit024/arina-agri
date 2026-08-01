@@ -227,7 +227,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
             ].map(({ color, count, label }) => (
               <Box key={label} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 10, height: 10, bgcolor: color, borderRadius: 0.5, flexShrink: 0 }} />
+                  <Box sx={{ width: 10, height: 10, bgcolor: color, borderRadius: '4px', flexShrink: 0 }} />
                   <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                     {label}
                   </Typography>
@@ -254,7 +254,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
             { color: '#9ca3af', label: t('legend.noData') },
           ].map(({ color, label }) => (
             <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 10, height: 10, bgcolor: color, borderRadius: 0.5, flexShrink: 0 }} />
+              <Box sx={{ width: 10, height: 10, bgcolor: color, borderRadius: '4px', flexShrink: 0 }} />
               <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.72rem', lineHeight: 1.4 }}>
                 {label}
               </Typography>

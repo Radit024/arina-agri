@@ -64,7 +64,6 @@ export default function CuacaView({
   theme,
   t,
   todayDate,
-  gpsLocation,
   notificationPlatform,
   savedContact,
   contactValue,
@@ -130,20 +129,13 @@ export default function CuacaView({
             startIcon={gpsStatus === 'loading' ? <CircularProgress color="inherit" size={16} /> : <MyLocationIcon />}
             onClick={handleUseGpsLocation}
             disabled={gpsStatus === 'loading'}
-            sx={{ width: { xs: '100%', sm: 'auto' }, px: 2.25, fontWeight: 700 }}
+            sx={{ width: 'fit-content', px: 2.25, fontWeight: 700 }}
           >
             {gpsStatus === 'loading' ? t('gps.buttons.loading') : t('gps.buttons.enable')}
           </PageActionButton>
         )}
       />
       <Box sx={{ mb: 3 }}>
-        {gpsLocation && (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-            {t('location.active', {
-              location: t('location.gpsWithAccuracy', { label: gpsLocation.label, accuracy: gpsLocation.accuracy }),
-            })}
-          </Typography>
-        )}
         {gpsStatus === 'success' && gpsMessage && (
           <Alert severity="success" sx={{ mt: 1.25 }}>
             {gpsMessage}
@@ -163,7 +155,11 @@ export default function CuacaView({
           size={{ xs: 12, lg: 8 }}
           sx={{ display: 'flex', flexDirection: 'column', alignSelf: 'stretch' }}
         >
-          <Card data-guide-target="weather-current" sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+          <Card
+            data-guide-target="weather-current"
+            data-guide-loading={weatherLoading && !forecastData ? 'true' : undefined}
+            sx={{ background: currentWeatherCardBackground, color: '#fff', position: 'relative', overflow: 'hidden' }}
+          >
             {isRainy && (
               <Box className="weather-rain-layer" aria-hidden>
                 {Array.from({ length: 16 }).map((_, i) => (

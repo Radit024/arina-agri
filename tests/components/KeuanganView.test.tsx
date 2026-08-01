@@ -200,6 +200,80 @@ function makeTransactionBatch(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeRab(overrides: Record<string, unknown> = {}) {
+  return {
+    categories: [],
+    items: [],
+    imports: [],
+    loading: false,
+    error: null,
+    backendOnline: false,
+    reload: vi.fn(),
+    createCategory: vi.fn(),
+    updateCategory: vi.fn(),
+    deleteCategory: vi.fn(),
+    createItem: vi.fn(),
+    updateItem: vi.fn(),
+    deleteItem: vi.fn(),
+    replaceRab: vi.fn(),
+    rabItemDialogOpen: false,
+    setRabItemDialogOpen: vi.fn(),
+    importDialogOpen: false,
+    setImportDialogOpen: vi.fn(),
+    importLoading: false,
+    importError: null,
+    setImportError: vi.fn(),
+    rabItemError: null,
+    setRabItemError: vi.fn(),
+    rabItemDraft: {
+      categoryName: 'Saprodi',
+      type: 'expense',
+      name: '',
+      volume: '1',
+      unit: 'Unit',
+      unitPrice: '',
+      plannedCashMonth: '',
+      aliases: '',
+    },
+    rabItemPlannedTotal: 0,
+    rabItemSubmitting: false,
+    rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
+    rabCategoryDialogOpen: false,
+    setRabCategoryDialogOpen: vi.fn(),
+    rabCategoryDialogItems: [],
+    rabCategoryDeleteError: null,
+    setRabCategoryDeleteError: vi.fn(),
+    addRabCategory: vi.fn(async () => null),
+    renameRabCategory: vi.fn(),
+    deleteRabCategory: vi.fn(),
+    updateRabItemDraftField: vi.fn(),
+    openRabItemDialog: vi.fn(),
+    openRabItemEditDialog: vi.fn(),
+    closeRabItemDialog: vi.fn(),
+    editingRabItemId: null,
+    totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
+    addRabItem: vi.fn(),
+    updateRabItem: vi.fn(),
+    deleteRabItem: vi.fn(),
+    rabItemDeleteError: null,
+    setRabItemDeleteError: vi.fn(),
+    submitRabItemDraft: vi.fn(),
+    importRabFile: vi.fn(),
+    filteredRabItems: [],
+    rabSearchQuery: '',
+    setRabSearchQuery: vi.fn(),
+    rabFilterJenis: 'semua' as const,
+    setRabFilterJenis: vi.fn(),
+    selectedRabItemIds: [],
+    toggleSelectRabItem: vi.fn(),
+    clearRabItemSelection: vi.fn(),
+    rabBulkDeleteConfirm: false,
+    setRabBulkDeleteConfirm: vi.fn(),
+    handleBulkDeleteRabItems: vi.fn(),
+    ...overrides,
+  };
+}
+
 function makeTransactionMaster() {
   return {
     customKategori: [],
@@ -289,6 +363,10 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     bulanOptions: ['2026-06'],
     getBulanLabel: () => 'Juni 2026',
     displayedTransactions: [transaction],
+    pagedTransactions: [transaction],
+    ledgerPage: 1,
+    setLedgerPage: vi.fn(),
+    ledgerTotalPages: 1,
     financeAccess: {
       hasSelectedProject: true,
       hasProjectData: true,
@@ -313,59 +391,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       projectDialogOpen: false,
       setProjectDialogOpen: vi.fn(),
     },
-    rab: {
-      categories: [],
-      items: [],
-      imports: [],
-      loading: false,
-      error: null,
-      backendOnline: false,
-      reload: vi.fn(),
-      createCategory: vi.fn(),
-      updateCategory: vi.fn(),
-      deleteCategory: vi.fn(),
-      createItem: vi.fn(),
-      updateItem: vi.fn(),
-      deleteItem: vi.fn(),
-      replaceRab: vi.fn(),
-      rabItemDialogOpen: false,
-      setRabItemDialogOpen: vi.fn(),
-      importDialogOpen: false,
-      setImportDialogOpen: vi.fn(),
-      importLoading: false,
-      importError: null,
-      setImportError: vi.fn(),
-      rabItemError: null,
-      setRabItemError: vi.fn(),
-      rabItemDraft: {
-        categoryName: 'Saprodi',
-        type: 'expense',
-        name: '',
-        volume: '1',
-        unit: 'Unit',
-        unitPrice: '',
-        plannedCashMonth: '',
-        aliases: '',
-      },
-      rabItemPlannedTotal: 0,
-      rabItemSubmitting: false,
-      rabCategoryOptions: ['Saprodi', 'Tenaga Kerja'],
-      rabCategoryDialogOpen: false,
-      setRabCategoryDialogOpen: vi.fn(),
-      rabCategoryDialogItems: [],
-      rabCategoryDeleteError: null,
-      setRabCategoryDeleteError: vi.fn(),
-      addRabCategory: vi.fn(async () => null),
-      renameRabCategory: vi.fn(),
-      deleteRabCategory: vi.fn(),
-      updateRabItemDraftField: vi.fn(),
-      openRabItemDialog: vi.fn(),
-      closeRabItemDialog: vi.fn(),
-      totals: { plannedIncome: 0, plannedExpense: 0, plannedProfit: 0 },
-      addRabItem: vi.fn(),
-      submitRabItemDraft: vi.fn(),
-      importRabFile: vi.fn(),
-    },
+    rab: makeRab() as KeuanganViewProps['rab'],
     rabTransactionLink: makeRabTransactionLink() as KeuanganViewProps['rabTransactionLink'],
     financeReports: {
       reportTransactions: [],
@@ -397,6 +423,23 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
           variancePercent: null,
         },
       },
+    },
+    labaRugiActions: {
+      filteredRows: [],
+      searchQuery: '',
+      setSearchQuery: vi.fn(),
+      filterJenis: 'semua' as const,
+      setFilterJenis: vi.fn(),
+      selectedItemIds: [],
+      toggleSelect: vi.fn(),
+      clearSelection: vi.fn(),
+      bulkDeleteConfirm: false,
+      setBulkDeleteConfirm: vi.fn(),
+      handleBulkDelete: vi.fn(),
+      editRow: vi.fn(),
+      deleteTargetRow: null,
+      setDeleteTargetRow: vi.fn(),
+      confirmDeleteRow: vi.fn(),
     },
     financeExport: {
       exportLoading: false,
@@ -472,7 +515,7 @@ describe('KeuanganView', () => {
   it('menampilkan rincian input transaksi pada ledger', () => {
     renderView();
 
-    expect(screen.getByRole('columnheader', { name: 'Input' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Volume Harga Satuan' })).toBeInTheDocument();
     expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);
@@ -480,6 +523,7 @@ describe('KeuanganView', () => {
     expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
     expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
+    expect(screen.getByText('2 kg')).toBeInTheDocument();
   });
 
   it('menampilkan tombol aksi desktop hanya ketika transaksi dipilih', () => {
@@ -561,6 +605,7 @@ describe('KeuanganView', () => {
   it('menampilkan badge RAB pada transaksi yang sudah terhubung', () => {
     renderView({
       displayedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
+      pagedTransactions: [{ ...transaction, rabItemId: rabItem.id, rabCategoryId: rabItem.categoryId }],
       rabTransactionLink: makeRabTransactionLink({
         getLinkedRabItem: vi.fn(() => rabItem),
       }) as KeuanganViewProps['rabTransactionLink'],
@@ -662,10 +707,10 @@ describe('KeuanganView', () => {
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
     const reportButton = screen.getByRole('button', { name: 'Export Laporan' });
 
-    expect(getComputedStyle(editButton).backgroundColor).toBe('rgba(82, 183, 136, 0.28)');
-    expect(getComputedStyle(editButton).color).toBe('rgb(255, 255, 255)');
-    expect(getComputedStyle(deleteButton).backgroundColor).toBe('rgba(212, 131, 106, 0.24)');
-    expect(getComputedStyle(deleteButton).color).toBe('rgb(212, 131, 106)');
+    expect(getComputedStyle(editButton).backgroundColor).toBe('rgb(82, 183, 136)');
+    expect(getComputedStyle(editButton).color).toBe('rgb(30, 38, 32)');
+    expect(getComputedStyle(deleteButton).backgroundColor).toBe('rgb(212, 131, 106)');
+    expect(getComputedStyle(deleteButton).color).toBe('rgb(30, 38, 32)');
     expect(reportButton).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Perhitungan HPP & BEP' })).not.toBeInTheDocument();
 
@@ -682,6 +727,7 @@ describe('KeuanganView', () => {
     const openForCreate = vi.fn();
     renderView({
       displayedTransactions: [],
+      pagedTransactions: [],
       financeAccess: {
         hasSelectedProject: false,
         hasProjectData: false,
@@ -703,6 +749,7 @@ describe('KeuanganView', () => {
     const openForCreate = vi.fn();
     renderView({
       displayedTransactions: [],
+      pagedTransactions: [],
       financeAccess: {
         hasSelectedProject: true,
         hasProjectData: false,
@@ -771,5 +818,30 @@ describe('KeuanganView', () => {
     expect(exportReportButton).toBeEnabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
+  });
+
+  it('memaginasi Buku Besar Transaksi menjadi 7 item per halaman', () => {
+    const allTransactions: ApiTransaction[] = Array.from({ length: 10 }, (_, index) => ({
+      ...transaction,
+      _id: `tx-${index + 1}`,
+      kategori: `kategori-${index + 1}`,
+    }));
+    const setLedgerPage = vi.fn();
+
+    renderView({
+      displayedTransactions: allTransactions,
+      pagedTransactions: allTransactions.slice(0, 7),
+      ledgerPage: 1,
+      setLedgerPage,
+      ledgerTotalPages: 2,
+    });
+
+    expect(screen.getByText('10 transaksi ditampilkan')).toBeInTheDocument();
+    expect(screen.getAllByText('kategori-1').length).toBeGreaterThan(0);
+    expect(screen.queryByText('kategori-8')).not.toBeInTheDocument();
+
+    const pageTwoButtons = screen.getAllByRole('button', { name: 'Go to page 2' });
+    fireEvent.click(pageTwoButtons[0]);
+    expect(setLedgerPage).toHaveBeenCalledWith(2);
   });
 });

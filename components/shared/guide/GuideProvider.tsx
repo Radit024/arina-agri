@@ -61,23 +61,27 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
   const autoPromptedPathRef = useRef<string | null>(null);
   const pendingOpenRequestRef = useRef(0);
 
-  const queueGuideOpen = useCallback((nextGuide: GuideDefinition) => {
-    const requestId = pendingOpenRequestRef.current + 1;
-    pendingOpenRequestRef.current = requestId;
+  const queueGuideOpen = useCallback(
+    (nextGuide: GuideDefinition, options: { requireReady?: boolean } = {}) => {
+      const requestId = pendingOpenRequestRef.current + 1;
+      pendingOpenRequestRef.current = requestId;
 
-    void waitForGuideInitialTarget(nextGuide).then(() => {
-      if (pendingOpenRequestRef.current !== requestId) return;
+      void waitForGuideInitialTarget(nextGuide, { timeoutMs: 4000 }).then((ready) => {
+        if (pendingOpenRequestRef.current !== requestId) return;
+        if (options.requireReady && !ready) return;
 
-      setActiveGuide(nextGuide);
-      setIsOpen(true);
-    });
+        setActiveGuide(nextGuide);
+        setIsOpen(true);
+      });
 
-    return () => {
-      if (pendingOpenRequestRef.current === requestId) {
-        pendingOpenRequestRef.current += 1;
-      }
-    };
-  }, []);
+      return () => {
+        if (pendingOpenRequestRef.current === requestId) {
+          pendingOpenRequestRef.current += 1;
+        }
+      };
+    },
+    []
+  );
 
   useEffect(() => {
     if (isOpen || autoPromptedPathRef.current === pathname) return;
@@ -86,7 +90,7 @@ export default function GuideProvider({ children }: { children: ReactNode }) {
     if (!nextGuide) return;
 
     autoPromptedPathRef.current = pathname;
-    return queueGuideOpen(nextGuide);
+    return queueGuideOpen(nextGuide, { requireReady: true });
   }, [isOpen, pathname, queueGuideOpen]);
 
   const openGuide = useCallback(

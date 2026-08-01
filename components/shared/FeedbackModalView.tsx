@@ -156,7 +156,7 @@ function FeedbackMarkdown({ children }: { children: string }) {
         },
         '& code': {
           bgcolor: alpha(theme.palette.text.primary, 0.08),
-          borderRadius: 1,
+          borderRadius: '8px',
           fontFamily: 'monospace',
           fontSize: '0.85em',
           px: 0.5,
@@ -164,7 +164,7 @@ function FeedbackMarkdown({ children }: { children: string }) {
         },
         '& pre': {
           bgcolor: alpha(theme.palette.text.primary, 0.08),
-          borderRadius: 1,
+          borderRadius: '8px',
           maxWidth: '100%',
           overflowX: 'auto',
           p: 1.25,
@@ -283,7 +283,7 @@ export default function FeedbackModalView({
                   sx={(theme) => ({
                     alignItems: 'center',
                     border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 1,
+                    borderRadius: '8px',
                     flexWrap: 'wrap',
                     px: 0.75,
                     py: 0.75,
@@ -298,7 +298,7 @@ export default function FeedbackModalView({
                         data-touch-target="44"
                         onClick={() => handleFormatClick(button.format)}
                         sx={{
-                          borderRadius: 1,
+                          borderRadius: '8px',
                           height: 40,
                           width: 40,
                         }}
@@ -338,7 +338,7 @@ export default function FeedbackModalView({
                   aria-live="polite"
                   sx={(theme) => ({
                     border: `1px solid ${theme.palette.divider}`,
-                    borderRadius: 1,
+                    borderRadius: '8px',
                     maxHeight: 180,
                     minHeight: 104,
                     overflowY: 'auto',
@@ -437,6 +437,7 @@ export default function FeedbackModalView({
         autoHideDuration={6000}
         onClose={onCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{ minWidth: { xs: 'calc(100vw - 32px)', sm: 420 } }}
       >
         <Alert onClose={onCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}

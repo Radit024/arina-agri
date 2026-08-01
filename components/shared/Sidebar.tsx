@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
@@ -42,12 +42,12 @@ const DRAWER_WIDTH_CLOSED = 88;
 
 const navItems = [
   { key: 'dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
-  { key: 'keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan' },
-  { key: 'stok', icon: <InventoryOutlinedIcon />, path: '/dashboard/stok' },
   { key: 'cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
   { key: 'kabarPasar', icon: <NewspaperIcon />, path: '/dashboard/kabar-pasar' },
-  { key: 'ensiklopedia', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia' },
+  { key: 'keuangan', icon: <AccountBalanceWalletOutlinedIcon />, path: '/dashboard/keuangan', sectionStart: true },
+  { key: 'stok', icon: <InventoryOutlinedIcon />, path: '/dashboard/stok' },
   { key: 'kalender', icon: <CalendarMonthOutlinedIcon />, path: '/dashboard/kalender' },
+  { key: 'ensiklopedia', icon: <AutoStoriesOutlinedIcon />, path: '/dashboard/ensiklopedia', sectionStart: true },
 ];
 
 export default function Sidebar() {
@@ -242,6 +242,9 @@ export default function Sidebar() {
         <List sx={{ pt: 0 }}>
           {navItems.map((item) => {
             const active = isActive(item.path);
+            const divider = item.sectionStart && isOpen ? (
+              <Divider key={`divider-${item.path}`} component="li" sx={{ my: 2, mx: 1 }} />
+            ) : null;
             const navButton = (
               <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
                 <ListItemButton
@@ -293,7 +296,12 @@ export default function Sidebar() {
             );
 
             if (isOpen) {
-              return navButton;
+              return (
+                <Fragment key={item.path}>
+                  {divider}
+                  {navButton}
+                </Fragment>
+              );
             }
 
             return (

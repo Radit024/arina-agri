@@ -99,6 +99,7 @@ export default function EnsiklopediaView({
       }}
     >
 
+      {/* Header custom (bukan PageHeader): halaman ini adalah chat shell sticky, bukan halaman data biasa. */}
       {/* Minimal Header */}
       <Box
         sx={{
@@ -535,7 +536,7 @@ export default function EnsiklopediaView({
                           color: 'text.primary',
                           px: 0.75,
                           py: 0.25,
-                          borderRadius: 1,
+                          borderRadius: '8px',
                           fontFamily: 'monospace',
                           fontSize: '0.88em'
                         },
@@ -558,7 +559,7 @@ export default function EnsiklopediaView({
                           maxWidth: '100%',
                           overflowX: 'auto',
                           bgcolor: alpha(theme.palette.text.primary, 0.08),
-                          borderRadius: 2,
+                          borderRadius: '8px',
                           p: 1.5,
                           mb: 1.6,
                           lineHeight: 1.55,
@@ -704,7 +705,7 @@ export default function EnsiklopediaView({
 
           {/* Quick Prompts (Only show if not empty state to avoid duplication) */}
           {hasUserMessages && (
-            <Box sx={{ mb: 1.5, maxWidth: '100%', overflow: 'hidden', position: 'relative' }}>
+            <Box sx={{ mb: 1.5, maxWidth: '100%', overflow: 'hidden', position: 'relative', display: 'flex', justifyContent: 'center' }}>
               <Box
                 data-guide-target="ai-quick-prompts"
                 sx={{

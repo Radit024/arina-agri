@@ -4,8 +4,13 @@ import { useMemo, useState } from 'react';
 
 import { useRabItems } from '@/hooks/useRabItems';
 import { sumRabItemsByType } from '@/lib/finance/rabCalculations';
-import type { ApiFinanceProject } from '@/lib/api';
-import type { RabEntryType } from '@/lib/finance/rabTypes';
+import { rabApi, transactionApi, type ApiFinanceProject } from '@/lib/api';
+import { DEFAULT_FINANCE_CATEGORIES, resolveFinanceCategory } from '@/lib/finance/categories';
+import { parseRabWorkbookFromArrayBuffer } from '@/lib/finance/rabExcel';
+import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
+import type { RabEntryType, RabItem } from '@/lib/finance/rabTypes';
+
+const RAB_SUGGESTION_MIN_SCORE = 5;
 
 const PRESET_RAB_CATEGORIES: Record<RabEntryType, string[]> = {
   expense: ['Saprodi', 'Tenaga Kerja', 'Jasa Alsintan', 'Irigasi & Air', 'Alat Tani', 'Operasional', 'Lainnya'],
@@ -92,17 +97,26 @@ function validateRabItemDraft(draft: RabItemDraft) {
   return null;
 }
 
-export function useRabController(project: ApiFinanceProject | null) {
+export function useRabController(
+  project: ApiFinanceProject | null,
+  addTransaction?: (data: Parameters<typeof transactionApi.create>[0]) => Promise<void>,
+) {
   const rabState = useRabItems(project?.id ?? null);
   const [rabItemDialogOpen, setRabItemDialogOpen] = useState(false);
+  const [editingRabItemId, setEditingRabItemId] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const importLoading = false;
+  const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [rabItemError, setRabItemError] = useState<string | null>(null);
   const [rabItemDraft, setRabItemDraft] = useState<RabItemFormDraft>(createRabItemFormDraft);
   const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
   const [rabCategoryDialogOpen, setRabCategoryDialogOpen] = useState(false);
   const [rabCategoryDeleteError, setRabCategoryDeleteError] = useState<string | null>(null);
+  const [rabSearchQuery, setRabSearchQuery] = useState('');
+  const [rabFilterJenis, setRabFilterJenis] = useState<'semua' | RabEntryType>('semua');
+  const [selectedRabItemIds, setSelectedRabItemIds] = useState<string[]>([]);
+  const [rabBulkDeleteConfirm, setRabBulkDeleteConfirm] = useState(false);
+  const [rabItemDeleteError, setRabItemDeleteError] = useState<string | null>(null);
 
   const totals = useMemo(
     () => ({
@@ -117,6 +131,31 @@ export function useRabController(project: ApiFinanceProject | null) {
     () => parseNumberInput(rabItemDraft.volume) * parseNumberInput(rabItemDraft.unitPrice),
     [rabItemDraft.unitPrice, rabItemDraft.volume],
   );
+
+  const filteredRabItems = useMemo(() => {
+    let result = rabState.items.filter(
+      (item) => rabFilterJenis === 'semua' || item.type === rabFilterJenis,
+    );
+
+    if (rabSearchQuery.trim()) {
+      const q = rabSearchQuery.toLowerCase().trim();
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          (item.categoryName ?? '').toLowerCase().includes(q) ||
+          item.unit.toLowerCase().includes(q) ||
+          item.aliases.some((alias) => alias.toLowerCase().includes(q)),
+      );
+    }
+
+    return result;
+  }, [rabState.items, rabFilterJenis, rabSearchQuery]);
+
+  const toggleSelectRabItem = (id: string) => {
+    setSelectedRabItemIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
+  };
+
+  const clearRabItemSelection = () => setSelectedRabItemIds([]);
 
   const rabCategoryOptions = useMemo(
     () =>
@@ -151,12 +190,30 @@ export function useRabController(project: ApiFinanceProject | null) {
 
   const openRabItemDialog = () => {
     setRabItemDraft(createRabItemFormDraft());
+    setEditingRabItemId(null);
+    setRabItemError(null);
+    setRabItemDialogOpen(true);
+  };
+
+  const openRabItemEditDialog = (item: RabItem) => {
+    setRabItemDraft({
+      categoryName: item.categoryName ?? getDefaultRabCategoryName(item.type),
+      type: item.type,
+      name: item.name,
+      volume: String(item.volume),
+      unit: item.unit,
+      unitPrice: String(item.unitPrice),
+      plannedCashMonth: item.plannedCashMonth ?? '',
+      aliases: item.aliases.join(', '),
+    });
+    setEditingRabItemId(item.id);
     setRabItemError(null);
     setRabItemDialogOpen(true);
   };
 
   const closeRabItemDialog = () => {
     setRabItemDialogOpen(false);
+    setEditingRabItemId(null);
   };
 
   const addRabCategory = async (name: string) => {
@@ -254,10 +311,46 @@ export function useRabController(project: ApiFinanceProject | null) {
     });
   };
 
+  const updateRabItem = async (id: string, draft: RabItemDraft) => {
+    if (!project) throw new Error('Pilih proyek terlebih dahulu');
+    const validationError = validateRabItemDraft(draft);
+    if (validationError) {
+      setRabItemError(validationError);
+      throw new Error(validationError);
+    }
+    setRabItemError(null);
+
+    const categoryName = draft.categoryName.trim();
+    const itemName = draft.name.trim();
+    const unit = draft.unit.trim();
+    const existingCategory = rabState.categories.find(
+      (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
+    );
+    const category = existingCategory ?? await rabState.createCategory({
+      projectId: project.id,
+      name: categoryName,
+      type: draft.type,
+      sortOrder: rabState.categories.length + 1,
+    });
+
+    return rabState.updateItem(id, {
+      categoryId: category.id,
+      categoryName: category.name,
+      type: draft.type,
+      name: itemName,
+      volume: draft.volume,
+      unit,
+      unitPrice: draft.unitPrice,
+      plannedTotal: draft.volume * draft.unitPrice,
+      plannedCashMonth: draft.plannedCashMonth,
+      aliases: draft.aliases ?? [itemName],
+    });
+  };
+
   const submitRabItemDraft = async () => {
     setRabItemSubmitting(true);
     try {
-      await addRabItem({
+      const draft: RabItemDraft = {
         categoryName: rabItemDraft.categoryName,
         type: rabItemDraft.type,
         name: rabItemDraft.name,
@@ -266,20 +359,146 @@ export function useRabController(project: ApiFinanceProject | null) {
         unitPrice: parseNumberInput(rabItemDraft.unitPrice),
         plannedCashMonth: rabItemDraft.plannedCashMonth.trim() || undefined,
         aliases: parseAliasesInput(rabItemDraft.aliases),
-      });
+      };
+      if (editingRabItemId) {
+        await updateRabItem(editingRabItemId, draft);
+      } else {
+        await addRabItem(draft);
+      }
       setRabItemDialogOpen(false);
+      setEditingRabItemId(null);
       setRabItemDraft(createRabItemFormDraft());
     } finally {
       setRabItemSubmitting(false);
     }
   };
 
+  const deleteRabItem = async (id: string) => {
+    try {
+      await rabState.deleteItem(id);
+      setRabItemDeleteError(null);
+      setSelectedRabItemIds((prev) => prev.filter((itemId) => itemId !== id));
+    } catch (err) {
+      setRabItemDeleteError(err instanceof Error ? err.message : 'Gagal menghapus item RAB');
+    }
+  };
+
+  const handleBulkDeleteRabItems = async () => {
+    for (const id of selectedRabItemIds) {
+      await rabState.deleteItem(id);
+    }
+    setSelectedRabItemIds([]);
+    setRabBulkDeleteConfirm(false);
+  };
+
   const importRabFile = async (file: File) => {
-    void file;
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
-    const message = 'Import Excel sementara dinonaktifkan';
-    setImportError(message);
-    throw new Error(message);
+    setImportLoading(true);
+    setImportError(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const parsed = await parseRabWorkbookFromArrayBuffer(buffer);
+      if (parsed.items.length === 0) {
+        throw new Error('Tidak ada item RAB yang terbaca dari file ini');
+      }
+
+      const categoryIdMap = new Map<string, Awaited<ReturnType<typeof rabState.createCategory>>>();
+      for (const category of parsed.categories) {
+        const existingCategory = rabState.categories.find(
+          (candidate) =>
+            candidate.type === category.type &&
+            candidate.name.toLowerCase() === category.name.toLowerCase(),
+        );
+        const resolvedCategory = existingCategory ?? await rabState.createCategory({
+          projectId: project.id,
+          name: category.name,
+          type: category.type,
+          sortOrder: rabState.categories.length + categoryIdMap.size + 1,
+        });
+        categoryIdMap.set(category.id, resolvedCategory);
+      }
+
+      let importedCount = 0;
+      const createdItems: RabItem[] = [];
+      for (const item of parsed.items) {
+        const category = categoryIdMap.get(item.categoryId);
+        if (!category) continue;
+        const createdItem = await rabState.createItem({
+          projectId: project.id,
+          categoryId: category.id,
+          categoryName: category.name,
+          type: item.type,
+          name: item.name,
+          volume: item.volume,
+          unit: item.unit,
+          unitPrice: item.unitPrice,
+          plannedTotal: item.plannedTotal,
+          plannedCashMonth: item.plannedCashMonth,
+          aliases: item.aliases,
+          sortOrder: rabState.items.length + importedCount + 1,
+        });
+        createdItems.push(createdItem);
+        importedCount += 1;
+      }
+
+      let importedTransactionCount = 0;
+      if (addTransaction && parsed.transactions.length > 0) {
+        const rabItemPool = [...rabState.items, ...createdItems];
+        for (const transaction of parsed.transactions) {
+          const suggestion = suggestRabItemsForTransaction({
+            items: rabItemPool,
+            transaction: { jenis: transaction.jenis, keterangan: transaction.keterangan },
+          })[0];
+          const matchedItem = suggestion && suggestion.score >= RAB_SUGGESTION_MIN_SCORE ? suggestion.item : null;
+          const resolvedCategory = resolveFinanceCategory({
+            jenis: transaction.jenis,
+            kategori: matchedItem?.categoryName ?? '',
+            keterangan: transaction.keterangan,
+            categories: DEFAULT_FINANCE_CATEGORIES,
+          });
+          const kategori = matchedItem?.categoryName ?? resolvedCategory?.label ?? 'Lainnya';
+
+          try {
+            await addTransaction({
+              jenis: transaction.jenis,
+              kategori,
+              nominal: transaction.nominal,
+              tanggal: transaction.tanggal,
+              keterangan: transaction.keterangan,
+              projectId: project.id,
+              rabCategoryId: matchedItem?.categoryId ?? null,
+              rabItemId: matchedItem?.id ?? null,
+              volume: transaction.volume ?? null,
+              satuan: transaction.satuan ?? null,
+              hargaSatuan: transaction.hargaSatuan ?? null,
+            });
+            importedTransactionCount += 1;
+          } catch {
+            // Satu baris transaksi gagal tidak boleh menggagalkan seluruh proses import.
+          }
+        }
+      }
+
+      try {
+        await rabApi.recordImport({
+          projectId: project.id,
+          fileName: file.name,
+          status: 'success',
+          summary: `${importedCount} item RAB dan ${importedTransactionCount} transaksi berhasil diimpor dari "${parsed.project.name}"`,
+          errors: [],
+        });
+      } catch {
+        // Riwayat import bersifat opsional, tidak boleh menggagalkan alur import utama.
+      }
+
+      setImportDialogOpen(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
+      setImportError(message);
+      throw new Error(message);
+    } finally {
+      setImportLoading(false);
+    }
   };
 
   return {
@@ -307,11 +526,28 @@ export function useRabController(project: ApiFinanceProject | null) {
     deleteRabCategory,
     updateRabItemDraftField,
     openRabItemDialog,
+    openRabItemEditDialog,
     closeRabItemDialog,
+    editingRabItemId,
     totals,
     addRabItem,
+    updateRabItem,
+    deleteRabItem,
+    rabItemDeleteError,
+    setRabItemDeleteError,
     submitRabItemDraft,
     importRabFile,
+    filteredRabItems,
+    rabSearchQuery,
+    setRabSearchQuery,
+    rabFilterJenis,
+    setRabFilterJenis,
+    selectedRabItemIds,
+    toggleSelectRabItem,
+    clearRabItemSelection,
+    rabBulkDeleteConfirm,
+    setRabBulkDeleteConfirm,
+    handleBulkDeleteRabItems,
   };
 }
 

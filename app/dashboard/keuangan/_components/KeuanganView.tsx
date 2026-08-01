@@ -863,7 +863,7 @@ export default function KeuanganView({
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '12%' }}>
                         <TableSortLabel
                           active={sortColumn === 'tanggal'}
-                          direction={sortColumn === 'tanggal' ? sortDir : 'asc'}
+                          direction={sortColumn === 'tanggal' && sortDir ? sortDir : 'asc'}
                           onClick={() => toggleSort('tanggal')}
                           sx={ledgerSortLabelSx}
                         >
@@ -873,7 +873,7 @@ export default function KeuanganView({
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '10%' }}>
                         <TableSortLabel
                           active={sortColumn === 'jenis'}
-                          direction={sortColumn === 'jenis' ? sortDir : 'asc'}
+                          direction={sortColumn === 'jenis' && sortDir ? sortDir : 'asc'}
                           onClick={() => toggleSort('jenis')}
                           sx={ledgerSortLabelSx}
                         >
@@ -883,7 +883,7 @@ export default function KeuanganView({
                       <TableCell sx={{ ...ledgerHeaderCellSx, width: '15%' }}>
                         <TableSortLabel
                           active={sortColumn === 'kategori'}
-                          direction={sortColumn === 'kategori' ? sortDir : 'asc'}
+                          direction={sortColumn === 'kategori' && sortDir ? sortDir : 'asc'}
                           onClick={() => toggleSort('kategori')}
                           sx={ledgerSortLabelSx}
                         >
@@ -899,7 +899,7 @@ export default function KeuanganView({
                       <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
                         <TableSortLabel
                           active={sortColumn === 'nominal'}
-                          direction={sortColumn === 'nominal' ? sortDir : 'asc'}
+                          direction={sortColumn === 'nominal' && sortDir ? sortDir : 'asc'}
                           onClick={() => toggleSort('nominal')}
                           sx={ledgerNumericSortLabelSx}
                         >

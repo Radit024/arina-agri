@@ -13,6 +13,7 @@ import { trackPageView } from '@/lib/analytics/trackPageView';
 import { useTransactions } from '@/hooks/useTransactions';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
+import { nextLedgerSortState } from './ledgerSort';
 import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
@@ -83,8 +84,8 @@ export function useKeuanganController() {
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
   const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis'>('tanggal');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>('desc');
   const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [ledgerPage, setLedgerPage] = useState(1);
@@ -226,13 +227,10 @@ export function useKeuanganController() {
     setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
   };
 
-  const toggleSort = (col: typeof sortColumn) => {
-    if (sortColumn === col) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortColumn(col);
-      setSortDir('asc');
-    }
+  const toggleSort = (col: NonNullable<typeof sortColumn>) => {
+    const next = nextLedgerSortState({ column: sortColumn, dir: sortDir }, col);
+    setSortColumn(next.column);
+    setSortDir(next.dir);
   };
 
   const toggleSelectTx = (id: string) => {
@@ -531,6 +529,8 @@ export function useKeuanganController() {
           (tx.keterangan ?? '').toLowerCase().includes(q)
       );
     }
+
+    if (!sortColumn || !sortDir) return result;
 
     return [...result].sort((a, b) => {
       let cmp = 0;

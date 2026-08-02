@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  compareScenarios,
   computeArusKasBulanan,
   computeArusKasPascaPembiayaan,
   computeBcRatio,
@@ -14,7 +15,7 @@ import {
   computePenerimaan,
   computeRabTotals,
 } from '@/lib/finance/scenarioCalculations';
-import type { FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
+import type { FinanceTransactionForReport, RabItem, ScenarioOutput } from '@/lib/finance/rabTypes';
 
 const padi1HaRabItems: RabItem[] = [
   {
@@ -220,5 +221,62 @@ describe('computeArusKasPascaPembiayaan', () => {
 
     expect(result).toHaveLength(6);
     expect(result[result.length - 1].kasKumulatifSetelahPembiayaan).toBe(22_891_000);
+  });
+});
+
+function makeScenarioOutput(overrides: Partial<ScenarioOutput> = {}): ScenarioOutput {
+  return {
+    totalPendapatan: 45_500_000,
+    totalBiayaProduksi: 22_159_000,
+    labaRugi: 23_341_000,
+    hpp: 3165.5714,
+    bepProduksi: 3409.0769,
+    bcRatio: 1.0533,
+    kategoriTotals: { 'expense:Benih': 412_500, 'expense:Sewa Lahan': 7_000_000 },
+    arusKasBulanan: [],
+    kebutuhanModalKerja: 18_869_000,
+    bunga: 450_000,
+    kasAkhirPascaPembiayaan: 22_891_000,
+    ...overrides,
+  };
+}
+
+describe('compareScenarios', () => {
+  it('computes selisih and selisih% for each top-level metric', () => {
+    const proyeksi = makeScenarioOutput();
+    const realisasi = makeScenarioOutput({ totalPendapatan: 40_000_000, labaRugi: 17_841_000 });
+
+    const result = compareScenarios(proyeksi, realisasi);
+    const pendapatanMetric = result.metrics.find((m) => m.label === 'Total Pendapatan');
+
+    expect(pendapatanMetric).toMatchObject({
+      proyeksi: 45_500_000,
+      realisasi: 40_000_000,
+      selisih: -5_500_000,
+    });
+    expect(pendapatanMetric?.selisihPercent).toBeCloseTo(-0.1209, 4);
+  });
+
+  it('shows selisih% as null instead of Infinity when proyeksi is zero', () => {
+    const proyeksi = makeScenarioOutput({ totalPendapatan: 0 });
+    const realisasi = makeScenarioOutput({ totalPendapatan: 5_000_000 });
+
+    const result = compareScenarios(proyeksi, realisasi);
+    const pendapatanMetric = result.metrics.find((m) => m.label === 'Total Pendapatan');
+
+    expect(pendapatanMetric?.selisih).toBe(5_000_000);
+    expect(pendapatanMetric?.selisihPercent).toBeNull();
+  });
+
+  it('marks category items that only exist in one scenario as unmatched, not omitted', () => {
+    const proyeksi = makeScenarioOutput({ kategoriTotals: { 'expense:Benih': 412_500 } });
+    const realisasi = makeScenarioOutput({
+      kategoriTotals: { 'expense:Benih': 400_000, 'expense:Pestisida': 320_000 },
+    });
+
+    const result = compareScenarios(proyeksi, realisasi);
+    const pestisida = result.kategoriMetrics.find((m) => m.label === 'expense:Pestisida');
+
+    expect(pestisida).toMatchObject({ proyeksi: 0, realisasi: 320_000, unmatched: true });
   });
 });

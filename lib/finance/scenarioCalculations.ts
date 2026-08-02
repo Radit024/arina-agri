@@ -4,6 +4,9 @@ import type {
   FinanceTransactionForReport,
   KelayakanStatus,
   RabItem,
+  ScenarioComparison,
+  ScenarioComparisonMetric,
+  ScenarioOutput,
 } from './rabTypes';
 import { buildMonthRange, sumRabItemsByType, sumTransactionsByJenis, toMonthKey } from './rabCalculations';
 
@@ -126,4 +129,70 @@ export function computeArusKasPascaPembiayaan(
 
     return { bulan: row.bulan, kasSetelahPembiayaan, kasKumulatifSetelahPembiayaan };
   });
+}
+
+function computeSelisihPercent(proyeksi: number, realisasi: number): number | null {
+  if (proyeksi === 0) return null;
+  return (realisasi - proyeksi) / proyeksi;
+}
+
+function buildComparisonMetric(
+  label: string,
+  proyeksi: number,
+  realisasi: number,
+  unmatched?: boolean,
+): ScenarioComparisonMetric {
+  return {
+    label,
+    proyeksi,
+    realisasi,
+    selisih: realisasi - proyeksi,
+    selisihPercent: computeSelisihPercent(proyeksi, realisasi),
+    ...(unmatched ? { unmatched: true } : {}),
+  };
+}
+
+export function compareScenarios(proyeksi: ScenarioOutput, realisasi: ScenarioOutput): ScenarioComparison {
+  const metrics: ScenarioComparisonMetric[] = [
+    buildComparisonMetric('Total Pendapatan', proyeksi.totalPendapatan, realisasi.totalPendapatan),
+    buildComparisonMetric('Total Biaya Produksi', proyeksi.totalBiayaProduksi, realisasi.totalBiayaProduksi),
+    buildComparisonMetric('Laba/Rugi', proyeksi.labaRugi, realisasi.labaRugi),
+    buildComparisonMetric('HPP', proyeksi.hpp ?? 0, realisasi.hpp ?? 0),
+    buildComparisonMetric('BEP Produksi', proyeksi.bepProduksi ?? 0, realisasi.bepProduksi ?? 0),
+    buildComparisonMetric('B/C Ratio', proyeksi.bcRatio ?? 0, realisasi.bcRatio ?? 0),
+    buildComparisonMetric('Kebutuhan Modal Kerja', proyeksi.kebutuhanModalKerja, realisasi.kebutuhanModalKerja),
+    buildComparisonMetric('Bunga', proyeksi.bunga, realisasi.bunga),
+    buildComparisonMetric('Kas Akhir Pasca Pembiayaan', proyeksi.kasAkhirPascaPembiayaan, realisasi.kasAkhirPascaPembiayaan),
+  ];
+
+  const kategoriKeys = new Set([
+    ...Object.keys(proyeksi.kategoriTotals),
+    ...Object.keys(realisasi.kategoriTotals),
+  ]);
+  const kategoriMetrics: ScenarioComparisonMetric[] = Array.from(kategoriKeys).map((key) => {
+    const proyeksiValue = proyeksi.kategoriTotals[key] ?? 0;
+    const realisasiValue = realisasi.kategoriTotals[key] ?? 0;
+    const unmatched = !(key in proyeksi.kategoriTotals) || !(key in realisasi.kategoriTotals);
+    return buildComparisonMetric(key, proyeksiValue, realisasiValue, unmatched);
+  });
+
+  const bulanKeys = new Set([
+    ...proyeksi.arusKasBulanan.map((row) => row.bulan),
+    ...realisasi.arusKasBulanan.map((row) => row.bulan),
+  ]);
+  const arusKasBulanan = Array.from(bulanKeys).sort().map((bulan) => {
+    const proyeksiRow = proyeksi.arusKasBulanan.find((row) => row.bulan === bulan);
+    const realisasiRow = realisasi.arusKasBulanan.find((row) => row.bulan === bulan);
+    const proyeksiValue = proyeksiRow?.kasBersih ?? 0;
+    const realisasiValue = realisasiRow?.kasBersih ?? 0;
+    return {
+      bulan,
+      proyeksi: proyeksiValue,
+      realisasi: realisasiValue,
+      selisih: realisasiValue - proyeksiValue,
+      selisihPercent: computeSelisihPercent(proyeksiValue, realisasiValue),
+    };
+  });
+
+  return { metrics, kategoriMetrics, arusKasBulanan };
 }

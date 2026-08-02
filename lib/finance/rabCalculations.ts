@@ -14,7 +14,7 @@ const UNLINKED_CATEGORY_ID = 'unlinked';
 const UNLINKED_CATEGORY_NAME = 'Belum terhubung';
 const VARIANCE_TOLERANCE = 0.01;
 
-function toMonthKey(dateLike: string) {
+export function toMonthKey(dateLike: string) {
   return dateLike.slice(0, 7);
 }
 

@@ -1,5 +1,5 @@
 import type { ArusKasBulanan, FinanceTransactionForReport, KelayakanStatus, RabItem } from './rabTypes';
-import { buildMonthRange, sumRabItemsByType, sumTransactionsByJenis } from './rabCalculations';
+import { buildMonthRange, sumRabItemsByType, sumTransactionsByJenis, toMonthKey } from './rabCalculations';
 
 export function computeRabTotals(rabItems: RabItem[]): {
   totalBiayaProduksi: number;
@@ -65,10 +65,6 @@ export function computeLabaRugi(transactions: FinanceTransactionForReport[]): {
     totalPengeluaran,
     labaRugi: totalPendapatan - totalPengeluaran,
   };
-}
-
-function toMonthKey(dateLike: string) {
-  return dateLike.slice(0, 7);
 }
 
 export function computeArusKasBulanan(

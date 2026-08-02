@@ -43,8 +43,14 @@ const rabItems: RabItem[] = [
   },
 ];
 
-// Placed to reproduce the corrected monthly kas bersih from audit §15.1:
-// Jul 0, Aug -13.464.000, Sep -1.330.000, Okt -840.000, Nov -3.235.000, Des +42.210.000
+// Transaction dates/amounts are split across months to reproduce the exact monthly kas
+// bersih figures from audit §15.1: Jul 0, Aug -13.464.000, Sep -1.330.000, Okt -840.000,
+// Nov -3.235.000, Des +42.210.000. Benih + Sewa Lahan + a first slice of Lain-lain land in
+// Agustus; the remaining Lain-lain (totaling 14.746.500 - 6.051.500 = 8.695.000) is spread
+// across Sep/Okt/Nov/Des to match each month's audited deficit; the corrected transportasi
+// figure (Rp200.000, not the source workbook's Rp20.000 typo) is folded into these Lain-lain
+// amounts rather than tracked as its own line item.
+// Sanity check: 6.051.500 + 1.330.000 + 840.000 + 3.235.000 + 3.290.000 = 14.746.500 (matches RAB).
 const transactions: FinanceTransactionForReport[] = [
   { id: 'tx-aug-1', jenis: 'pengeluaran', kategori: 'Benih', nominal: 412_500, tanggal: '2026-08-01' },
   { id: 'tx-aug-2', jenis: 'pengeluaran', kategori: 'Sewa Lahan', nominal: 7_000_000, tanggal: '2026-08-05' },

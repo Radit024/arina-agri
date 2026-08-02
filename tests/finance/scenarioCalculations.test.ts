@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  computeArusKasBulanan,
   computeBcRatio,
   computeBepProduksi,
   computeHpp,
@@ -157,5 +158,25 @@ describe('computeLabaRugi', () => {
     const result = computeLabaRugi([]);
 
     expect(result).toEqual({ totalPendapatan: 0, totalPengeluaran: 0, labaRugi: 0 });
+  });
+});
+
+describe('computeArusKasBulanan', () => {
+  it('builds monthly kas masuk/keluar/bersih/kumulatif from transaction dates, not RAB plannedCashMonth', () => {
+    const result = computeArusKasBulanan(padi1HaTransactions, '2026-07', '2026-12');
+
+    expect(result).toHaveLength(6);
+    expect(result[0]).toMatchObject({ bulan: '2026-07', kasMasuk: 0, kasKeluar: 7_412_500, kasBersih: -7_412_500 });
+    expect(result[1]).toMatchObject({ bulan: '2026-08', kasMasuk: 0, kasKeluar: 14_746_500, kasBersih: -14_746_500 });
+    expect(result[5]).toMatchObject({ bulan: '2026-12', kasMasuk: 45_500_000, kasKeluar: 0, kasBersih: 45_500_000 });
+    expect(result[5].kasKumulatif).toBe(23_341_000);
+  });
+
+  it('keeps months with no transactions at zero instead of omitting them', () => {
+    const result = computeArusKasBulanan(padi1HaTransactions, '2026-07', '2026-12');
+
+    expect(result[2]).toMatchObject({ bulan: '2026-09', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
+    expect(result[3]).toMatchObject({ bulan: '2026-10', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
+    expect(result[4]).toMatchObject({ bulan: '2026-11', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
   });
 });

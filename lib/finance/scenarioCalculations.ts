@@ -1,5 +1,5 @@
-import type { FinanceTransactionForReport, KelayakanStatus, RabItem } from './rabTypes';
-import { sumRabItemsByType, sumTransactionsByJenis } from './rabCalculations';
+import type { ArusKasBulanan, FinanceTransactionForReport, KelayakanStatus, RabItem } from './rabTypes';
+import { buildMonthRange, sumRabItemsByType, sumTransactionsByJenis } from './rabCalculations';
 
 export function computeRabTotals(rabItems: RabItem[]): {
   totalBiayaProduksi: number;
@@ -65,4 +65,30 @@ export function computeLabaRugi(transactions: FinanceTransactionForReport[]): {
     totalPengeluaran,
     labaRugi: totalPendapatan - totalPengeluaran,
   };
+}
+
+function toMonthKey(dateLike: string) {
+  return dateLike.slice(0, 7);
+}
+
+export function computeArusKasBulanan(
+  transactions: FinanceTransactionForReport[],
+  startMonth: string,
+  endMonth: string,
+): ArusKasBulanan[] {
+  const months = buildMonthRange(startMonth, endMonth);
+  let kasKumulatif = 0;
+
+  return months.map((bulan) => {
+    const kasMasuk = transactions
+      .filter((tx) => tx.jenis === 'pendapatan' && toMonthKey(tx.tanggal) === bulan)
+      .reduce((total, tx) => total + tx.nominal, 0);
+    const kasKeluar = transactions
+      .filter((tx) => tx.jenis === 'pengeluaran' && toMonthKey(tx.tanggal) === bulan)
+      .reduce((total, tx) => total + tx.nominal, 0);
+    const kasBersih = kasMasuk - kasKeluar;
+    kasKumulatif += kasBersih;
+
+    return { bulan, kasMasuk, kasKeluar, kasBersih, kasKumulatif };
+  });
 }

@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   computeArusKasBulanan,
+  computeArusKasPascaPembiayaan,
   computeBcRatio,
   computeBepProduksi,
+  computeBunga,
   computeHpp,
+  computeKebutuhanModalKerja,
   computeKelayakanStatus,
   computeKeuntungan,
   computeLabaRugi,
@@ -178,5 +181,44 @@ describe('computeArusKasBulanan', () => {
     expect(result[2]).toMatchObject({ bulan: '2026-09', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
     expect(result[3]).toMatchObject({ bulan: '2026-10', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
     expect(result[4]).toMatchObject({ bulan: '2026-11', kasMasuk: 0, kasKeluar: 0, kasBersih: 0 });
+  });
+});
+
+describe('computeKebutuhanModalKerja', () => {
+  it('returns the absolute value of the maximum cumulative deficit before financing', () => {
+    const arusKas = computeArusKasBulanan(padi1HaTransactions, '2026-07', '2026-12');
+
+    expect(computeKebutuhanModalKerja(arusKas)).toBe(22_159_000);
+  });
+
+  it('returns 0 when cumulative cash never goes negative', () => {
+    const arusKas = computeArusKasBulanan(
+      [{ id: 'tx', jenis: 'pendapatan', kategori: 'x', nominal: 1000, tanggal: '2026-07-01' }],
+      '2026-07', '2026-07',
+    );
+
+    expect(computeKebutuhanModalKerja(arusKas)).toBe(0);
+  });
+});
+
+describe('computeBunga', () => {
+  it('multiplies pokok pinjaman by bunga per periode (percent)', () => {
+    expect(computeBunga(15_000_000, 3)).toBe(450_000);
+  });
+});
+
+describe('computeArusKasPascaPembiayaan', () => {
+  it('reduces cumulative cash by the net financing cost (interest) by end of period', () => {
+    const arusKas = computeArusKasBulanan(padi1HaTransactions, '2026-07', '2026-12');
+    const result = computeArusKasPascaPembiayaan(arusKas, {
+      nilaiPinjaman: 15_000_000,
+      bungaPerPeriode: 3,
+      biayaLain: 0,
+      tanggalPencairan: '2026-08',
+      tanggalPembayaran: '2026-12',
+    });
+
+    expect(result).toHaveLength(6);
+    expect(result[result.length - 1].kasKumulatifSetelahPembiayaan).toBe(22_891_000);
   });
 });

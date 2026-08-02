@@ -1,4 +1,10 @@
-import type { ArusKasBulanan, FinanceTransactionForReport, KelayakanStatus, RabItem } from './rabTypes';
+import type {
+  ArusKasBulanan,
+  ArusKasPascaPembiayaanBulanan,
+  FinanceTransactionForReport,
+  KelayakanStatus,
+  RabItem,
+} from './rabTypes';
 import { buildMonthRange, sumRabItemsByType, sumTransactionsByJenis, toMonthKey } from './rabCalculations';
 
 export function computeRabTotals(rabItems: RabItem[]): {
@@ -86,5 +92,38 @@ export function computeArusKasBulanan(
     kasKumulatif += kasBersih;
 
     return { bulan, kasMasuk, kasKeluar, kasBersih, kasKumulatif };
+  });
+}
+
+export function computeKebutuhanModalKerja(arusKasBulanan: ArusKasBulanan[]): number {
+  const minKumulatif = Math.min(0, ...arusKasBulanan.map((row) => row.kasKumulatif));
+  return Math.abs(minKumulatif);
+}
+
+export function computeBunga(pokokPinjaman: number, bungaPerPeriode: number): number {
+  return pokokPinjaman * (bungaPerPeriode / 100);
+}
+
+export function computeArusKasPascaPembiayaan(
+  arusKasBulanan: ArusKasBulanan[],
+  financing: {
+    nilaiPinjaman: number;
+    bungaPerPeriode: number;
+    biayaLain: number;
+    tanggalPencairan: string;
+    tanggalPembayaran: string;
+  },
+): ArusKasPascaPembiayaanBulanan[] {
+  const bunga = computeBunga(financing.nilaiPinjaman, financing.bungaPerPeriode);
+  const pelunasan = financing.nilaiPinjaman + bunga + financing.biayaLain;
+  let kasKumulatifSetelahPembiayaan = 0;
+
+  return arusKasBulanan.map((row) => {
+    const arusMasukPembiayaan = row.bulan === financing.tanggalPencairan ? financing.nilaiPinjaman : 0;
+    const arusKeluarPembiayaan = row.bulan === financing.tanggalPembayaran ? pelunasan : 0;
+    const kasSetelahPembiayaan = row.kasBersih + arusMasukPembiayaan - arusKeluarPembiayaan;
+    kasKumulatifSetelahPembiayaan += kasSetelahPembiayaan;
+
+    return { bulan: row.bulan, kasSetelahPembiayaan, kasKumulatifSetelahPembiayaan };
   });
 }

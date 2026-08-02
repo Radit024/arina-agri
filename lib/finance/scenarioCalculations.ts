@@ -107,14 +107,21 @@ export function computeBunga(pokokPinjaman: number, bungaPerPeriode: number): nu
   return pokokPinjaman * (bungaPerPeriode / 100);
 }
 
+// NOTE: `pencairanBulan`/`pembayaranBulan` are month keys ('YYYY-MM'), matching the granularity of
+// `ArusKasBulanan.bulan` — NOT full ISO dates. This is a deliberately narrower shape than
+// `FinancingAssumptions` (whose `tanggalPencairan`/`tanggalPembayaran` are full dates from the
+// `financing_assumptions` table). Callers wiring real `FinancingAssumptions` data into this
+// function MUST truncate to a month key first (e.g. via `toMonthKey`) — passing a full date string
+// through unchanged will silently never match any `row.bulan` and financing will appear to have no
+// effect at all, with no type error or runtime error to signal the mistake.
 export function computeArusKasPascaPembiayaan(
   arusKasBulanan: ArusKasBulanan[],
   financing: {
     nilaiPinjaman: number;
     bungaPerPeriode: number;
     biayaLain: number;
-    tanggalPencairan: string;
-    tanggalPembayaran: string;
+    pencairanBulan: string;
+    pembayaranBulan: string;
   },
 ): ArusKasPascaPembiayaanBulanan[] {
   const bunga = computeBunga(financing.nilaiPinjaman, financing.bungaPerPeriode);
@@ -122,8 +129,8 @@ export function computeArusKasPascaPembiayaan(
   let kasKumulatifSetelahPembiayaan = 0;
 
   return arusKasBulanan.map((row) => {
-    const arusMasukPembiayaan = row.bulan === financing.tanggalPencairan ? financing.nilaiPinjaman : 0;
-    const arusKeluarPembiayaan = row.bulan === financing.tanggalPembayaran ? pelunasan : 0;
+    const arusMasukPembiayaan = row.bulan === financing.pencairanBulan ? financing.nilaiPinjaman : 0;
+    const arusKeluarPembiayaan = row.bulan === financing.pembayaranBulan ? pelunasan : 0;
     const kasSetelahPembiayaan = row.kasBersih + arusMasukPembiayaan - arusKeluarPembiayaan;
     kasKumulatifSetelahPembiayaan += kasSetelahPembiayaan;
 

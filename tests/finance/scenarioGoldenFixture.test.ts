@@ -100,8 +100,8 @@ describe('Golden fixture: Padi 1 Ha (audit-corrected)', () => {
       nilaiPinjaman: 15_000_000,
       bungaPerPeriode: 3,
       biayaLain: 0,
-      tanggalPencairan: '2026-08',
-      tanggalPembayaran: '2026-12',
+      pencairanBulan: '2026-08',
+      pembayaranBulan: '2026-12',
     });
     expect(pascaPembiayaan[pascaPembiayaan.length - 1].kasKumulatifSetelahPembiayaan).toBe(22_891_000);
   });

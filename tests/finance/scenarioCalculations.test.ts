@@ -122,4 +122,16 @@ describe('computeKelayakanStatus', () => {
   it('returns impas when produksi is within tolerance of a repeating-decimal BEP', () => {
     expect(computeKelayakanStatus(3409, 3409.0769)).toBe('impas');
   });
+
+  it('returns untung when bepProduksi is zero and produksi is positive', () => {
+    expect(computeKelayakanStatus(100, 0)).toBe('untung');
+  });
+
+  it('returns rugi when bepProduksi is zero and produksi is negative', () => {
+    expect(computeKelayakanStatus(-100, 0)).toBe('rugi');
+  });
+
+  it('returns impas when both bepProduksi and produksi are zero', () => {
+    expect(computeKelayakanStatus(0, 0)).toBe('impas');
+  });
 });

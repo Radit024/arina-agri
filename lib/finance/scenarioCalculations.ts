@@ -43,7 +43,11 @@ export function computeBcRatio(keuntungan: number, totalBiayaProduksi: number): 
 const KELAYAKAN_TOLERANCE = 0.01;
 
 export function computeKelayakanStatus(produksi: number, bepProduksi: number): KelayakanStatus {
-  if (bepProduksi === 0 || Math.abs(produksi - bepProduksi) / bepProduksi <= KELAYAKAN_TOLERANCE) {
+  if (bepProduksi === 0) {
+    if (produksi === 0) return 'impas';
+    return produksi > 0 ? 'untung' : 'rugi';
+  }
+  if (Math.abs(produksi - bepProduksi) / bepProduksi <= KELAYAKAN_TOLERANCE) {
     return 'impas';
   }
   return produksi > bepProduksi ? 'untung' : 'rugi';

@@ -10,6 +10,89 @@ export type VarianceStatus =
   | 'di_atas_target'
   | 'di_bawah_target';
 
+export type ScenarioMode = 'PROJECTION' | 'REALIZATION';
+
+export interface FinanceScenarioEntity {
+  id: string;
+  projectId: string;
+  mode: ScenarioMode;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductionSalesAssumptions {
+  id: string;
+  scenarioId: string;
+  produksi: number;
+  satuan: string;
+  hargaJual: number;
+}
+
+export interface FinancingAssumptions {
+  id: string;
+  scenarioId: string;
+  saldoKasAwal: number;
+  modalSendiri: number;
+  nilaiPinjaman: number;
+  bungaPerPeriode: number;
+  tanggalPencairan: string;
+  tanggalPembayaran: string;
+  biayaLain: number;
+}
+
+export type KelayakanStatus = 'rugi' | 'impas' | 'untung';
+
+export interface ArusKasBulanan {
+  bulan: string;
+  kasMasuk: number;
+  kasKeluar: number;
+  kasBersih: number;
+  kasKumulatif: number;
+}
+
+export interface ArusKasPascaPembiayaanBulanan {
+  bulan: string;
+  kasSetelahPembiayaan: number;
+  kasKumulatifSetelahPembiayaan: number;
+}
+
+export interface ScenarioOutput {
+  totalPendapatan: number;
+  totalBiayaProduksi: number;
+  labaRugi: number;
+  hpp: number | null;
+  bepProduksi: number | null;
+  bcRatio: number | null;
+  kategoriTotals: Record<string, number>;
+  arusKasBulanan: ArusKasBulanan[];
+  kebutuhanModalKerja: number;
+  bunga: number;
+  kasAkhirPascaPembiayaan: number;
+}
+
+export interface ScenarioComparisonMetric {
+  label: string;
+  proyeksi: number;
+  realisasi: number;
+  selisih: number;
+  selisihPercent: number | null;
+  unmatched?: boolean;
+}
+
+export interface ScenarioComparisonMonth {
+  bulan: string;
+  proyeksi: number;
+  realisasi: number;
+  selisih: number;
+  selisihPercent: number | null;
+}
+
+export interface ScenarioComparison {
+  metrics: ScenarioComparisonMetric[];
+  kategoriMetrics: ScenarioComparisonMetric[];
+  arusKasBulanan: ScenarioComparisonMonth[];
+}
+
 export interface FinanceProject {
   id: string;
   name: string;

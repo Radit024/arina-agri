@@ -65,6 +65,11 @@ describe('computeKeuntungan', () => {
   it('allows a negative result (rugi)', () => {
     expect(computeKeuntungan(10_000, 20_000)).toBe(-10_000);
   });
+
+  it('returns null for non-finite input (NaN/Infinity)', () => {
+    expect(computeKeuntungan(NaN, 20_000)).toBeNull();
+    expect(computeKeuntungan(10_000, Infinity)).toBeNull();
+  });
 });
 
 describe('computeHpp', () => {
@@ -112,5 +117,9 @@ describe('computeKelayakanStatus', () => {
 
   it('returns untung when produksi is above BEP', () => {
     expect(computeKelayakanStatus(7000, 3409.08)).toBe('untung');
+  });
+
+  it('returns impas when produksi is within tolerance of a repeating-decimal BEP', () => {
+    expect(computeKelayakanStatus(3409, 3409.0769)).toBe('impas');
   });
 });

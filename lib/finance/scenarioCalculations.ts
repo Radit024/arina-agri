@@ -17,7 +17,8 @@ export function computePenerimaan(produksi: number, hargaJual: number): number |
   return produksi * hargaJual;
 }
 
-export function computeKeuntungan(penerimaan: number, totalBiayaProduksi: number): number {
+export function computeKeuntungan(penerimaan: number, totalBiayaProduksi: number): number | null {
+  if (!Number.isFinite(penerimaan) || !Number.isFinite(totalBiayaProduksi)) return null;
   return penerimaan - totalBiayaProduksi;
 }
 
@@ -39,7 +40,11 @@ export function computeBcRatio(keuntungan: number, totalBiayaProduksi: number): 
   return keuntungan / totalBiayaProduksi;
 }
 
+const KELAYAKAN_TOLERANCE = 0.01;
+
 export function computeKelayakanStatus(produksi: number, bepProduksi: number): KelayakanStatus {
-  if (produksi === bepProduksi) return 'impas';
+  if (bepProduksi === 0 || Math.abs(produksi - bepProduksi) / bepProduksi <= KELAYAKAN_TOLERANCE) {
+    return 'impas';
+  }
   return produksi > bepProduksi ? 'untung' : 'rugi';
 }

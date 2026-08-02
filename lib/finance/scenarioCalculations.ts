@@ -1,5 +1,5 @@
-import type { KelayakanStatus, RabItem } from './rabTypes';
-import { sumRabItemsByType } from './rabCalculations';
+import type { FinanceTransactionForReport, KelayakanStatus, RabItem } from './rabTypes';
+import { sumRabItemsByType, sumTransactionsByJenis } from './rabCalculations';
 
 export function computeRabTotals(rabItems: RabItem[]): {
   totalBiayaProduksi: number;
@@ -51,4 +51,18 @@ export function computeKelayakanStatus(produksi: number, bepProduksi: number): K
     return 'impas';
   }
   return produksi > bepProduksi ? 'untung' : 'rugi';
+}
+
+export function computeLabaRugi(transactions: FinanceTransactionForReport[]): {
+  totalPendapatan: number;
+  totalPengeluaran: number;
+  labaRugi: number;
+} {
+  const totalPendapatan = sumTransactionsByJenis(transactions, 'pendapatan');
+  const totalPengeluaran = sumTransactionsByJenis(transactions, 'pengeluaran');
+  return {
+    totalPendapatan,
+    totalPengeluaran,
+    labaRugi: totalPendapatan - totalPengeluaran,
+  };
 }

@@ -6,10 +6,11 @@ import {
   computeHpp,
   computeKelayakanStatus,
   computeKeuntungan,
+  computeLabaRugi,
   computePenerimaan,
   computeRabTotals,
 } from '@/lib/finance/scenarioCalculations';
-import type { RabItem } from '@/lib/finance/rabTypes';
+import type { FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
 
 const padi1HaRabItems: RabItem[] = [
   {
@@ -133,5 +134,28 @@ describe('computeKelayakanStatus', () => {
 
   it('returns impas when both bepProduksi and produksi are zero', () => {
     expect(computeKelayakanStatus(0, 0)).toBe('impas');
+  });
+});
+
+const padi1HaTransactions: FinanceTransactionForReport[] = [
+  { id: 'tx1', jenis: 'pengeluaran', kategori: 'Benih', nominal: 412_500, tanggal: '2026-07-01' },
+  { id: 'tx2', jenis: 'pengeluaran', kategori: 'Sewa Lahan', nominal: 7_000_000, tanggal: '2026-07-01' },
+  { id: 'tx3', jenis: 'pengeluaran', kategori: 'Lain-lain', nominal: 14_746_500, tanggal: '2026-08-15' },
+  { id: 'tx4', jenis: 'pendapatan', kategori: 'Penjualan', nominal: 45_500_000, tanggal: '2026-12-20' },
+];
+
+describe('computeLabaRugi', () => {
+  it('sums income and expense transactions independently for one scenario', () => {
+    const result = computeLabaRugi(padi1HaTransactions);
+
+    expect(result.totalPendapatan).toBe(45_500_000);
+    expect(result.totalPengeluaran).toBe(22_159_000);
+    expect(result.labaRugi).toBe(23_341_000);
+  });
+
+  it('returns zeros for an empty transaction list', () => {
+    const result = computeLabaRugi([]);
+
+    expect(result).toEqual({ totalPendapatan: 0, totalPengeluaran: 0, labaRugi: 0 });
   });
 });

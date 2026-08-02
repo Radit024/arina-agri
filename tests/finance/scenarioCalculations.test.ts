@@ -279,4 +279,36 @@ describe('compareScenarios', () => {
 
     expect(pestisida).toMatchObject({ proyeksi: 0, realisasi: 320_000, unmatched: true });
   });
+
+  it('includes all months from both scenarios, sorted, with fallback zeros for missing months', () => {
+    const proyeksi = makeScenarioOutput({
+      arusKasBulanan: [
+        { bulan: '2026-07', kasMasuk: 0, kasKeluar: 1000, kasBersih: -1000, kasKumulatif: -1000 },
+        { bulan: '2026-09', kasMasuk: 5000, kasKeluar: 0, kasBersih: 5000, kasKumulatif: 4000 },
+      ],
+    });
+    const realisasi = makeScenarioOutput({
+      arusKasBulanan: [
+        { bulan: '2026-08', kasMasuk: 2000, kasKeluar: 500, kasBersih: 1500, kasKumulatif: 1500 },
+        { bulan: '2026-09', kasMasuk: 4000, kasKeluar: 0, kasBersih: 4000, kasKumulatif: 5500 },
+      ],
+    });
+
+    const result = compareScenarios(proyeksi, realisasi);
+
+    expect(result.arusKasBulanan).toHaveLength(3);
+    expect(result.arusKasBulanan.map((row) => row.bulan)).toEqual(['2026-07', '2026-08', '2026-09']);
+    expect(result.arusKasBulanan[1]).toMatchObject({
+      bulan: '2026-08',
+      proyeksi: 0,
+      realisasi: 1500,
+      selisih: 1500,
+    });
+    expect(result.arusKasBulanan[2]).toMatchObject({
+      bulan: '2026-09',
+      proyeksi: 5000,
+      realisasi: 4000,
+      selisih: -1000,
+    });
+  });
 });

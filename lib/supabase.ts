@@ -94,6 +94,19 @@ export interface DbFinanceScenario {
   updated_at: string;
 }
 
+export interface DbFinancingAssumptions {
+  id: string;
+  scenario_id: string;
+  saldo_kas_awal: number;
+  modal_sendiri: number;
+  nilai_pinjaman: number;
+  bunga_per_periode: number;
+  tanggal_pencairan: string | null;
+  tanggal_pembayaran: string | null;
+  biaya_lain: number;
+  updated_at: string;
+}
+
 export interface DbCalendarEvent {
   id: string;
   user_id: string;

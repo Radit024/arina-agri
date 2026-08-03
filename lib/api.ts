@@ -4,6 +4,7 @@ import { computeStockBatchStatus as computeStatus } from '@/lib/stok/computeStat
 import type {
   DbFinanceProject,
   DbFinanceScenario,
+  DbFinancingAssumptions,
   DbHarvestBatch,
   DbRabCategory,
   DbRabImport,
@@ -17,6 +18,7 @@ import type {
   FinanceProject,
   FinanceScenarioEntity,
   FinanceTransactionForReport,
+  FinancingAssumptions,
   RabCategory,
   RabItem,
 } from '@/lib/finance/rabTypes';
@@ -55,6 +57,8 @@ export interface ApiTransaction {
 }
 
 export type ApiFinanceScenario = FinanceScenarioEntity;
+
+export type ApiFinancingAssumptions = FinancingAssumptions;
 
 export type ApiFinanceProject = FinanceProject;
 
@@ -365,6 +369,20 @@ function mapFinanceScenario(row: DbFinanceScenario): FinanceScenarioEntity {
     mode: row.mode,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapFinancingAssumptions(row: DbFinancingAssumptions): FinancingAssumptions {
+  return {
+    id: row.id,
+    scenarioId: row.scenario_id,
+    saldoKasAwal: row.saldo_kas_awal,
+    modalSendiri: row.modal_sendiri,
+    nilaiPinjaman: row.nilai_pinjaman,
+    bungaPerPeriode: row.bunga_per_periode,
+    tanggalPencairan: row.tanggal_pencairan ?? '',
+    tanggalPembayaran: row.tanggal_pembayaran ?? '',
+    biayaLain: row.biaya_lain,
   };
 }
 
@@ -942,6 +960,48 @@ export const financeScenarioApi = {
     }
 
     return (existing ?? []).map((row) => mapFinanceScenario(row as DbFinanceScenario));
+  },
+};
+
+// ─── Financing Assumptions API ─────────────────────────────────────
+export const financingAssumptionsApi = {
+  getByScenario: async (scenarioId: string): Promise<ApiFinancingAssumptions | null> => {
+    const user = await resolveCurrentUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('financing_assumptions')
+      .select('*')
+      .eq('scenario_id', scenarioId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapFinancingAssumptions(data as DbFinancingAssumptions) : null;
+  },
+
+  upsert: async (
+    scenarioId: string,
+    payload: Omit<FinancingAssumptions, 'id' | 'scenarioId'>,
+  ): Promise<ApiFinancingAssumptions> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('financing_assumptions')
+      .upsert(
+        {
+          scenario_id: scenarioId,
+          saldo_kas_awal: payload.saldoKasAwal,
+          modal_sendiri: payload.modalSendiri,
+          nilai_pinjaman: payload.nilaiPinjaman,
+          bunga_per_periode: payload.bungaPerPeriode,
+          tanggal_pencairan: payload.tanggalPencairan || null,
+          tanggal_pembayaran: payload.tanggalPembayaran || null,
+          biaya_lain: payload.biayaLain,
+        },
+        { onConflict: 'scenario_id' },
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapFinancingAssumptions(data as DbFinancingAssumptions);
   },
 };
 

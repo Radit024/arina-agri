@@ -16,6 +16,7 @@ import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
 import { useFinanceScenarioController } from './useFinanceScenarioController';
+import { useFinancingController } from './useFinancingController';
 import { useLabaRugiActionsController } from './useLabaRugiActionsController';
 import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
@@ -79,7 +80,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan'>('buku-besar');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
   const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>('desc');
@@ -107,6 +108,10 @@ export function useKeuanganController() {
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
+  });
+  const financing = useFinancingController({
+    scenarioId: financeScenario.activeScenario?.id ?? null,
+    arusKasBulanan: financeReports.arusKasBulanan,
   });
   const labaRugiActions = useLabaRugiActionsController();
   const hasSelectedProject = Boolean(financeProject.selectedProject);
@@ -538,6 +543,7 @@ export function useKeuanganController() {
     rab,
     rabTransactionLink: guardedRabTransactionLink,
     financeReports,
+    financing,
     labaRugiActions,
     financeExport,
     transactionBatch: guardedTransactionBatch,

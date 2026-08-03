@@ -48,6 +48,9 @@ export function useFinanceProjectController() {
     null,
   );
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [projectDialogMode, setProjectDialogMode] = useState<'create' | 'edit'>('create');
+  const [deleteProjectConfirmOpen, setDeleteProjectConfirmOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const selection = useMemo(
     () => resolveFinanceProjectSelection({
@@ -73,6 +76,44 @@ export function useFinanceProjectController() {
     return created;
   };
 
+  const updateProject = async (id: string, payload: Partial<ApiFinanceProject>) => {
+    const updated = await projectState.updateProject(id, payload);
+    setProjectDialogOpen(false);
+    return updated;
+  };
+
+  const openCreateProjectDialog = () => {
+    setProjectDialogMode('create');
+    setProjectDialogOpen(true);
+  };
+
+  const openEditProjectDialog = () => {
+    if (!selection.selectedProject) return;
+    setProjectDialogMode('edit');
+    setProjectDialogOpen(true);
+  };
+
+  const requestDeleteProject = () => {
+    if (!selection.selectedProject) return;
+    setDeleteProjectConfirmOpen(true);
+  };
+
+  const cancelDeleteProject = () => {
+    setDeleteProjectConfirmOpen(false);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!selection.selectedProject) return;
+    setDeletingProject(true);
+    try {
+      await projectState.deleteProject(selection.selectedProject.id);
+      setSelectedProjectId(null);
+      setDeleteProjectConfirmOpen(false);
+    } finally {
+      setDeletingProject(false);
+    }
+  };
+
   return {
     ...projectState,
     selectedProjectId: selection.selectedProjectId,
@@ -80,7 +121,16 @@ export function useFinanceProjectController() {
     selectedProject: selection.selectedProject,
     projectDialogOpen,
     setProjectDialogOpen,
+    projectDialogMode,
     createProject,
+    updateProject,
+    openCreateProjectDialog,
+    openEditProjectDialog,
+    deleteProjectConfirmOpen,
+    deletingProject,
+    requestDeleteProject,
+    cancelDeleteProject,
+    confirmDeleteProject,
   };
 }
 

@@ -8,7 +8,7 @@ import type { UseFinanceProjectControllerResult } from './useFinanceProjectContr
 
 type FinanceProjectDialogControllerInput = Pick<
   UseFinanceProjectControllerResult,
-  'createProject' | 'projectDialogOpen' | 'setProjectDialogOpen'
+  'createProject' | 'updateProject' | 'projectDialogOpen' | 'setProjectDialogOpen' | 'projectDialogMode' | 'selectedProject'
 >;
 
 export type FinanceProjectDialogForm = {
@@ -41,6 +41,22 @@ export function defaultFinanceProjectDialogForm(): FinanceProjectDialogForm {
     startDate,
     endDate,
     status: 'active',
+    landBlock: '',
+    variety: '',
+    cultivationMethod: '',
+  };
+}
+
+function formFromProject(project: ApiFinanceProject): FinanceProjectDialogForm {
+  return {
+    name: project.name,
+    commodity: project.commodity,
+    landArea: String(project.landArea),
+    landAreaUnit: project.landAreaUnit,
+    seasonLabel: project.seasonLabel,
+    startDate: project.startDate,
+    endDate: project.endDate,
+    status: project.status,
     landBlock: '',
     variety: '',
     cultivationMethod: '',
@@ -86,10 +102,14 @@ export function useFinanceProjectDialogController(financeProject: FinanceProject
 
   useEffect(() => {
     if (financeProject.projectDialogOpen) {
-      setForm(defaultFinanceProjectDialogForm());
+      setForm(
+        financeProject.projectDialogMode === 'edit' && financeProject.selectedProject
+          ? formFromProject(financeProject.selectedProject)
+          : defaultFinanceProjectDialogForm(),
+      );
       setSubmitting(false);
     }
-  }, [financeProject.projectDialogOpen]);
+  }, [financeProject.projectDialogOpen, financeProject.projectDialogMode, financeProject.selectedProject]);
 
   const startDateValid = isValidDateInputValue(form.startDate);
   const endDateValid = isValidDateInputValue(form.endDate);
@@ -124,7 +144,12 @@ export function useFinanceProjectDialogController(financeProject: FinanceProject
 
     setSubmitting(true);
     try {
-      await financeProject.createProject(buildFinanceProjectDialogPayload(form));
+      const payload = buildFinanceProjectDialogPayload(form);
+      if (financeProject.projectDialogMode === 'edit' && financeProject.selectedProject) {
+        await financeProject.updateProject(financeProject.selectedProject.id, payload);
+      } else {
+        await financeProject.createProject(payload);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -137,6 +162,7 @@ export function useFinanceProjectDialogController(financeProject: FinanceProject
     endDateValid,
     canSubmit,
     dateDisplayValues,
+    mode: financeProject.projectDialogMode,
     setField,
     setDateField,
     setStatus,

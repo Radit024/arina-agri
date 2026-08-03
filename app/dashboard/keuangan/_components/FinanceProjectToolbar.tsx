@@ -1,6 +1,8 @@
 'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
@@ -12,6 +14,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
@@ -216,11 +219,36 @@ export default function FinanceProjectToolbar({
           <Button
             variant="outlined"
             startIcon={<AddCircleIcon />}
-            onClick={() => financeProject.setProjectDialogOpen(true)}
+            onClick={financeProject.openCreateProjectDialog}
             sx={{ borderRadius: 8 }}
           >
             Buat Proyek
           </Button>
+
+          <Tooltip title="Edit proyek">
+            <span>
+              <IconButton
+                aria-label="Edit proyek"
+                disabled={!financeProject.selectedProject}
+                onClick={financeProject.openEditProjectDialog}
+              >
+                <EditOutlinedIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
+          <Tooltip title="Hapus proyek">
+            <span>
+              <IconButton
+                aria-label="Hapus proyek"
+                disabled={!financeProject.selectedProject}
+                onClick={financeProject.requestDeleteProject}
+                color="error"
+              >
+                <DeleteOutlineIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
 
           <Button
             variant="outlined"
@@ -294,6 +322,40 @@ export default function FinanceProjectToolbar({
       </Box>
 
       <FinanceProjectDialog financeProject={financeProject} />
+
+      {/* ─── Konfirmasi Hapus Proyek ─── */}
+      <Dialog
+        open={financeProject.deleteProjectConfirmOpen}
+        onClose={financeProject.cancelDeleteProject}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Hapus proyek ini?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`Proyek "${financeProject.selectedProject?.name ?? ''}" beserta seluruh data RAB dan transaksi yang terkait akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={financeProject.cancelDeleteProject}
+            disabled={financeProject.deletingProject}
+            sx={{ borderRadius: 2 }}
+          >
+            Batal
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={financeProject.confirmDeleteProject}
+            disabled={financeProject.deletingProject}
+            sx={{ borderRadius: 2 }}
+          >
+            {financeProject.deletingProject ? 'Menghapus...' : 'Ya, Hapus Proyek'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ─── Konfirmasi Berpindah Mode dengan Draft Belum Tersimpan ─── */}
       <Dialog

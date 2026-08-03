@@ -98,4 +98,89 @@ describe('useFinancingAssumptions', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe('Gagal memuat');
   });
+
+  it('does not fetch while auth is still loading', async () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: true });
+
+    const { result } = renderHook(() => useFinancingAssumptions('scenario-1'));
+
+    expect(result.current.loading).toBe(true);
+    expect(financingAssumptionsApi.getByScenario).not.toHaveBeenCalled();
+  });
+
+  it('reload() re-fetches the assumptions', async () => {
+    vi.mocked(financingAssumptionsApi.getByScenario).mockResolvedValue(assumptions);
+
+    const { result } = renderHook(() => useFinancingAssumptions('scenario-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(financingAssumptionsApi.getByScenario).toHaveBeenCalledTimes(1);
+
+    const updatedAssumptions = {
+      ...assumptions,
+      nilaiPinjaman: 20_000_000,
+    };
+    vi.mocked(financingAssumptionsApi.getByScenario).mockResolvedValue(updatedAssumptions);
+    await result.current.reload();
+
+    await waitFor(() => expect(result.current.assumptions?.nilaiPinjaman).toBe(20_000_000));
+    expect(financingAssumptionsApi.getByScenario).toHaveBeenCalledTimes(2);
+  });
+
+  it('save() propagates an error when upsert rejects', async () => {
+    vi.mocked(financingAssumptionsApi.getByScenario).mockResolvedValue(assumptions);
+    vi.mocked(financingAssumptionsApi.upsert).mockRejectedValue(new Error('Gagal menyimpan'));
+
+    const { result } = renderHook(() => useFinancingAssumptions('scenario-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let errorThrown: unknown;
+    await act(async () => {
+      try {
+        await result.current.save({
+          saldoKasAwal: 0,
+          modalSendiri: 3_869_000,
+          nilaiPinjaman: 15_000_000,
+          bungaPerPeriode: 3,
+          tanggalPencairan: '2026-08-01',
+          tanggalPembayaran: '2026-12-01',
+          biayaLain: 0,
+        });
+      } catch (err) {
+        errorThrown = err;
+      }
+    });
+
+    expect(errorThrown).toBeInstanceOf(Error);
+    if (errorThrown instanceof Error) {
+      expect(errorThrown.message).toBe('Gagal menyimpan');
+    }
+    expect(result.current.assumptions).toEqual(assumptions);
+  });
+
+  it('save() throws when scenarioId is null', async () => {
+    const { result } = renderHook(() => useFinancingAssumptions(null));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let errorThrown: unknown;
+    await act(async () => {
+      try {
+        await result.current.save({
+          saldoKasAwal: 0,
+          modalSendiri: 3_869_000,
+          nilaiPinjaman: 15_000_000,
+          bungaPerPeriode: 3,
+          tanggalPencairan: '2026-08-01',
+          tanggalPembayaran: '2026-12-01',
+          biayaLain: 0,
+        });
+      } catch (err) {
+        errorThrown = err;
+      }
+    });
+
+    expect(errorThrown).toBeInstanceOf(Error);
+    if (errorThrown instanceof Error) {
+      expect(errorThrown.message).toBe('Scenario belum dipilih');
+    }
+  });
 });

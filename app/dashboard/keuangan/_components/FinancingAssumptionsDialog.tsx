@@ -7,6 +7,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
+import InputAdornment from '@mui/material/InputAdornment';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
@@ -28,7 +29,7 @@ export default function FinancingAssumptionsDialog({ financing }: Props) {
       slotProps={{ paper: { sx: { borderRadius: 4 } } }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography component="span" variant="h6" sx={{ display: 'block', fontFamily: 'var(--font-sora)', fontWeight: 800 }}>
+        <Typography component="span" variant="h6" sx={{ display: 'block', fontFamily: 'var(--font-sora)', fontWeight: 800, lineHeight: 1.2 }}>
           Atur Asumsi Pembiayaan
         </Typography>
         <Typography component="span" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -49,6 +50,17 @@ export default function FinancingAssumptionsDialog({ financing }: Props) {
               fullWidth
               value={draft.saldoKasAwal}
               onChange={(e) => updateDraftField('saldoKasAwal', e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Rp
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -58,6 +70,17 @@ export default function FinancingAssumptionsDialog({ financing }: Props) {
               fullWidth
               value={draft.modalSendiri}
               onChange={(e) => updateDraftField('modalSendiri', e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Rp
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -67,6 +90,17 @@ export default function FinancingAssumptionsDialog({ financing }: Props) {
               fullWidth
               value={draft.nilaiPinjaman}
               onChange={(e) => updateDraftField('nilaiPinjaman', e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Rp
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -105,6 +139,17 @@ export default function FinancingAssumptionsDialog({ financing }: Props) {
               fullWidth
               value={draft.biayaLain}
               onChange={(e) => updateDraftField('biayaLain', e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>
+                        Rp
+                      </Typography>
+                    </InputAdornment>
+                  ),
+                },
+              }}
             />
           </Grid>
         </Grid>

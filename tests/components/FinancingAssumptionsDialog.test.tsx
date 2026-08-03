@@ -49,6 +49,8 @@ describe('FinancingAssumptionsDialog', () => {
   it('renders all financing input fields', () => {
     renderDialog();
 
+    expect(screen.getByLabelText(/Saldo Kas Awal/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Modal Sendiri/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Nilai Pinjaman/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Bunga per Periode/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Tanggal Pencairan/i)).toBeInTheDocument();
@@ -78,6 +80,22 @@ describe('FinancingAssumptionsDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Simpan/i }));
 
     expect(financing.submitDraft).toHaveBeenCalled();
+  });
+
+  it('calls closeDialog when the cancel button is clicked', () => {
+    const financing = makeFinancing();
+    renderDialog(financing);
+
+    fireEvent.click(screen.getByRole('button', { name: /Batal/i }));
+
+    expect(financing.closeDialog).toHaveBeenCalled();
+  });
+
+  it('disables the save button when saving is true', () => {
+    renderDialog(makeFinancing({ saving: true }));
+
+    const saveButton = screen.getByRole('button', { name: /Simpan/i });
+    expect(saveButton).toBeDisabled();
   });
 
   it('does not render when dialogOpen is false', () => {

@@ -20,6 +20,7 @@ export interface DbTransaction {
   tanggal: string;
   keterangan: string;
   project_id?: string | null;
+  scenario_id?: string | null;
   rab_category_id?: string | null;
   rab_item_id?: string | null;
   volume?: number | null;
@@ -82,6 +83,15 @@ export interface DbRabImport {
   summary: string | null;
   errors: string[] | null;
   created_at: string;
+}
+
+export interface DbFinanceScenario {
+  id: string;
+  user_id: string;
+  project_id: string;
+  mode: 'PROJECTION' | 'REALIZATION';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DbCalendarEvent {

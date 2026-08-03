@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 
-import { useRabItems } from '@/hooks/useRabItems';
+import { useRabItemsForScenario } from '@/hooks/useRabItemsForScenario';
 import { sumRabItemsByType } from '@/lib/finance/rabCalculations';
 import { rabApi, transactionApi, type ApiFinanceProject } from '@/lib/api';
 import { DEFAULT_FINANCE_CATEGORIES, resolveFinanceCategory } from '@/lib/finance/categories';
 import { parseRabWorkbookFromArrayBuffer } from '@/lib/finance/rabExcel';
 import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
-import type { RabEntryType, RabItem } from '@/lib/finance/rabTypes';
+import type { FinanceScenarioEntity, RabEntryType, RabItem } from '@/lib/finance/rabTypes';
 
 const RAB_SUGGESTION_MIN_SCORE = 5;
 
@@ -100,8 +100,9 @@ function validateRabItemDraft(draft: RabItemDraft) {
 export function useRabController(
   project: ApiFinanceProject | null,
   addTransaction?: (data: Parameters<typeof transactionApi.create>[0]) => Promise<void>,
+  scenario?: FinanceScenarioEntity | null,
 ) {
-  const rabState = useRabItems(project?.id ?? null);
+  const rabState = useRabItemsForScenario(scenario?.id ?? null);
   const [rabItemDialogOpen, setRabItemDialogOpen] = useState(false);
   const [editingRabItemId, setEditingRabItemId] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -288,11 +289,13 @@ export function useRabController(
     const existingCategory = rabState.categories.find(
       (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
     );
+    const scenarioId = scenario?.id;
     const category = existingCategory ?? await rabState.createCategory({
       projectId: project.id,
       name: categoryName,
       type: draft.type,
       sortOrder: rabState.categories.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
 
     return rabState.createItem({
@@ -308,6 +311,7 @@ export function useRabController(
       plannedCashMonth: draft.plannedCashMonth,
       aliases: draft.aliases ?? [itemName],
       sortOrder: rabState.items.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
   };
 
@@ -326,11 +330,13 @@ export function useRabController(
     const existingCategory = rabState.categories.find(
       (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
     );
+    const scenarioId = scenario?.id;
     const category = existingCategory ?? await rabState.createCategory({
       projectId: project.id,
       name: categoryName,
       type: draft.type,
       sortOrder: rabState.categories.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
 
     return rabState.updateItem(id, {
@@ -393,6 +399,7 @@ export function useRabController(
 
   const importRabFile = async (file: File) => {
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
+    const scenarioId = scenario?.id;
     setImportLoading(true);
     setImportError(null);
     try {
@@ -414,6 +421,7 @@ export function useRabController(
           name: category.name,
           type: category.type,
           sortOrder: rabState.categories.length + categoryIdMap.size + 1,
+          ...(scenarioId ? { scenarioId } : {}),
         });
         categoryIdMap.set(category.id, resolvedCategory);
       }
@@ -436,6 +444,7 @@ export function useRabController(
           plannedCashMonth: item.plannedCashMonth,
           aliases: item.aliases,
           sortOrder: rabState.items.length + importedCount + 1,
+          ...(scenarioId ? { scenarioId } : {}),
         });
         createdItems.push(createdItem);
         importedCount += 1;

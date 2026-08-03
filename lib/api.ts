@@ -3,6 +3,7 @@ import { buildDevelopmentAccessToken, readLocalDevelopmentUserId } from '@/lib/d
 import { computeStockBatchStatus as computeStatus } from '@/lib/stok/computeStatus';
 import type {
   DbFinanceProject,
+  DbFinanceScenario,
   DbHarvestBatch,
   DbRabCategory,
   DbRabImport,
@@ -13,10 +14,9 @@ import type {
   DbTransactionSatuan,
 } from '@/lib/supabase';
 import type {
-  CashFlowComparison,
   FinanceProject,
+  FinanceScenarioEntity,
   FinanceTransactionForReport,
-  IncomeStatementComparison,
   RabCategory,
   RabItem,
 } from '@/lib/finance/rabTypes';
@@ -49,9 +49,12 @@ export interface ApiTransaction {
   volume?: number | null;
   satuan?: string | null;
   hargaSatuan?: number | null;
+  scenarioId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+export type ApiFinanceScenario = FinanceScenarioEntity;
 
 export type ApiFinanceProject = FinanceProject;
 
@@ -349,6 +352,17 @@ function mapTx(row: DbTransaction): ApiTransaction {
     volume: row.volume ?? null,
     satuan: row.satuan ?? null,
     hargaSatuan: row.harga_satuan ?? null,
+    scenarioId: row.scenario_id ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapFinanceScenario(row: DbFinanceScenario): FinanceScenarioEntity {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    mode: row.mode,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -547,6 +561,29 @@ export const transactionApi = {
     return (data ?? []).map(mapTx);
   },
 
+  getByScenario: async (scenarioId: string): Promise<ApiTransaction[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('scenario_id', scenarioId)
+      .order('tanggal', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapTx);
+  },
+
+  createForScenario: async (
+    payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> & { scenarioId: string },
+  ): Promise<ApiTransaction> => {
+    return authenticatedJsonRequest<ApiTransaction>('/api/finance/transactions', {
+      method: 'POST',
+      body: { ...payload, scenario_id: payload.scenarioId },
+    });
+  },
+
   create: async (payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'>): Promise<ApiTransaction> => {
     return authenticatedJsonRequest<ApiTransaction>('/api/finance/transactions', {
       method: 'POST',
@@ -684,6 +721,71 @@ export const rabApi = {
     return { categories, items, imports };
   },
 
+  getByScenario: async (scenarioId: string): Promise<{ categories: ApiRabCategory[]; items: ApiRabItem[]; imports: ApiRabImport[] }> => {
+    const user = await resolveCurrentUser();
+    if (!user) return { categories: [], items: [], imports: [] };
+    // We need project_id for imports — get it from categories
+    const [categoryResult, itemResult] = await Promise.all([
+      supabase.from('rab_categories').select('*').eq('scenario_id', scenarioId).eq('user_id', user.id).order('sort_order', { ascending: true }),
+      supabase.from('rab_items').select('*').eq('scenario_id', scenarioId).eq('user_id', user.id).order('sort_order', { ascending: true }),
+    ]);
+    if (categoryResult.error) throw new Error(categoryResult.error.message);
+    if (itemResult.error) throw new Error(itemResult.error.message);
+
+    const categories = (categoryResult.data ?? []).map((row) => mapRabCategory(row as DbRabCategory));
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+    const items = (itemResult.data ?? []).map((row) => {
+      const item = row as DbRabItem;
+      return mapRabItem(item, categoriesById.get(item.category_id));
+    });
+    return { categories, items, imports: [] };
+  },
+
+  createCategoryForScenario: async (payload: Omit<ApiRabCategory, 'id'> & { scenarioId: string }): Promise<ApiRabCategory> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('rab_categories')
+      .insert({
+        user_id: user.id,
+        project_id: payload.projectId,
+        scenario_id: payload.scenarioId,
+        name: payload.name,
+        type: payload.type,
+        sort_order: payload.sortOrder,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapRabCategory(data as DbRabCategory);
+  },
+
+  createItemForScenario: async (payload: Omit<ApiRabItem, 'id'> & { scenarioId: string }): Promise<ApiRabItem> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('rab_items')
+      .insert({
+        user_id: user.id,
+        project_id: payload.projectId,
+        scenario_id: payload.scenarioId,
+        category_id: payload.categoryId,
+        name: payload.name,
+        type: payload.type,
+        volume: payload.volume,
+        unit: payload.unit,
+        unit_price: payload.unitPrice,
+        planned_total: payload.plannedTotal,
+        planned_cash_month: payload.plannedCashMonth ?? null,
+        aliases: payload.aliases,
+        sort_order: payload.sortOrder,
+      })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return { ...mapRabItem(data as DbRabItem), categoryName: payload.categoryName };
+  },
+
   createCategory: async (payload: Omit<ApiRabCategory, 'id'>): Promise<ApiRabCategory> => {
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
@@ -798,6 +900,48 @@ export const rabApi = {
       .single();
     if (error) throw new Error(error.message);
     return mapRabImport(data as DbRabImport);
+  },
+};
+
+// ─── Finance Scenario API ─────────────────────────────────────────
+export const financeScenarioApi = {
+  getOrCreateForProject: async (projectId: string): Promise<ApiFinanceScenario[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+
+    // Fetch existing scenarios for this project
+    const { data: existing, error: fetchError } = await supabase
+      .from('finance_scenarios')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('user_id', user.id);
+    if (fetchError) throw new Error(fetchError.message);
+
+    const existingModes = new Set((existing ?? []).map((row) => (row as DbFinanceScenario).mode));
+    const modesToCreate: Array<'PROJECTION' | 'REALIZATION'> = (['PROJECTION', 'REALIZATION'] as const).filter(
+      (mode) => !existingModes.has(mode),
+    );
+
+    if (modesToCreate.length > 0) {
+      const inserts = modesToCreate.map((mode) => ({
+        user_id: user.id,
+        project_id: projectId,
+        mode,
+      }));
+      const { error: insertError } = await supabase.from('finance_scenarios').insert(inserts);
+      if (insertError) throw new Error(insertError.message);
+
+      // Re-fetch after insert
+      const { data: refreshed, error: refreshError } = await supabase
+        .from('finance_scenarios')
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id);
+      if (refreshError) throw new Error(refreshError.message);
+      return (refreshed ?? []).map((row) => mapFinanceScenario(row as DbFinanceScenario));
+    }
+
+    return (existing ?? []).map((row) => mapFinanceScenario(row as DbFinanceScenario));
   },
 };
 
@@ -1241,8 +1385,6 @@ export const aiApi = {
     project?: FinanceProject | null;
     rabItems?: RabItem[];
     transactions: FinanceTransactionForReport[];
-    incomeStatementComparison?: IncomeStatementComparison;
-    cashFlowComparison?: CashFlowComparison;
   }) =>
     apiFetch<{ analysis: string; model: string }>('/api/ai/financial-report', payload),
 };

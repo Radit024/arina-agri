@@ -122,7 +122,7 @@ describe('RAB Excel helpers', () => {
     ]);
   });
 
-  it('builds export workbook with the expected five worksheets', async () => {
+  it('builds export workbook with the expected four worksheets', async () => {
     const workbook = await buildFinanceExportWorkbook({
       project,
       rabItems,
@@ -136,9 +136,7 @@ describe('RAB Excel helpers', () => {
       'Catatan Transaksi Harian',
       'Laporan Laba Rugi',
       'Arus Kas',
-      'Perbandingan Rencana vs Aktual',
     ]);
-    expect(workbook.getWorksheet('Perbandingan Rencana vs Aktual')?.getCell('A1').value).toBe('PERBANDINGAN RENCANA VS AKTUAL');
   });
 
   it('resolves the linked RAB item name (not its raw id) in the ledger sheet', async () => {

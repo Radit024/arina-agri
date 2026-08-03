@@ -391,55 +391,32 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       projectDialogOpen: false,
       setProjectDialogOpen: vi.fn(),
     },
+    financeScenario: {
+      activeMode: 'PROJECTION' as const,
+      setActiveMode: vi.fn(),
+      scenarios: [],
+      activeScenario: null,
+      loading: false,
+      error: null,
+    } satisfies KeuanganViewProps['financeScenario'],
     rab: makeRab() as KeuanganViewProps['rab'],
     rabTransactionLink: makeRabTransactionLink() as KeuanganViewProps['rabTransactionLink'],
     financeReports: {
       reportTransactions: [],
       reportStartMonth: '2026-06',
       reportEndMonth: '2026-06',
-      incomeStatementComparison: {
-        rows: [],
-        summary: {
-          plannedIncome: 0,
-          plannedExpense: 0,
-          plannedProfit: 0,
-          actualIncome: 0,
-          actualExpense: 0,
-          actualProfit: 0,
-          profitVariance: 0,
-          profitVariancePercent: null,
-        },
+      labaRugi: {
+        totalPendapatan: 0,
+        totalPengeluaran: 0,
+        labaRugi: 0,
       },
-      cashFlowComparison: {
-        rows: [],
-        summary: {
-          plannedInflow: 0,
-          actualInflow: 0,
-          plannedOutflow: 0,
-          actualOutflow: 0,
-          plannedNet: 0,
-          actualNet: 0,
-          variance: 0,
-          variancePercent: null,
-        },
-      },
+      arusKasBulanan: [],
     },
     labaRugiActions: {
-      filteredRows: [],
       searchQuery: '',
       setSearchQuery: vi.fn(),
       filterJenis: 'semua' as const,
       setFilterJenis: vi.fn(),
-      selectedItemIds: [],
-      toggleSelect: vi.fn(),
-      clearSelection: vi.fn(),
-      bulkDeleteConfirm: false,
-      setBulkDeleteConfirm: vi.fn(),
-      handleBulkDelete: vi.fn(),
-      editRow: vi.fn(),
-      deleteTargetRow: null,
-      setDeleteTargetRow: vi.fn(),
-      confirmDeleteRow: vi.fn(),
     },
     financeExport: {
       exportLoading: false,
@@ -477,15 +454,15 @@ describe('KeuanganView', () => {
     const panels: Array<[KeuanganViewProps['financeTab'], string, string]> = [
       ['buku-besar', 'finance-panel-buku-besar', 'Buku Besar Transaksi'],
       ['rab', 'finance-panel-rab', 'Belum ada proyek'],
-      ['laba-rugi', 'finance-panel-laba-rugi', 'Laba Rugi Rencana vs Aktual'],
-      ['arus-kas', 'finance-panel-arus-kas', 'Arus Kas Rencana vs Aktual'],
+      ['laba-rugi', 'finance-panel-laba-rugi', 'Laba Rugi'],
+      ['arus-kas', 'finance-panel-arus-kas', 'Arus Kas Bulanan'],
     ];
 
     for (const [financeTab, testId, visibleTitle] of panels) {
       const { unmount } = renderView({ financeTab });
 
       expect(screen.getByTestId(testId)).toHaveAttribute('data-finance-fill-height', 'true');
-      expect(screen.getByText(visibleTitle)).toBeInTheDocument();
+      expect(screen.getAllByText(visibleTitle).length).toBeGreaterThan(0);
 
       unmount();
     }
@@ -812,10 +789,10 @@ describe('KeuanganView', () => {
 
     const exportExcelButton = screen.getByRole('button', { name: 'Export Excel' });
     const exportReportButton = screen.getByRole('button', { name: 'Export Laporan' });
-    expect(exportExcelButton).toBeEnabled();
+    expect(exportExcelButton).toBeDisabled();
     expect(exportExcelButton).toHaveClass('MuiButton-outlined');
     expect(within(exportExcelButton).getByTestId('finance-export-excel-logo')).toHaveAttribute('src', '/icons/excel-logo.svg');
-    expect(exportReportButton).toBeEnabled();
+    expect(exportReportButton).toBeDisabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
   });

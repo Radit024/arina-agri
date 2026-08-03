@@ -1,10 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { formatMonthYear } from '@/lib/formatters';
 import type {
-  CashFlowComparison,
   FinanceProject,
   FinanceTransactionForReport,
-  IncomeStatementComparison,
   RabItem,
 } from '@/lib/finance/rabTypes';
 import type { BmkgWeatherWarning } from '@/lib/server/weather/bmkgTypes';
@@ -158,8 +156,6 @@ interface FinancialReportData {
   project?: FinanceProject | null;
   rabItems?: RabItem[];
   transactions?: FinanceTransactionForReport[];
-  incomeStatementComparison?: IncomeStatementComparison;
-  cashFlowComparison?: CashFlowComparison;
   userName?: string;
 }
 
@@ -170,26 +166,6 @@ function formatFinancialRp(value: number) {
 function formatSignedFinancialRp(value: number) {
   if (value === 0) return 'Rp 0';
   return `${value > 0 ? '+ ' : '- '}${formatFinancialRp(value)}`;
-}
-
-function formatFinancialPercent(value: number | null) {
-  if (value === null || !Number.isFinite(value)) return '-';
-  return `${(value * 100).toLocaleString('id-ID', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })}%`;
-}
-
-function financialStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    belum_ada_realisasi: 'Belum ada realisasi',
-    sesuai_rencana: 'Sesuai rencana',
-    hemat: 'Hemat',
-    over_budget: 'Over budget',
-    di_atas_target: 'Di atas target',
-    di_bawah_target: 'Di bawah target',
-  };
-  return labels[status] ?? status;
 }
 
 function formatLimitedRows<T>(rows: T[], formatter: (row: T, index: number) => string, maxRows = 25) {
@@ -217,8 +193,6 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
     project,
     rabItems,
     transactions,
-    incomeStatementComparison,
-    cashFlowComparison,
     userName,
   } = reportData;
 
@@ -236,13 +210,9 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
   }
 
   const farmerName = userName ? userName : 'Petani';
-  const plannedIncome = incomeStatementComparison?.summary.plannedIncome
-    ?? rabItems?.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.plannedTotal, 0)
-    ?? 0;
-  const plannedExpense = incomeStatementComparison?.summary.plannedExpense
-    ?? rabItems?.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.plannedTotal, 0)
-    ?? 0;
-  const plannedProfit = incomeStatementComparison?.summary.plannedProfit ?? (plannedIncome - plannedExpense);
+  const plannedIncome = rabItems?.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.plannedTotal, 0) ?? 0;
+  const plannedExpense = rabItems?.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.plannedTotal, 0) ?? 0;
+  const plannedProfit = plannedIncome - plannedExpense;
 
   const dataContext = [
     `NAMA PETANI / PEMILIK AKUN: ${farmerName}`,
@@ -274,38 +244,6 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
           `Bulan kas ${item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}`,
         ].join(' | '))
       : ['- Belum ada item RAB.']),
-    '',
-    'LAPORAN LABA RUGI RENCANA VS AKTUAL:',
-    ...(incomeStatementComparison
-      ? [
-          `- Ringkasan: Rencana pendapatan ${formatFinancialRp(incomeStatementComparison.summary.plannedIncome)}, aktual ${formatFinancialRp(incomeStatementComparison.summary.actualIncome)}; rencana pengeluaran ${formatFinancialRp(incomeStatementComparison.summary.plannedExpense)}, aktual ${formatFinancialRp(incomeStatementComparison.summary.actualExpense)}; selisih laba ${formatSignedFinancialRp(incomeStatementComparison.summary.profitVariance)} (${formatFinancialPercent(incomeStatementComparison.summary.profitVariancePercent)}).`,
-          ...formatLimitedRows(incomeStatementComparison.rows, (row) => [
-            `- ${row.categoryName} / ${row.itemName}`,
-            row.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
-            `Rencana ${formatFinancialRp(row.planned)}`,
-            `Aktual ${formatFinancialRp(row.actual)}`,
-            `Selisih ${formatSignedFinancialRp(row.variance)} (${formatFinancialPercent(row.variancePercent)})`,
-            `Status: ${financialStatusLabel(row.status)}`,
-          ].join(' | ')),
-        ]
-      : ['- Data perbandingan laba rugi tidak tersedia.']),
-    '',
-    'ARUS KAS RENCANA VS AKTUAL:',
-    ...(cashFlowComparison
-      ? [
-          `- Ringkasan: kas masuk rencana ${formatFinancialRp(cashFlowComparison.summary.plannedInflow)}, aktual ${formatFinancialRp(cashFlowComparison.summary.actualInflow)}; kas keluar rencana ${formatFinancialRp(cashFlowComparison.summary.plannedOutflow)}, aktual ${formatFinancialRp(cashFlowComparison.summary.actualOutflow)}; selisih bersih ${formatSignedFinancialRp(cashFlowComparison.summary.variance)} (${formatFinancialPercent(cashFlowComparison.summary.variancePercent)}).`,
-          ...formatLimitedRows(cashFlowComparison.rows, (row) => [
-            `- ${formatMonthYear(row.month)}`,
-            `Masuk rencana ${formatFinancialRp(row.plannedInflow)}`,
-            `Masuk aktual ${formatFinancialRp(row.actualInflow)}`,
-            `Keluar rencana ${formatFinancialRp(row.plannedOutflow)}`,
-            `Keluar aktual ${formatFinancialRp(row.actualOutflow)}`,
-            `Bersih rencana ${formatSignedFinancialRp(row.plannedNet)}`,
-            `Bersih aktual ${formatSignedFinancialRp(row.actualNet)}`,
-            `Selisih ${formatSignedFinancialRp(row.variance)}`,
-          ].join(' | ')),
-        ]
-      : ['- Data perbandingan arus kas tidak tersedia.']),
     '',
     'RINCIAN PENGELUARAN PER KATEGORI:',
     ...Object.entries(pengeluaranPerKategori).map(([k, v]) => `- ${k}: ${formatFinancialRp(v)}`),

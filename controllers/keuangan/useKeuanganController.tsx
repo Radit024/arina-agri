@@ -5,18 +5,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { aiApi } from '@/lib/api';
-import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
 import { trackPageView } from '@/lib/analytics/trackPageView';
 
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactionsForScenario } from '@/hooks/useTransactionsForScenario';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { nextLedgerSortState } from './ledgerSort';
 import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
+import { useFinanceScenarioController } from './useFinanceScenarioController';
 import { useLabaRugiActionsController } from './useLabaRugiActionsController';
 import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
@@ -56,8 +55,6 @@ export function useKeuanganController() {
     void trackPageView('keuangan');
   }, []);
 
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
-  
   const bepKey = `arina-bfa-inputs-${user?.id || 'guest'}`;
   const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>(bepKey, {
     totalBiaya: 0,
@@ -93,18 +90,17 @@ export function useKeuanganController() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const financeProject = useFinanceProjectController();
-  const rab = useRabController(financeProject.selectedProject, addTransaction);
+  const financeScenario = useFinanceScenarioController(financeProject.selectedProject?.id);
+  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactionsForScenario(
+    financeScenario.activeScenario?.id ?? null,
+  );
+  const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
   const clearSelectionTxs = () => setSelectedTxIds([]);
-  const projectScopedTransactions = useMemo(() => {
-    const selectedProjectId = financeProject.selectedProject?.id;
-    if (!selectedProjectId) return transactions;
-    return transactions.filter((tx) => tx.projectId === selectedProjectId);
-  }, [financeProject.selectedProject?.id, transactions]);
   const rabTransactionLink = useRabTransactionLinkController({
     rabItems: rab.items,
-    transactions: projectScopedTransactions,
+    transactions,
     updateTransaction,
   });
   const financeReports = useFinanceReportController({
@@ -112,19 +108,15 @@ export function useKeuanganController() {
     rabItems: rab.items,
     transactions,
   });
-  const labaRugiActions = useLabaRugiActionsController({
-    rows: financeReports.incomeStatementComparison.rows,
-    rabItems: rab.items,
-    openRabItemEditDialog: rab.openRabItemEditDialog,
-    deleteRabItem: rab.deleteRabItem,
-  });
+  const labaRugiActions = useLabaRugiActionsController();
   const hasSelectedProject = Boolean(financeProject.selectedProject);
-  const hasProjectData = hasSelectedProject && (projectScopedTransactions.length > 0 || rab.items.length > 0);
+  const hasProjectData = hasSelectedProject && (transactions.length > 0 || rab.items.length > 0);
   const financeAccess = {
     hasSelectedProject,
     hasProjectData,
     canInputFinance: hasSelectedProject,
-    canExportFinance: hasSelectedProject && hasProjectData,
+    // Export Excel/PDF disabled during sub-section B (mode-awareness not yet implemented, §Keputusan #5)
+    canExportFinance: false,
   };
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
@@ -132,12 +124,12 @@ export function useKeuanganController() {
     transactions: financeReports.reportTransactions,
     startMonth: financeReports.reportStartMonth,
     endMonth: financeReports.reportEndMonth,
-    canExport: financeAccess.canExportFinance,
+    canExport: false, // disabled per Keputusan Desain #5
     hasProjectData: financeAccess.hasProjectData,
   });
   const reportPeriodeLabel = financeReports.reportStartMonth === financeReports.reportEndMonth
-    ? getPeriodeLabel(financeReports.reportStartMonth)
-    : `${getPeriodeLabel(financeReports.reportStartMonth)} - ${getPeriodeLabel(financeReports.reportEndMonth)}`;
+    ? financeReports.reportStartMonth
+    : `${financeReports.reportStartMonth} s.d. ${financeReports.reportEndMonth}`;
   const reportPeriodKey = financeReports.reportStartMonth === financeReports.reportEndMonth
     ? financeReports.reportStartMonth
     : `${financeReports.reportStartMonth}_sd_${financeReports.reportEndMonth}`;
@@ -308,83 +300,18 @@ export function useKeuanganController() {
   };
 
   // ─── Generate PDF (manual, tanpa AI) ──────────────────────────
+  // NOTE: Dinonaktifkan sementara per Keputusan Desain #5 (mode-aware export belum diimplementasikan).
   const handleGeneratePdfManual = async () => {
-    const blockedMessage = getFinanceExportBlockedMessage();
-    if (blockedMessage) {
-      setReportError(blockedMessage);
-      return;
-    }
-
-    setReportLoading(true);
-    setReportError(null);
-    try {
-      await generatePdfReport({
-        periode: reportPeriodKey,
-        periodeLabel: reportPeriodeLabel,
-        totalPendapatan: reportTotals.totalPendapatan,
-        totalPengeluaran: reportTotals.totalPengeluaran,
-        labaBersih: reportTotals.labaBersih,
-        project: financeProject.selectedProject,
-        rabItems: rab.items,
-        transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-      });
-    } catch {
-      setReportError(t('reportDialog.error.failed'));
-    } finally {
-      setReportLoading(false);
-    }
+    setReportError('Ekspor laporan PDF tersedia setelah revisi mode-aware selesai.');
   };
 
   // ─── Generate PDF (dengan AI Saran) ────────────────────────────
+  // NOTE: Dinonaktifkan sementara per Keputusan Desain #5 (mode-aware export belum diimplementasikan).
   const handleGeneratePdfAI = async () => {
-    const blockedMessage = getFinanceExportBlockedMessage();
-    if (blockedMessage) {
-      setReportError(blockedMessage);
-      return;
-    }
-
-    if (aiQuotaRemaining <= 0) return;
-    setReportLoading(true);
-    setReportError(null);
-    try {
-      const result = await aiApi.generateFinancialReport({
-        periode: reportPeriodeLabel,
-        totalPendapatan: reportTotals.totalPendapatan,
-        totalPengeluaran: reportTotals.totalPengeluaran,
-        labaBersih: reportTotals.labaBersih,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        project: financeProject.selectedProject,
-        rabItems: rab.items,
-        transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
-      });
-      consumeAiQuota();
-      await generatePdfReport({
-        periode: reportPeriodKey,
-        periodeLabel: reportPeriodeLabel,
-        totalPendapatan: reportTotals.totalPendapatan,
-        totalPengeluaran: reportTotals.totalPengeluaran,
-        labaBersih: reportTotals.labaBersih,
-        project: financeProject.selectedProject,
-        rabItems: rab.items,
-        transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        aiAnalysis: result.analysis,
-      });
-    } catch {
-      setReportError(t('reportDialog.error.aiFailed'));
-    } finally {
-      setReportLoading(false);
-    }
+    setReportError('Ekspor laporan PDF+AI tersedia setelah revisi mode-aware selesai.');
   };
 
-  const monthFilteredTransactions = projectScopedTransactions.filter((tx) =>
+  const monthFilteredTransactions = transactions.filter((tx) =>
     filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
   );
 
@@ -488,12 +415,12 @@ export function useKeuanganController() {
     () =>
       Array.from(
         new Set(
-          projectScopedTransactions
+          transactions
             .map((t) => t.tanggal.slice(0, 7))
             .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
         )
       ).sort((a, b) => a.localeCompare(b)),
-    [projectScopedTransactions]
+    [transactions]
   );
 
   const getBulanLabel = (bulanKey: string) => {
@@ -607,6 +534,7 @@ export function useKeuanganController() {
     ledgerTotalPages,
     financeAccess,
     financeProject,
+    financeScenario,
     rab,
     rabTransactionLink: guardedRabTransactionLink,
     financeReports,

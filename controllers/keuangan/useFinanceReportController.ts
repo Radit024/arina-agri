@@ -3,11 +3,11 @@
 import { useMemo } from 'react';
 
 import {
-  buildCashFlowComparison,
-  buildIncomeStatementComparison,
-} from '@/lib/finance/rabCalculations';
+  computeLabaRugi,
+  computeArusKasBulanan,
+} from '@/lib/finance/scenarioCalculations';
 import type { ApiFinanceProject, ApiTransaction } from '@/lib/api';
-import type { FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
+import type { ArusKasBulanan, FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
 
 function toMonthKey(date: string) {
   return date.slice(0, 7);
@@ -59,26 +59,23 @@ export function useFinanceReportController({
   transactions: ApiTransaction[];
 }) {
   return useMemo(() => {
+    // transactions are already scenario-scoped from useTransactionsForScenario,
+    // but keep a project filter as a safety net for legacy data paths.
     const filteredTransactions = project
-      ? transactions.filter((transaction) => transaction.projectId === project.id)
+      ? transactions.filter((transaction) => !transaction.projectId || transaction.projectId === project.id)
       : transactions;
     const reportTransactions = filteredTransactions.map(transactionToReport);
     const { startMonth, endMonth } = resolveReportRange(project, rabItems, filteredTransactions);
+
+    const labaRugi = computeLabaRugi(reportTransactions);
+    const arusKasBulanan: ArusKasBulanan[] = computeArusKasBulanan(reportTransactions, startMonth, endMonth);
 
     return {
       reportTransactions,
       reportStartMonth: startMonth,
       reportEndMonth: endMonth,
-      incomeStatementComparison: buildIncomeStatementComparison({
-        rabItems,
-        transactions: reportTransactions,
-      }),
-      cashFlowComparison: buildCashFlowComparison({
-        rabItems,
-        transactions: reportTransactions,
-        startMonth,
-        endMonth,
-      }),
+      labaRugi,
+      arusKasBulanan,
     };
   }, [project, rabItems, transactions]);
 }

@@ -5,10 +5,8 @@
 
 import { formatDateLong, formatMonthYear } from '@/lib/formatters';
 import type {
-  CashFlowComparison,
   FinanceProject,
   FinanceTransactionForReport,
-  IncomeStatementComparison,
   RabItem,
 } from '@/lib/finance/rabTypes';
 
@@ -34,8 +32,6 @@ export interface ReportData {
   project?: FinanceProject | null;
   rabItems?: RabItem[];
   transactions: FinanceTransactionForReport[];
-  incomeStatementComparison?: IncomeStatementComparison;
-  cashFlowComparison?: CashFlowComparison;
   userName?: string;
   aiAnalysis?: string;
 }
@@ -69,35 +65,8 @@ function formatReportRp(value: number) {
   return `Rp ${Math.abs(value).toLocaleString('id-ID')}`;
 }
 
-function formatSignedReportRp(value: number) {
-  if (value === 0) return 'Rp 0';
-  return `${value > 0 ? '+ ' : '- '}${formatReportRp(value)}`;
-}
-
-function formatReportPercent(value: number | null) {
-  if (value === null || !Number.isFinite(value)) return '-';
-  return `${(value * 100).toLocaleString('id-ID', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })}%`;
-}
-
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    belum_ada_realisasi: 'Belum ada realisasi',
-    sesuai_rencana: 'Sesuai rencana',
-    hemat: 'Hemat',
-    over_budget: 'Over budget',
-    di_atas_target: 'Di atas target',
-    di_bawah_target: 'Di bawah target',
-  };
-  return labels[status] ?? status;
-}
-
 export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
   const tables: PdfReportTable[] = [];
-  const incomeStatement = data.incomeStatementComparison;
-  const cashFlow = data.cashFlowComparison;
   const rabItems = data.rabItems ?? [];
   const sortedTransactions = [...data.transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
 
@@ -145,91 +114,6 @@ export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
       6: { halign: 'right' },
     },
   });
-
-  if (incomeStatement) {
-    tables.push({
-      title: 'LAPORAN LABA RUGI',
-      head: [['Kategori', 'Item', 'Jenis', 'Rencana', 'Aktual', 'Selisih', '% Selisih', 'Status']],
-      body: incomeStatement.rows.length > 0
-        ? incomeStatement.rows.map((row) => [
-            row.categoryName,
-            row.itemName,
-            row.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
-            formatReportRp(row.planned),
-            formatReportRp(row.actual),
-            formatSignedReportRp(row.variance),
-            formatReportPercent(row.variancePercent),
-            statusLabel(row.status),
-          ])
-        : [['Belum ada data laba rugi', '', '', '', '', '', '', '']],
-      columnStyles: {
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-      },
-    });
-  }
-
-  if (cashFlow) {
-    tables.push({
-      title: 'ARUS KAS',
-      head: [['Bulan', 'Kas Masuk Rencana', 'Kas Masuk Aktual', 'Kas Keluar Rencana', 'Kas Keluar Aktual', 'Bersih Rencana', 'Bersih Aktual', 'Selisih']],
-      body: cashFlow.rows.length > 0
-        ? cashFlow.rows.map((row) => [
-            formatMonthYear(row.month),
-            formatReportRp(row.plannedInflow),
-            formatReportRp(row.actualInflow),
-            formatReportRp(row.plannedOutflow),
-            formatReportRp(row.actualOutflow),
-            formatSignedReportRp(row.plannedNet),
-            formatSignedReportRp(row.actualNet),
-            formatSignedReportRp(row.variance),
-          ])
-        : [['Belum ada data arus kas', '', '', '', '', '', '', '']],
-      columnStyles: {
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-        7: { halign: 'right' },
-      },
-    });
-  }
-
-  if (incomeStatement) {
-    tables.push({
-      title: 'PERBANDINGAN RENCANA VS AKTUAL',
-      head: [['Metric', 'Rencana', 'Aktual', 'Selisih']],
-      body: [
-        [
-          'Pendapatan',
-          formatReportRp(incomeStatement.summary.plannedIncome),
-          formatReportRp(incomeStatement.summary.actualIncome),
-          formatSignedReportRp(incomeStatement.summary.actualIncome - incomeStatement.summary.plannedIncome),
-        ],
-        [
-          'Pengeluaran',
-          formatReportRp(incomeStatement.summary.plannedExpense),
-          formatReportRp(incomeStatement.summary.actualExpense),
-          formatSignedReportRp(incomeStatement.summary.actualExpense - incomeStatement.summary.plannedExpense),
-        ],
-        [
-          'Laba/Rugi',
-          formatSignedReportRp(incomeStatement.summary.plannedProfit),
-          formatSignedReportRp(incomeStatement.summary.actualProfit),
-          formatSignedReportRp(incomeStatement.summary.profitVariance),
-        ],
-      ],
-      columnStyles: {
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-      },
-    });
-  }
 
   return tables;
 }

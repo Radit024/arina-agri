@@ -24,6 +24,7 @@ const transactionRow = {
   tanggal: '2026-07-30',
   keterangan: 'Beli pupuk',
   project_id: null,
+  scenario_id: null,
   rab_category_id: null,
   rab_item_id: null,
   volume: null,
@@ -88,6 +89,40 @@ describe('finance transactions route', () => {
       eventType: 'action',
       eventName: 'transaction_created',
     });
+  });
+
+  it('includes scenario_id when creating a transaction for a scenario', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
+    const single = vi.fn().mockResolvedValue({
+      data: { ...transactionRow, scenario_id: 'scenario-1' },
+      error: null,
+    });
+    const select = vi.fn(() => ({ single }));
+    const insert = vi.fn(() => ({ select }));
+    from.mockReturnValue({ insert });
+    const { POST } = await import('@/app/api/finance/transactions/route');
+
+    const response = await POST(new Request('http://localhost/api/finance/transactions', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: JSON.stringify({
+        jenis: 'pengeluaran',
+        kategori: 'Pupuk',
+        nominal: 150000,
+        tanggal: '2026-07-30',
+        keterangan: 'Beli pupuk',
+        scenarioId: 'scenario-1',
+        scenario_id: 'scenario-1',
+      }),
+    }));
+    const json = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: 'user-1',
+      scenario_id: 'scenario-1',
+    }));
+    expect(json.data.scenarioId).toBe('scenario-1');
   });
 
   it('returns 500 and does not record an event when the insert fails', async () => {

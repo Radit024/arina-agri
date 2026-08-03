@@ -1,22 +1,39 @@
 'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import { useState, type SyntheticEvent } from 'react';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import type { ScenarioMode } from '@/lib/finance/rabTypes';
 import FinanceProjectDialog from './FinanceProjectDialog';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeAccess' | 'financeProject' | 'rab' | 'financeExport' | 'reportLoading'> & {
+type Props = Pick<
+  UseKeuanganControllerResult,
+  'financeAccess' | 'financeProject' | 'rab' | 'financeExport' | 'reportLoading' | 'financeScenario' | 'transactionBatch'
+> & {
   onOpenPdfReport: () => void;
 };
+
+const EXPORT_DISABLED_TOOLTIP = 'Fitur ini tersedia setelah revisi mode-aware selesai';
 
 function ExcelLogoIcon() {
   return (
@@ -26,7 +43,7 @@ function ExcelLogoIcon() {
       alt=""
       aria-hidden="true"
       data-testid="finance-export-excel-logo"
-      sx={{ width: 22, height: 22, display: 'block' }}
+      sx={{ width: 22, height: 22, display: 'block', opacity: 0.4 }}
     />
   );
 }
@@ -39,12 +56,83 @@ function PdfLogoIcon() {
       alt=""
       aria-hidden="true"
       data-testid="finance-export-pdf-logo"
-      sx={{ width: 22, height: 22, display: 'block' }}
+      sx={{ width: 22, height: 22, display: 'block', opacity: 0.4 }}
     />
   );
 }
 
-export default function FinanceProjectToolbar({ financeAccess, financeProject, rab, financeExport, reportLoading, onOpenPdfReport }: Props) {
+const MODE_LABELS: Record<ScenarioMode, string> = {
+  PROJECTION: 'Proyeksi',
+  REALIZATION: 'Realisasi',
+};
+
+export default function FinanceProjectToolbar({
+  financeAccess,
+  financeProject,
+  rab,
+  financeExport,
+  reportLoading,
+  financeScenario,
+  transactionBatch,
+  onOpenPdfReport,
+}: Props) {
+  const { activeMode, setActiveMode, loading: scenarioLoading } = financeScenario;
+  const [modeSwitchConfirmOpen, setModeSwitchConfirmOpen] = useState(false);
+  const [pendingMode, setPendingMode] = useState<ScenarioMode | null>(null);
+
+  // Mengikuti pola dirty-state confirmation di TransactionBatchDialog.tsx:
+  // draft transaksi dianggap "belum disimpan" ketika dialog terbuka, masih di
+  // tahap input, dan minimal satu draft memiliki isi.
+  const hasUnsavedTransactionDraft =
+    transactionBatch.dialogOpen &&
+    transactionBatch.stage === 'input' &&
+    transactionBatch.drafts.some((draft) => draft.kategori || draft.nominal || draft.keterangan);
+
+  // RAB belum punya sinyal dirty-state khusus seperti TransactionBatchDialog,
+  // jadi dipakai heuristik setara: dialog item RAB terbuka dan field utamanya
+  // (nama / harga satuan) sudah diisi.
+  const hasUnsavedRabDraft =
+    rab.rabItemDialogOpen &&
+    (rab.rabItemDraft.name.trim() !== '' || rab.rabItemDraft.unitPrice.trim() !== '');
+
+  const hasUnsavedDraft = hasUnsavedTransactionDraft || hasUnsavedRabDraft;
+
+  const closeOpenDialogs = () => {
+    // Dialog transaksi/RAB merujuk ke mode yang sedang ditinggalkan — tutup
+    // supaya tidak ada dialog "nyasar" yang tampil di atas mode baru.
+    if (transactionBatch.dialogOpen) {
+      transactionBatch.closeDialog();
+    }
+    if (rab.rabItemDialogOpen) {
+      rab.closeRabItemDialog();
+    }
+  };
+
+  const handleModeChange = (_: SyntheticEvent, newMode: ScenarioMode) => {
+    if (newMode === activeMode) return;
+    if (hasUnsavedDraft) {
+      setPendingMode(newMode);
+      setModeSwitchConfirmOpen(true);
+      return;
+    }
+    closeOpenDialogs();
+    setActiveMode(newMode);
+  };
+
+  const handleCancelModeSwitch = () => {
+    setModeSwitchConfirmOpen(false);
+    setPendingMode(null);
+  };
+
+  const handleConfirmModeSwitch = () => {
+    closeOpenDialogs();
+    if (pendingMode) {
+      setActiveMode(pendingMode);
+    }
+    setModeSwitchConfirmOpen(false);
+    setPendingMode(null);
+  };
+
   return (
     <>
       <Box
@@ -57,6 +145,57 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
           bgcolor: 'background.paper',
         }}
       >
+        {/* Mode Selector — Proyeksi | Realisasi */}
+        {financeProject.selectedProject && (
+          <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              <Tabs
+                value={activeMode}
+                onChange={handleModeChange}
+                aria-label="Mode skenario keuangan"
+                sx={{
+                  '& .MuiTab-root': { fontWeight: 700, textTransform: 'none', fontSize: '0.9rem' },
+                  '& .Mui-selected': { color: 'primary.main' },
+                }}
+              >
+                <Tab
+                  id="finance-scenario-tab-projection"
+                  aria-controls="finance-scenario-tabpanel-projection"
+                  label={MODE_LABELS.PROJECTION}
+                  value="PROJECTION"
+                  disabled={scenarioLoading}
+                />
+                <Tab
+                  id="finance-scenario-tab-realization"
+                  aria-controls="finance-scenario-tabpanel-realization"
+                  label={MODE_LABELS.REALIZATION}
+                  value="REALIZATION"
+                  disabled={scenarioLoading}
+                />
+              </Tabs>
+              {scenarioLoading && (
+                <Chip label="Memuat skenario…" size="small" variant="outlined" color="default" />
+              )}
+              {!scenarioLoading && activeMode === 'PROJECTION' && (
+                <Chip
+                  label="Mode: Rencana"
+                  size="small"
+                  color="info"
+                  variant="outlined"
+                />
+              )}
+              {!scenarioLoading && activeMode === 'REALIZATION' && (
+                <Chip
+                  label="Mode: Aktual"
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                />
+              )}
+            </Stack>
+          </Box>
+        )}
+
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
           <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 260 } }}>
             <InputLabel>Proyek </InputLabel>
@@ -93,29 +232,42 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
             Import Excel
           </Button>
 
-          <Button
-            data-guide-target="finance-export"
-            variant="outlined"
-            startIcon={<ExcelLogoIcon />}
-            disabled={!financeAccess.canExportFinance || financeExport.exportLoading}
-            onClick={financeExport.handleExportFinanceWorkbook}
-            sx={{ borderRadius: 8 }}
-          >
-            Export Excel
-          </Button>
+          {/* Export Excel — disabled, mode-aware export belum siap */}
+          <Tooltip title={EXPORT_DISABLED_TOOLTIP}>
+            <span>
+              <Button
+                data-guide-target="finance-export"
+                variant="outlined"
+                startIcon={<ExcelLogoIcon />}
+                disabled
+                onClick={financeExport.handleExportFinanceWorkbook}
+                sx={{ borderRadius: 8 }}
+                aria-description={EXPORT_DISABLED_TOOLTIP}
+              >
+                Export Excel
+              </Button>
+            </span>
+          </Tooltip>
 
-          <Button
-            data-guide-target="finance-export-pdf"
-            variant="outlined"
-            startIcon={<PdfLogoIcon />}
-            disabled={!financeAccess.canExportFinance || reportLoading}
-            onClick={onOpenPdfReport}
-            sx={{ borderRadius: 8 }}
-          >
-            Export Laporan
-          </Button>
+          {/* Export Laporan PDF — disabled, mode-aware export belum siap */}
+          <Tooltip title={EXPORT_DISABLED_TOOLTIP}>
+            <span>
+              <Button
+                data-guide-target="finance-export-pdf"
+                variant="outlined"
+                startIcon={<PdfLogoIcon />}
+                disabled
+                onClick={onOpenPdfReport}
+                sx={{ borderRadius: 8 }}
+                aria-description={EXPORT_DISABLED_TOOLTIP}
+              >
+                Export Laporan
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
 
+        {/* Status messages */}
         {!financeProject.backendOnline && (
           <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
             Data RAB memakai penyimpanan lokal sampai tabel Supabase tersedia.
@@ -131,9 +283,49 @@ export default function FinanceProjectToolbar({ financeAccess, financeProject, r
             {financeExport.exportError}
           </Typography>
         )}
+
+        {/* Info notice */}
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mt: 1.5 }}>
+          <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          <Typography variant="caption" color="text.disabled">
+            Ekspor laporan tersedia setelah implementasi revisi mode-aware selesai.
+          </Typography>
+        </Stack>
       </Box>
 
       <FinanceProjectDialog financeProject={financeProject} />
+
+      {/* ─── Konfirmasi Berpindah Mode dengan Draft Belum Tersimpan ─── */}
+      <Dialog
+        open={modeSwitchConfirmOpen}
+        onClose={handleCancelModeSwitch}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>Ganti mode?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Data transaksi/RAB yang belum disimpan akan hilang jika Anda berpindah mode.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={handleCancelModeSwitch}
+            sx={{ borderRadius: 2 }}
+          >
+            Lanjut Mengisi
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmModeSwitch}
+            sx={{ borderRadius: 2 }}
+          >
+            Ya, Ganti Mode
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

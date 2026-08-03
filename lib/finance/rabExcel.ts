@@ -1,11 +1,7 @@
 import ExcelJS from 'exceljs';
 
 import { formatDateLong, formatMonthYear } from '@/lib/formatters';
-import {
-  buildCashFlowComparison,
-  buildIncomeStatementComparison,
-  buildMonthRange,
-} from './rabCalculations';
+import { buildMonthRange } from './rabCalculations';
 import type {
   FinanceProject,
   FinanceTransactionForReport,
@@ -19,7 +15,6 @@ const HEADER_FILL = 'FF166534';
 const SUBHEADER_FILL = 'FFE2E8F0';
 const INCOME_FILL = 'FFDCFCE7';
 const EXPENSE_FILL = 'FFFFEDD5';
-const COMPARISON_FILL = 'FFDBEAFE';
 const BORDER_COLOR = 'FFCBD5E1';
 const IGNORED_RAB_SUMMARY_ROW_PATTERN = /total|keuntungan|hpp|bep|ratio|bagi hasil/i;
 
@@ -135,10 +130,6 @@ function applyHeader(row: ExcelJS.Row, fill = SUBHEADER_FILL) {
 
 function applyCurrency(cell: ExcelJS.Cell) {
   cell.numFmt = '"Rp" #,##0;[Red]-"Rp" #,##0;"-"';
-}
-
-function applyPercent(cell: ExcelJS.Cell) {
-  cell.numFmt = '0.0%;[Red]-0.0%;"-"';
 }
 
 function applyTableBorders(sheet: ExcelJS.Worksheet, fromRow: number, toRow: number, fromCol: number, toCol: number) {
@@ -527,82 +518,6 @@ function writeCashFlowSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, r
   sheet.columns = [{ width: 28 }, ...months.map(() => ({ width: 16 })), { width: 18 }];
 }
 
-function writeComparisonSheet(
-  sheet: ExcelJS.Worksheet,
-  project: FinanceProject,
-  rabItems: RabItem[],
-  transactions: FinanceTransactionForReport[],
-  startMonth: string,
-  endMonth: string,
-) {
-  applyTitle(sheet, 'PERBANDINGAN RENCANA VS AKTUAL', project.name);
-  const incomeStatement = buildIncomeStatementComparison({ rabItems, transactions });
-  const cashFlow = buildCashFlowComparison({ rabItems, transactions, startMonth, endMonth });
-
-  sheet.getRow(4).values = ['Metric', 'Rencana', 'Aktual', 'Selisih'];
-  applyHeader(sheet.getRow(4), COMPARISON_FILL);
-  const kpis = [
-    ['Pendapatan', incomeStatement.summary.plannedIncome, incomeStatement.summary.actualIncome, incomeStatement.summary.actualIncome - incomeStatement.summary.plannedIncome],
-    ['Pengeluaran', incomeStatement.summary.plannedExpense, incomeStatement.summary.actualExpense, incomeStatement.summary.actualExpense - incomeStatement.summary.plannedExpense],
-    ['Laba/Rugi', incomeStatement.summary.plannedProfit, incomeStatement.summary.actualProfit, incomeStatement.summary.profitVariance],
-  ];
-  kpis.forEach((row, index) => {
-    const rowNumber = index + 5;
-    sheet.getRow(rowNumber).values = row;
-    [2, 3, 4].forEach((col) => applyCurrency(sheet.getCell(rowNumber, col)));
-  });
-
-  const tableStart = 10;
-  sheet.getRow(tableStart).values = ['Kategori', 'Item', 'Jenis', 'Rencana', 'Aktual', 'Selisih', '% Selisih', 'Status'];
-  applyHeader(sheet.getRow(tableStart), COMPARISON_FILL);
-  incomeStatement.rows.forEach((row, index) => {
-    const rowNumber = tableStart + index + 1;
-    sheet.getRow(rowNumber).values = [
-      row.categoryName,
-      row.itemName,
-      row.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
-      row.planned,
-      row.actual,
-      row.variance,
-      row.variancePercent,
-      row.status,
-    ];
-    [4, 5, 6].forEach((col) => applyCurrency(sheet.getCell(rowNumber, col)));
-    applyPercent(sheet.getCell(rowNumber, 7));
-  });
-
-  const cashStart = tableStart + incomeStatement.rows.length + 4;
-  sheet.getRow(cashStart).values = ['Bulan', 'Kas Masuk Rencana', 'Kas Masuk Aktual', 'Kas Keluar Rencana', 'Kas Keluar Aktual', 'Bersih Rencana', 'Bersih Aktual', 'Selisih'];
-  applyHeader(sheet.getRow(cashStart), COMPARISON_FILL);
-  cashFlow.rows.forEach((row, index) => {
-    const rowNumber = cashStart + index + 1;
-    sheet.getRow(rowNumber).values = [
-      formatMonthYear(row.month),
-      row.plannedInflow,
-      row.actualInflow,
-      row.plannedOutflow,
-      row.actualOutflow,
-      row.plannedNet,
-      row.actualNet,
-      row.variance,
-    ];
-    [2, 3, 4, 5, 6, 7, 8].forEach((col) => applyCurrency(sheet.getCell(rowNumber, col)));
-  });
-
-  applyTableBorders(sheet, 4, Math.max(cashStart + cashFlow.rows.length, 7), 1, 8);
-  sheet.views = [{ state: 'frozen', ySplit: 4 }];
-  sheet.columns = [
-    { width: 22 },
-    { width: 28 },
-    { width: 16 },
-    { width: 18 },
-    { width: 18 },
-    { width: 18 },
-    { width: 14 },
-    { width: 20 },
-  ];
-}
-
 export async function buildFinanceExportWorkbook({
   project,
   rabItems,
@@ -618,14 +533,6 @@ export async function buildFinanceExportWorkbook({
   writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions, rabItems);
   writeIncomeStatementSheet(workbook.addWorksheet('Laporan Laba Rugi'), project, rabItems);
   writeCashFlowSheet(workbook.addWorksheet('Arus Kas'), project, rabItems, startMonth, endMonth);
-  writeComparisonSheet(
-    workbook.addWorksheet('Perbandingan Rencana vs Aktual'),
-    project,
-    rabItems,
-    transactions,
-    startMonth,
-    endMonth,
-  );
 
   return workbook;
 }

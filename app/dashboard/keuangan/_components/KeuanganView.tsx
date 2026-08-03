@@ -197,6 +197,7 @@ export default function KeuanganView({
   financeTab,
   setFinanceTab,
   financeProject,
+  financeScenario,
   rab,
   rabTransactionLink,
   financeReports,
@@ -356,9 +357,11 @@ export default function KeuanganView({
       <FinanceProjectToolbar
         financeAccess={financeAccess}
         financeProject={financeProject}
+        financeScenario={financeScenario}
         rab={rab}
         financeExport={financeExport}
         reportLoading={reportLoading}
+        transactionBatch={transactionBatch}
         onOpenPdfReport={handleOpenFinanceReportDialog}
       />
 

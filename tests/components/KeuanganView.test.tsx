@@ -493,6 +493,12 @@ describe('KeuanganView', () => {
     }
   });
 
+  it('shows the Arus Kas Pasca Pembiayaan tab and renders FinanceFinancingView when selected', () => {
+    renderView({ financeTab: 'arus-kas-pasca-pembiayaan' });
+
+    expect(screen.getByTestId('finance-panel-arus-kas-pasca-pembiayaan')).toBeInTheDocument();
+  });
+
   it('keeps mobile edit and delete actions visible on each transaction card', () => {
     const openForEdit = vi.fn();
     const handleDelete = vi.fn();

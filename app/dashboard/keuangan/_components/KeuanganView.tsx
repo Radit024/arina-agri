@@ -63,8 +63,10 @@ import type { HighlightItemIdentifierWithType } from '@mui/x-charts/models';
 
 import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
+import FinanceFinancingView from './FinanceFinancingView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
+import FinancingAssumptionsDialog from './FinancingAssumptionsDialog';
 import RabImportDialog from './RabImportDialog';
 import RabItemDialog from './RabItemDialog';
 import RabTransactionLinkDialog from './RabTransactionLinkDialog';
@@ -201,6 +203,7 @@ export default function KeuanganView({
   rab,
   rabTransactionLink,
   financeReports,
+  financing,
   labaRugiActions,
   financeExport,
   handleOpenFinanceReportDialog,
@@ -387,6 +390,7 @@ export default function KeuanganView({
         <Tab value="rab" label="RAB" />
         <Tab value="laba-rugi" label="Laba Rugi" />
         <Tab value="arus-kas" label="Arus Kas" />
+        <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
       </Tabs>
 
       {financeTab === 'buku-besar' && (
@@ -1245,6 +1249,15 @@ export default function KeuanganView({
           <FinanceCashFlowView financeReports={financeReports} />
         </Box>
       )}
+      {financeTab === 'arus-kas-pasca-pembiayaan' && (
+        <Box
+          data-testid="finance-panel-arus-kas-pasca-pembiayaan"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
+          <FinanceFinancingView financing={financing} />
+        </Box>
+      )}
 
       {/* ─── MODAL: Catat / Edit Transaksi (Batch) ─── */}
       <TransactionBatchDialog
@@ -1255,6 +1268,7 @@ export default function KeuanganView({
       <RabTransactionLinkDialog link={rabTransactionLink} />
       <RabImportDialog rab={rab} />
       <RabItemDialog rab={rab} />
+      <FinancingAssumptionsDialog financing={financing} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog

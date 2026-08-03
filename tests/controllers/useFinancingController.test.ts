@@ -119,6 +119,22 @@ describe('useFinancingController', () => {
     expect(result.current.saveError).toMatch(/tidak boleh negatif/i);
   });
 
+  it('rejects non-numeric nilaiPinjaman on submit without calling save', async () => {
+    const { result } = renderHook(() =>
+      useFinancingController({ scenarioId: 'scenario-1', arusKasBulanan }),
+    );
+
+    act(() => result.current.openDialog());
+    act(() => result.current.updateDraftField('nilaiPinjaman', 'abc'));
+
+    await act(async () => {
+      await result.current.submitDraft();
+    });
+
+    expect(save).not.toHaveBeenCalled();
+    expect(result.current.saveError).toMatch(/harus berupa angka/i);
+  });
+
   it('rejects tanggalPembayaran before tanggalPencairan', async () => {
     const { result } = renderHook(() =>
       useFinancingController({ scenarioId: 'scenario-1', arusKasBulanan }),

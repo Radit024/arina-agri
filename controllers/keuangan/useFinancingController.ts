@@ -44,13 +44,22 @@ function draftFromAssumptions(assumptions: FinancingAssumptions | null): Financi
   };
 }
 
-function validateDraft(draft: FinancingDraft): string | null {
-  const nilaiPinjaman = Number(draft.nilaiPinjaman) || 0;
-  const bungaPerPeriode = Number(draft.bungaPerPeriode) || 0;
-  const biayaLain = Number(draft.biayaLain) || 0;
-  const saldoKasAwal = Number(draft.saldoKasAwal) || 0;
-  const modalSendiri = Number(draft.modalSendiri) || 0;
+function parseFinancingNumber(value: string): number | null {
+  if (value.trim() === '') return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
 
+function validateDraft(draft: FinancingDraft): string | null {
+  const saldoKasAwal = parseFinancingNumber(draft.saldoKasAwal);
+  const modalSendiri = parseFinancingNumber(draft.modalSendiri);
+  const nilaiPinjaman = parseFinancingNumber(draft.nilaiPinjaman);
+  const bungaPerPeriode = parseFinancingNumber(draft.bungaPerPeriode);
+  const biayaLain = parseFinancingNumber(draft.biayaLain);
+
+  if (saldoKasAwal === null || modalSendiri === null || nilaiPinjaman === null || bungaPerPeriode === null || biayaLain === null) {
+    return 'Saldo kas awal, modal sendiri, nilai pinjaman, bunga, dan biaya lain harus berupa angka';
+  }
   if (nilaiPinjaman < 0 || bungaPerPeriode < 0 || biayaLain < 0 || saldoKasAwal < 0 || modalSendiri < 0) {
     return 'Nilai pinjaman, bunga, biaya lain, saldo kas awal, dan modal sendiri tidak boleh negatif';
   }
@@ -117,13 +126,13 @@ export function useFinancingController({
     setSaving(true);
     try {
       await save({
-        saldoKasAwal: Number(draft.saldoKasAwal) || 0,
-        modalSendiri: Number(draft.modalSendiri) || 0,
-        nilaiPinjaman: Number(draft.nilaiPinjaman) || 0,
-        bungaPerPeriode: Number(draft.bungaPerPeriode) || 0,
+        saldoKasAwal: parseFinancingNumber(draft.saldoKasAwal) ?? 0,
+        modalSendiri: parseFinancingNumber(draft.modalSendiri) ?? 0,
+        nilaiPinjaman: parseFinancingNumber(draft.nilaiPinjaman) ?? 0,
+        bungaPerPeriode: parseFinancingNumber(draft.bungaPerPeriode) ?? 0,
         tanggalPencairan: draft.tanggalPencairan ? `${draft.tanggalPencairan}-01` : '',
         tanggalPembayaran: draft.tanggalPembayaran ? `${draft.tanggalPembayaran}-01` : '',
-        biayaLain: Number(draft.biayaLain) || 0,
+        biayaLain: parseFinancingNumber(draft.biayaLain) ?? 0,
       });
       setDialogOpen(false);
     } catch (err) {

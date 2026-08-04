@@ -6,11 +6,17 @@ import { useRabItemsForScenario } from '@/hooks/useRabItemsForScenario';
 import { sumRabItemsByType } from '@/lib/finance/rabCalculations';
 import { rabApi, transactionApi, type ApiFinanceProject } from '@/lib/api';
 import { DEFAULT_FINANCE_CATEGORIES, resolveFinanceCategory } from '@/lib/finance/categories';
-import { parseRabWorkbookFromArrayBuffer } from '@/lib/finance/rabExcel';
+import { parseRabWorkbookFromArrayBuffer, type ParsedRabWorkbook } from '@/lib/finance/rabExcel';
 import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
 import type { FinanceScenarioEntity, RabEntryType, RabItem } from '@/lib/finance/rabTypes';
 
 const RAB_SUGGESTION_MIN_SCORE = 5;
+const RECONCILIATION_ABSOLUTE_TOLERANCE = 1000;
+const RECONCILIATION_RELATIVE_TOLERANCE = 0.005;
+
+function formatRupiah(value: number) {
+  return new Intl.NumberFormat('id-ID').format(Math.round(value));
+}
 
 const PRESET_RAB_CATEGORIES: Record<RabEntryType, string[]> = {
   expense: ['Saprodi', 'Tenaga Kerja', 'Jasa Alsintan', 'Irigasi & Air', 'Alat Tani', 'Operasional', 'Lainnya'],
@@ -81,6 +87,44 @@ function parseAliasesInput(value: string) {
   return aliases.length > 0 ? aliases : undefined;
 }
 
+// Alasan skip per baris menyertakan deskripsi baris itu sendiri (mis. "Baris 'Produksi'
+// dilewati (Total Rencana kosong...)") supaya laporan tetap granular per baris. Untuk
+// pengelompokan warning, dua baris yang beda deskripsi tapi sama sebab (mis. dua baris
+// dengan tanggal tak dikenali) harus digabung jadi satu baris warning "N baris dilewati:
+// <sebab>" — jadi kelompokkan berdasarkan klausa penjelasan di dalam kurung, bukan string
+// reason yang utuh (yang selalu unik per baris karena memuat deskripsi).
+function extractSkipReasonLabel(reason: string): string {
+  const match = /\(([^)]+)\)\s*$/.exec(reason);
+  return match ? match[1] : reason;
+}
+
+function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
+  const warnings: string[] = [];
+
+  for (const entry of parsed.reconciliation) {
+    const tolerance = Math.max(
+      RECONCILIATION_ABSOLUTE_TOLERANCE,
+      Math.abs(entry.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE,
+    );
+    if (Math.abs(entry.difference) > tolerance) {
+      warnings.push(
+        `Kategori "${entry.categoryName}": jumlah item (Rp${formatRupiah(entry.computedTotal)}) tidak cocok dengan TOTAL di sheet (Rp${formatRupiah(entry.declaredTotal)}), selisih Rp${formatRupiah(entry.difference)}`,
+      );
+    }
+  }
+
+  const skipCountByReason = new Map<string, number>();
+  for (const skipped of parsed.skippedRows) {
+    const label = extractSkipReasonLabel(skipped.reason);
+    skipCountByReason.set(label, (skipCountByReason.get(label) ?? 0) + 1);
+  }
+  for (const [label, count] of skipCountByReason) {
+    warnings.push(`${count} baris dilewati: ${label}`);
+  }
+
+  return warnings;
+}
+
 function validateRabItemDraft(draft: RabItemDraft) {
   if (!draft.categoryName.trim()) return 'Kategori RAB wajib diisi';
   if (!draft.name.trim()) return 'Nama item RAB wajib diisi';
@@ -108,6 +152,7 @@ export function useRabController(
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [rabItemError, setRabItemError] = useState<string | null>(null);
   const [rabItemDraft, setRabItemDraft] = useState<RabItemFormDraft>(createRabItemFormDraft);
   const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
@@ -402,6 +447,7 @@ export function useRabController(
     const scenarioId = scenario?.id;
     setImportLoading(true);
     setImportError(null);
+    setImportWarnings([]);
     try {
       const buffer = await file.arrayBuffer();
       const parsed = await parseRabWorkbookFromArrayBuffer(buffer);
@@ -488,12 +534,21 @@ export function useRabController(
         }
       }
 
+      const warnings = buildImportWarnings(parsed);
+      setImportWarnings(warnings);
+
+      const skippedCount = parsed.skippedRows.length;
+      const hasReconciliationWarning = warnings.some((warning) => warning.startsWith('Kategori'));
+      const summary = `${importedCount} item RAB dan ${importedTransactionCount} transaksi berhasil diimpor dari "${parsed.project.name}"`
+        + (skippedCount > 0 ? `, ${skippedCount} baris dilewati` : '')
+        + (hasReconciliationWarning ? ', ada selisih rekonsiliasi' : '');
+
       try {
         await rabApi.recordImport({
           projectId: project.id,
           fileName: file.name,
           status: 'success',
-          summary: `${importedCount} item RAB dan ${importedTransactionCount} transaksi berhasil diimpor dari "${parsed.project.name}"`,
+          summary,
           errors: [],
         });
       } catch {
@@ -519,6 +574,8 @@ export function useRabController(
     importLoading,
     importError,
     setImportError,
+    importWarnings,
+    setImportWarnings,
     rabItemError,
     setRabItemError,
     rabItemDraft,

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
-import { financeScenarioApi, type ApiFinanceScenario } from '@/lib/api';
+import { financeScenarioApi, migrationApi, type ApiFinanceScenario } from '@/lib/api';
 
 export function useFinanceScenarios(projectId: string | null) {
   const { user, loading: authLoading } = useAuth();
@@ -21,6 +21,14 @@ export function useFinanceScenarios(projectId: string | null) {
         return;
       }
       const data = await financeScenarioApi.getOrCreateForProject(projectId);
+      const projScenario = data.find((s) => s.mode === 'PROJECTION');
+      if (projScenario) {
+        try {
+          await migrationApi.autoMigrateLegacyRab(projectId, projScenario.id);
+        } catch (migErr) {
+          console.error('[useFinanceScenarios] Gagal auto-migrasi RAB legacy:', migErr);
+        }
+      }
       setScenarios(data);
       setError(null);
     } catch (err) {

@@ -101,4 +101,37 @@ describe('FinanceIncomeStatementView (Phase B Scenario-Aware)', () => {
       screen.getByText('Tambahkan transaksi ke skenario ini untuk melihat laporan laba rugi.'),
     ).toBeInTheDocument();
   });
+
+  it('renders Kelayakan Usaha metrics when assumptions are present', () => {
+    const customReports = {
+      ...makeFinanceReports(),
+      kelayakanUsaha: {
+        totalBiayaProduksi: 200_000,
+        produksi: 1000,
+        satuan: 'kg',
+        hargaJual: 6500,
+        penerimaan: 6_500_000,
+        hpp: 200,
+        bepProduksi: 30.77,
+        bcRatio: 31.5,
+        kelayakanStatus: 'untung' as const,
+      },
+    };
+
+    render(
+      <ThemeProvider theme={theme}>
+        <FinanceIncomeStatementView
+          financeReports={customReports}
+          labaRugiActions={makeLabaRugiActions()}
+        />
+      </ThemeProvider>,
+    );
+
+    expect(screen.getByText('Kelayakan Usaha (Asumsi Produksi & Penjualan)')).toBeInTheDocument();
+    expect(screen.getByText('HPP (Harga Pokok Produksi)')).toBeInTheDocument();
+    expect(screen.getByText('BEP Produksi (Batas Impas)')).toBeInTheDocument();
+    expect(screen.getByText('B/C Ratio')).toBeInTheDocument();
+    expect(screen.getByText('Status Kelayakan')).toBeInTheDocument();
+    expect(screen.getByText('UNTUNG')).toBeInTheDocument();
+  });
 });

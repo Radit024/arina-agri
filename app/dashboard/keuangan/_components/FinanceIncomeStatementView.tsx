@@ -5,8 +5,10 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
@@ -15,7 +17,9 @@ import Typography from '@mui/material/Typography';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import { formatRupiah } from '@/lib/formatters';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeReports' | 'labaRugiActions'>;
+type Props = Pick<UseKeuanganControllerResult, 'financeReports' | 'labaRugiActions'> & {
+  productionSales?: UseKeuanganControllerResult['productionSales'];
+};
 
 function SummaryCard({
   title,
@@ -78,8 +82,8 @@ function SummaryCard({
   );
 }
 
-export default function FinanceIncomeStatementView({ financeReports }: Props) {
-  const { labaRugi, reportTransactions } = financeReports;
+export default function FinanceIncomeStatementView({ financeReports, productionSales }: Props) {
+  const { labaRugi, reportTransactions, kelayakanUsaha } = financeReports;
 
   const profitColor = labaRugi.labaRugi >= 0 ? 'success.main' : 'error.main';
   const ProfitIcon =
@@ -153,6 +157,134 @@ export default function FinanceIncomeStatementView({ financeReports }: Props) {
           />
         </Grid>
       </Grid>
+
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Section Kelayakan Usaha */}
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700 }}>
+              Kelayakan Usaha (Asumsi Produksi & Penjualan)
+            </Typography>
+            <Typography variant="caption" color="text.disabled">
+              {kelayakanUsaha?.produksi && kelayakanUsaha?.hargaJual
+                ? `Asumsi skenario: Volume ${kelayakanUsaha.produksi.toLocaleString('id-ID')} ${kelayakanUsaha.satuan} • Harga Jual ${formatRupiah(kelayakanUsaha.hargaJual)}/${kelayakanUsaha.satuan}`
+                : 'Asumsi volume produksi dan harga jual belum diatur untuk skenario ini.'}
+            </Typography>
+          </Box>
+          {productionSales && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={productionSales.openDialog}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+              Atur Asumsi
+            </Button>
+          )}
+        </Stack>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ height: '100%', borderTop: '3px solid', borderColor: 'primary.main' }}>
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                  HPP (Harga Pokok Produksi)
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
+                  {kelayakanUsaha?.hpp != null
+                    ? `${formatRupiah(kelayakanUsaha.hpp)} / ${kelayakanUsaha.satuan}`
+                    : '—'}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
+                  Total Biaya ÷ Volume Produksi
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ height: '100%', borderTop: '3px solid', borderColor: 'info.main' }}>
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                  BEP Produksi (Batas Impas)
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
+                  {kelayakanUsaha?.bepProduksi != null
+                    ? `${kelayakanUsaha.bepProduksi.toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${kelayakanUsaha.satuan}`
+                    : '—'}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
+                  Total Biaya ÷ Harga Jual
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card sx={{ height: '100%', borderTop: '3px solid', borderColor: 'warning.main' }}>
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                  B/C Ratio
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>
+                  {kelayakanUsaha?.bcRatio != null ? kelayakanUsaha.bcRatio.toFixed(2) : '—'}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
+                  Keuntungan ÷ Total Biaya
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Card
+              sx={{
+                height: '100%',
+                borderTop: '3px solid',
+                borderColor:
+                  kelayakanUsaha?.kelayakanStatus === 'untung'
+                    ? 'success.main'
+                    : kelayakanUsaha?.kelayakanStatus === 'impas'
+                      ? 'info.main'
+                      : kelayakanUsaha?.kelayakanStatus === 'rugi'
+                        ? 'error.main'
+                        : 'divider',
+              }}
+            >
+              <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                  Status Kelayakan
+                </Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  {kelayakanUsaha?.kelayakanStatus ? (
+                    <Chip
+                      label={kelayakanUsaha.kelayakanStatus.toUpperCase()}
+                      size="small"
+                      color={
+                        kelayakanUsaha.kelayakanStatus === 'untung'
+                          ? 'success'
+                          : kelayakanUsaha.kelayakanStatus === 'impas'
+                            ? 'info'
+                            : 'error'
+                      }
+                      sx={{ fontWeight: 800 }}
+                    />
+                  ) : (
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                      —
+                    </Typography>
+                  )}
+                </Box>
+                <Typography variant="caption" color="text.disabled" sx={{ display: 'block' }}>
+                  Evaluasi volume vs BEP
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
 
       <Divider sx={{ mb: 2 }} />
 

@@ -223,6 +223,8 @@ function makeRab(overrides: Record<string, unknown> = {}) {
     importLoading: false,
     importError: null,
     setImportError: vi.fn(),
+    importWarnings: [],
+    setImportWarnings: vi.fn(),
     rabItemError: null,
     setRabItemError: vi.fn(),
     rabItemDraft: {
@@ -419,6 +421,17 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
         labaRugi: 0,
       },
       arusKasBulanan: [],
+      kelayakanUsaha: {
+        totalBiayaProduksi: 0,
+        produksi: null,
+        satuan: 'kg',
+        hargaJual: null,
+        penerimaan: null,
+        hpp: null,
+        bepProduksi: null,
+        bcRatio: null,
+        kelayakanStatus: null,
+      },
     },
     financing: {
       assumptions: null,
@@ -445,6 +458,59 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       saving: false,
       saveError: null,
     },
+    financeComparison: {
+      comparison: null,
+      loading: false,
+      error: null,
+      hasEnoughData: false,
+      projectionHasData: false,
+      realizationHasData: false,
+      projectionOutput: {
+        totalPendapatan: 0,
+        totalBiayaProduksi: 0,
+        labaRugi: 0,
+        hpp: null,
+        bepProduksi: null,
+        bcRatio: null,
+        kategoriTotals: {},
+        arusKasBulanan: [],
+        kebutuhanModalKerja: 0,
+        bunga: 0,
+        kasAkhirPascaPembiayaan: 0,
+      },
+      realizationOutput: {
+        totalPendapatan: 0,
+        totalBiayaProduksi: 0,
+        labaRugi: 0,
+        hpp: null,
+        bepProduksi: null,
+        bcRatio: null,
+        kategoriTotals: {},
+        arusKasBulanan: [],
+        kebutuhanModalKerja: 0,
+        bunga: 0,
+        kasAkhirPascaPembiayaan: 0,
+      },
+    },
+    productionSales: {
+      assumptions: null,
+      loading: false,
+      error: null,
+      dialogOpen: false,
+      draft: {
+        produksi: '',
+        satuan: 'kg',
+        hargaJual: '',
+      },
+      openDialog: vi.fn(),
+      closeDialog: vi.fn(),
+      updateDraftField: vi.fn(),
+      handleSubmit: vi.fn(),
+      reload: vi.fn(async () => {}),
+      submitting: false,
+      submitError: null,
+      validationError: null,
+    },
     labaRugiActions: {
       searchQuery: '',
       setSearchQuery: vi.fn(),
@@ -456,6 +522,21 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
       exportError: null,
       setExportError: vi.fn(),
       handleExportFinanceWorkbook: vi.fn(),
+    },
+    migration: {
+      unclassifiedTransactions: [],
+      unclassifiedCount: 0,
+      loading: false,
+      error: null,
+      dialogOpen: false,
+      setDialogOpen: vi.fn(),
+      openDialog: vi.fn(),
+      closeDialog: vi.fn(),
+      isSubmitting: false,
+      submitError: null,
+      handleClassifyTransactions: vi.fn(async () => ({ successCount: 0, failCount: 0 })),
+      handleUnclassifyTransaction: vi.fn(async () => {}),
+      reloadUnclassified: vi.fn(async () => {}),
     },
     searchQuery: '',
     setSearchQuery: vi.fn(),
@@ -489,6 +570,7 @@ describe('KeuanganView', () => {
       ['rab', 'finance-panel-rab', 'Belum ada proyek'],
       ['laba-rugi', 'finance-panel-laba-rugi', 'Laba Rugi'],
       ['arus-kas', 'finance-panel-arus-kas', 'Arus Kas Bulanan'],
+      ['perbandingan', 'finance-panel-perbandingan', 'Perbandingan Proyeksi vs Realisasi'],
     ];
 
     for (const [financeTab, testId, visibleTitle] of panels) {
@@ -876,4 +958,57 @@ describe('KeuanganView', () => {
     fireEvent.click(pageTwoButtons[0]);
     expect(setLedgerPage).toHaveBeenCalledWith(2);
   });
+
+  it('menampilkan banner transaksi belum diklasifikasi dan membuka dialog klasifikasi saat diklik', () => {
+    const openDialog = vi.fn();
+    renderView({
+      migration: {
+        unclassifiedTransactions: [transaction],
+        unclassifiedCount: 1,
+        loading: false,
+        error: null,
+        dialogOpen: false,
+        setDialogOpen: vi.fn(),
+        openDialog,
+        closeDialog: vi.fn(),
+        isSubmitting: false,
+        submitError: null,
+        handleClassifyTransactions: vi.fn(async () => ({ successCount: 0, failCount: 0 })),
+        handleUnclassifyTransaction: vi.fn(async () => {}),
+        reloadUnclassified: vi.fn(async () => {}),
+      },
+    });
+
+    const classifyButton = screen.getByRole('button', { name: 'Klasifikasikan Sekarang' });
+    expect(classifyButton).toBeInTheDocument();
+    expect(screen.getByText('1 Transaksi Belum Diklasifikasi')).toBeInTheDocument();
+
+    fireEvent.click(classifyButton);
+    expect(openDialog).toHaveBeenCalledTimes(1);
+  });
+
+  it('menampilkan panel perbandingan saat tab Perbandingan dipilih dan memanggil setFinanceTab saat diklik', () => {
+    const setFinanceTab = vi.fn();
+    const { unmount } = renderView({
+      financeTab: 'buku-besar',
+      setFinanceTab,
+    });
+
+    const perbandinganTab = screen.getByRole('tab', { name: 'Perbandingan' });
+    expect(perbandinganTab).toBeInTheDocument();
+
+    fireEvent.click(perbandinganTab);
+    expect(setFinanceTab).toHaveBeenCalledWith('perbandingan');
+
+    unmount();
+
+    renderView({
+      financeTab: 'perbandingan',
+      setFinanceTab,
+    });
+
+    expect(screen.getByTestId('finance-panel-perbandingan')).toBeInTheDocument();
+    expect(screen.getByText('Perbandingan Proyeksi vs Realisasi')).toBeInTheDocument();
+  });
 });
+

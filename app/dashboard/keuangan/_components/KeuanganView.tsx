@@ -63,15 +63,19 @@ import type { HighlightItemIdentifierWithType } from '@mui/x-charts/models';
 
 import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
+import { FinanceComparisonView } from './FinanceComparisonView';
 import FinanceFinancingView from './FinanceFinancingView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
 import FinancingAssumptionsDialog from './FinancingAssumptionsDialog';
+import ProductionSalesAssumptionsDialog from './ProductionSalesAssumptionsDialog';
 import RabImportDialog from './RabImportDialog';
 import RabItemDialog from './RabItemDialog';
 import RabTransactionLinkDialog from './RabTransactionLinkDialog';
 import RabPlanningView from './RabPlanningView';
 import TransactionBatchDialog from './TransactionBatchDialog';
+import UnclassifiedTransactionsBanner from './UnclassifiedTransactionsBanner';
+import TransactionClassificationDialog from './TransactionClassificationDialog';
 
 const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
@@ -204,11 +208,14 @@ export default function KeuanganView({
   rabTransactionLink,
   financeReports,
   financing,
+  financeComparison,
+  productionSales,
   labaRugiActions,
   financeExport,
   handleOpenFinanceReportDialog,
   transactionBatch,
   transactionMaster,
+  migration,
   searchQuery,
   setSearchQuery,
   sortColumn,
@@ -391,6 +398,7 @@ export default function KeuanganView({
         <Tab value="laba-rugi" label="Laba Rugi" />
         <Tab value="arus-kas" label="Arus Kas" />
         <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
+        <Tab value="perbandingan" label="Perbandingan" />
       </Tabs>
 
       {financeTab === 'buku-besar' && (
@@ -399,6 +407,10 @@ export default function KeuanganView({
         data-finance-fill-height="true"
         sx={financePanelSx}
       >
+        <UnclassifiedTransactionsBanner
+          unclassifiedCount={migration.unclassifiedCount}
+          onOpenDialog={migration.openDialog}
+        />
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, md: 4 }}>
             <Card data-guide-target="finance-summary" sx={{ height: '100%' }}>
@@ -1237,7 +1249,11 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceIncomeStatementView financeReports={financeReports} labaRugiActions={labaRugiActions} />
+          <FinanceIncomeStatementView
+            financeReports={financeReports}
+            labaRugiActions={labaRugiActions}
+            productionSales={productionSales}
+          />
         </Box>
       )}
       {financeTab === 'arus-kas' && (
@@ -1258,6 +1274,15 @@ export default function KeuanganView({
           <FinanceFinancingView financing={financing} />
         </Box>
       )}
+      {financeTab === 'perbandingan' && (
+        <Box
+          data-testid="finance-panel-perbandingan"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
+          <FinanceComparisonView {...financeComparison} />
+        </Box>
+      )}
 
       {/* ─── MODAL: Catat / Edit Transaksi (Batch) ─── */}
       <TransactionBatchDialog
@@ -1269,6 +1294,7 @@ export default function KeuanganView({
       <RabImportDialog rab={rab} />
       <RabItemDialog rab={rab} />
       <FinancingAssumptionsDialog financing={financing} />
+      <ProductionSalesAssumptionsDialog controller={productionSales} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog
@@ -1648,6 +1674,21 @@ export default function KeuanganView({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <TransactionClassificationDialog
+        open={migration.dialogOpen}
+        onClose={migration.closeDialog}
+        unclassifiedTransactions={migration.unclassifiedTransactions}
+        projectionScenarioId={
+          financeScenario.scenarios.find((s) => s.mode === 'PROJECTION')?.id ?? null
+        }
+        realizationScenarioId={
+          financeScenario.scenarios.find((s) => s.mode === 'REALIZATION')?.id ?? null
+        }
+        onClassify={migration.handleClassifyTransactions}
+        isSubmitting={migration.isSubmitting}
+        submitError={migration.submitError}
+      />
 
       {/* Snackbar feedback */}
       <Snackbar

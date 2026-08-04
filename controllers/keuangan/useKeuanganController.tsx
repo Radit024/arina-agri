@@ -17,11 +17,14 @@ import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
 import { useFinanceScenarioController } from './useFinanceScenarioController';
 import { useFinancingController } from './useFinancingController';
+import { useComparisonController } from './useComparisonController';
 import { useLabaRugiActionsController } from './useLabaRugiActionsController';
 import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
 import { useTransactionBatchController } from './useTransactionBatchController';
 import { useTransactionMasterController } from './useTransactionMasterController';
+import { useMigrationController } from './useMigrationController';
+import { useProductionSalesController } from './useProductionSalesController';
 
 type BepHppInputs = {
   totalBiaya: number;
@@ -80,7 +83,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan'>('buku-besar');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan' | 'perbandingan'>('buku-besar');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
   const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>('desc');
@@ -92,9 +95,19 @@ export function useKeuanganController() {
 
   const financeProject = useFinanceProjectController();
   const financeScenario = useFinanceScenarioController(financeProject.selectedProject?.id);
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactionsForScenario(
-    financeScenario.activeScenario?.id ?? null,
-  );
+  const {
+    transactions,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    reload: reloadTransactions,
+  } = useTransactionsForScenario(financeScenario.activeScenario?.id ?? null);
+  const migration = useMigrationController({
+    projectId: financeProject.selectedProject?.id ?? null,
+    onSuccess: () => {
+      void reloadTransactions();
+    },
+  });
   const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
@@ -104,14 +117,23 @@ export function useKeuanganController() {
     transactions,
     updateTransaction,
   });
+  const productionSales = useProductionSalesController({
+    scenarioId: financeScenario.activeScenario?.id ?? null,
+  });
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
+    productionSalesAssumptions: productionSales.assumptions,
   });
   const financing = useFinancingController({
     scenarioId: financeScenario.activeScenario?.id ?? null,
     arusKasBulanan: financeReports.arusKasBulanan,
+  });
+  const financeComparison = useComparisonController({
+    scenarios: financeScenario.scenarios,
+    project: financeProject.selectedProject,
+    active: financeTab === 'perbandingan',
   });
   const labaRugiActions = useLabaRugiActionsController();
   const hasSelectedProject = Boolean(financeProject.selectedProject);
@@ -544,10 +566,13 @@ export function useKeuanganController() {
     rabTransactionLink: guardedRabTransactionLink,
     financeReports,
     financing,
+    financeComparison,
+    productionSales,
     labaRugiActions,
     financeExport,
     transactionBatch: guardedTransactionBatch,
     transactionMaster,
+    migration,
     searchQuery,
     setSearchQuery,
     sortColumn,

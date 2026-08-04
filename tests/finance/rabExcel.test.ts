@@ -1,8 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 
-import { buildFinanceExportWorkbook, parseRabWorkbook } from '@/lib/finance/rabExcel';
+import { buildFinanceExportWorkbook, parseLedgerWorkbook, parseRabWorkbook } from '@/lib/finance/rabExcel';
 import type { FinanceProject, FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
+
+async function loadGoldenRabWorkbook() {
+  const buffer = fs.readFileSync(
+    path.join(process.cwd(), 'tests', 'fixtures', 'rab', 'catatan-keuangan-padi-1ha-ade.xlsx'),
+  );
+  const workbook = new ExcelJS.Workbook();
+  // exceljs's Buffer type comes from a different @types/node version than this repo's,
+  // so the structurally-identical Node Buffer needs an explicit cast here.
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  return workbook;
+}
 
 async function buildSampleRabWorkbook() {
   const workbook = new ExcelJS.Workbook();
@@ -151,4 +165,275 @@ describe('RAB Excel helpers', () => {
     const ledgerSheet = workbook.getWorksheet('Catatan Transaksi Harian');
     expect(ledgerSheet?.getCell('H5').value).toBe('Benih');
   });
+});
+
+describe('RAB Excel writer — layout mirrors the reference RAB template', () => {
+  const rabItemsWithIncome: RabItem[] = [
+    ...rabItems,
+    {
+      id: 'harvest',
+      projectId: 'p1',
+      categoryId: 'pendapatan',
+      categoryName: 'Pendapatan',
+      type: 'income',
+      name: 'Penerimaan',
+      volume: 7_000,
+      unit: 'kg',
+      unitPrice: 6_500,
+      plannedTotal: 45_500_000,
+      aliases: ['penerimaan'],
+      sortOrder: 2,
+    },
+  ];
+
+  it('places the title, project name, and season on rows 1-3 and the header on row 6', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems: rabItemsWithIncome,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const rabSheet = workbook.getWorksheet('RAB')!;
+    expect(rabSheet.getCell('A1').value).toBe('RENCANA ANGGARAN BIAYA (RAB)');
+    expect(rabSheet.getCell('A2').value).toBe(project.name);
+    expect(rabSheet.getCell('A3').value).toBe(project.seasonLabel);
+    expect(rabSheet.getCell('A6').value).toBe('NO');
+    expect(rabSheet.getCell('B6').value).toBe('URAIAN');
+  });
+
+  it('marks each category with a letter, resets item numbering, and writes a TOTAL row per category', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems: rabItemsWithIncome,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const rabSheet = workbook.getWorksheet('RAB')!;
+    expect(rabSheet.getCell('A7').value).toBe('A');
+    expect(rabSheet.getCell('B7').value).toBe('Saprodi');
+    expect(rabSheet.getCell('A8').value).toBe(1);
+    expect(rabSheet.getCell('B8').value).toBe('Benih');
+    expect(rabSheet.getCell('B9').value).toBe('TOTAL');
+    expect(rabSheet.getCell('F9').value).toEqual(expect.objectContaining({ result: 412_500 }));
+  });
+
+  it('writes a grand TOTAL BIAYA PRODUKSI row after all expense categories', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems: rabItemsWithIncome,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const rabSheet = workbook.getWorksheet('RAB')!;
+    expect(rabSheet.getCell('A10').value).toBe('B');
+    expect(rabSheet.getCell('B10').value).toBe('TOTAL BIAYA PRODUKSI');
+    expect(rabSheet.getCell('F10').value).toEqual(expect.objectContaining({ result: 412_500 }));
+  });
+
+  it('writes an ESTIMASI PENDAPATAN section ending in a Keuntungan row', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems: rabItemsWithIncome,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const rabSheet = workbook.getWorksheet('RAB')!;
+    expect(rabSheet.getCell('A11').value).toBe('C');
+    expect(rabSheet.getCell('B11').value).toBe('ESTIMASI PENDAPATAN');
+    expect(rabSheet.getCell('A12').value).toBe(1);
+    expect(rabSheet.getCell('B12').value).toBe('Penerimaan');
+    expect(rabSheet.getCell('B13').value).toBe('TOTAL PENDAPATAN');
+    expect(rabSheet.getCell('F13').value).toEqual(expect.objectContaining({ result: 45_500_000 }));
+    expect(rabSheet.getCell('B14').value).toBe('Keuntungan');
+    expect(rabSheet.getCell('F14').value).toEqual(expect.objectContaining({ result: 45_500_000 - 412_500 }));
+  });
+
+  it('does not write an ESTIMASI PENDAPATAN section or Keuntungan row when there is no income item', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const rabSheet = workbook.getWorksheet('RAB')!;
+    expect(rabSheet.getCell('B11').value).toBeNull();
+  });
+
+  it('combines project name and season into a single subtitle row on the ledger sheet', async () => {
+    const workbook = await buildFinanceExportWorkbook({
+      project,
+      rabItems,
+      transactions,
+      startMonth: '2026-08',
+      endMonth: '2026-12',
+    });
+
+    const ledgerSheet = workbook.getWorksheet('Catatan Transaksi Harian')!;
+    expect(ledgerSheet.getCell('A2').value).toBe(`${project.name} PADA ${project.seasonLabel}`);
+  });
+});
+
+describe('RAB Excel parser — golden fixture (file RAB nyata)', () => {
+  it('reconciles every category cleanly against the sheet\'s own TOTAL rows', async () => {
+    const workbook = await loadGoldenRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.reconciliation).toHaveLength(5);
+    expect(parsed.reconciliation.map((entry) => entry.categoryId).sort()).toEqual(
+      ['biaya-tetap', 'jasa-alsintan', 'lain-lain', 'saprodi', 'tenaga-kerja'].sort(),
+    );
+    for (const entry of parsed.reconciliation) {
+      expect(entry.difference).toBe(0);
+    }
+  });
+
+  it('parses the expected item count and excludes summary/derivation rows', async () => {
+    const workbook = await loadGoldenRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.items).toHaveLength(22);
+    const itemNames = parsed.items.map((item) => item.name.toLowerCase());
+    for (const excluded of ['keuntungan', 'hpp', 'bep produksi', 'b/c ratio', '40 % pemilik lahan', '60% bp', 'produksi', 'harga pasar']) {
+      expect(itemNames).not.toContain(excluded);
+    }
+  });
+
+  it('reports skipped helper rows and the profit-sharing section', async () => {
+    const workbook = await loadGoldenRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.skippedRows.some((row) => row.reason.includes('Total Rencana kosong') && row.description === 'Produksi')).toBe(true);
+    expect(parsed.skippedRows.some((row) => row.reason.includes('Total Rencana kosong') && row.description === 'Harga pasar')).toBe(true);
+    expect(parsed.skippedRows.some((row) => row.description === 'BAGI HASIL')).toBe(true);
+  });
+
+  it('parses all 37 ledger transactions with no skipped rows', async () => {
+    const workbook = await loadGoldenRabWorkbook();
+    const rabParsed = parseRabWorkbook(workbook);
+    const ledgerParsed = parseLedgerWorkbook(workbook);
+
+    expect(rabParsed.transactions).toHaveLength(37);
+    expect(ledgerParsed.transactions).toHaveLength(37);
+    expect(ledgerParsed.skippedRows).toHaveLength(0);
+  });
+});
+
+describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
+  it('flags a reconciliation difference when the sheet TOTAL disagrees with the sum of its items', async () => {
+    const workbook = await buildSampleRabWorkbook();
+    // Sabotage the item's own planned total (as if it were computed with a typo'd unit
+    // price) without touching the "TOTAL" row at B16/F16 — this is exactly the scenario
+    // reconciliation exists to catch.
+    workbook.getWorksheet('1. RAB PADI 1 Ha')!.getCell('F9').value = { formula: 'C9*E9', result: 425_000 };
+
+    const parsed = parseRabWorkbook(workbook);
+    const saprodi = parsed.reconciliation.find((entry) => entry.categoryId === 'saprodi');
+
+    expect(saprodi).toBeDefined();
+    expect(saprodi!.declaredTotal).toBe(412_500);
+    expect(saprodi!.computedTotal).toBe(425_000);
+    expect(saprodi!.difference).toBe(12_500);
+  });
+
+  it('does not let a cross-category rollup TOTAL row overwrite the immediate subsection TOTAL', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+    sheet.getCell('A2').value = 'Proyek Uji';
+    sheet.getCell('A3').value = 'MT Uji';
+    sheet.getCell('A7').value = 'I';
+    sheet.getCell('B7').value = 'SAPRODI';
+    sheet.getRow(8).values = [1, 'Benih', 25, 'Kg', 16_500, 412_500];
+    // Subsection TOTAL comes first — this is the declared total that must win.
+    sheet.getCell('B9').value = 'TOTAL';
+    sheet.getCell('F9').value = 412_500;
+    // A rollup total for a larger scope appears later, still under the same
+    // currentCategory ('SAPRODI') because no new category header row has appeared yet.
+    sheet.getCell('B10').value = 'TOTAL BIAYA VARIABEL';
+    sheet.getCell('F10').value = 99_999_999;
+
+    const parsed = parseRabWorkbook(workbook);
+    const saprodi = parsed.reconciliation.find((entry) => entry.categoryId === 'saprodi');
+
+    expect(saprodi).toBeDefined();
+    expect(saprodi!.declaredTotal).toBe(412_500);
+    expect(saprodi!.difference).toBe(0);
+  });
+
+  it('does not produce a reconciliation entry for a category with no TOTAL row in the sheet', async () => {
+    const workbook = await buildSampleRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.reconciliation.some((entry) => entry.categoryId === 'pendapatan')).toBe(false);
+  });
+
+  it('reports a skip reason for helper rows with an empty planned total', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+    sheet.getCell('A2').value = 'Proyek Uji';
+    sheet.getCell('A3').value = 'MT Uji';
+    sheet.getCell('A49').value = 'E';
+    sheet.getCell('B49').value = 'ESTIMASI PENDAPATAN';
+    sheet.getCell('B50').value = 'Produksi';
+    sheet.getCell('C50').value = 7_000;
+    sheet.getCell('D50').value = 'kg';
+
+    const parsed = parseRabWorkbook(workbook);
+
+    expect(parsed.skippedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          description: 'Produksi',
+          reason: expect.stringContaining('Total Rencana kosong'),
+        }),
+      ]),
+    );
+  });
+
+  it('reports a skip reason for ledger rows with an unrecognized date format', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('2. Catatan Transaksi Harian');
+    sheet.getRow(4).values = ['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)'];
+    sheet.getRow(5).values = ['15/03/2026', 'Pembelian benih padi', 25, 'Kg', 16_500, 412_500, '-'];
+
+    const parsed = parseLedgerWorkbook(workbook);
+
+    expect(parsed.transactions).toHaveLength(0);
+    expect(parsed.skippedRows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          description: 'Pembelian benih padi',
+          reason: expect.stringContaining('format tanggal tidak dikenali'),
+        }),
+      ]),
+    );
+  });
+
+  it.each(['Subtotal Produksi', 'Grand Total Biaya', 'Laba Bersih', 'Margin Usaha'])(
+    'excludes "%s" rows from parsed items via the extended ignore pattern',
+    async (description) => {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+      sheet.getCell('A2').value = 'Proyek Uji';
+      sheet.getCell('A3').value = 'MT Uji';
+      sheet.getCell('A7').value = 'I';
+      sheet.getCell('B7').value = 'SAPRODI';
+      sheet.getRow(8).values = [1, 'Benih', 25, 'Kg', 16_500, 412_500];
+      sheet.getCell('B9').value = description;
+      sheet.getCell('F9').value = 999_999;
+
+      const parsed = parseRabWorkbook(workbook);
+
+      expect(parsed.items.map((item) => item.name.toLowerCase())).not.toContain(description.toLowerCase());
+    },
+  );
 });

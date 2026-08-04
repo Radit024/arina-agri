@@ -129,4 +129,32 @@ describe('useFinanceReportController', () => {
     expect(result.current.reportStartMonth).toBe('2026-05');
     expect(result.current.reportEndMonth).toBe('2026-08');
   });
+
+  it('computes kelayakanUsaha metrics when productionSalesAssumptions is provided', () => {
+    const transactions: ApiTransaction[] = [
+      tx({ _id: 'tx-1', jenis: 'pendapatan', nominal: 45_500_000, tanggal: '2026-06-15', projectId: 'project-1' }),
+      tx({ _id: 'tx-2', jenis: 'pengeluaran', nominal: 22_159_000, tanggal: '2026-06-10', projectId: 'project-1' }),
+    ];
+
+    const { result } = renderHook(() =>
+      useFinanceReportController({
+        project,
+        rabItems,
+        transactions,
+        productionSalesAssumptions: {
+          id: 'asm-1',
+          scenarioId: 'sc-1',
+          produksi: 7000,
+          satuan: 'Kg',
+          hargaJual: 6500,
+        },
+      }),
+    );
+
+    expect(result.current.kelayakanUsaha).toBeDefined();
+    expect(result.current.kelayakanUsaha?.totalBiayaProduksi).toBe(22_159_000);
+    expect(result.current.kelayakanUsaha?.hpp).toBeCloseTo(3165.57, 1);
+    expect(result.current.kelayakanUsaha?.bepProduksi).toBeCloseTo(3409.08, 1);
+    expect(result.current.kelayakanUsaha?.kelayakanStatus).toBe('untung');
+  });
 });

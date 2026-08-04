@@ -107,6 +107,27 @@ export interface DbFinancingAssumptions {
   updated_at: string;
 }
 
+export interface DbProductionSalesAssumptions {
+  id: string;
+  scenario_id: string;
+  produksi: number | null;
+  satuan: string | null;
+  harga_jual: number | null;
+  updated_at: string;
+}
+
+export interface DbMigrationAuditLog {
+  id: string;
+  user_id: string;
+  project_id: string;
+  entity_type: 'rab_category' | 'rab_item' | 'transaction';
+  entity_id: string;
+  previous_scenario_id: string | null;
+  new_scenario_id: string | null;
+  action: 'auto_migrate_rab' | 'classify_transaction' | 'rollback_classification';
+  created_at: string;
+}
+
 export interface DbCalendarEvent {
   id: string;
   user_id: string;

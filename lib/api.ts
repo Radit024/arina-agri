@@ -6,6 +6,8 @@ import type {
   DbFinanceScenario,
   DbFinancingAssumptions,
   DbHarvestBatch,
+  DbMigrationAuditLog,
+  DbProductionSalesAssumptions,
   DbRabCategory,
   DbRabImport,
   DbRabItem,
@@ -19,6 +21,7 @@ import type {
   FinanceScenarioEntity,
   FinanceTransactionForReport,
   FinancingAssumptions,
+  ProductionSalesAssumptions,
   RabCategory,
   RabItem,
 } from '@/lib/finance/rabTypes';
@@ -59,6 +62,8 @@ export interface ApiTransaction {
 export type ApiFinanceScenario = FinanceScenarioEntity;
 
 export type ApiFinancingAssumptions = FinancingAssumptions;
+
+export type ApiProductionSalesAssumptions = ProductionSalesAssumptions;
 
 export type ApiFinanceProject = FinanceProject;
 
@@ -383,6 +388,16 @@ function mapFinancingAssumptions(row: DbFinancingAssumptions): FinancingAssumpti
     tanggalPencairan: row.tanggal_pencairan ?? '',
     tanggalPembayaran: row.tanggal_pembayaran ?? '',
     biayaLain: row.biaya_lain,
+  };
+}
+
+function mapProductionSalesAssumptions(row: DbProductionSalesAssumptions): ProductionSalesAssumptions {
+  return {
+    id: row.id,
+    scenarioId: row.scenario_id,
+    produksi: Number(row.produksi ?? 0),
+    satuan: row.satuan ?? 'kg',
+    hargaJual: Number(row.harga_jual ?? 0),
   };
 }
 
@@ -1005,6 +1020,43 @@ export const financingAssumptionsApi = {
   },
 };
 
+export const productionSalesAssumptionsApi = {
+  getByScenario: async (scenarioId: string): Promise<ApiProductionSalesAssumptions | null> => {
+    const user = await resolveCurrentUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('production_sales_assumptions')
+      .select('*')
+      .eq('scenario_id', scenarioId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? mapProductionSalesAssumptions(data as DbProductionSalesAssumptions) : null;
+  },
+
+  upsert: async (
+    scenarioId: string,
+    payload: Omit<ProductionSalesAssumptions, 'id' | 'scenarioId'>,
+  ): Promise<ApiProductionSalesAssumptions> => {
+    const user = await resolveCurrentUser();
+    if (!user) throw new Error('Belum login');
+    const { data, error } = await supabase
+      .from('production_sales_assumptions')
+      .upsert(
+        {
+          scenario_id: scenarioId,
+          produksi: payload.produksi,
+          satuan: payload.satuan || 'kg',
+          harga_jual: payload.hargaJual,
+        },
+        { onConflict: 'scenario_id' },
+      )
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return mapProductionSalesAssumptions(data as DbProductionSalesAssumptions);
+  },
+};
+
 export const eventApi = {
   getAll: async (): Promise<ApiCalendarEvent[]> => {
     return calendarEventRequest<ApiCalendarEvent[]>('/api/calendar/events', { method: 'GET' });
@@ -1615,5 +1667,154 @@ export const transactionSatuanApi = {
       .eq('id', id)
       .eq('user_id', user.id);
     if (error) throw new Error(error.message);
+  },
+};
+
+// ─── Migration API (Tahap 2 Roadmap) ──────────────────────────────
+export const migrationApi = {
+  autoMigrateLegacyRab: async (projectId: string, projectionScenarioId: string): Promise<number> => {
+    const user = await resolveCurrentUser();
+    if (!user) return 0;
+
+    const { data: categoriesData, error: catError } = await supabase
+      .from('rab_categories')
+      .select('id')
+      .eq('project_id', projectId)
+      .is('scenario_id', null);
+    if (catError) throw new Error(catError.message);
+
+    const { data: itemsData, error: itemError } = await supabase
+      .from('rab_items')
+      .select('id')
+      .eq('project_id', projectId)
+      .is('scenario_id', null);
+    if (itemError) throw new Error(itemError.message);
+
+    const categories = (categoriesData ?? []) as Array<{ id: string }>;
+    const items = (itemsData ?? []) as Array<{ id: string }>;
+
+    if (categories.length === 0 && items.length === 0) {
+      return 0;
+    }
+
+    let updatedCount = 0;
+
+    if (categories.length > 0) {
+      const catIds = categories.map((c) => c.id);
+      const { error: updCatError } = await supabase
+        .from('rab_categories')
+        .update({ scenario_id: projectionScenarioId })
+        .in('id', catIds);
+      if (updCatError) throw new Error(updCatError.message);
+      updatedCount += categories.length;
+
+      const catLogs = categories.map((c) => ({
+        user_id: user.id,
+        project_id: projectId,
+        entity_type: 'rab_category' as const,
+        entity_id: c.id,
+        previous_scenario_id: null,
+        new_scenario_id: projectionScenarioId,
+        action: 'auto_migrate_rab' as const,
+      }));
+      await supabase.from('migration_audit_log').insert(catLogs);
+    }
+
+    if (items.length > 0) {
+      const itemIds = items.map((i) => i.id);
+      const { error: updItemError } = await supabase
+        .from('rab_items')
+        .update({ scenario_id: projectionScenarioId })
+        .in('id', itemIds);
+      if (updItemError) throw new Error(updItemError.message);
+      updatedCount += items.length;
+
+      const itemLogs = items.map((i) => ({
+        user_id: user.id,
+        project_id: projectId,
+        entity_type: 'rab_item' as const,
+        entity_id: i.id,
+        previous_scenario_id: null,
+        new_scenario_id: projectionScenarioId,
+        action: 'auto_migrate_rab' as const,
+      }));
+      await supabase.from('migration_audit_log').insert(itemLogs);
+    }
+
+    return updatedCount;
+  },
+
+  getUnclassifiedTransactions: async (projectId: string): Promise<ApiTransaction[]> => {
+    const user = await resolveCurrentUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('project_id', projectId)
+      .is('scenario_id', null)
+      .order('tanggal', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data || []).map((t) => mapTx(t as DbTransaction));
+  },
+
+  classifyTransactions: async (
+    projectId: string,
+    transactionIds: string[],
+    targetScenarioId: string,
+  ): Promise<{ successCount: number; failCount: number }> => {
+    const user = await resolveCurrentUser();
+    if (!user || transactionIds.length === 0) return { successCount: 0, failCount: 0 };
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const txId of transactionIds) {
+      try {
+        const { error } = await supabase
+          .from('transactions')
+          .update({ scenario_id: targetScenarioId })
+          .eq('id', txId);
+        if (error) throw new Error(error.message);
+
+        await supabase.from('migration_audit_log').insert({
+          user_id: user.id,
+          project_id: projectId,
+          entity_type: 'transaction',
+          entity_id: txId,
+          previous_scenario_id: null,
+          new_scenario_id: targetScenarioId,
+          action: 'classify_transaction',
+        });
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+
+    return { successCount, failCount };
+  },
+
+  unclassifyTransaction: async (
+    projectId: string,
+    transactionId: string,
+    currentScenarioId: string,
+  ): Promise<void> => {
+    const user = await resolveCurrentUser();
+    if (!user) return;
+    const { error } = await supabase
+      .from('transactions')
+      .update({ scenario_id: null })
+      .eq('id', transactionId);
+    if (error) throw new Error(error.message);
+
+    await supabase.from('migration_audit_log').insert({
+      user_id: user.id,
+      project_id: projectId,
+      entity_type: 'transaction',
+      entity_id: transactionId,
+      previous_scenario_id: currentScenarioId,
+      new_scenario_id: null,
+      action: 'rollback_classification',
+    });
   },
 };

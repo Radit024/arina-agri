@@ -5,15 +5,38 @@ import { useMemo } from 'react';
 import {
   computeLabaRugi,
   computeArusKasBulanan,
+  computeHpp,
+  computeBepProduksi,
+  computeBcRatio,
+  computeKelayakanStatus,
+  computePenerimaan,
+  computeKeuntungan,
 } from '@/lib/finance/scenarioCalculations';
 import type { ApiFinanceProject, ApiTransaction } from '@/lib/api';
-import type { ArusKasBulanan, FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
+import type {
+  ArusKasBulanan,
+  FinanceTransactionForReport,
+  ProductionSalesAssumptions,
+  RabItem,
+} from '@/lib/finance/rabTypes';
+
+export type KelayakanUsahaOutput = {
+  totalBiayaProduksi: number;
+  produksi: number | null;
+  satuan: string;
+  hargaJual: number | null;
+  penerimaan: number | null;
+  hpp: number | null;
+  bepProduksi: number | null;
+  bcRatio: number | null;
+  kelayakanStatus: 'untung' | 'impas' | 'rugi' | null;
+};
 
 function toMonthKey(date: string) {
   return date.slice(0, 7);
 }
 
-function transactionToReport(transaction: ApiTransaction): FinanceTransactionForReport {
+export function transactionToReport(transaction: ApiTransaction): FinanceTransactionForReport {
   return {
     id: transaction._id,
     jenis: transaction.jenis,
@@ -30,7 +53,7 @@ function transactionToReport(transaction: ApiTransaction): FinanceTransactionFor
   };
 }
 
-function resolveReportRange(project: ApiFinanceProject | null, rabItems: RabItem[], transactions: ApiTransaction[]) {
+export function resolveReportRange(project: ApiFinanceProject | null, rabItems: RabItem[], transactions: ApiTransaction[]) {
   const startCandidates = [
     project?.startDate ? toMonthKey(project.startDate) : null,
     ...rabItems.map((item) => item.plannedCashMonth ?? null),
@@ -53,10 +76,12 @@ export function useFinanceReportController({
   project,
   rabItems,
   transactions,
+  productionSalesAssumptions,
 }: {
   project: ApiFinanceProject | null;
   rabItems: RabItem[];
   transactions: ApiTransaction[];
+  productionSalesAssumptions?: ProductionSalesAssumptions | null;
 }) {
   return useMemo(() => {
     // transactions are already scenario-scoped from useTransactionsForScenario,
@@ -70,14 +95,62 @@ export function useFinanceReportController({
     const labaRugi = computeLabaRugi(reportTransactions);
     const arusKasBulanan: ArusKasBulanan[] = computeArusKasBulanan(reportTransactions, startMonth, endMonth);
 
+    const totalBiayaProduksi = labaRugi.totalPengeluaran;
+    const produksi = productionSalesAssumptions?.produksi ?? null;
+    const satuan = productionSalesAssumptions?.satuan || 'kg';
+    const hargaJual = productionSalesAssumptions?.hargaJual ?? null;
+
+    const penerimaan =
+      produksi !== null && hargaJual !== null && produksi >= 0 && hargaJual >= 0
+        ? computePenerimaan(produksi, hargaJual)
+        : null;
+
+    const keuntungan =
+      penerimaan !== null ? computeKeuntungan(penerimaan, totalBiayaProduksi) : null;
+
+    const hpp =
+      produksi !== null && produksi > 0 ? computeHpp(totalBiayaProduksi, produksi) : null;
+
+    const bepProduksi =
+      hargaJual !== null && hargaJual > 0 ? computeBepProduksi(totalBiayaProduksi, hargaJual) : null;
+
+    const bcRatio =
+      keuntungan !== null ? computeBcRatio(keuntungan, totalBiayaProduksi) : null;
+
+    const kelayakanStatus =
+      produksi !== null && bepProduksi !== null
+        ? computeKelayakanStatus(produksi, bepProduksi)
+        : null;
+
+    const kelayakanUsaha: KelayakanUsahaOutput = {
+      totalBiayaProduksi,
+      produksi,
+      satuan,
+      hargaJual,
+      penerimaan,
+      hpp,
+      bepProduksi,
+      bcRatio,
+      kelayakanStatus,
+    };
+
     return {
       reportTransactions,
       reportStartMonth: startMonth,
       reportEndMonth: endMonth,
       labaRugi,
       arusKasBulanan,
+      kelayakanUsaha,
     };
-  }, [project, rabItems, transactions]);
+  }, [project, rabItems, transactions, productionSalesAssumptions]);
 }
 
-export type UseFinanceReportControllerResult = ReturnType<typeof useFinanceReportController>;
+export type UseFinanceReportControllerResult = {
+  reportTransactions: FinanceTransactionForReport[];
+  reportStartMonth: string;
+  reportEndMonth: string;
+  labaRugi: ReturnType<typeof computeLabaRugi>;
+  arusKasBulanan: ArusKasBulanan[];
+  kelayakanUsaha?: KelayakanUsahaOutput;
+};
+

@@ -92,6 +92,8 @@ export interface FinanceExportWorkbookInput {
   transactions: FinanceTransactionForReport[];
   startMonth: string;
   endMonth: string;
+  /** Human-readable mode label, e.g. 'Proyeksi' or 'Realisasi'. Shown in sheet subtitles. */
+  modeLabel?: string;
 }
 
 function slugify(value: string) {
@@ -488,12 +490,13 @@ export async function parseRabWorkbookFromArrayBuffer(buffer: ArrayBuffer) {
   return parseRabWorkbook(workbook);
 }
 
-function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[]) {
+function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[], modeLabel?: string) {
   // Layout mirrors the user's reference RAB template: title / project name / season on
   // rows 1-3, header on row 6 (rows 4-5 blank), sections marked with letters (A, B, C...)
   // each ending in a "TOTAL" row, a grand "TOTAL BIAYA PRODUKSI" row, then an "ESTIMASI
   // PENDAPATAN" section ending in "Keuntungan" (pendapatan - biaya produksi).
-  applyTitle(sheet, 'RENCANA ANGGARAN BIAYA (RAB)', project.name, project.seasonLabel);
+  const rabSubtitle = modeLabel ? `${project.name} (${modeLabel})` : project.name;
+  applyTitle(sheet, 'RENCANA ANGGARAN BIAYA (RAB)', rabSubtitle, project.seasonLabel);
   const headerRow = 6;
   sheet.getRow(headerRow).values = ['NO', 'URAIAN', 'VOLUME', 'SATUAN', 'HARGA SATUAN (RP)', 'TOTAL RENCANA', 'BULAN KAS'];
   applyHeader(sheet.getRow(headerRow));
@@ -623,8 +626,9 @@ function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabIte
   ];
 }
 
-function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, transactions: FinanceTransactionForReport[], rabItems: RabItem[]) {
-  applyTitle(sheet, 'CATATAN TRANSAKSI HARIAN', `${project.name} PADA ${project.seasonLabel}`);
+function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, transactions: FinanceTransactionForReport[], rabItems: RabItem[], modeLabel?: string) {
+  const ledgerExtraLine = modeLabel ? `${project.name} PADA ${project.seasonLabel} — ${modeLabel}` : `${project.name} PADA ${project.seasonLabel}`;
+  applyTitle(sheet, 'CATATAN TRANSAKSI HARIAN', ledgerExtraLine);
   sheet.getRow(4).values = ['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)', 'Item RAB'];
   applyHeader(sheet.getRow(4));
 
@@ -733,13 +737,14 @@ export async function buildFinanceExportWorkbook({
   transactions,
   startMonth,
   endMonth,
+  modeLabel,
 }: FinanceExportWorkbookInput) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Arina Agri';
   workbook.created = new Date();
 
-  writeRabSheet(workbook.addWorksheet('RAB'), project, rabItems);
-  writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions, rabItems);
+  writeRabSheet(workbook.addWorksheet('RAB'), project, rabItems, modeLabel);
+  writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions, rabItems, modeLabel);
   writeIncomeStatementSheet(workbook.addWorksheet('Laporan Laba Rugi'), project, rabItems);
   writeCashFlowSheet(workbook.addWorksheet('Arus Kas'), project, rabItems, startMonth, endMonth);
 

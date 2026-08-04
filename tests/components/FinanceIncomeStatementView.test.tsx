@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import FinanceIncomeStatementView from '@/app/dashboard/keuangan/_components/FinanceIncomeStatementView';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import { buildIncomeStatementWorksheetData } from '@/lib/finance/incomeStatementWorksheet';
 import type { FinanceTransactionForReport } from '@/lib/finance/rabTypes';
 
 const theme = createTheme();
@@ -38,6 +39,11 @@ function makeFinanceReports(reportTransactions = mockTransactions): FinanceRepor
     .filter((tx) => tx.jenis === 'pengeluaran')
     .reduce((sum, tx) => sum + tx.nominal, 0);
 
+  const incomeStatementWorksheet = buildIncomeStatementWorksheetData({
+    transactions: reportTransactions,
+    rabItems: [],
+  });
+
   return {
     reportTransactions,
     reportStartMonth: '2026-06',
@@ -48,6 +54,7 @@ function makeFinanceReports(reportTransactions = mockTransactions): FinanceRepor
       labaRugi: totalPendapatan - totalPengeluaran,
     },
     arusKasBulanan: [],
+    incomeStatementWorksheet,
   } as unknown as FinanceReports;
 }
 
@@ -71,26 +78,31 @@ function renderView(reportTransactions = mockTransactions) {
   );
 }
 
-describe('FinanceIncomeStatementView (Phase B Scenario-Aware)', () => {
-  it('renders summary cards with Total Pendapatan, Total Pengeluaran, and Laba Bersih', () => {
+describe('FinanceIncomeStatementView (Modern Grouped Layout)', () => {
+  it('renders grouped panels with Pengeluaran, Pendapatan, and Ringkasan Laba / Rugi', () => {
     renderView();
 
     expect(screen.getByText('Laba Rugi')).toBeInTheDocument();
-    expect(screen.getByText('Total Pendapatan')).toBeInTheDocument();
-    expect(screen.getByText('Total Pengeluaran')).toBeInTheDocument();
-    expect(screen.getByText('Laba Bersih')).toBeInTheDocument();
+    expect(screen.getByTestId('income-statement-expense-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('income-statement-income-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('income-statement-summary-panel')).toBeInTheDocument();
 
-    expect(screen.getByText('Rp 6.500.000')).toBeInTheDocument();
-    expect(screen.getByText('Rp 200.000')).toBeInTheDocument();
+    expect(screen.getAllByText('Total Pendapatan').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Total Pengeluaran').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Ringkasan Laba / Rugi')).toBeInTheDocument();
+
+    expect(screen.getAllByText('Rp 6.500.000').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Rp 200.000').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Rp 6.300.000')).toBeInTheDocument();
   });
 
-  it('renders category breakdown when transactions exist', () => {
+  it('renders category and item labels when transactions exist', () => {
     renderView();
 
-    expect(screen.getByText('Rincian per Kategori')).toBeInTheDocument();
-    expect(screen.getByText('Penjualan Padi')).toBeInTheDocument();
+    expect(screen.getAllByText('Pendapatan').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Hasil panen musim ini')).toBeInTheDocument();
     expect(screen.getByText('Pupuk Urea')).toBeInTheDocument();
+    expect(screen.getByText('Pembelian urea 50kg')).toBeInTheDocument();
   });
 
   it('renders empty state when there are no transactions', () => {
@@ -98,11 +110,11 @@ describe('FinanceIncomeStatementView (Phase B Scenario-Aware)', () => {
 
     expect(screen.getByText('Belum ada data transaksi')).toBeInTheDocument();
     expect(
-      screen.getByText('Tambahkan transaksi ke skenario ini untuk melihat laporan laba rugi.'),
+      screen.getByText('Tambahkan transaksi pengeluaran atau pendapatan untuk melihat laporan laba rugi.'),
     ).toBeInTheDocument();
   });
 
-  it('renders Kelayakan Usaha metrics when assumptions are present', () => {
+  it('renders Kelayakan Usaha strip when assumptions are present', () => {
     const customReports = {
       ...makeFinanceReports(),
       kelayakanUsaha: {
@@ -127,11 +139,11 @@ describe('FinanceIncomeStatementView (Phase B Scenario-Aware)', () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText('Kelayakan Usaha (Asumsi Produksi & Penjualan)')).toBeInTheDocument();
-    expect(screen.getByText('HPP (Harga Pokok Produksi)')).toBeInTheDocument();
-    expect(screen.getByText('BEP Produksi (Batas Impas)')).toBeInTheDocument();
+    expect(screen.getByText('Kelayakan Usaha')).toBeInTheDocument();
+    expect(screen.getByText('HPP')).toBeInTheDocument();
+    expect(screen.getByText('BEP Produksi')).toBeInTheDocument();
     expect(screen.getByText('B/C Ratio')).toBeInTheDocument();
-    expect(screen.getByText('Status Kelayakan')).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('UNTUNG')).toBeInTheDocument();
   });
 });

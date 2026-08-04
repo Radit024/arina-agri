@@ -34,6 +34,10 @@ export interface ReportData {
   transactions: FinanceTransactionForReport[];
   userName?: string;
   aiAnalysis?: string;
+  /** Human-readable mode label, e.g. 'Proyeksi' or 'Realisasi'. Shown in PDF metadata. */
+  modeLabel?: string;
+  /** Filename-safe slug for mode, e.g. 'proyeksi'. Used in downloaded filename. */
+  modeSlug?: string;
 }
 
 type PdfTableColumnStyle = {
@@ -213,6 +217,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
     renderMetaRow('KOMODITAS', `${data.project.commodity} - ${data.project.landArea} ${data.project.landAreaUnit}`);
     renderMetaRow('MUSIM', data.project.seasonLabel);
   }
+  if (data.modeLabel) renderMetaRow('MODE', data.modeLabel);
 
   y += 5;
   doc.setFontSize(12);
@@ -390,6 +395,7 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
     doc.text(`Halaman ${i} dari ${pageCount}`, pageW - marginX, footerY, { align: 'right' });
   }
 
-  const fileName = `Laporan_Keuangan_Arina_${data.periode.replace('-', '_')}_${Date.now()}.pdf`;
+  const modeSlugPart = data.modeSlug ? `_${data.modeSlug}` : '';
+  const fileName = `Laporan_Keuangan_Arina_${data.periode.replace('-', '_')}${modeSlugPart}_${Date.now()}.pdf`;
   doc.save(fileName);
 }

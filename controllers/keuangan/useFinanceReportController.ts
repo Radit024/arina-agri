@@ -19,6 +19,10 @@ import type {
   ProductionSalesAssumptions,
   RabItem,
 } from '@/lib/finance/rabTypes';
+import {
+  buildIncomeStatementWorksheetData,
+  type IncomeStatementWorksheetData,
+} from '@/lib/finance/incomeStatementWorksheet';
 
 export type KelayakanUsahaOutput = {
   totalBiayaProduksi: number;
@@ -122,6 +126,11 @@ export function useFinanceReportController({
         ? computeKelayakanStatus(produksi, bepProduksi)
         : null;
 
+    const incomeStatementWorksheet = buildIncomeStatementWorksheetData({
+      transactions: reportTransactions,
+      rabItems,
+    });
+
     const kelayakanUsaha: KelayakanUsahaOutput = {
       totalBiayaProduksi,
       produksi,
@@ -140,6 +149,7 @@ export function useFinanceReportController({
       reportEndMonth: endMonth,
       labaRugi,
       arusKasBulanan,
+      incomeStatementWorksheet,
       kelayakanUsaha,
     };
   }, [project, rabItems, transactions, productionSalesAssumptions]);
@@ -151,6 +161,7 @@ export type UseFinanceReportControllerResult = {
   reportEndMonth: string;
   labaRugi: ReturnType<typeof computeLabaRugi>;
   arusKasBulanan: ArusKasBulanan[];
+  incomeStatementWorksheet: IncomeStatementWorksheetData;
   kelayakanUsaha?: KelayakanUsahaOutput;
 };
 

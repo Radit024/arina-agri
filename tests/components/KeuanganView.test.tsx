@@ -421,6 +421,13 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
         labaRugi: 0,
       },
       arusKasBulanan: [],
+      incomeStatementWorksheet: {
+        incomeGroups: [],
+        expenseGroups: [],
+        totalPendapatan: 0,
+        totalPengeluaran: 0,
+        labaRugi: 0,
+      },
       kelayakanUsaha: {
         totalBiayaProduksi: 0,
         produksi: null,
@@ -926,10 +933,10 @@ describe('KeuanganView', () => {
 
     const exportExcelButton = screen.getByRole('button', { name: 'Export Excel' });
     const exportReportButton = screen.getByRole('button', { name: 'Export Laporan' });
-    expect(exportExcelButton).toBeDisabled();
+    expect(exportExcelButton).toBeEnabled();
     expect(exportExcelButton).toHaveClass('MuiButton-outlined');
     expect(within(exportExcelButton).getByTestId('finance-export-excel-logo')).toHaveAttribute('src', '/icons/excel-logo.svg');
-    expect(exportReportButton).toBeDisabled();
+    expect(exportReportButton).toBeEnabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
   });

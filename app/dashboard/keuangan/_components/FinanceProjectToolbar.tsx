@@ -27,6 +27,7 @@ import { useState, type SyntheticEvent } from 'react';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import type { ScenarioMode } from '@/lib/finance/rabTypes';
+import { MODE_LABELS } from '@/lib/finance/scenarioLabels';
 import FinanceProjectDialog from './FinanceProjectDialog';
 
 type Props = Pick<
@@ -35,8 +36,6 @@ type Props = Pick<
 > & {
   onOpenPdfReport: () => void;
 };
-
-const EXPORT_DISABLED_TOOLTIP = 'Fitur ini tersedia setelah revisi mode-aware selesai';
 
 function ExcelLogoIcon() {
   return (
@@ -63,11 +62,6 @@ function PdfLogoIcon() {
     />
   );
 }
-
-const MODE_LABELS: Record<ScenarioMode, string> = {
-  PROJECTION: 'Proyeksi',
-  REALIZATION: 'Realisasi',
-};
 
 export default function FinanceProjectToolbar({
   financeAccess,
@@ -260,39 +254,27 @@ export default function FinanceProjectToolbar({
             Import Excel
           </Button>
 
-          {/* Export Excel — disabled, mode-aware export belum siap */}
-          <Tooltip title={EXPORT_DISABLED_TOOLTIP}>
-            <span>
-              <Button
-                data-guide-target="finance-export"
-                variant="outlined"
-                startIcon={<ExcelLogoIcon />}
-                disabled
-                onClick={financeExport.handleExportFinanceWorkbook}
-                sx={{ borderRadius: 8 }}
-                aria-description={EXPORT_DISABLED_TOOLTIP}
-              >
-                Export Excel
-              </Button>
-            </span>
-          </Tooltip>
+          <Button
+            data-guide-target="finance-export"
+            variant="outlined"
+            startIcon={<ExcelLogoIcon />}
+            disabled={!financeAccess.canExportFinance || financeExport.exportLoading}
+            onClick={financeExport.handleExportFinanceWorkbook}
+            sx={{ borderRadius: 8 }}
+          >
+            Export Excel
+          </Button>
 
-          {/* Export Laporan PDF — disabled, mode-aware export belum siap */}
-          <Tooltip title={EXPORT_DISABLED_TOOLTIP}>
-            <span>
-              <Button
-                data-guide-target="finance-export-pdf"
-                variant="outlined"
-                startIcon={<PdfLogoIcon />}
-                disabled
-                onClick={onOpenPdfReport}
-                sx={{ borderRadius: 8 }}
-                aria-description={EXPORT_DISABLED_TOOLTIP}
-              >
-                Export Laporan
-              </Button>
-            </span>
-          </Tooltip>
+          <Button
+            data-guide-target="finance-export-pdf"
+            variant="outlined"
+            startIcon={<PdfLogoIcon />}
+            disabled={!financeAccess.canExportFinance || reportLoading}
+            onClick={onOpenPdfReport}
+            sx={{ borderRadius: 8 }}
+          >
+            Export Laporan
+          </Button>
         </Stack>
 
         {/* Status messages */}
@@ -311,14 +293,6 @@ export default function FinanceProjectToolbar({
             {financeExport.exportError}
           </Typography>
         )}
-
-        {/* Info notice */}
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', mt: 1.5 }}>
-          <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-          <Typography variant="caption" color="text.disabled">
-            Ekspor laporan tersedia setelah implementasi revisi mode-aware selesai.
-          </Typography>
-        </Stack>
       </Box>
 
       <FinanceProjectDialog financeProject={financeProject} />

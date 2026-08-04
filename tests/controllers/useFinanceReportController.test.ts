@@ -61,6 +61,8 @@ describe('useFinanceReportController', () => {
     ]);
 
     expect(result.current.reportTransactions).toHaveLength(3);
+    expect(result.current.incomeStatementWorksheet.incomeGroups).toHaveLength(1);
+    expect(result.current.incomeStatementWorksheet.expenseGroups).toHaveLength(1);
   });
 
   it('filters out transactions belonging to a different project', () => {

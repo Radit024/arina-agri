@@ -82,7 +82,7 @@ describe('FinanceIncomeStatementView (Modern Grouped Layout)', () => {
   it('renders grouped panels with Pengeluaran, Pendapatan, and Ringkasan Laba / Rugi', () => {
     renderView();
 
-    expect(screen.getByText('Laba Rugi')).toBeInTheDocument();
+    expect(screen.getByTestId('income-statement-card')).toBeInTheDocument();
     expect(screen.getByTestId('income-statement-expense-panel')).toBeInTheDocument();
     expect(screen.getByTestId('income-statement-income-panel')).toBeInTheDocument();
     expect(screen.getByTestId('income-statement-summary-panel')).toBeInTheDocument();

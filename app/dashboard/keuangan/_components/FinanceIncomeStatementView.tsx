@@ -23,7 +23,7 @@ type Props = Pick<UseKeuanganControllerResult, 'financeReports' | 'labaRugiActio
   productionSales?: UseKeuanganControllerResult['productionSales'];
 };
 
-function WorksheetGroupedTable({
+function WorksheetGroupedSection({
   testId,
   title,
   groups,
@@ -44,16 +44,7 @@ function WorksheetGroupedTable({
   const badgeColor = isIncome ? 'success' : 'error';
 
   return (
-    <Card
-      data-testid={testId}
-      sx={{
-        borderRadius: 2.5,
-        border: '1px solid',
-        borderColor: 'divider',
-        boxShadow: 1,
-        overflow: 'hidden',
-      }}
-    >
+    <Box data-testid={testId} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box
         sx={{
           px: 2.5,
@@ -78,7 +69,7 @@ function WorksheetGroupedTable({
         />
       </Box>
 
-      <TableContainer>
+      <TableContainer sx={{ flex: 1 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -153,11 +144,11 @@ function WorksheetGroupedTable({
           </TableFooter>
         </Table>
       </TableContainer>
-    </Card>
+    </Box>
   );
 }
 
-function SummaryModernCard({
+function SummaryModernSection({
   totalPendapatan,
   totalPengeluaran,
   labaRugi,
@@ -171,14 +162,13 @@ function SummaryModernCard({
   const badgeText = labaRugi > 0 ? 'SURPLUS (LABA)' : labaRugi < 0 ? 'DEFISIT (RUGI)' : 'IMPAS';
 
   return (
-    <Card
+    <Box
       data-testid="income-statement-summary-panel"
       sx={{
-        borderRadius: 2.5,
-        border: '1px solid',
+        borderTop: '1px solid',
         borderColor: 'divider',
-        boxShadow: 1,
-        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       <Box
@@ -251,11 +241,11 @@ function SummaryModernCard({
           </TableFooter>
         </Table>
       </TableContainer>
-    </Card>
+    </Box>
   );
 }
 
-function KelayakanUsahaStrip({
+function KelayakanUsahaSection({
   kelayakanUsaha,
   productionSales,
 }: {
@@ -285,14 +275,12 @@ function KelayakanUsahaStrip({
   ];
 
   return (
-    <Card
+    <Box
       sx={{
-        mt: 3,
-        borderRadius: 2.5,
-        border: '1px solid',
+        borderTop: '1px solid',
         borderColor: 'divider',
-        boxShadow: 1,
-        p: 2,
+        bgcolor: 'action.hover',
+        p: 2.5,
       }}
     >
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
@@ -328,13 +316,13 @@ function KelayakanUsahaStrip({
             variant="outlined"
             size="small"
             onClick={productionSales.openDialog}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: 'background.paper' }}
           >
             Atur Asumsi
           </Button>
         )}
       </Stack>
-    </Card>
+    </Box>
   );
 }
 
@@ -352,70 +340,64 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
     incomeStatementWorksheet.incomeGroups.length > 0 ||
     incomeStatementWorksheet.expenseGroups.length > 0;
 
-  const isProfit = incomeStatementWorksheet.labaRugi >= 0;
-
   return (
-    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, p: { xs: 0, md: 0.5 } }}>
-      {/* Header Bar */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2.5 }}
-      >
-        <Box>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            Laba Rugi
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Ringkasan pendapatan dan pengeluaran operasional usaha kebun Anda.
-          </Typography>
-        </Box>
-        <Chip
-          label={
-            isProfit
-              ? `Surplus ${formatRupiah(incomeStatementWorksheet.labaRugi)}`
-              : `Defisit ${formatRupiah(Math.abs(incomeStatementWorksheet.labaRugi))}`
-          }
-          color={isProfit ? 'success' : 'error'}
-          variant="outlined"
-          size="medium"
-          sx={{ fontWeight: 800, mt: { xs: 1, sm: 0 } }}
-        />
-      </Stack>
-
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {hasWorksheetData ? (
-        <Grid container spacing={3} sx={{ alignItems: 'flex-start' }}>
-          {/* Left Column: Pengeluaran Grouped */}
-          <Grid size={{ xs: 12, lg: 7 }}>
-            <WorksheetGroupedTable
-              testId="income-statement-expense-panel"
-              title="Pengeluaran"
-              groups={incomeStatementWorksheet.expenseGroups}
-              totalLabel="Total Pengeluaran"
-              totalAmount={incomeStatementWorksheet.totalPengeluaran}
-              tone="expense"
-            />
-          </Grid>
-
-          {/* Right Column: Pendapatan Grouped + Summary */}
-          <Grid size={{ xs: 12, lg: 5 }}>
-            <Stack spacing={3}>
-              <WorksheetGroupedTable
-                testId="income-statement-income-panel"
-                title="Pendapatan"
-                groups={incomeStatementWorksheet.incomeGroups}
-                totalLabel="Total Pendapatan"
-                totalAmount={incomeStatementWorksheet.totalPendapatan}
-                tone="income"
+        <Card
+          data-testid="income-statement-card"
+          sx={{
+            borderRadius: 2.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: 1,
+            overflow: 'hidden',
+          }}
+        >
+          <Grid container>
+            {/* Left Column: Pengeluaran Grouped */}
+            <Grid
+              size={{ xs: 12, lg: 7 }}
+              sx={{
+                borderRight: { lg: '1px solid' },
+                borderBottom: { xs: '1px solid', lg: 0 },
+                borderColor: 'divider',
+              }}
+            >
+              <WorksheetGroupedSection
+                testId="income-statement-expense-panel"
+                title="Pengeluaran"
+                groups={incomeStatementWorksheet.expenseGroups}
+                totalLabel="Total Pengeluaran"
+                totalAmount={incomeStatementWorksheet.totalPengeluaran}
+                tone="expense"
               />
+            </Grid>
 
-              <SummaryModernCard
+            {/* Right Column: Pendapatan Grouped + Summary */}
+            <Grid size={{ xs: 12, lg: 5 }} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flex: 1 }}>
+                <WorksheetGroupedSection
+                  testId="income-statement-income-panel"
+                  title="Pendapatan"
+                  groups={incomeStatementWorksheet.incomeGroups}
+                  totalLabel="Total Pendapatan"
+                  totalAmount={incomeStatementWorksheet.totalPendapatan}
+                  tone="income"
+                />
+              </Box>
+
+              <SummaryModernSection
                 totalPendapatan={incomeStatementWorksheet.totalPendapatan}
                 totalPengeluaran={incomeStatementWorksheet.totalPengeluaran}
                 labaRugi={incomeStatementWorksheet.labaRugi}
               />
-            </Stack>
+            </Grid>
           </Grid>
-        </Grid>
+
+          {kelayakanUsaha && (
+            <KelayakanUsahaSection kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
+          )}
+        </Card>
       ) : (
         <Card sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8, borderRadius: 2.5 }}>
           <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
@@ -427,10 +409,6 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
             </Typography>
           </Box>
         </Card>
-      )}
-
-      {kelayakanUsaha && (
-        <KelayakanUsahaStrip kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
       )}
     </Box>
   );

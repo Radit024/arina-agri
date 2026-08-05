@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -1119,19 +1120,28 @@ export default function KeuanganView({
           </Card>
         </Box>
 
-          <Card
-            data-testid="finance-distribution-card"
-            data-finance-card-align="ledger"
-            data-finance-card-fill-bottom="true"
+          <Collapse
+            orientation="horizontal"
+            in={distributionPanelOpen}
             sx={{
-              width: { md: 300, lg: 330 },
-              flexShrink: 0,
-              alignSelf: 'stretch',
-              minHeight: 0,
-              display: { xs: 'none', md: distributionPanelOpen ? 'flex' : 'none' },
-              flexDirection: 'column',
+              display: { xs: 'none', md: 'block' },
+              '& .MuiCollapse-wrapper': { height: '100%' },
+              '& .MuiCollapse-wrapperInner': { height: '100%' },
             }}
           >
+            <Card
+              data-testid="finance-distribution-card"
+              data-finance-card-align="ledger"
+              data-finance-card-fill-bottom="true"
+              sx={{
+                width: { md: 300, lg: 330 },
+                flexShrink: 0,
+                height: '100%',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -1181,6 +1191,7 @@ export default function KeuanganView({
               {renderDistributionBreakdown()}
             </CardContent>
           </Card>
+          </Collapse>
         </Box>
 
         <Dialog

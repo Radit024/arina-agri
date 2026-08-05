@@ -1,9 +1,11 @@
-'use client';
+import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -13,9 +15,12 @@ import TableFooter from '@mui/material/TableFooter';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
-import { formatMonthYear, formatRupiah } from '@/lib/formatters';
+import { formatMonthYear, formatRupiah, formatDateShort } from '@/lib/formatters';
+import type { ArusKasBulanan, FinanceTransactionForReport } from '@/lib/finance/rabTypes';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeReports'>;
 
@@ -25,8 +30,110 @@ function colorForNet(net: number) {
   return 'text.secondary';
 }
 
+function CashFlowRow({
+  row,
+  transactions,
+}: {
+  row: ArusKasBulanan;
+  transactions: FinanceTransactionForReport[];
+}) {
+  const [open, setOpen] = useState(false);
+  const net = row.kasMasuk - row.kasKeluar;
+  
+  const monthTransactions = transactions.filter(
+    (tx) => tx.tanggal.slice(0, 7) === row.bulan
+  );
+
+  return (
+    <>
+      <TableRow
+        hover
+        sx={{ '& > *': { borderBottom: open ? 'unset' : undefined } }}
+      >
+        <TableCell sx={{ padding: '0 4px', width: '40px' }}>
+          <IconButton size="small" onClick={() => setOpen(!open)}>
+            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+          </IconButton>
+        </TableCell>
+        <TableCell sx={{ fontWeight: 600 }}>{formatMonthYear(row.bulan)}</TableCell>
+        <TableCell
+          align="right"
+          sx={{ color: row.kasMasuk > 0 ? 'success.main' : 'text.disabled' }}
+        >
+          {row.kasMasuk > 0 ? `+${formatRupiah(row.kasMasuk)}` : formatRupiah(0)}
+        </TableCell>
+        <TableCell
+          align="right"
+          sx={{ color: row.kasKeluar > 0 ? 'error.main' : 'text.disabled' }}
+        >
+          {row.kasKeluar > 0 ? `−${formatRupiah(row.kasKeluar)}` : formatRupiah(0)}
+        </TableCell>
+        <TableCell
+          align="right"
+          sx={{ fontWeight: 600, color: colorForNet(net) }}
+        >
+          {net >= 0 ? '+' : '−'}{formatRupiah(Math.abs(net))}
+        </TableCell>
+        <TableCell
+          align="right"
+          sx={{ fontWeight: 700, color: colorForNet(row.kasKumulatif) }}
+        >
+          {formatRupiah(row.kasKumulatif)}
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ margin: 2, mb: 3 }}>
+              <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 700 }}>
+                Detail Transaksi ({formatMonthYear(row.bulan)})
+              </Typography>
+              {monthTransactions.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  Tidak ada transaksi di bulan ini.
+                </Typography>
+              ) : (
+                <Table size="small" aria-label="rincian">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 600 }}>Tanggal</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Kategori</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>Keterangan</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>Nominal</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {monthTransactions.map((tx) => (
+                      <TableRow key={tx.id}>
+                        <TableCell>{formatDateShort(tx.tanggal)}</TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={tx.kategori} 
+                            size="small" 
+                            variant="outlined"
+                            color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
+                            sx={{ height: 20, fontSize: '0.7rem' }}
+                          />
+                        </TableCell>
+                        <TableCell>{tx.keterangan || '-'}</TableCell>
+                        <TableCell align="right" sx={{ color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main' }}>
+                          {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+}
+
 export default function FinanceCashFlowView({ financeReports }: Props) {
-  const { arusKasBulanan, reportStartMonth, reportEndMonth } = financeReports;
+  const { arusKasBulanan, reportTransactions, reportStartMonth, reportEndMonth } = financeReports;
 
   const totalInflow = arusKasBulanan.reduce((sum, row) => sum + row.kasMasuk, 0);
   const totalOutflow = arusKasBulanan.reduce((sum, row) => sum + row.kasKeluar, 0);
@@ -83,6 +190,7 @@ export default function FinanceCashFlowView({ financeReports }: Props) {
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={{ width: '40px' }}></TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Bulan</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>Kas Masuk</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>Kas Keluar</TableCell>
@@ -91,56 +199,24 @@ export default function FinanceCashFlowView({ financeReports }: Props) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {arusKasBulanan.map((row) => {
-                  const net = row.kasMasuk - row.kasKeluar;
-                  return (
-                    <TableRow
-                      key={row.bulan}
-                      hover
-                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                    >
-                      <TableCell sx={{ fontWeight: 600 }}>{formatMonthYear(row.bulan)}</TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ color: row.kasMasuk > 0 ? 'success.main' : 'text.disabled' }}
-                      >
-                        {row.kasMasuk > 0 ? `+${formatRupiah(row.kasMasuk)}` : formatRupiah(0)}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ color: row.kasKeluar > 0 ? 'error.main' : 'text.disabled' }}
-                      >
-                        {row.kasKeluar > 0 ? `−${formatRupiah(row.kasKeluar)}` : formatRupiah(0)}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ fontWeight: 600, color: colorForNet(net) }}
-                      >
-                        {net >= 0 ? '+' : '−'}{formatRupiah(Math.abs(net))}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ fontWeight: 700, color: colorForNet(row.kasKumulatif) }}
-                      >
-                        {formatRupiah(row.kasKumulatif)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                {arusKasBulanan.map((row) => (
+                  <CashFlowRow key={row.bulan} row={row} transactions={reportTransactions} />
+                ))}
               </TableBody>
               <TableFooter>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
-                  <TableCell sx={{ fontWeight: 800 }}>Total</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
+                  <TableCell></TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Total</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: 'success.main' }}>
                     +{formatRupiah(totalInflow)}
                   </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>
+                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: 'error.main' }}>
                     −{formatRupiah(totalOutflow)}
                   </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: colorForNet(totalNet) }}>
+                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: colorForNet(totalNet) }}>
                     {totalNet >= 0 ? '+' : '−'}{formatRupiah(Math.abs(totalNet))}
                   </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: colorForNet(lastCumulative) }}>
+                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: colorForNet(lastCumulative) }}>
                     {formatRupiah(lastCumulative)}
                   </TableCell>
                 </TableRow>

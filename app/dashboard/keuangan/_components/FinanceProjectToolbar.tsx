@@ -45,7 +45,7 @@ function ExcelLogoIcon() {
       alt=""
       aria-hidden="true"
       data-testid="finance-export-excel-logo"
-      sx={{ width: 22, height: 22, display: 'block', opacity: 0.4 }}
+      sx={{ width: 22, height: 22, display: 'block' }}
     />
   );
 }
@@ -58,7 +58,7 @@ function PdfLogoIcon() {
       alt=""
       aria-hidden="true"
       data-testid="finance-export-pdf-logo"
-      sx={{ width: 22, height: 22, display: 'block', opacity: 0.4 }}
+      sx={{ width: 22, height: 22, display: 'block' }}
     />
   );
 }

@@ -1,10 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -252,6 +255,7 @@ function KelayakanUsahaSection({
   kelayakanUsaha: NonNullable<UseKeuanganControllerResult['financeReports']['kelayakanUsaha']>;
   productionSales?: UseKeuanganControllerResult['productionSales'];
 }) {
+  const [expanded, setExpanded] = useState(true);
   const metrics = [
     {
       label: 'HPP',
@@ -277,13 +281,21 @@ function KelayakanUsahaSection({
   return (
     <Box
       sx={{
-        borderTop: '1px solid',
+        borderBottom: '1px solid',
         borderColor: 'divider',
         bgcolor: 'action.hover',
-        p: 2.5,
       }}
     >
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ alignItems: { md: 'center' } }}>
+      <Box
+        sx={{
+          p: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
         <Box sx={{ minWidth: 200 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
             Kelayakan Usaha
@@ -292,36 +304,56 @@ function KelayakanUsahaSection({
             Asumsi Produksi & Penjualan
           </Typography>
         </Box>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, minmax(130px, 1fr))' },
-            gap: 1.5,
-            flex: 1,
-          }}
-        >
-          {metrics.map((metric) => (
-            <Box key={metric.label} sx={{ borderLeft: '2px solid', borderColor: 'divider', pl: 1.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                {metric.label}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.25 }}>
-                {metric.value}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-        {productionSales && (
+        <Stack direction="row" spacing={1}>
           <Button
-            variant="outlined"
+            variant="text"
             size="small"
-            onClick={productionSales.openDialog}
-            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: 'background.paper' }}
+            endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
-            Atur Asumsi
+            {expanded ? 'Sembunyikan' : 'Tampilkan'}
           </Button>
-        )}
-      </Stack>
+        </Stack>
+      </Box>
+      <Collapse in={expanded}>
+        <Box sx={{ p: 2.5, pt: 0 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, minmax(110px, 1fr))' },
+              gap: 1.5,
+              alignItems: 'center',
+            }}
+          >
+            {metrics.map((metric) => (
+              <Box key={metric.label} sx={{ borderLeft: '2px solid', borderColor: 'divider', pl: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                  {metric.label}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.25 }}>
+                  {metric.value}
+                </Typography>
+              </Box>
+            ))}
+            {productionSales && (
+              <Box sx={{ pl: { xs: 0, md: 1.5 } }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    productionSales.openDialog();
+                  }}
+                  fullWidth
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: 'background.paper' }}
+                >
+                  Atur Asumsi
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Collapse>
     </Box>
   );
 }
@@ -353,16 +385,13 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
             overflow: 'hidden',
           }}
         >
+          {kelayakanUsaha && (
+            <KelayakanUsahaSection kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
+          )}
+
           <Grid container>
             {/* Left Column: Pengeluaran Grouped */}
-            <Grid
-              size={{ xs: 12, lg: 7 }}
-              sx={{
-                borderRight: { lg: '1px solid' },
-                borderBottom: { xs: '1px solid', lg: 0 },
-                borderColor: 'divider',
-              }}
-            >
+            <Grid size={{ xs: 12, lg: 7 }}>
               <WorksheetGroupedSection
                 testId="income-statement-expense-panel"
                 title="Pengeluaran"
@@ -393,10 +422,6 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
               />
             </Grid>
           </Grid>
-
-          {kelayakanUsaha && (
-            <KelayakanUsahaSection kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
-          )}
         </Card>
       ) : (
         <Card sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8, borderRadius: 2.5 }}>

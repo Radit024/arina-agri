@@ -1,7 +1,9 @@
 import ExcelJS from 'exceljs';
 
-import { formatDateLong, formatMonthYear } from '@/lib/formatters';
+import { formatDateLong, formatMonthYear, formatDateShort } from '@/lib/formatters';
 import { buildMonthRange } from './rabCalculations';
+import { buildIncomeStatementWorksheetData } from './incomeStatementWorksheet';
+import { computeArusKasBulanan } from './scenarioCalculations';
 import type {
   FinanceProject,
   FinanceTransactionForReport,
@@ -666,69 +668,248 @@ function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, tra
   ];
 }
 
-function writeIncomeStatementSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[]) {
-  applyTitle(sheet, 'LAPORAN LABA RUGI RENCANA', project.name);
-  sheet.getRow(4).values = ['Jenis', 'Kategori', 'Item', 'Jumlah Rencana'];
-  applyHeader(sheet.getRow(4));
+function writeIncomeStatementSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[], transactions: FinanceTransactionForReport[], modeLabel?: string) {
+  const titleLine = modeLabel ? `LAPORAN LABA RUGI — ${modeLabel.toUpperCase()}` : 'LAPORAN LABA RUGI';
+  applyTitle(sheet, titleLine, project.name);
 
-  rabItems.forEach((item, index) => {
-    const rowNumber = index + 5;
-    sheet.getRow(rowNumber).values = [
-      item.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
-      item.categoryName ?? item.categoryId,
-      item.name,
-      item.plannedTotal,
-    ];
-    applyCurrency(sheet.getCell(rowNumber, 4));
+  const data = buildIncomeStatementWorksheetData({ transactions, rabItems });
+
+  const expenseRows: any[][] = [];
+  data.expenseGroups.forEach((group) => {
+    expenseRows.push([{ value: group.label, font: { bold: true } }, '']);
+    group.items.forEach((item) => {
+      expenseRows.push([item.label, item.amount]);
+    });
+    expenseRows.push([
+      { value: 'Sub-total', font: { italic: true, bold: true, color: { argb: 'FF475569' } }, alignment: { horizontal: 'right' } },
+      { value: group.subtotal, font: { bold: true, color: { argb: 'FFDC2626' } }, isCurrency: true },
+    ]);
   });
 
-  const totalRow = rabItems.length + 6;
-  sheet.getCell(totalRow, 3).value = 'Laba/Rugi Rencana';
-  sheet.getCell(totalRow, 4).value = rabItems.filter((item) => item.type === 'income').reduce((sum, item) => sum + item.plannedTotal, 0)
-    - rabItems.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.plannedTotal, 0);
-  sheet.getRow(totalRow).font = { bold: true };
-  applyCurrency(sheet.getCell(totalRow, 4));
-  applyTableBorders(sheet, 4, totalRow, 1, 4);
-  sheet.columns = [{ width: 16 }, { width: 24 }, { width: 36 }, { width: 18 }];
+  const incomeRows: any[][] = [];
+  data.incomeGroups.forEach((group) => {
+    incomeRows.push([{ value: group.label, font: { bold: true } }, '']);
+    group.items.forEach((item) => {
+      incomeRows.push([item.label, item.amount]);
+    });
+    incomeRows.push([
+      { value: 'Sub-total', font: { italic: true, bold: true, color: { argb: 'FF475569' } }, alignment: { horizontal: 'right' } },
+      { value: group.subtotal, font: { bold: true, color: { argb: 'FF16A34A' } }, isCurrency: true },
+    ]);
+  });
+
+  const headerRow = 4;
+  sheet.getRow(headerRow).values = ['Jenis / Kategori', 'Jumlah', 'Jenis / Kategori', 'Jumlah'];
+  applyHeader(sheet.getRow(headerRow));
+
+  let rowNum = 5;
+  const maxRows = Math.max(expenseRows.length, incomeRows.length);
+
+  for (let i = 0; i < maxRows; i++) {
+    const eRow = expenseRows[i] || ['', ''];
+    const iRow = incomeRows[i] || ['', ''];
+    const row = sheet.getRow(rowNum);
+
+    const cellA = row.getCell(1);
+    cellA.value = typeof eRow[0] === 'object' ? eRow[0].value : eRow[0];
+    if (typeof eRow[0] === 'object') {
+      if (eRow[0].font) cellA.font = eRow[0].font;
+      if (eRow[0].alignment) cellA.alignment = eRow[0].alignment;
+    }
+    if (eRow[0] && typeof eRow[0] === 'object' && eRow[0].font?.bold && !eRow[0].font?.italic) {
+      cellA.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      sheet.mergeCells(`A${rowNum}:B${rowNum}`);
+    }
+
+    const cellB = row.getCell(2);
+    cellB.value = typeof eRow[1] === 'object' ? eRow[1].value : eRow[1];
+    if (typeof eRow[1] === 'object' && eRow[1].font) cellB.font = eRow[1].font;
+    if (typeof eRow[1] === 'number' || (typeof eRow[1] === 'object' && eRow[1].isCurrency)) applyCurrency(cellB);
+
+    const cellC = row.getCell(3);
+    cellC.value = typeof iRow[0] === 'object' ? iRow[0].value : iRow[0];
+    if (typeof iRow[0] === 'object') {
+      if (iRow[0].font) cellC.font = iRow[0].font;
+      if (iRow[0].alignment) cellC.alignment = iRow[0].alignment;
+    }
+    if (iRow[0] && typeof iRow[0] === 'object' && iRow[0].font?.bold && !iRow[0].font?.italic) {
+      cellC.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      sheet.mergeCells(`C${rowNum}:D${rowNum}`);
+    }
+
+    const cellD = row.getCell(4);
+    cellD.value = typeof iRow[1] === 'object' ? iRow[1].value : iRow[1];
+    if (typeof iRow[1] === 'object' && iRow[1].font) cellD.font = iRow[1].font;
+    if (typeof iRow[1] === 'number' || (typeof iRow[1] === 'object' && iRow[1].isCurrency)) applyCurrency(cellD);
+
+    rowNum += 1;
+  }
+
+  const totalRow = sheet.getRow(rowNum);
+  totalRow.getCell(1).value = 'Total Pengeluaran';
+  totalRow.getCell(1).font = { bold: true };
+  totalRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  totalRow.getCell(2).value = data.totalPengeluaran;
+  totalRow.getCell(2).font = { bold: true, color: { argb: 'FFDC2626' } };
+  totalRow.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  applyCurrency(totalRow.getCell(2));
+
+  totalRow.getCell(3).value = 'Total Pendapatan';
+  totalRow.getCell(3).font = { bold: true };
+  totalRow.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  totalRow.getCell(4).value = data.totalPendapatan;
+  totalRow.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };
+  totalRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  applyCurrency(totalRow.getCell(4));
+  rowNum += 1;
+
+  rowNum += 1;
+  const summaryTitleRow = sheet.getRow(rowNum);
+  summaryTitleRow.getCell(3).value = 'Ringkasan Laba / Rugi';
+  summaryTitleRow.getCell(3).font = { bold: true };
+  summaryTitleRow.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  const badgeText = data.labaRugi > 0 ? 'SURPLUS (LABA)' : data.labaRugi < 0 ? 'DEFISIT (RUGI)' : 'IMPAS';
+  summaryTitleRow.getCell(4).value = badgeText;
+  summaryTitleRow.getCell(4).font = { bold: true, color: { argb: data.labaRugi >= 0 ? 'FF16A34A' : 'FFDC2626' } };
+  summaryTitleRow.getCell(4).alignment = { horizontal: 'right' };
+  summaryTitleRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  rowNum += 1;
+
+  const summaryPendapatan = sheet.getRow(rowNum);
+  summaryPendapatan.getCell(3).value = 'Total Pendapatan';
+  summaryPendapatan.getCell(4).value = data.totalPendapatan;
+  summaryPendapatan.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };
+  applyCurrency(summaryPendapatan.getCell(4));
+  rowNum += 1;
+
+  const summaryPengeluaran = sheet.getRow(rowNum);
+  summaryPengeluaran.getCell(3).value = 'Total Pengeluaran';
+  summaryPengeluaran.getCell(4).value = data.totalPengeluaran;
+  summaryPengeluaran.getCell(4).font = { bold: true, color: { argb: 'FFDC2626' } };
+  applyCurrency(summaryPengeluaran.getCell(4));
+  rowNum += 1;
+
+  const summaryLaba = sheet.getRow(rowNum);
+  summaryLaba.getCell(3).value = 'Laba/Rugi';
+  summaryLaba.getCell(3).font = { bold: true };
+  summaryLaba.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: data.labaRugi >= 0 ? 'FFDCFCE7' : 'FFFEE2E2' } };
+  summaryLaba.getCell(4).value = data.labaRugi;
+  summaryLaba.getCell(4).font = { bold: true, color: { argb: data.labaRugi >= 0 ? 'FF16A34A' : 'FFDC2626' } };
+  summaryLaba.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: data.labaRugi >= 0 ? 'FFDCFCE7' : 'FFFEE2E2' } };
+  applyCurrency(summaryLaba.getCell(4));
+
+  applyTableBorders(sheet, 4, rowNum - 4, 1, 2);
+  applyTableBorders(sheet, 4, rowNum, 3, 4);
+  sheet.columns = [
+    { width: 45 },
+    { width: 22 },
+    { width: 45 },
+    { width: 22 },
+  ];
 }
 
-function writeCashFlowSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabItems: RabItem[], startMonth: string, endMonth: string) {
-  applyTitle(sheet, 'ARUS KAS RENCANA', project.name);
-  const months = buildMonthRange(startMonth, endMonth);
-  sheet.getRow(4).values = ['Deskripsi', ...months.map(formatMonthYear), 'Total'];
-  applyHeader(sheet.getRow(4));
+function writeCashFlowSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, transactions: FinanceTransactionForReport[], startMonth: string, endMonth: string, modeLabel?: string) {
+  const titleLine = modeLabel ? `ARUS KAS — ${modeLabel.toUpperCase()}` : 'ARUS KAS';
+  applyTitle(sheet, titleLine, project.name, `${formatMonthYear(startMonth)} s.d. ${formatMonthYear(endMonth)}`);
+  
+  const headerRow = 5;
+  sheet.getRow(headerRow).values = ['Bulan', 'Kas Masuk', 'Kas Keluar', 'Kas Bersih', 'Kumulatif'];
+  applyHeader(sheet.getRow(headerRow));
 
-  const rows = [
-    { label: 'Kas Masuk Rencana', type: 'income' as const },
-    { label: 'Kas Keluar Rencana', type: 'expense' as const },
+  const arusKasBulanan = computeArusKasBulanan(transactions, startMonth, endMonth);
+  
+  let rowNum = 6;
+  arusKasBulanan.forEach((row) => {
+    const monthRow = sheet.getRow(rowNum);
+    monthRow.values = [formatMonthYear(row.bulan), row.kasMasuk, row.kasKeluar, row.kasBersih, row.kasKumulatif];
+    monthRow.font = { bold: true };
+    applyCurrency(monthRow.getCell(2));
+    if (row.kasMasuk > 0) monthRow.getCell(2).font = { bold: true, color: { argb: 'FF16A34A' } };
+    else monthRow.getCell(2).font = { bold: true, color: { argb: 'FF94A3B8' } };
+    
+    applyCurrency(monthRow.getCell(3));
+    if (row.kasKeluar > 0) monthRow.getCell(3).font = { bold: true, color: { argb: 'FFDC2626' } };
+    else monthRow.getCell(3).font = { bold: true, color: { argb: 'FF94A3B8' } };
+    
+    applyCurrency(monthRow.getCell(4));
+    if (row.kasBersih > 0) monthRow.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };
+    else if (row.kasBersih < 0) monthRow.getCell(4).font = { bold: true, color: { argb: 'FFDC2626' } };
+    else monthRow.getCell(4).font = { bold: true, color: { argb: 'FF94A3B8' } };
+    
+    applyCurrency(monthRow.getCell(5));
+    if (row.kasKumulatif > 0) monthRow.getCell(5).font = { bold: true, color: { argb: 'FF16A34A' } };
+    else if (row.kasKumulatif < 0) monthRow.getCell(5).font = { bold: true, color: { argb: 'FFDC2626' } };
+    else monthRow.getCell(5).font = { bold: true, color: { argb: 'FF94A3B8' } };
+    
+    monthRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+    rowNum += 1;
+    
+    const monthTx = transactions.filter((tx) => tx.tanggal.startsWith(row.bulan)).sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+    if (monthTx.length === 0) {
+      const emptyRow = sheet.getRow(rowNum);
+      emptyRow.getCell(1).value = 'Tidak ada transaksi di bulan ini.';
+      emptyRow.getCell(1).font = { italic: true, color: { argb: 'FF64748B' } };
+      sheet.mergeCells(`A${rowNum}:E${rowNum}`);
+      rowNum += 1;
+    } else {
+      const detailHeaderRow = sheet.getRow(rowNum);
+      detailHeaderRow.values = ['Tanggal', 'Kategori', 'Keterangan', '', 'Nominal'];
+      detailHeaderRow.font = { bold: true, size: 10 };
+      rowNum += 1;
+      
+      monthTx.forEach((tx) => {
+        const txRow = sheet.getRow(rowNum);
+        txRow.values = [
+          formatDateShort(tx.tanggal),
+          tx.kategori,
+          tx.keterangan || tx.kategori,
+          '',
+          tx.nominal,
+        ];
+        applyCurrency(txRow.getCell(5));
+        if (tx.jenis === 'pendapatan') {
+          txRow.getCell(5).font = { color: { argb: 'FF16A34A' } };
+        } else {
+          txRow.getCell(5).font = { color: { argb: 'FFDC2626' } };
+        }
+        rowNum += 1;
+      });
+    }
+    
+    rowNum += 1;
+  });
+  
+  const totalRow = sheet.getRow(rowNum);
+  const totalMasuk = arusKasBulanan.reduce((sum, r) => sum + r.kasMasuk, 0);
+  const totalKeluar = arusKasBulanan.reduce((sum, r) => sum + r.kasKeluar, 0);
+  const totalBersih = totalMasuk - totalKeluar;
+  
+  totalRow.values = ['Total', totalMasuk, totalKeluar, totalBersih, totalBersih];
+  totalRow.font = { bold: true };
+  totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+  applyCurrency(totalRow.getCell(2));
+  if (totalMasuk > 0) totalRow.getCell(2).font = { bold: true, color: { argb: 'FF16A34A' } };
+  
+  applyCurrency(totalRow.getCell(3));
+  if (totalKeluar > 0) totalRow.getCell(3).font = { bold: true, color: { argb: 'FFDC2626' } };
+  
+  applyCurrency(totalRow.getCell(4));
+  if (totalBersih > 0) {
+    totalRow.getCell(4).font = { bold: true, color: { argb: 'FF16A34A' } };
+    totalRow.getCell(5).font = { bold: true, color: { argb: 'FF16A34A' } };
+  } else if (totalBersih < 0) {
+    totalRow.getCell(4).font = { bold: true, color: { argb: 'FFDC2626' } };
+    totalRow.getCell(5).font = { bold: true, color: { argb: 'FFDC2626' } };
+  }
+  applyCurrency(totalRow.getCell(5));
+
+  sheet.columns = [
+    { width: 22 },
+    { width: 28 },
+    { width: 48 },
+    { width: 20 },
+    { width: 20 },
   ];
-
-  rows.forEach((row, rowIndex) => {
-    const rowNumber = rowIndex + 5;
-    sheet.getCell(rowNumber, 1).value = row.label;
-    months.forEach((month, monthIndex) => {
-      const value = rabItems
-        .filter((item) => item.type === row.type && item.plannedCashMonth === month)
-        .reduce((sum, item) => sum + item.plannedTotal, 0);
-      sheet.getCell(rowNumber, monthIndex + 2).value = value;
-      applyCurrency(sheet.getCell(rowNumber, monthIndex + 2));
-    });
-    sheet.getCell(rowNumber, months.length + 2).value = { formula: `SUM(B${rowNumber}:${String.fromCharCode(65 + months.length)}${rowNumber})` };
-    applyCurrency(sheet.getCell(rowNumber, months.length + 2));
-  });
-
-  const netRow = 7;
-  sheet.getCell(netRow, 1).value = 'Arus Kas Bersih Rencana';
-  months.forEach((_, monthIndex) => {
-    const col = String.fromCharCode(66 + monthIndex);
-    sheet.getCell(netRow, monthIndex + 2).value = { formula: `${col}5-${col}6` };
-    applyCurrency(sheet.getCell(netRow, monthIndex + 2));
-  });
-  sheet.getCell(netRow, months.length + 2).value = { formula: `SUM(B${netRow}:${String.fromCharCode(65 + months.length)}${netRow})` };
-  applyCurrency(sheet.getCell(netRow, months.length + 2));
-  sheet.getRow(netRow).font = { bold: true };
-  applyTableBorders(sheet, 4, netRow, 1, months.length + 2);
-  sheet.columns = [{ width: 28 }, ...months.map(() => ({ width: 16 })), { width: 18 }];
 }
 
 export async function buildFinanceExportWorkbook({
@@ -745,8 +926,8 @@ export async function buildFinanceExportWorkbook({
 
   writeRabSheet(workbook.addWorksheet('RAB'), project, rabItems, modeLabel);
   writeLedgerSheet(workbook.addWorksheet('Catatan Transaksi Harian'), project, transactions, rabItems, modeLabel);
-  writeIncomeStatementSheet(workbook.addWorksheet('Laporan Laba Rugi'), project, rabItems);
-  writeCashFlowSheet(workbook.addWorksheet('Arus Kas'), project, rabItems, startMonth, endMonth);
+  writeIncomeStatementSheet(workbook.addWorksheet('Laporan Laba Rugi'), project, rabItems, transactions, modeLabel);
+  writeCashFlowSheet(workbook.addWorksheet('Arus Kas'), project, transactions, startMonth, endMonth, modeLabel);
 
   return workbook;
 }

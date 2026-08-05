@@ -850,7 +850,7 @@ describe('KeuanganView', () => {
     expect(openForCreate).not.toHaveBeenCalled();
   });
 
-  it('mengaktifkan input tetapi menonaktifkan export ketika proyek belum punya data', () => {
+  it('mengaktifkan input dan export ketika proyek sudah dipilih, walaupun belum punya data', () => {
     const openForCreate = vi.fn();
     renderView({
       displayedTransactions: [],
@@ -859,7 +859,7 @@ describe('KeuanganView', () => {
         hasSelectedProject: true,
         hasProjectData: false,
         canInputFinance: true,
-        canExportFinance: false,
+        canExportFinance: true, // Berubah menjadi true karena hasSelectedProject = true
       },
       financeProject: {
         projects: [financeProject],
@@ -890,8 +890,8 @@ describe('KeuanganView', () => {
 
     const addButton = screen.getByRole('button', { name: 'Catat Transaksi' });
     expect(addButton).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Export Excel' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeEnabled();
 
     fireEvent.click(addButton);
     expect(openForCreate).toHaveBeenCalled();

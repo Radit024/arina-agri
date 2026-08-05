@@ -147,7 +147,7 @@ export function useKeuanganController() {
     hasSelectedProject,
     hasProjectData,
     canInputFinance: hasSelectedProject,
-    canExportFinance: hasProjectData,
+    canExportFinance: hasSelectedProject,
   };
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
@@ -319,7 +319,6 @@ export function useKeuanganController() {
 
   const getFinanceExportBlockedMessage = () => {
     if (!financeAccess.hasSelectedProject) return 'Buat atau pilih proyek terlebih dahulu';
-    if (!financeAccess.hasProjectData) return 'Tambahkan transaksi atau RAB sebelum export laporan';
     return null;
   };
 

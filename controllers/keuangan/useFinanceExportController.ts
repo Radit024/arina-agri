@@ -42,8 +42,8 @@ export function useFinanceExportController({
 
     const effectiveHasProjectData = hasProjectData ?? (rabItems.length > 0 || transactions.length > 0);
     const effectiveCanExport = canExport ?? effectiveHasProjectData;
-    if (!effectiveCanExport || !effectiveHasProjectData) {
-      setExportError('Tambahkan transaksi atau RAB sebelum export laporan');
+    if (!effectiveCanExport) {
+      setExportError('Buat atau pilih proyek terlebih dahulu untuk export laporan');
       return;
     }
 

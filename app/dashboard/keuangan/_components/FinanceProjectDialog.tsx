@@ -22,6 +22,7 @@ type Props = Pick<UseKeuanganControllerResult, 'financeProject'>;
 export default function FinanceProjectDialog({ financeProject }: Props) {
   const dialog = useFinanceProjectDialogController(financeProject);
   const { form } = dialog;
+  const isEdit = dialog.mode === 'edit';
 
   return (
     <Dialog
@@ -32,7 +33,7 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
       slotProps={{ paper: { sx: { borderRadius: 4 } } }}
     >
       <DialogTitle sx={{ fontWeight: 800, fontFamily: 'var(--font-sora)' }}>
-        Buat Proyek Baru
+        {isEdit ? 'Edit Proyek' : 'Buat Proyek Baru'}
       </DialogTitle>
 
       <DialogContent sx={{ pt: '12px !important' }}>
@@ -50,17 +51,19 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Lokasi / Blok Lahan"
-              value={form.landBlock}
-              onChange={(e) => dialog.setField('landBlock', e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="Blok A, Greenhouse 2, atau Dusun Krajan"
-              helperText="Opsional. Akan ditambahkan ke nama proyek saat disimpan."
-            />
-          </Grid>
+          {!isEdit && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Lokasi / Blok Lahan"
+                value={form.landBlock}
+                onChange={(e) => dialog.setField('landBlock', e.target.value)}
+                fullWidth
+                size="small"
+                placeholder="Blok A, Greenhouse 2, atau Dusun Krajan"
+                helperText="Opsional. Akan ditambahkan ke nama proyek saat disimpan."
+              />
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -75,17 +78,19 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Varietas / Tipe"
-              value={form.variety}
-              onChange={(e) => dialog.setField('variety', e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="Dewata F1, Inpari 32, atau lokal"
-              helperText="Opsional. Akan disimpan bersama komoditas."
-            />
-          </Grid>
+          {!isEdit && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Varietas / Tipe"
+                value={form.variety}
+                onChange={(e) => dialog.setField('variety', e.target.value)}
+                fullWidth
+                size="small"
+                placeholder="Dewata F1, Inpari 32, atau lokal"
+                helperText="Opsional. Akan disimpan bersama komoditas."
+              />
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
@@ -124,17 +129,19 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              label="Metode Budidaya"
-              value={form.cultivationMethod}
-              onChange={(e) => dialog.setField('cultivationMethod', e.target.value)}
-              fullWidth
-              size="small"
-              placeholder="Open field, greenhouse, polybag"
-              helperText="Opsional. Akan ditambahkan ke label musim."
-            />
-          </Grid>
+          {!isEdit && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Metode Budidaya"
+                value={form.cultivationMethod}
+                onChange={(e) => dialog.setField('cultivationMethod', e.target.value)}
+                fullWidth
+                size="small"
+                placeholder="Open field, greenhouse, polybag"
+                helperText="Opsional. Akan ditambahkan ke label musim."
+              />
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12, sm: 6 }}>
             <FormControl fullWidth size="small">
@@ -195,7 +202,7 @@ export default function FinanceProjectDialog({ financeProject }: Props) {
           disabled={dialog.submitting || !dialog.canSubmit}
           sx={{ borderRadius: 2 }}
         >
-          {dialog.submitting ? 'Menyimpan...' : 'Buat Proyek'}
+          {dialog.submitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Proyek'}
         </Button>
       </DialogActions>
     </Dialog>

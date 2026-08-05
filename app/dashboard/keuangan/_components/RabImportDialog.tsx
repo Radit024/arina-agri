@@ -26,6 +26,7 @@ export default function RabImportDialog({ rab }: Props) {
     setSelectedFile(null);
     setIsDragActive(false);
     rab.setImportError(null);
+    rab.setImportWarnings([]);
     rab.setImportDialogOpen(false);
   };
 
@@ -69,6 +70,19 @@ export default function RabImportDialog({ rab }: Props) {
         {rab.importError && (
           <Alert severity="error" onClose={() => rab.setImportError(null)} sx={{ mb: 2, borderRadius: 2 }}>
             {rab.importError}
+          </Alert>
+        )}
+
+        {rab.importWarnings.length > 0 && (
+          <Alert severity="warning" onClose={() => rab.setImportWarnings([])} sx={{ mb: 2, borderRadius: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
+              Import berhasil, tapi ada beberapa hal yang perlu dicek:
+            </Typography>
+            {rab.importWarnings.map((warning) => (
+              <Typography key={warning} variant="caption" component="div">
+                • {warning}
+              </Typography>
+            ))}
           </Alert>
         )}
 

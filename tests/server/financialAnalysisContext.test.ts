@@ -22,7 +22,7 @@ describe('generateFinancialAnalysis finance planning context', () => {
     generateContentMock.mockClear();
   });
 
-  it('injects project, RAB, income statement comparison, and cash flow comparison into the AI prompt', async () => {
+  it('injects project and RAB data into the AI prompt', async () => {
     await generateFinancialAnalysis({
       reportData: {
         periode: 'Juni 2026 - September 2026',
@@ -68,59 +68,6 @@ describe('generateFinancialAnalysis finance planning context', () => {
             keterangan: 'Beli pupuk urea',
           },
         ],
-        incomeStatementComparison: {
-          rows: [
-            {
-              categoryId: 'saprodi',
-              categoryName: 'Saprodi',
-              itemId: 'rab-pupuk',
-              itemName: 'Pupuk Urea',
-              type: 'expense',
-              planned: 2000000,
-              actual: 750000,
-              variance: -1250000,
-              variancePercent: -0.625,
-              status: 'hemat',
-            },
-          ],
-          summary: {
-            plannedIncome: 0,
-            plannedExpense: 2000000,
-            plannedProfit: -2000000,
-            actualIncome: 0,
-            actualExpense: 750000,
-            actualProfit: -750000,
-            profitVariance: 1250000,
-            profitVariancePercent: -0.625,
-          },
-        },
-        cashFlowComparison: {
-          rows: [
-            {
-              month: '2026-06',
-              plannedInflow: 0,
-              actualInflow: 0,
-              plannedOutflow: 2000000,
-              actualOutflow: 750000,
-              plannedNet: -2000000,
-              actualNet: -750000,
-              plannedCumulative: -2000000,
-              actualCumulative: -750000,
-              variance: 1250000,
-              variancePercent: -0.625,
-            },
-          ],
-          summary: {
-            plannedInflow: 0,
-            actualInflow: 0,
-            plannedOutflow: 2000000,
-            actualOutflow: 750000,
-            plannedNet: -2000000,
-            actualNet: -750000,
-            variance: 1250000,
-            variancePercent: -0.625,
-          },
-        },
       },
     });
 
@@ -130,10 +77,7 @@ describe('generateFinancialAnalysis finance planning context', () => {
     expect(mergedPrompt).toContain('Padi 1 Ha');
     expect(mergedPrompt).toContain('RENCANA ANGGARAN BIAYA (RAB)');
     expect(mergedPrompt).toContain('Pupuk Urea');
-    expect(mergedPrompt).toContain('LAPORAN LABA RUGI RENCANA VS AKTUAL');
-    expect(mergedPrompt).toContain('Hemat');
-    expect(mergedPrompt).toContain('ARUS KAS RENCANA VS AKTUAL');
-    expect(mergedPrompt).toContain('Juni 2026');
+    expect(mergedPrompt).toContain('RINGKASAN RENCANA VS AKTUAL');
     expect(mergedPrompt).toContain('rekomendasi wajib mempertimbangkan deviasi RAB vs aktual');
   });
 });

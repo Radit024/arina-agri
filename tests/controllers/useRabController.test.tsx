@@ -1,12 +1,13 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useRabItems } from '@/hooks/useRabItems';
+import { useRabItemsForScenario } from '@/hooks/useRabItemsForScenario';
 import { useRabController } from '@/controllers/keuangan/useRabController';
 import type { ApiFinanceProject } from '@/lib/api';
+import type { FinanceScenarioEntity } from '@/lib/finance/rabTypes';
 
-vi.mock('@/hooks/useRabItems', () => ({
-  useRabItems: vi.fn(),
+vi.mock('@/hooks/useRabItemsForScenario', () => ({
+  useRabItemsForScenario: vi.fn(),
 }));
 
 const project: ApiFinanceProject = {
@@ -19,6 +20,12 @@ const project: ApiFinanceProject = {
   startDate: '2026-01-01',
   endDate: '2026-04-30',
   status: 'active',
+};
+
+const scenario: FinanceScenarioEntity = {
+  id: 'scenario-1',
+  projectId: project.id,
+  mode: 'PROJECTION',
 };
 
 const createCategory = vi.fn();
@@ -40,7 +47,7 @@ beforeEach(() => {
   });
   createItem.mockResolvedValue(null);
 
-  vi.mocked(useRabItems).mockReturnValue({
+  vi.mocked(useRabItemsForScenario).mockReturnValue({
     categories: [],
     items: [],
     imports: [],
@@ -60,7 +67,7 @@ beforeEach(() => {
 
 describe('useRabController', () => {
   it('submits the complete RAB item draft with parsed aliases and planned total', async () => {
-    const { result } = renderHook(() => useRabController(project));
+    const { result } = renderHook(() => useRabController(project, undefined, scenario));
 
     act(() => {
       result.current.updateRabItemDraftField('categoryName', 'Saprodi');
@@ -94,7 +101,7 @@ describe('useRabController', () => {
   });
 
   it('provides selectable preset and custom RAB category options per type', () => {
-    vi.mocked(useRabItems).mockReturnValue({
+    vi.mocked(useRabItemsForScenario).mockReturnValue({
       categories: [
         {
           id: 'cat-transport',
@@ -119,7 +126,7 @@ describe('useRabController', () => {
       reload: vi.fn(),
     });
 
-    const { result } = renderHook(() => useRabController(project));
+    const { result } = renderHook(() => useRabController(project, undefined, scenario));
 
     expect(result.current.rabCategoryOptions).toEqual(
       expect.arrayContaining(['Saprodi', 'Tenaga Kerja', 'Transport Panen']),
@@ -145,7 +152,7 @@ describe('useRabController', () => {
       sortOrder: 1,
     });
 
-    const { result } = renderHook(() => useRabController(project));
+    const { result } = renderHook(() => useRabController(project, undefined, scenario));
 
     await act(async () => {
       await result.current.addRabCategory('Transport Panen');

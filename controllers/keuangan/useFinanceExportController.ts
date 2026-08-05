@@ -18,6 +18,8 @@ export function useFinanceExportController({
   endMonth,
   canExport,
   hasProjectData,
+  modeLabel,
+  modeSlug,
 }: {
   project: ApiFinanceProject | null;
   rabItems: RabItem[];
@@ -26,6 +28,8 @@ export function useFinanceExportController({
   endMonth: string;
   canExport?: boolean;
   hasProjectData?: boolean;
+  modeLabel?: string;
+  modeSlug?: string;
 }) {
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -38,8 +42,8 @@ export function useFinanceExportController({
 
     const effectiveHasProjectData = hasProjectData ?? (rabItems.length > 0 || transactions.length > 0);
     const effectiveCanExport = canExport ?? effectiveHasProjectData;
-    if (!effectiveCanExport || !effectiveHasProjectData) {
-      setExportError('Tambahkan transaksi atau RAB sebelum export laporan');
+    if (!effectiveCanExport) {
+      setExportError('Buat atau pilih proyek terlebih dahulu untuk export laporan');
       return;
     }
 
@@ -53,12 +57,17 @@ export function useFinanceExportController({
           transactions,
           startMonth,
           endMonth,
+          modeLabel,
         }),
         import('file-saver'),
       ]);
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      saveAs(blob, `laporan-keuangan-${sanitizeFilename(project.name)}.xlsx`);
+      const slug = sanitizeFilename(project.name);
+      const fileName = modeSlug
+        ? `laporan-keuangan-${slug}-${modeSlug}.xlsx`
+        : `laporan-keuangan-${slug}.xlsx`;
+      saveAs(blob, fileName);
     } catch (err) {
       setExportError(err instanceof Error ? err.message : 'Gagal export Excel');
     } finally {
@@ -75,3 +84,4 @@ export function useFinanceExportController({
 }
 
 export type UseFinanceExportControllerResult = ReturnType<typeof useFinanceExportController>;
+

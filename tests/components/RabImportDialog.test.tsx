@@ -10,6 +10,8 @@ function makeRab(overrides: Partial<Parameters<typeof RabImportDialog>[0]['rab']
     importLoading: false,
     importError: null,
     setImportError: vi.fn(),
+    importWarnings: [],
+    setImportWarnings: vi.fn(),
     importRabFile: vi.fn(),
     ...overrides,
   } as Parameters<typeof RabImportDialog>[0]['rab'];
@@ -88,5 +90,28 @@ describe('RabImportDialog', () => {
     fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
     expect(screen.queryByText('should-be-ignored.xlsx')).not.toBeInTheDocument();
+  });
+
+  it('shows a warning alert with each reported import warning', () => {
+    const rab = makeRab({
+      importWarnings: [
+        'Kategori "SAPRODI": jumlah item (Rp425.000) tidak cocok dengan TOTAL di sheet (Rp412.500), selisih Rp12.500',
+        '2 baris dilewati: format tanggal tidak dikenali',
+      ],
+    });
+    render(<RabImportDialog rab={rab} />);
+
+    expect(screen.getByText('Import berhasil, tapi ada beberapa hal yang perlu dicek:')).toBeInTheDocument();
+    expect(screen.getByText(/SAPRODI/)).toBeInTheDocument();
+    expect(screen.getByText(/2 baris dilewati/)).toBeInTheDocument();
+  });
+
+  it('clears import warnings when the dialog is closed', () => {
+    const rab = makeRab({ importWarnings: ['1 baris dilewati: tidak ada nominal pengeluaran/pemasukan'] });
+    render(<RabImportDialog rab={rab} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+
+    expect(rab.setImportWarnings).toHaveBeenCalledWith([]);
   });
 });

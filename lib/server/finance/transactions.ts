@@ -17,6 +17,7 @@ interface DbTransactionRow {
   volume: number | null;
   satuan: string | null;
   harga_satuan: number | null;
+  scenario_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,6 +34,8 @@ interface CreateTransactionPayload {
   volume?: unknown;
   satuan?: unknown;
   hargaSatuan?: unknown;
+  scenarioId?: unknown;
+  scenario_id?: unknown;
 }
 
 function mapTransactionRow(row: DbTransactionRow): ApiTransaction {
@@ -49,6 +52,7 @@ function mapTransactionRow(row: DbTransactionRow): ApiTransaction {
     volume: row.volume,
     satuan: row.satuan,
     hargaSatuan: row.harga_satuan,
+    scenarioId: row.scenario_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -84,6 +88,11 @@ function parseCreatePayload(body: CreateTransactionPayload) {
   if (typeof body.volume === 'number') insertPayload.volume = body.volume;
   if (typeof body.satuan === 'string') insertPayload.satuan = body.satuan;
   if (typeof body.hargaSatuan === 'number') insertPayload.harga_satuan = body.hargaSatuan;
+  if (typeof body.scenarioId === 'string') {
+    insertPayload.scenario_id = body.scenarioId;
+  } else if (typeof body.scenario_id === 'string') {
+    insertPayload.scenario_id = body.scenario_id;
+  }
 
   return insertPayload;
 }

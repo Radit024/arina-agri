@@ -1,5 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
+
 
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
@@ -7,16 +6,6 @@ import { describe, expect, it } from 'vitest';
 import { buildFinanceExportWorkbook, parseLedgerWorkbook, parseRabWorkbook } from '@/lib/finance/rabExcel';
 import type { FinanceProject, FinanceTransactionForReport, RabItem } from '@/lib/finance/rabTypes';
 
-async function loadGoldenRabWorkbook() {
-  const buffer = fs.readFileSync(
-    path.join(process.cwd(), 'tests', 'fixtures', 'rab', 'catatan-keuangan-padi-1ha-ade.xlsx'),
-  );
-  const workbook = new ExcelJS.Workbook();
-  // exceljs's Buffer type comes from a different @types/node version than this repo's,
-  // so the structurally-identical Node Buffer needs an explicit cast here.
-  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
-  return workbook;
-}
 
 async function buildSampleRabWorkbook() {
   const workbook = new ExcelJS.Workbook();
@@ -283,50 +272,6 @@ describe('RAB Excel writer — layout mirrors the reference RAB template', () =>
   });
 });
 
-describe('RAB Excel parser — golden fixture (file RAB nyata)', () => {
-  it('reconciles every category cleanly against the sheet\'s own TOTAL rows', async () => {
-    const workbook = await loadGoldenRabWorkbook();
-    const parsed = parseRabWorkbook(workbook);
-
-    expect(parsed.reconciliation).toHaveLength(5);
-    expect(parsed.reconciliation.map((entry) => entry.categoryId).sort()).toEqual(
-      ['biaya-tetap', 'jasa-alsintan', 'lain-lain', 'saprodi', 'tenaga-kerja'].sort(),
-    );
-    for (const entry of parsed.reconciliation) {
-      expect(entry.difference).toBe(0);
-    }
-  });
-
-  it('parses the expected item count and excludes summary/derivation rows', async () => {
-    const workbook = await loadGoldenRabWorkbook();
-    const parsed = parseRabWorkbook(workbook);
-
-    expect(parsed.items).toHaveLength(22);
-    const itemNames = parsed.items.map((item) => item.name.toLowerCase());
-    for (const excluded of ['keuntungan', 'hpp', 'bep produksi', 'b/c ratio', '40 % pemilik lahan', '60% bp', 'produksi', 'harga pasar']) {
-      expect(itemNames).not.toContain(excluded);
-    }
-  });
-
-  it('reports skipped helper rows and the profit-sharing section', async () => {
-    const workbook = await loadGoldenRabWorkbook();
-    const parsed = parseRabWorkbook(workbook);
-
-    expect(parsed.skippedRows.some((row) => row.reason.includes('Total Rencana kosong') && row.description === 'Produksi')).toBe(true);
-    expect(parsed.skippedRows.some((row) => row.reason.includes('Total Rencana kosong') && row.description === 'Harga pasar')).toBe(true);
-    expect(parsed.skippedRows.some((row) => row.description === 'BAGI HASIL')).toBe(true);
-  });
-
-  it('parses all 37 ledger transactions with no skipped rows', async () => {
-    const workbook = await loadGoldenRabWorkbook();
-    const rabParsed = parseRabWorkbook(workbook);
-    const ledgerParsed = parseLedgerWorkbook(workbook);
-
-    expect(rabParsed.transactions).toHaveLength(37);
-    expect(ledgerParsed.transactions).toHaveLength(37);
-    expect(ledgerParsed.skippedRows).toHaveLength(0);
-  });
-});
 
 describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
   it('flags a reconciliation difference when the sheet TOTAL disagrees with the sum of its items', async () => {

@@ -122,6 +122,13 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
     warnings.push(`${count} baris dilewati: ${label}`);
   }
 
+  if (parsed.warnings) {
+    for (const w of parsed.warnings) {
+      const cleanedMessage = w.message.replace('Parser tidak yakin: ', '');
+      warnings.push(`Item "${w.description}" (Baris ${w.rowNumber}): ${cleanedMessage}`);
+    }
+  }
+
   return warnings;
 }
 
@@ -555,7 +562,9 @@ export function useRabController(
         // Riwayat import bersifat opsional, tidak boleh menggagalkan alur import utama.
       }
 
-      setImportDialogOpen(false);
+      if (warnings.length === 0) {
+        setImportDialogOpen(false);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
       setImportError(message);

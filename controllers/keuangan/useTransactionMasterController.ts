@@ -54,7 +54,7 @@ export function useTransactionMasterController() {
 
   const addKategori = async (nama: string) => {
     if (isGuestMode) {
-      const created: MasterItem = { id: `mock-kat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, nama, createdAt: new Date().toISOString() };
+      const created: MasterItem = { id: `mock-kat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, nama };
       setCustomKategori((prev) => [...prev, created]);
       return;
     }
@@ -83,7 +83,7 @@ export function useTransactionMasterController() {
 
   const addSatuan = async (nama: string) => {
     if (isGuestMode) {
-      const created: MasterItem = { id: `mock-sat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, nama, createdAt: new Date().toISOString() };
+      const created: MasterItem = { id: `mock-sat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, nama };
       setCustomSatuan((prev) => [...prev, created]);
       return;
     }

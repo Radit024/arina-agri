@@ -101,7 +101,7 @@ describe('RabImportDialog', () => {
     });
     render(<RabImportDialog rab={rab} />);
 
-    expect(screen.getByText('Import berhasil, tapi ada beberapa hal yang perlu dicek:')).toBeInTheDocument();
+    expect(screen.getByText('Import berhasil, namun ada beberapa catatan yang bisa Anda cek:')).toBeInTheDocument();
     expect(screen.getByText(/SAPRODI/)).toBeInTheDocument();
     expect(screen.getByText(/2 baris dilewati/)).toBeInTheDocument();
   });
@@ -110,7 +110,7 @@ describe('RabImportDialog', () => {
     const rab = makeRab({ importWarnings: ['1 baris dilewati: tidak ada nominal pengeluaran/pemasukan'] });
     render(<RabImportDialog rab={rab} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tutup' }));
 
     expect(rab.setImportWarnings).toHaveBeenCalledWith([]);
   });

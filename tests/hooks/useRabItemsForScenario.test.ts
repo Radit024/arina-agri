@@ -55,6 +55,7 @@ beforeEach(() => {
   vi.mocked(rabApi.deleteItem).mockReset();
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ user: { id: 'user-1' }, loading: false });
+  window.sessionStorage.clear();
 });
 
 describe('useRabItemsForScenario', () => {

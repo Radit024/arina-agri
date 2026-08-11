@@ -338,7 +338,7 @@ describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
       expect.arrayContaining([
         expect.objectContaining({
           description: 'Produksi',
-          reason: expect.stringContaining('Total Rencana kosong'),
+          reason: expect.stringContaining('total biayanya kosong'),
         }),
       ]),
     );
@@ -357,7 +357,7 @@ describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
       expect.arrayContaining([
         expect.objectContaining({
           description: 'Pembelian benih padi',
-          reason: expect.stringContaining('format tanggal tidak dikenali'),
+          reason: expect.stringContaining('penulisan tanggalnya tidak dikenali'),
         }),
       ]),
     );

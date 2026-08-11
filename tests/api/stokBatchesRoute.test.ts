@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 
 const from = vi.fn();
 const resolveRequestUserId = vi.fn();
@@ -50,6 +50,12 @@ describe('stok batches route', () => {
     from.mockReset();
     resolveRequestUserId.mockReset();
     recordEvent.mockReset();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-30T00:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('returns 401 when unauthenticated', async () => {

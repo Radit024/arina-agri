@@ -64,7 +64,7 @@ export default function MobileTopAppBar() {
                 color="text.secondary"
                 sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
               >
-                {t(`${titleKey}_subtitle`)}
+                {t((titleKey + '_subtitle') as Parameters<typeof t>[0])}
               </Typography>
             </motion.div>
           </AnimatePresence>

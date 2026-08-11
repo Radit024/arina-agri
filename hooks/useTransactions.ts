@@ -40,7 +40,7 @@ export function useTransactions() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading, isGuestMode]);
+  }, [user, authLoading, isGuestMode, setTransactions]);
 
   useEffect(() => {
     loadData();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-function usesessionStorage<T>(key: string, initialValue: T) {
+function useSessionStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isHydrated, setIsHydrated] = useState(false);
   // React state only updates on the next render, so consecutive setValue calls made
@@ -43,4 +43,4 @@ function usesessionStorage<T>(key: string, initialValue: T) {
   return [storedValue, setValue, isHydrated] as const;
 }
 
-export default usesessionStorage;
+export default useSessionStorage;

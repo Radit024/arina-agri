@@ -38,7 +38,7 @@ export function useTransactionsForScenario(scenarioId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [scenarioId, user, authLoading, isGuestMode]);
+  }, [scenarioId, user, authLoading, isGuestMode, setTransactions]);
 
   useEffect(() => {
     loadData();

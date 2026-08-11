@@ -6,7 +6,6 @@ import type {
   DbFinanceScenario,
   DbFinancingAssumptions,
   DbHarvestBatch,
-  DbMigrationAuditLog,
   DbProductionSalesAssumptions,
   DbRabCategory,
   DbRabImport,

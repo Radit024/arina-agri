@@ -40,7 +40,7 @@ export function useCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading, isGuestMode]);
+  }, [user, authLoading, isGuestMode, setEvents]);
 
   useEffect(() => {
     loadData();

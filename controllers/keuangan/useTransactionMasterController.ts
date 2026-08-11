@@ -30,7 +30,7 @@ export function useTransactionMasterController() {
     } catch {
       // presets masih tersedia
     }
-  }, [user]);
+  }, [user, isGuestMode, setCustomKategori]);
 
   const loadCustomSatuan = useCallback(async () => {
     if (!user || isGuestMode) return;
@@ -38,7 +38,7 @@ export function useTransactionMasterController() {
       const data = await transactionSatuanApi.getAll();
       setCustomSatuan(data);
     } catch {}
-  }, [user]);
+  }, [user, isGuestMode, setCustomSatuan]);
 
   useEffect(() => {
     loadCustomKategori();

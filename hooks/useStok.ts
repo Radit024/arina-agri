@@ -131,7 +131,7 @@ export function useStok() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading, isGuestMode]);
+  }, [user, authLoading, isGuestMode, setBatches, setSummary, setMutations]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

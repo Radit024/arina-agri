@@ -71,8 +71,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenarioId, user, isHydrated]);
+  }, [scenarioId, user, isHydrated, setLocalState]);
 
   useEffect(() => {
     loadData();

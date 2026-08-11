@@ -1,7 +1,6 @@
 import ExcelJS from 'exceljs';
 
 import { formatDateLong, formatMonthYear, formatDateShort } from '@/lib/formatters';
-import { buildMonthRange } from './rabCalculations';
 import { buildIncomeStatementWorksheetData } from './incomeStatementWorksheet';
 import { computeArusKasBulanan } from './scenarioCalculations';
 import type {
@@ -726,7 +725,9 @@ function writeIncomeStatementSheet(sheet: ExcelJS.Worksheet, project: FinancePro
 
   const data = buildIncomeStatementWorksheetData({ transactions, rabItems });
 
-  const expenseRows: any[][] = [];
+  type RowCell = string | number | { value: string | number; font?: Partial<ExcelJS.Font>; alignment?: Partial<ExcelJS.Alignment>; isCurrency?: boolean };
+
+  const expenseRows: RowCell[][] = [];
   data.expenseGroups.forEach((group) => {
     expenseRows.push([{ value: group.label, font: { bold: true } }, '']);
     group.items.forEach((item) => {
@@ -738,7 +739,7 @@ function writeIncomeStatementSheet(sheet: ExcelJS.Worksheet, project: FinancePro
     ]);
   });
 
-  const incomeRows: any[][] = [];
+  const incomeRows: RowCell[][] = [];
   data.incomeGroups.forEach((group) => {
     incomeRows.push([{ value: group.label, font: { bold: true } }, '']);
     group.items.forEach((item) => {

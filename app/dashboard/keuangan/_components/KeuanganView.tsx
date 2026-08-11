@@ -268,44 +268,59 @@ export default function KeuanganView({
           pr: 0.5,
         }}
       >
-        {finalPieData.map((item) => (
-          <Box
-            key={item.id}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '10px minmax(0, 1fr) auto',
-              alignItems: 'center',
-              columnGap: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              px: 1,
-              py: 0.75,
-              bgcolor: 'background.paper',
-            }}
-          >
+        {finalPieData.map((item, index) => {
+          const isHighlighted = distributionHighlightedItem?.dataIndex === index;
+          return (
             <Box
-              aria-hidden
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                bgcolor: item.color,
+              key={item.id}
+              onClick={() => {
+                setDistributionHighlightedItem((prev) =>
+                  prev?.dataIndex === index
+                    ? null
+                    : { seriesId: EXPENSE_DISTRIBUTION_SERIES_ID, dataIndex: index }
+                );
               }}
-            />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 800, color: 'text.primary' }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formatRupiah(item.value)}
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '10px minmax(0, 1fr) auto',
+                alignItems: 'center',
+                columnGap: 1,
+                border: '1px solid',
+                borderColor: isHighlighted ? 'primary.main' : 'divider',
+                borderRadius: 2,
+                px: 1,
+                py: 0.75,
+                bgcolor: isHighlighted ? (theme) => alpha(theme.palette.primary.main, 0.04) : 'background.paper',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                },
+              }}
+            >
+              <Box
+                aria-hidden
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: item.color,
+                }}
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 800, color: 'text.primary' }}>
+                  {item.label}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatRupiah(item.value)}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                {formatDistributionPercentage(item.percentage)}
               </Typography>
             </Box>
-            <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.primary' }}>
-              {formatDistributionPercentage(item.percentage)}
-            </Typography>
-          </Box>
-        ))}
+          );
+        })}
       </Box>
     );
   };
@@ -1181,10 +1196,7 @@ export default function KeuanganView({
                   width={300}
                   height={210}
                   slotProps={{
-                    legend: {
-                      direction: 'horizontal',
-                      position: { vertical: 'bottom', horizontal: 'center' },
-                    },
+                    legend: { hidden: true },
                   }}
                 />
               </Box>
@@ -1229,12 +1241,10 @@ export default function KeuanganView({
               highlightedItem={distributionHighlightedItem}
               onHighlightChange={(item) => setDistributionHighlightedItem(item)}
               width={320}
-              height={280}
+              height={220}
+              margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
               slotProps={{
-                legend: {
-                  direction: 'horizontal',
-                  position: { vertical: 'bottom', horizontal: 'center' },
-                },
+                legend: { hidden: true },
               }}
             />
             <Box sx={{ width: '100%', maxWidth: 360 }}>

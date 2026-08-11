@@ -46,7 +46,14 @@
     "kabarPasar": "Market News",
     "pengaturan": "Settings",
     "guide": "Guide",
-    "beriMasukan": "Give Feedback"
+    "beriMasukan": "Give Feedback",
+    "dashboard_subtitle": "Overview",
+    "keuangan_subtitle": "Monitor Cash Flow",
+    "cuaca_subtitle": "Monitor Weather",
+    "ensiklopedia_subtitle": "Farming Q&A",
+    "kalender_subtitle": "Activity Schedule",
+    "stok_subtitle": "Manage Inventory",
+    "kabarPasar_subtitle": "Farming News"
   },
   "Guide": {
     "stepProgress": "Step {current} of {total}",

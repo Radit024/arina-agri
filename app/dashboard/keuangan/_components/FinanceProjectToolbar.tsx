@@ -193,21 +193,48 @@ export default function FinanceProjectToolbar({
         )}
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ alignItems: { xs: 'stretch', md: 'center' } }}>
-          <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 260 } }}>
-            <InputLabel>Proyek </InputLabel>
-            <Select
-              label="Proyek"
-              value={financeProject.selectedProjectId ?? ''}
-              onChange={(event) => financeProject.setSelectedProjectId(event.target.value || null)}
-            >
-              {financeProject.projects.length === 0 && <MenuItem value="">Belum ada proyek</MenuItem>}
-              {financeProject.projects.map((project) => (
-                <MenuItem key={project.id} value={project.id}>
-                  {project.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Stack direction="row" spacing={0.5} sx={{ width: { xs: '100%', md: 'auto' }, alignItems: 'center' }}>
+            <FormControl size="small" sx={{ flexGrow: 1, minWidth: { md: 260 } }}>
+              <InputLabel>Proyek </InputLabel>
+              <Select
+                label="Proyek"
+                value={financeProject.selectedProjectId ?? ''}
+                onChange={(event) => financeProject.setSelectedProjectId(event.target.value || null)}
+              >
+                {financeProject.projects.length === 0 && <MenuItem value="">Belum ada proyek</MenuItem>}
+                {financeProject.projects.map((project) => (
+                  <MenuItem key={project.id} value={project.id}>
+                    {project.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Tooltip title="Edit proyek">
+              <span>
+                <IconButton
+                  aria-label="Edit proyek"
+                  disabled={!financeProject.selectedProject}
+                  onClick={financeProject.openEditProjectDialog}
+                >
+                  <EditOutlinedIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="Hapus proyek">
+              <span>
+                <IconButton
+                  aria-label="Hapus proyek"
+                  disabled={!financeProject.selectedProject}
+                  onClick={financeProject.requestDeleteProject}
+                  color="error"
+                >
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
 
           <Button
             variant="outlined"
@@ -217,31 +244,6 @@ export default function FinanceProjectToolbar({
           >
             Buat Proyek
           </Button>
-
-          <Tooltip title="Edit proyek">
-            <span>
-              <IconButton
-                aria-label="Edit proyek"
-                disabled={!financeProject.selectedProject}
-                onClick={financeProject.openEditProjectDialog}
-              >
-                <EditOutlinedIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-
-          <Tooltip title="Hapus proyek">
-            <span>
-              <IconButton
-                aria-label="Hapus proyek"
-                disabled={!financeProject.selectedProject}
-                onClick={financeProject.requestDeleteProject}
-                color="error"
-              >
-                <DeleteOutlineIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
 
           <Button
             variant="outlined"

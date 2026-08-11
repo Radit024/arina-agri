@@ -5,7 +5,7 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -55,27 +55,21 @@ export default function MobileTopAppBar() {
               <Typography
                 variant="subtitle1"
                 component="h1"
-                sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                sx={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
               >
                 {t(titleKey)}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}
+              >
+                {t(`${titleKey}_subtitle`)}
               </Typography>
             </motion.div>
           </AnimatePresence>
         </Box>
 
-        <IconButton
-          aria-label={t('pengaturan')}
-          data-guide-target="mobile-profile-settings"
-          size="small"
-          onClick={() => router.push(pathname + '?settings=true&tab=general')}
-          sx={{
-            color: 'text.secondary',
-            flexShrink: 0,
-            '&:hover': { color: 'text.primary' },
-          }}
-        >
-          <SettingsOutlinedIcon sx={{ fontSize: 20 }} />
-        </IconButton>
       </Toolbar>
     </AppBar>
   );

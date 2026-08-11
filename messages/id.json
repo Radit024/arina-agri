@@ -46,7 +46,14 @@
     "kabarPasar": "Berita",
     "pengaturan": "Pengaturan",
     "guide": "Panduan",
-    "beriMasukan": "Feedback"
+    "beriMasukan": "Feedback",
+    "dashboard_subtitle": "Ringkasan Utama",
+    "keuangan_subtitle": "Pantau Arus Kas",
+    "cuaca_subtitle": "Pantau Cuaca",
+    "ensiklopedia_subtitle": "Tanya Jawab Pertanian",
+    "kalender_subtitle": "Jadwal Kegiatan",
+    "stok_subtitle": "Kelola Persediaan",
+    "kabarPasar_subtitle": "Berita Pertanian"
   },
   "Guide": {
     "stepProgress": "Langkah {current} dari {total}",

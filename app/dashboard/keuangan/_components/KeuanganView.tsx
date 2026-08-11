@@ -234,7 +234,7 @@ export default function KeuanganView({
   const [distributionPanelOpen, setDistributionPanelOpen] = useState(true);
   const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const [distributionHighlightedItem, setDistributionHighlightedItem] =
-    useState<HighlightItemIdentifierWithType<'pie'> | null>(null);
+    useState<{ type?: 'pie'; seriesId: string; dataIndex?: number } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

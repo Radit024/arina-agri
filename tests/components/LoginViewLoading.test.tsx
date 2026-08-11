@@ -18,7 +18,7 @@ const copy: Record<string, string> = {
   processing: 'Memproses...',
   preparingDashboard: 'Menyiapkan dashboard...',
   formLabel: 'Form login',
-  localLogin: 'Masuk mode lokal',
+  localLogin: 'Masuk sebagai Guest',
 };
 
 function LoginViewHarness({ localLoginEnabled = false }: { localLoginEnabled?: boolean }) {
@@ -59,10 +59,10 @@ describe('LoginView loading transition', () => {
   it('shows the local login action only when enabled', () => {
     const { rerender } = render(<LoginViewHarness />);
 
-    expect(screen.queryByRole('button', { name: 'Masuk mode lokal' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Masuk sebagai Guest' })).not.toBeInTheDocument();
 
     rerender(<LoginViewHarness localLoginEnabled />);
 
-    expect(screen.getByRole('button', { name: 'Masuk mode lokal' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Masuk sebagai Guest' })).toBeInTheDocument();
   });
 });

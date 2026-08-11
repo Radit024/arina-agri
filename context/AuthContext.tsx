@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isGuestMode: boolean;
   startLocalSession: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  isGuestMode: false,
   startLocalSession: noopAsync,
   signOut: noopAsync,
 });
@@ -34,7 +36,7 @@ function buildLocalUser(userId: string) {
   return {
     id: userId,
     email: 'local@arinaagri.dev',
-    user_metadata: { full_name: 'Akun Lokal' },
+    user_metadata: { full_name: 'Akun Demo' },
   } as unknown as User;
 }
 
@@ -87,6 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     clearLocalDevelopmentAuth();
+    sessionStorage.clear();
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
@@ -134,13 +137,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [applyLocalDevelopmentSession, applySupabaseSession]);
 
+  const isGuestMode = user?.email === 'local@arinaagri.dev';
+
   const value = useMemo(() => ({
     user,
     session,
     loading,
+    isGuestMode,
     startLocalSession,
     signOut,
-  }), [loading, session, signOut, startLocalSession, user]);
+  }), [loading, session, signOut, startLocalSession, user, isGuestMode]);
 
   return (
     <AuthContext.Provider value={value}>

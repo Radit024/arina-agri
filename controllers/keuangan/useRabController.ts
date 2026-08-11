@@ -94,8 +94,8 @@ function parseAliasesInput(value: string) {
 // <sebab>" — jadi kelompokkan berdasarkan klausa penjelasan di dalam kurung, bukan string
 // reason yang utuh (yang selalu unik per baris karena memuat deskripsi).
 function extractSkipReasonLabel(reason: string): string {
-  const match = /\(([^)]+)\)\s*$/.exec(reason);
-  return match ? match[1] : reason;
+  const parts = reason.split(' karena ');
+  return parts.length > 1 ? `karena ${parts[1]}` : reason;
 }
 
 function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
@@ -108,7 +108,7 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
     );
     if (Math.abs(entry.difference) > tolerance) {
       warnings.push(
-        `Kategori "${entry.categoryName}": jumlah item (Rp${formatRupiah(entry.computedTotal)}) tidak cocok dengan TOTAL di sheet (Rp${formatRupiah(entry.declaredTotal)}), selisih Rp${formatRupiah(entry.difference)}`,
+        `Pada kelompok "${entry.categoryName}": Total hasil hitungan aplikasi (Rp${formatRupiah(entry.computedTotal)}) sedikit berbeda dengan angka TOTAL yang Anda tulis (Rp${formatRupiah(entry.declaredTotal)})`,
       );
     }
   }
@@ -122,20 +122,27 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
     warnings.push(`${count} baris dilewati: ${label}`);
   }
 
+  if (parsed.warnings) {
+    for (const w of parsed.warnings) {
+      const cleanedMessage = w.message.replace('Parser tidak yakin: ', '');
+      warnings.push(`Item "${w.description}" (Baris ${w.rowNumber}): ${cleanedMessage}`);
+    }
+  }
+
   return warnings;
 }
 
 function validateRabItemDraft(draft: RabItemDraft) {
-  if (!draft.categoryName.trim()) return 'Kategori RAB wajib diisi';
-  if (!draft.name.trim()) return 'Nama item RAB wajib diisi';
-  if (!Number.isFinite(draft.volume) || draft.volume <= 0) return 'Volume RAB harus lebih dari 0';
-  if (!draft.unit.trim()) return 'Satuan RAB wajib diisi';
-  if (!Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0) return 'Harga satuan RAB harus lebih dari 0';
+  if (!draft.categoryName.trim()) return 'Pilihan kategori tidak boleh kosong';
+  if (!draft.name.trim()) return 'Nama barang/jasa tidak boleh kosong';
+  if (!Number.isFinite(draft.volume) || draft.volume <= 0) return 'Jumlah/volume harus lebih dari 0';
+  if (!draft.unit.trim()) return 'Satuan (misal: kg, liter, dll) tidak boleh kosong';
+  if (!Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0) return 'Harga satuan harus lebih dari 0';
   if (draft.plannedCashMonth) {
     const monthMatch = /^(\d{4})-(\d{2})$/.exec(draft.plannedCashMonth);
     const month = monthMatch ? Number(monthMatch[2]) : 0;
     if (!monthMatch || month < 1 || month > 12) {
-      return 'Bulan kas harus memakai format YYYY-MM';
+      return 'Format bulan kurang tepat (harus Tahun-Bulan, misal 2026-08)';
     }
   }
   return null;
@@ -497,6 +504,7 @@ export function useRabController(
       }
 
       let importedTransactionCount = 0;
+      const unlinkedTransactionNames: string[] = [];
       if (addTransaction && parsed.transactions.length > 0) {
         const rabItemPool = [...rabState.items, ...createdItems];
         for (const transaction of parsed.transactions) {
@@ -505,6 +513,11 @@ export function useRabController(
             transaction: { jenis: transaction.jenis, keterangan: transaction.keterangan },
           })[0];
           const matchedItem = suggestion && suggestion.score >= RAB_SUGGESTION_MIN_SCORE ? suggestion.item : null;
+          
+          if (!matchedItem) {
+            unlinkedTransactionNames.push(transaction.keterangan);
+          }
+
           const resolvedCategory = resolveFinanceCategory({
             jenis: transaction.jenis,
             kategori: matchedItem?.categoryName ?? '',
@@ -535,6 +548,18 @@ export function useRabController(
       }
 
       const warnings = buildImportWarnings(parsed);
+      
+      if (unlinkedTransactionNames.length > 0) {
+        const uniqueNames = Array.from(new Set(unlinkedTransactionNames));
+        const displayNames = uniqueNames.slice(0, 3);
+        const othersCount = uniqueNames.length - displayNames.length;
+        
+        let namesText = displayNames.map((n) => `"${n}"`).join(', ');
+        if (othersCount > 0) namesText += `, dan ${othersCount} lainnya`;
+
+        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Transaksi ini sementara dipisahkan ke kategori lain, namun Anda bisa merapikannya nanti di menu Transaksi.`);
+      }
+
       setImportWarnings(warnings);
 
       const skippedCount = parsed.skippedRows.length;
@@ -555,7 +580,9 @@ export function useRabController(
         // Riwayat import bersifat opsional, tidak boleh menggagalkan alur import utama.
       }
 
-      setImportDialogOpen(false);
+      if (warnings.length === 0) {
+        setImportDialogOpen(false);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
       setImportError(message);

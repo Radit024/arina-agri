@@ -66,6 +66,12 @@ export interface RabParseSkippedRow {
   reason: string;
 }
 
+export interface RabParseWarning {
+  rowNumber: number;
+  description: string;
+  message: string;
+}
+
 export interface RabCategoryReconciliation {
   categoryId: string;
   categoryName: string;
@@ -86,6 +92,7 @@ export interface ParsedRabWorkbook {
   transactions: ParsedLedgerTransaction[];
   skippedRows: RabParseSkippedRow[];
   reconciliation: RabCategoryReconciliation[];
+  warnings: RabParseWarning[];
 }
 
 export interface FinanceExportWorkbookInput {
@@ -112,7 +119,21 @@ function getNumericCellValue(cell: ExcelJS.Cell) {
     return value.result;
   }
   if (typeof value === 'string') {
-    const parsed = Number(value.replace(/[^\d.-]/g, ''));
+    let cleaned = value.replace(/[^\d.,-]/g, '');
+    if (cleaned.includes(',') && cleaned.includes('.')) {
+      if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+      } else {
+        cleaned = cleaned.replace(/,/g, '');
+      }
+    } else if (cleaned.includes(',')) {
+      cleaned = cleaned.replace(',', '.');
+    } else if (cleaned.includes('.')) {
+      if (/\.\d{3}(?!\d)/.test(cleaned)) {
+        cleaned = cleaned.replace(/\./g, '');
+      }
+    }
+    const parsed = Number(cleaned);
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return 0;
@@ -213,6 +234,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
   const categories = new Map<string, RabCategory>();
   const items: RabItem[] = [];
   const skippedRows: RabParseSkippedRow[] = [];
+  const warnings: RabParseWarning[] = [];
   const declaredTotals = new Map<string, number>();
   const computedTotals = new Map<string, number>();
   let currentCategory = 'RAB';
@@ -256,14 +278,14 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
         skippedRows.push({
           rowNumber,
           description,
-          reason: `Section '${description}' dan baris di bawahnya dilewati (bukan item RAB)`,
+          reason: `Bagian '${description}' beserta isinya dilewati karena bukan merupakan data anggaran/pengeluaran`,
         });
         skipSection = true;
         return;
       }
       skipSection = false;
       currentCategory = description;
-      currentType = /pendapatan|penerimaan/i.test(description) ? 'income' : currentType;
+      currentType = /pendapatan|penerimaan|penjualan/i.test(description) && !/biaya|pengeluaran/i.test(description) ? 'income' : 'expense';
       return;
     }
 
@@ -274,7 +296,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       skippedRows.push({
         rowNumber,
         description,
-        reason: `Baris '${description}' dilewati (cocok pola ringkasan: total/subtotal/dll)`,
+        reason: `Baris '${description}' dilewati karena merupakan baris jumlah/total (bukan data item tunggal)`,
       });
       return;
     }
@@ -284,13 +306,13 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       skippedRows.push({
         rowNumber,
         description,
-        reason: `Baris '${description}' dilewati (Total Rencana kosong — kemungkinan baris bantu)`,
+        reason: `Baris '${description}' dilewati karena total biayanya kosong (kemungkinan hanya sekadar baris keterangan)`,
       });
       return;
     }
 
-    const type: RabEntryType = currentType === 'income' || /penerimaan|penjualan/i.test(description) ? 'income' : 'expense';
-    const categoryName = type === 'income' ? 'Pendapatan' : currentCategory;
+    const type: RabEntryType = currentType;
+    const categoryName = currentCategory;
     const categoryId = slugify(categoryName);
 
     if (!categories.has(categoryId)) {
@@ -303,6 +325,35 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       });
     }
 
+    const finalPlannedTotal = plannedTotal || volume * unitPrice;
+
+    if (volume > 0 && unitPrice > 0 && plannedTotal > 0) {
+      const calc = volume * unitPrice;
+      if (Math.abs(calc - plannedTotal) > 100) {
+        warnings.push({
+          rowNumber,
+          description,
+          message: `Total biaya di excel (Rp${plannedTotal}) berbeda dengan hasil perkalian jumlah × harga (Rp${calc})`,
+        });
+      }
+    }
+
+    if (finalPlannedTotal > 0) {
+      if (volume === 0 && unitPrice === 0) {
+        warnings.push({
+          rowNumber,
+          description,
+          message: `Jumlah dan Harga Satuan kosong, sehingga aplikasi langsung mencatat total biayanya saja (Rp${finalPlannedTotal})`,
+        });
+      } else if (!unit) {
+        warnings.push({
+          rowNumber,
+          description,
+          message: `Satuan barang/jasa tidak diisi`,
+        });
+      }
+    }
+
     items.push({
       id: `${categoryId}-${slugify(description)}-${rowNumber}`,
       projectId,
@@ -313,12 +364,12 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       volume,
       unit,
       unitPrice,
-      plannedTotal: plannedTotal || volume * unitPrice,
+      plannedTotal: finalPlannedTotal,
       plannedCashMonth: undefined,
       aliases: [description],
       sortOrder: items.length + 1,
     });
-    computedTotals.set(categoryId, (computedTotals.get(categoryId) ?? 0) + (plannedTotal || volume * unitPrice));
+    computedTotals.set(categoryId, (computedTotals.get(categoryId) ?? 0) + finalPlannedTotal);
   });
 
   const reconciliation: RabCategoryReconciliation[] = [];
@@ -354,6 +405,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     transactions: ledgerResult.transactions,
     skippedRows: [...skippedRows, ...ledgerResult.skippedRows],
     reconciliation,
+    warnings,
   };
 }
 
@@ -450,7 +502,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
       skippedRows.push({
         rowNumber,
         description: keterangan,
-        reason: `Baris '${keterangan}' dilewati (format tanggal tidak dikenali)`,
+        reason: `Baris '${keterangan}' dilewati karena penulisan tanggalnya tidak dikenali`,
       });
       return;
     }
@@ -461,7 +513,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
       skippedRows.push({
         rowNumber,
         description: keterangan,
-        reason: `Baris '${keterangan}' dilewati (tidak ada nominal pengeluaran/pemasukan)`,
+        reason: `Baris '${keterangan}' dilewati karena tidak ada nilai rupiah pengeluaran maupun pemasukan`,
       });
       return;
     }

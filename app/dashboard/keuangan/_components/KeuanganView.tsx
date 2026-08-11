@@ -277,7 +277,7 @@ export default function KeuanganView({
                 setDistributionHighlightedItem((prev) =>
                   prev?.dataIndex === index
                     ? null
-                    : { seriesId: EXPENSE_DISTRIBUTION_SERIES_ID, dataIndex: index }
+                    : { type: 'pie', seriesId: EXPENSE_DISTRIBUTION_SERIES_ID, dataIndex: index }
                 );
               }}
               sx={{
@@ -1195,9 +1195,7 @@ export default function KeuanganView({
                   onHighlightChange={(item) => setDistributionHighlightedItem(item)}
                   width={300}
                   height={210}
-                  slotProps={{
-                    legend: { hidden: true },
-                  }}
+                  hideLegend
                 />
               </Box>
               {renderDistributionBreakdown()}
@@ -1243,9 +1241,7 @@ export default function KeuanganView({
               width={320}
               height={220}
               margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              slotProps={{
-                legend: { hidden: true },
-              }}
+              hideLegend
             />
             <Box sx={{ width: '100%', maxWidth: 360 }}>
               {renderDistributionBreakdown(240)}

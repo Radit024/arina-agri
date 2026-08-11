@@ -280,7 +280,6 @@ export default function FinanceProjectToolbar({
         {/* Status messages */}
         {!financeProject.backendOnline && (
           <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 1 }}>
-            Data RAB memakai penyimpanan lokal sampai tabel Supabase tersedia.
           </Typography>
         )}
         {rab.importError && (

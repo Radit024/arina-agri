@@ -30,7 +30,7 @@ export default function FinanceFinancingView({ financing }: Props) {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="caption" color="text.secondary">Kebutuhan Modal Kerja</Typography>
+              <Typography variant="caption" color="text.secondary" component="div">Kebutuhan Modal Kerja</Typography>
               <Typography variant="h6" sx={{ fontWeight: 900 }}>{formatRupiah(kebutuhanModalKerja)}</Typography>
             </CardContent>
           </Card>
@@ -38,13 +38,15 @@ export default function FinanceFinancingView({ financing }: Props) {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="caption" color="text.secondary">Bunga</Typography>
+              <Typography variant="caption" color="text.secondary" component="div">Bunga</Typography>
               {hasAssumptions ? (
                 <Typography variant="h6" sx={{ fontWeight: 900 }}>{formatRupiah(bunga)}</Typography>
               ) : (
-                <Button size="small" variant="outlined" onClick={openDialog} sx={{ mt: 1, borderRadius: 8 }}>
-                  Atur Asumsi Pembiayaan
-                </Button>
+                <Box sx={{ mt: 1 }}>
+                  <Button size="small" variant="outlined" onClick={openDialog} sx={{ borderRadius: 8 }}>
+                    Atur Asumsi Pembiayaan
+                  </Button>
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -52,13 +54,15 @@ export default function FinanceFinancingView({ financing }: Props) {
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent>
-              <Typography variant="caption" color="text.secondary">Kas Akhir Pasca Pembiayaan</Typography>
+              <Typography variant="caption" color="text.secondary" component="div">Kas Akhir Pasca Pembiayaan</Typography>
               {hasAssumptions ? (
                 <Typography variant="h6" sx={{ fontWeight: 900 }}>{formatRupiah(kasAkhirPascaPembiayaan ?? 0)}</Typography>
               ) : (
-                <Button size="small" variant="outlined" onClick={openDialog} sx={{ mt: 1, borderRadius: 8 }}>
-                  Atur Asumsi Pembiayaan
-                </Button>
+                <Box sx={{ mt: 1 }}>
+                  <Button size="small" variant="outlined" onClick={openDialog} sx={{ borderRadius: 8 }}>
+                    Atur Asumsi Pembiayaan
+                  </Button>
+                </Box>
               )}
             </CardContent>
           </Card>

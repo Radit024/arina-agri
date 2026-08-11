@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
+import useSessionStorage from '@/hooks/useSessionStorage';
 import { rabApi, type ApiRabCategory, type ApiRabImport, type ApiRabItem } from '@/lib/api';
 
 function createLocalId(prefix: string) {
@@ -22,15 +23,15 @@ type RabLocalState = {
  * Shape identical to useRabItems so existing UI consumers need minimal changes.
  */
 export function useRabItemsForScenario(scenarioId: string | null) {
-  const { user } = useAuth();
+  const { user, isGuestMode } = useAuth();
   const [categories, setCategories] = useState<ApiRabCategory[]>([]);
   const [items, setItems] = useState<ApiRabItem[]>([]);
   const [imports, setImports] = useState<ApiRabImport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [backendOnline, setBackendOnline] = useState(true);
-  // Local fallback state for offline mode
-  const [localState, setLocalState] = useState<RabLocalState>({ categories: [], items: [], imports: [] });
+  const storageKey = `arina-scenario-rab-${user?.id ?? 'guest'}-${scenarioId ?? 'none'}`;
+  const [localState, setLocalState, isHydrated] = useSessionStorage<RabLocalState>(storageKey, { categories: [], items: [], imports: [] });
 
   const syncLocalState = useCallback((update: RabLocalState | ((prev: RabLocalState) => RabLocalState)) => {
     setLocalState((prev) => {
@@ -43,6 +44,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
   }, []);
 
   const loadData = useCallback(async () => {
+    if (!isHydrated) return;
     setLoading(true);
     try {
       if (!scenarioId) {
@@ -51,7 +53,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
         setError(null);
         return;
       }
-      if (!user) {
+      if (!user || isGuestMode) {
         syncLocalState(localState);
         setBackendOnline(false);
         setError(null);
@@ -70,7 +72,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scenarioId, user]);
+  }, [scenarioId, user, isHydrated]);
 
   useEffect(() => {
     loadData();
@@ -78,7 +80,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
 
   const createCategory = async (payload: Omit<ApiRabCategory, 'id'> & { scenarioId?: string }) => {
     const sid = payload.scenarioId ?? scenarioId ?? '';
-    if (backendOnline && user && sid) {
+    if (backendOnline && user && sid && !isGuestMode) {
       const created = await rabApi.createCategoryForScenario({ ...payload, scenarioId: sid });
       setCategories((prev) => [...prev, created]);
       return created;
@@ -94,7 +96,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
     const applyItemCategoryName = (item: ApiRabItem, category: ApiRabCategory) =>
       item.categoryId === id ? { ...item, categoryName: category.name } : item;
 
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const updated = await rabApi.updateCategory(id, payload);
       setCategories((prev) => prev.map((category) => (category.id === id ? updated : category)));
       setItems((prev) => prev.map((item) => applyItemCategoryName(item, updated)));
@@ -114,7 +116,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
   };
 
   const deleteCategory = async (id: string) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       await rabApi.deleteCategory(id);
       setCategories((prev) => prev.filter((category) => category.id !== id));
       return;
@@ -127,7 +129,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
 
   const createItem = async (payload: Omit<ApiRabItem, 'id'> & { scenarioId?: string }) => {
     const sid = payload.scenarioId ?? scenarioId ?? '';
-    if (backendOnline && user && sid) {
+    if (backendOnline && user && sid && !isGuestMode) {
       const created = await rabApi.createItemForScenario({ ...payload, scenarioId: sid });
       setItems((prev) => [...prev, created]);
       return created;
@@ -138,7 +140,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
   };
 
   const updateItem = async (id: string, payload: Partial<ApiRabItem>) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const updated = await rabApi.updateItem(id, payload);
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
       return updated;
@@ -156,7 +158,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
   };
 
   const deleteItem = async (id: string) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       await rabApi.deleteItem(id);
     }
     syncLocalState((prev) => ({ ...prev, items: prev.items.filter((item) => item.id !== id) }));

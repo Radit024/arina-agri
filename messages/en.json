@@ -993,7 +993,7 @@
       "processing": "Processing...",
       "preparingDashboard": "Preparing dashboard...",
       "formLabel": "Login form",
-      "localLogin": "Use local mode",
+      "localLogin": "Login as Guest",
       "error": {
         "invalid": "Invalid email or password. Please try again.",
         "failed": "Login failed. Check your email and password."

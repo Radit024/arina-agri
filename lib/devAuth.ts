@@ -8,10 +8,6 @@ export const DEVELOPMENT_LOCAL_USER_ID_STORAGE_KEY = 'arina_local_user_id';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function isDevelopmentEnvironment() {
-  return process.env.NODE_ENV === 'development';
-}
-
 function getBrowserStorage() {
   if (typeof window === 'undefined') return null;
 
@@ -61,7 +57,7 @@ export function parseDevelopmentAccessToken(token: string) {
 }
 
 export function readLocalDevelopmentUserId(storage: Storage | null = getBrowserStorage()) {
-  if (!isDevelopmentEnvironment() || !storage) return null;
+  if (!storage) return null;
   if (storage.getItem(DEVELOPMENT_AUTH_MODE_STORAGE_KEY) !== DEVELOPMENT_AUTH_MODE_LOCAL) return null;
 
   const localUserId = storage.getItem(DEVELOPMENT_LOCAL_USER_ID_STORAGE_KEY);
@@ -69,7 +65,7 @@ export function readLocalDevelopmentUserId(storage: Storage | null = getBrowserS
 }
 
 export function activateLocalDevelopmentAuth(storage: Storage | null = getBrowserStorage()) {
-  if (!isDevelopmentEnvironment() || !storage) return null;
+  if (!storage) return null;
 
   const existingUserId = storage.getItem(DEVELOPMENT_LOCAL_USER_ID_STORAGE_KEY);
   const localUserId = isUuid(existingUserId) ? existingUserId : createUuid();
@@ -92,3 +88,4 @@ export function clearDevelopmentAuthMode(storage: Storage | null = getBrowserSto
   if (!storage) return;
   storage.removeItem(DEVELOPMENT_AUTH_MODE_STORAGE_KEY);
 }
+

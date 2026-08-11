@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import useSessionStorage from '@/hooks/useSessionStorage';
 import { rabApi, type ApiRabCategory, type ApiRabImport, type ApiRabItem } from '@/lib/api';
 
 function createLocalId(prefix: string) {
@@ -17,9 +17,9 @@ type RabLocalState = {
 };
 
 export function useRabItems(projectId: string | null) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuestMode } = useAuth();
   const storageKey = `arina-rab-${user?.id ?? 'guest'}-${projectId ?? 'none'}`;
-  const [localState, setLocalState] = useLocalStorage<RabLocalState>(
+  const [localState, setLocalState, isHydrated] = useSessionStorage<RabLocalState>(
     storageKey,
     { categories: [], items: [], imports: [] },
   );
@@ -43,7 +43,7 @@ export function useRabItems(projectId: string | null) {
   }, [setLocalState]);
 
   const loadData = useCallback(async () => {
-    if (authLoading) return;
+    if (authLoading || !isHydrated) return;
     setLoading(true);
     try {
       if (!projectId) {
@@ -53,7 +53,7 @@ export function useRabItems(projectId: string | null) {
         setError(null);
         return;
       }
-      if (!user) {
+      if (!user || isGuestMode) {
         syncLocalState(localState);
         setBackendOnline(false);
         setError(null);
@@ -72,14 +72,15 @@ export function useRabItems(projectId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [authLoading, localState, projectId, syncLocalState, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, user, isGuestMode, authLoading, isHydrated]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const createCategory = async (payload: Omit<ApiRabCategory, 'id'>) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const created = await rabApi.createCategory(payload);
       setCategories((prev) => [...prev, created]);
       return created;
@@ -95,7 +96,7 @@ export function useRabItems(projectId: string | null) {
     const applyItemCategoryName = (item: ApiRabItem, category: ApiRabCategory) =>
       item.categoryId === id ? { ...item, categoryName: category.name } : item;
 
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const updated = await rabApi.updateCategory(id, payload);
       setCategories((prev) => prev.map((category) => (category.id === id ? updated : category)));
       setItems((prev) => prev.map((item) => applyItemCategoryName(item, updated)));
@@ -115,7 +116,7 @@ export function useRabItems(projectId: string | null) {
   };
 
   const deleteCategory = async (id: string) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       await rabApi.deleteCategory(id);
       setCategories((prev) => prev.filter((category) => category.id !== id));
       return;
@@ -127,7 +128,7 @@ export function useRabItems(projectId: string | null) {
   };
 
   const createItem = async (payload: Omit<ApiRabItem, 'id'>) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const created = await rabApi.createItem(payload);
       setItems((prev) => [...prev, created]);
       return created;
@@ -138,7 +139,7 @@ export function useRabItems(projectId: string | null) {
   };
 
   const updateItem = async (id: string, payload: Partial<ApiRabItem>) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const updated = await rabApi.updateItem(id, payload);
       setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
       return updated;
@@ -156,7 +157,7 @@ export function useRabItems(projectId: string | null) {
   };
 
   const deleteItem = async (id: string) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       await rabApi.deleteItem(id);
     }
     syncLocalState((prev) => ({ ...prev, items: prev.items.filter((item) => item.id !== id) }));

@@ -27,7 +27,7 @@ export function useLoginController() {
   const [showPassword, setShowPassword] = useState(false);
   const { user, loading: authLoading, startLocalSession } = useAuth();
   const redirecting = loginRedirecting || (!authLoading && Boolean(user));
-  const localLoginEnabled = process.env.NODE_ENV === 'development';
+  const localLoginEnabled = true;
 
   useEffect(() => {
     router.prefetch('/dashboard');

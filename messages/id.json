@@ -993,7 +993,7 @@
       "processing": "Memproses...",
       "preparingDashboard": "Menyiapkan dashboard...",
       "formLabel": "Form login",
-      "localLogin": "Masuk mode lokal",
+      "localLogin": "Masuk sebagai Tamu",
       "error": {
         "invalid": "Email atau password salah. Silakan coba lagi.",
         "failed": "Gagal masuk. Periksa email dan password Anda."

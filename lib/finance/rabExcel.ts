@@ -278,7 +278,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
         skippedRows.push({
           rowNumber,
           description,
-          reason: `Section '${description}' dan baris di bawahnya dilewati (bukan item RAB)`,
+          reason: `Bagian '${description}' beserta isinya dilewati karena bukan merupakan data anggaran/pengeluaran`,
         });
         skipSection = true;
         return;
@@ -296,7 +296,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       skippedRows.push({
         rowNumber,
         description,
-        reason: `Baris '${description}' dilewati (cocok pola ringkasan: total/subtotal/dll)`,
+        reason: `Baris '${description}' dilewati karena merupakan baris jumlah/total (bukan data item tunggal)`,
       });
       return;
     }
@@ -306,7 +306,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       skippedRows.push({
         rowNumber,
         description,
-        reason: `Baris '${description}' dilewati (Total Rencana kosong — kemungkinan baris bantu)`,
+        reason: `Baris '${description}' dilewati karena total biayanya kosong (kemungkinan hanya sekadar baris keterangan)`,
       });
       return;
     }
@@ -333,7 +333,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
         warnings.push({
           rowNumber,
           description,
-          message: `Parser tidak yakin: Total rencana di excel (Rp${plannedTotal}) tidak sama dengan hasil kali volume × harga (Rp${calc})`,
+          message: `Total biaya di excel (Rp${plannedTotal}) berbeda dengan hasil perkalian jumlah × harga (Rp${calc})`,
         });
       }
     }
@@ -343,13 +343,13 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
         warnings.push({
           rowNumber,
           description,
-          message: `Parser tidak yakin: Volume dan Harga Satuan kosong, parser mengambil Total Rencana (Rp${finalPlannedTotal}) secara langsung`,
+          message: `Jumlah dan Harga Satuan kosong, sehingga aplikasi langsung mencatat total biayanya saja (Rp${finalPlannedTotal})`,
         });
       } else if (!unit) {
         warnings.push({
           rowNumber,
           description,
-          message: `Parser tidak yakin: Satuan tidak diisi`,
+          message: `Satuan barang/jasa tidak diisi`,
         });
       }
     }
@@ -502,7 +502,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
       skippedRows.push({
         rowNumber,
         description: keterangan,
-        reason: `Baris '${keterangan}' dilewati (format tanggal tidak dikenali)`,
+        reason: `Baris '${keterangan}' dilewati karena penulisan tanggalnya tidak dikenali`,
       });
       return;
     }
@@ -513,7 +513,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
       skippedRows.push({
         rowNumber,
         description: keterangan,
-        reason: `Baris '${keterangan}' dilewati (tidak ada nominal pengeluaran/pemasukan)`,
+        reason: `Baris '${keterangan}' dilewati karena tidak ada nilai rupiah pengeluaran maupun pemasukan`,
       });
       return;
     }

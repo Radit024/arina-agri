@@ -76,7 +76,7 @@ export default function RabImportDialog({ rab }: Props) {
         {rab.importWarnings.length > 0 && (
           <Alert severity="warning" onClose={() => rab.setImportWarnings([])} sx={{ mb: 2, borderRadius: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              Import berhasil, tapi ada beberapa hal yang perlu dicek:
+              Import berhasil, namun ada beberapa catatan yang bisa Anda cek:
             </Typography>
             {rab.importWarnings.map((warning) => (
               <Typography key={warning} variant="caption" component="div">

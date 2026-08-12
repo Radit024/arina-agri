@@ -64,4 +64,66 @@ describe('suggestRabItemsForTransaction', () => {
 
     expect(suggestions).toEqual([]);
   });
+
+  it('matches Pembelian dolomit to Dolomit @40kg after noise stripping', () => {
+    const testItems: RabItem[] = [
+      {
+        id: 'dolomit-item',
+        projectId: 'p1',
+        categoryId: 'saprodi',
+        categoryName: 'SAPRODI',
+        type: 'expense',
+        name: 'Dolomit @40kg',
+        volume: 4,
+        unit: 'Karung',
+        unitPrice: 28_000,
+        plannedTotal: 112_000,
+        aliases: [],
+        sortOrder: 1,
+      },
+    ];
+
+    const suggestions = suggestRabItemsForTransaction({
+      items: testItems,
+      transaction: {
+        jenis: 'pengeluaran',
+        kategori: 'SAPRODI',
+        keterangan: 'Pembelian dolomit',
+      },
+    });
+
+    expect(suggestions[0].item.id).toBe('dolomit-item');
+    expect(suggestions[0].score).toBeGreaterThanOrEqual(4);
+  });
+
+  it('matches Pembelian herbisida persiapan lahan to Herbisida (kontak)', () => {
+    const testItems: RabItem[] = [
+      {
+        id: 'herbisida-item',
+        projectId: 'p1',
+        categoryId: 'saprodi',
+        categoryName: 'SAPRODI',
+        type: 'expense',
+        name: 'Herbisida (kontak)',
+        volume: 3,
+        unit: 'Liter',
+        unitPrice: 100_000,
+        plannedTotal: 300_000,
+        aliases: [],
+        sortOrder: 1,
+      },
+    ];
+
+    const suggestions = suggestRabItemsForTransaction({
+      items: testItems,
+      transaction: {
+        jenis: 'pengeluaran',
+        kategori: 'SAPRODI',
+        keterangan: 'Pembelian herbisida persiapan lahan',
+      },
+    });
+
+    expect(suggestions[0].item.id).toBe('herbisida-item');
+    expect(suggestions[0].score).toBeGreaterThanOrEqual(4);
+  });
 });

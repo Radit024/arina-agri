@@ -17,6 +17,9 @@ function useSessionStorage<T>(key: string, initialValue: T) {
         const parsed = JSON.parse(item);
         latestValueRef.current = parsed;
         setStoredValue(parsed);
+      } else {
+        latestValueRef.current = initialValue;
+        setStoredValue(initialValue);
       }
     } catch (error) {
       console.error(`Error reading sessionStorage key "${key}":`, error);

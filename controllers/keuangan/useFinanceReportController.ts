@@ -93,7 +93,13 @@ export function useFinanceReportController({
     const filteredTransactions = project
       ? transactions.filter((transaction) => !transaction.projectId || transaction.projectId === project.id)
       : transactions;
-    const reportTransactions = filteredTransactions.map(transactionToReport);
+    const reportTransactions = filteredTransactions
+      .map(transactionToReport)
+      .sort((a, b) => {
+        const timeA = new Date(a.tanggal).getTime();
+        const timeB = new Date(b.tanggal).getTime();
+        return isNaN(timeA) || isNaN(timeB) ? a.tanggal.localeCompare(b.tanggal) : timeA - timeB;
+      });
     const { startMonth, endMonth } = resolveReportRange(project, rabItems, filteredTransactions);
 
     const labaRugi = computeLabaRugi(reportTransactions);

@@ -220,18 +220,11 @@ export async function getDashboardSummary({
     : null;
   const effectiveProjectId = selectedProject?.id;
 
-  let transactionsQuery = supabase
-    .from('transactions')
-    .select('jenis,kategori,nominal,tanggal,project_id')
+  const realizationScenariosPromise = supabase
+    .from('finance_scenarios')
+    .select('id')
     .eq('user_id', userId)
-    .gte('tanggal', dateWindow.from)
-    .lte('tanggal', dateWindow.to)
-    .order('tanggal', { ascending: false })
-    .order('created_at', { ascending: false });
-
-  if (effectiveProjectId) {
-    transactionsQuery = transactionsQuery.eq('project_id', effectiveProjectId);
-  }
+    .eq('mode', 'REALIZATION');
 
   const pricesPromise = supabase
     .from('commodity_prices')
@@ -247,16 +240,37 @@ export async function getDashboardSummary({
     .order('pub_date', { ascending: false })
     .limit(NEWS_LIMIT);
 
-  const [transactionsResult, pricesResult, newsResult, weather] = await Promise.all([
-    transactionsQuery,
+  const [realizationScenariosResult, pricesResult, newsResult, weather] = await Promise.all([
+    realizationScenariosPromise,
     pricesPromise,
     newsPromise,
     loadWeather(adm4, locationLabel),
   ]);
 
-  if (transactionsResult.error) throw new Error(transactionsResult.error.message);
+  if (realizationScenariosResult.error) throw new Error(realizationScenariosResult.error.message);
   if (pricesResult.error) throw new Error(pricesResult.error.message);
   if (newsResult.error) throw new Error(newsResult.error.message);
+
+  const realizationScenarioIds = ((realizationScenariosResult.data || []) as Array<{ id: string }>).map((s) => s.id);
+  const safeScenarioIds =
+    realizationScenarioIds.length > 0 ? realizationScenarioIds : ['00000000-0000-0000-0000-000000000000'];
+
+  let transactionsQuery = supabase
+    .from('transactions')
+    .select('jenis,kategori,nominal,tanggal,project_id')
+    .eq('user_id', userId)
+    .in('scenario_id', safeScenarioIds)
+    .gte('tanggal', dateWindow.from)
+    .lte('tanggal', dateWindow.to)
+    .order('tanggal', { ascending: false })
+    .order('created_at', { ascending: false });
+
+  if (effectiveProjectId) {
+    transactionsQuery = transactionsQuery.eq('project_id', effectiveProjectId);
+  }
+
+  const transactionsResult = await transactionsQuery;
+  if (transactionsResult.error) throw new Error(transactionsResult.error.message);
 
   const transactions = ((transactionsResult.data || []) as DashboardTransactionRow[]).map((transaction) => ({
     jenis: transaction.jenis,

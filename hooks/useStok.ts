@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { stokApi, buyersApi, gradesApi, locationsApi, type ApiHarvestBatch, type ApiStockMutation, type StokSummary, type ApiBuyer, type ApiGrade, type ApiLocation } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import useSessionStorage from '@/hooks/useSessionStorage';
 
 // ─── Mock data for unauthenticated users ──────────────────────────
 const MOCK_BATCHES: ApiHarvestBatch[] = [
@@ -92,10 +93,11 @@ export function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
 
 // ─── useStok Hook ─────────────────────────────────────────────────
 export function useStok() {
-  const { user, loading: authLoading } = useAuth();
-  const [batches, setBatches] = useState<ApiHarvestBatch[]>([]);
-  const [mutations, setMutations] = useState<ApiStockMutation[]>([]);
-  const [summary, setSummary] = useState<StokSummary>({
+  const { user, loading: authLoading, isGuestMode } = useAuth();
+  const storageKey = `arina-stok-${user?.id ?? 'guest'}`;
+  const [batches, setBatches] = useSessionStorage<ApiHarvestBatch[]>(`${storageKey}-batches`, MOCK_BATCHES);
+  const [mutations, setMutations] = useSessionStorage<ApiStockMutation[]>(`${storageKey}-mutations`, MOCK_MUTATIONS);
+  const [summary, setSummary] = useSessionStorage<StokSummary>(`${storageKey}-summary`, {
     totalStokSiapJual: 0,
     stokTerjualMingguIni: 0,
     estimasiNilaiStok: 0,
@@ -111,10 +113,7 @@ export function useStok() {
     if (authLoading) return;
     setLoading(true);
     try {
-      if (!user) {
-        setBatches(MOCK_BATCHES);
-        setMutations(MOCK_MUTATIONS);
-        setSummary(computeLocalSummary(MOCK_BATCHES));
+      if (!user || isGuestMode) {
         setLoading(false);
         return;
       }
@@ -132,7 +131,7 @@ export function useStok() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, isGuestMode, setBatches, setSummary, setMutations]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -173,18 +172,36 @@ export function useStok() {
 
   // ── CRUD actions ──────────────────────────────────────────────
   const addBatch = async (data: Parameters<typeof stokApi.create>[0]) => {
+    if (isGuestMode) {
+      const created: ApiHarvestBatch = {
+        ...data,
+        _id: `mock-batch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        batchCode: `BATCH-${Date.now()}`,
+        stokTersisa: data.beratMasuk,
+        status: 'aman',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setBatches((prev) => [created, ...prev]);
+      setSummary(computeLocalSummary([created, ...batches]));
+      return;
+    }
     const created = await stokApi.create(data);
     setBatches((prev) => [created, ...prev]);
     await loadData(); // refresh summary
   };
 
   const updateBatch = async (id: string, data: Partial<ApiHarvestBatch>) => {
+    if (isGuestMode) {
+      setBatches((prev) => prev.map((b) => (b._id === id ? { ...b, ...data, updatedAt: new Date().toISOString() } : b)));
+      return;
+    }
     const updated = await stokApi.update(id, data);
     setBatches((prev) => prev.map((b) => (b._id === id ? updated : b)));
   };
 
   const closeBatch = async (id: string) => {
-    if (!user) {
+    if (!user || isGuestMode) {
       setBatches((prev) => prev.map((b) => b._id === id ? { ...b, status: 'habis' as const } : b));
       return;
     }
@@ -194,6 +211,27 @@ export function useStok() {
   };
 
   const stockOut = async (batchId: string, outData: Parameters<typeof stokApi.stockOut>[1]) => {
+    if (isGuestMode) {
+      const batch = batches.find((b) => b._id === batchId);
+      if (!batch) return;
+      const updatedBatch = { ...batch, stokTersisa: batch.stokTersisa - outData.berat, updatedAt: new Date().toISOString() };
+      const mutation: ApiStockMutation = {
+        _id: `mock-mut-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        batchId,
+        batchCode: batch.batchCode,
+        tipe: 'keluar',
+        berat: outData.berat,
+        tanggal: outData.tanggal,
+        tujuan: outData.namaPembeli || 'Pembeli Umum',
+        hargaRealisasi: outData.hargaRealisasi,
+        catatan: outData.catatan,
+        createdAt: new Date().toISOString(),
+      };
+      setBatches((prev) => prev.map((b) => (b._id === batchId ? updatedBatch : b)));
+      setMutations((prev) => [mutation, ...prev]);
+      setSummary(computeLocalSummary(batches.map(b => b._id === batchId ? updatedBatch : b)));
+      return;
+    }
     const result = await stokApi.stockOut(batchId, outData);
     setBatches((prev) => prev.map((b) => (b._id === batchId ? result.batch : b)));
     setMutations((prev) => [result.mutation, ...prev]);
@@ -253,7 +291,7 @@ export function useStok() {
   const displayLocations = locations.length > 0 ? locations : DEFAULT_LOCATIONS;
 
   return {
-    batches, mutations, summary, loading, backendOnline: true, error, buyers,
+    batches, mutations, summary, loading, backendOnline: !isGuestMode, error, buyers,
     grades: displayGrades,
     locations: displayLocations,
     addBatch, updateBatch, closeBatch, stockOut, refreshMutations, reload: loadData,

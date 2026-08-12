@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import useSessionStorage from '@/hooks/useSessionStorage';
 import { financeProjectApi, type ApiFinanceProject } from '@/lib/api';
 
 type ProjectDraft = Omit<ApiFinanceProject, 'id' | 'createdAt' | 'updatedAt'>;
@@ -13,9 +13,9 @@ function createLocalId(prefix: string) {
 }
 
 export function useFinanceProjects() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuestMode } = useAuth();
   const storageKey = `arina-finance-projects-${user?.id ?? 'guest'}`;
-  const [localProjects, setLocalProjects] = useLocalStorage<ApiFinanceProject[]>(storageKey, []);
+  const [localProjects, setLocalProjects] = useSessionStorage<ApiFinanceProject[]>(storageKey, []);
   const [projects, setProjects] = useState<ApiFinanceProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function useFinanceProjects() {
     if (authLoading) return;
     setLoading(true);
     try {
-      if (!user) {
+      if (!user || isGuestMode) {
         setProjects(localProjects);
         setBackendOnline(false);
         setError(null);
@@ -42,14 +42,14 @@ export function useFinanceProjects() {
     } finally {
       setLoading(false);
     }
-  }, [authLoading, localProjects, user]);
+  }, [authLoading, localProjects, user, isGuestMode]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
   const createProject = async (payload: ProjectDraft) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const created = await financeProjectApi.create(payload);
       setProjects((prev) => [created, ...prev]);
       return created;
@@ -68,7 +68,7 @@ export function useFinanceProjects() {
   };
 
   const updateProject = async (id: string, payload: Partial<ApiFinanceProject>) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       const updated = await financeProjectApi.update(id, payload);
       setProjects((prev) => prev.map((project) => (project.id === id ? updated : project)));
       return updated;
@@ -87,7 +87,7 @@ export function useFinanceProjects() {
   };
 
   const deleteProject = async (id: string) => {
-    if (backendOnline && user) {
+    if (backendOnline && user && !isGuestMode) {
       await financeProjectApi.delete(id);
     }
     setLocalProjects((prev) => prev.filter((project) => project.id !== id));

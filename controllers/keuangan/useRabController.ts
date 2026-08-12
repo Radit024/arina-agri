@@ -2,15 +2,21 @@
 
 import { useMemo, useState } from 'react';
 
-import { useRabItems } from '@/hooks/useRabItems';
+import { useRabItemsForScenario } from '@/hooks/useRabItemsForScenario';
 import { sumRabItemsByType } from '@/lib/finance/rabCalculations';
 import { rabApi, transactionApi, type ApiFinanceProject } from '@/lib/api';
 import { DEFAULT_FINANCE_CATEGORIES, resolveFinanceCategory } from '@/lib/finance/categories';
-import { parseRabWorkbookFromArrayBuffer } from '@/lib/finance/rabExcel';
+import { parseRabWorkbookFromArrayBuffer, type ParsedRabWorkbook } from '@/lib/finance/rabExcel';
 import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
-import type { RabEntryType, RabItem } from '@/lib/finance/rabTypes';
+import type { FinanceScenarioEntity, RabEntryType, RabItem } from '@/lib/finance/rabTypes';
 
 const RAB_SUGGESTION_MIN_SCORE = 5;
+const RECONCILIATION_ABSOLUTE_TOLERANCE = 1000;
+const RECONCILIATION_RELATIVE_TOLERANCE = 0.005;
+
+function formatRupiah(value: number) {
+  return new Intl.NumberFormat('id-ID').format(Math.round(value));
+}
 
 const PRESET_RAB_CATEGORIES: Record<RabEntryType, string[]> = {
   expense: ['Saprodi', 'Tenaga Kerja', 'Jasa Alsintan', 'Irigasi & Air', 'Alat Tani', 'Operasional', 'Lainnya'],
@@ -81,17 +87,62 @@ function parseAliasesInput(value: string) {
   return aliases.length > 0 ? aliases : undefined;
 }
 
+// Alasan skip per baris menyertakan deskripsi baris itu sendiri (mis. "Baris 'Produksi'
+// dilewati (Total Rencana kosong...)") supaya laporan tetap granular per baris. Untuk
+// pengelompokan warning, dua baris yang beda deskripsi tapi sama sebab (mis. dua baris
+// dengan tanggal tak dikenali) harus digabung jadi satu baris warning "N baris dilewati:
+// <sebab>" — jadi kelompokkan berdasarkan klausa penjelasan di dalam kurung, bukan string
+// reason yang utuh (yang selalu unik per baris karena memuat deskripsi).
+function extractSkipReasonLabel(reason: string): string {
+  const parts = reason.split(' karena ');
+  return parts.length > 1 ? `karena ${parts[1]}` : reason;
+}
+
+function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
+  const warnings: string[] = [];
+
+  for (const entry of parsed.reconciliation) {
+    const tolerance = Math.max(
+      RECONCILIATION_ABSOLUTE_TOLERANCE,
+      Math.abs(entry.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE,
+    );
+    if (Math.abs(entry.difference) > tolerance) {
+      warnings.push(
+        `Pada kelompok "${entry.categoryName}": Total hasil hitungan aplikasi (Rp${formatRupiah(entry.computedTotal)}) sedikit berbeda dengan angka TOTAL yang Anda tulis (Rp${formatRupiah(entry.declaredTotal)})`,
+      );
+    }
+  }
+
+  const skipCountByReason = new Map<string, number>();
+  for (const skipped of parsed.skippedRows) {
+    const label = extractSkipReasonLabel(skipped.reason);
+    skipCountByReason.set(label, (skipCountByReason.get(label) ?? 0) + 1);
+  }
+  for (const [label, count] of skipCountByReason) {
+    warnings.push(`${count} baris dilewati: ${label}`);
+  }
+
+  if (parsed.warnings) {
+    for (const w of parsed.warnings) {
+      const cleanedMessage = w.message.replace('Parser tidak yakin: ', '');
+      warnings.push(`Item "${w.description}" (Baris ${w.rowNumber}): ${cleanedMessage}`);
+    }
+  }
+
+  return warnings;
+}
+
 function validateRabItemDraft(draft: RabItemDraft) {
-  if (!draft.categoryName.trim()) return 'Kategori RAB wajib diisi';
-  if (!draft.name.trim()) return 'Nama item RAB wajib diisi';
-  if (!Number.isFinite(draft.volume) || draft.volume <= 0) return 'Volume RAB harus lebih dari 0';
-  if (!draft.unit.trim()) return 'Satuan RAB wajib diisi';
-  if (!Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0) return 'Harga satuan RAB harus lebih dari 0';
+  if (!draft.categoryName.trim()) return 'Pilihan kategori tidak boleh kosong';
+  if (!draft.name.trim()) return 'Nama barang/jasa tidak boleh kosong';
+  if (!Number.isFinite(draft.volume) || draft.volume <= 0) return 'Jumlah/volume harus lebih dari 0';
+  if (!draft.unit.trim()) return 'Satuan (misal: kg, liter, dll) tidak boleh kosong';
+  if (!Number.isFinite(draft.unitPrice) || draft.unitPrice <= 0) return 'Harga satuan harus lebih dari 0';
   if (draft.plannedCashMonth) {
     const monthMatch = /^(\d{4})-(\d{2})$/.exec(draft.plannedCashMonth);
     const month = monthMatch ? Number(monthMatch[2]) : 0;
     if (!monthMatch || month < 1 || month > 12) {
-      return 'Bulan kas harus memakai format YYYY-MM';
+      return 'Format bulan kurang tepat (harus Tahun-Bulan, misal 2026-08)';
     }
   }
   return null;
@@ -100,13 +151,15 @@ function validateRabItemDraft(draft: RabItemDraft) {
 export function useRabController(
   project: ApiFinanceProject | null,
   addTransaction?: (data: Parameters<typeof transactionApi.create>[0]) => Promise<void>,
+  scenario?: FinanceScenarioEntity | null,
 ) {
-  const rabState = useRabItems(project?.id ?? null);
+  const rabState = useRabItemsForScenario(scenario?.id ?? null);
   const [rabItemDialogOpen, setRabItemDialogOpen] = useState(false);
   const [editingRabItemId, setEditingRabItemId] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [rabItemError, setRabItemError] = useState<string | null>(null);
   const [rabItemDraft, setRabItemDraft] = useState<RabItemFormDraft>(createRabItemFormDraft);
   const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
@@ -288,11 +341,13 @@ export function useRabController(
     const existingCategory = rabState.categories.find(
       (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
     );
+    const scenarioId = scenario?.id;
     const category = existingCategory ?? await rabState.createCategory({
       projectId: project.id,
       name: categoryName,
       type: draft.type,
       sortOrder: rabState.categories.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
 
     return rabState.createItem({
@@ -308,6 +363,7 @@ export function useRabController(
       plannedCashMonth: draft.plannedCashMonth,
       aliases: draft.aliases ?? [itemName],
       sortOrder: rabState.items.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
   };
 
@@ -326,11 +382,13 @@ export function useRabController(
     const existingCategory = rabState.categories.find(
       (category) => category.name.toLowerCase() === categoryName.toLowerCase() && category.type === draft.type,
     );
+    const scenarioId = scenario?.id;
     const category = existingCategory ?? await rabState.createCategory({
       projectId: project.id,
       name: categoryName,
       type: draft.type,
       sortOrder: rabState.categories.length + 1,
+      ...(scenarioId ? { scenarioId } : {}),
     });
 
     return rabState.updateItem(id, {
@@ -393,8 +451,10 @@ export function useRabController(
 
   const importRabFile = async (file: File) => {
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
+    const scenarioId = scenario?.id;
     setImportLoading(true);
     setImportError(null);
+    setImportWarnings([]);
     try {
       const buffer = await file.arrayBuffer();
       const parsed = await parseRabWorkbookFromArrayBuffer(buffer);
@@ -414,6 +474,7 @@ export function useRabController(
           name: category.name,
           type: category.type,
           sortOrder: rabState.categories.length + categoryIdMap.size + 1,
+          ...(scenarioId ? { scenarioId } : {}),
         });
         categoryIdMap.set(category.id, resolvedCategory);
       }
@@ -436,12 +497,14 @@ export function useRabController(
           plannedCashMonth: item.plannedCashMonth,
           aliases: item.aliases,
           sortOrder: rabState.items.length + importedCount + 1,
+          ...(scenarioId ? { scenarioId } : {}),
         });
         createdItems.push(createdItem);
         importedCount += 1;
       }
 
       let importedTransactionCount = 0;
+      const unlinkedTransactionNames: string[] = [];
       if (addTransaction && parsed.transactions.length > 0) {
         const rabItemPool = [...rabState.items, ...createdItems];
         for (const transaction of parsed.transactions) {
@@ -450,6 +513,11 @@ export function useRabController(
             transaction: { jenis: transaction.jenis, keterangan: transaction.keterangan },
           })[0];
           const matchedItem = suggestion && suggestion.score >= RAB_SUGGESTION_MIN_SCORE ? suggestion.item : null;
+          
+          if (!matchedItem) {
+            unlinkedTransactionNames.push(transaction.keterangan);
+          }
+
           const resolvedCategory = resolveFinanceCategory({
             jenis: transaction.jenis,
             kategori: matchedItem?.categoryName ?? '',
@@ -479,19 +547,42 @@ export function useRabController(
         }
       }
 
+      const warnings = buildImportWarnings(parsed);
+      
+      if (unlinkedTransactionNames.length > 0) {
+        const uniqueNames = Array.from(new Set(unlinkedTransactionNames));
+        const displayNames = uniqueNames.slice(0, 3);
+        const othersCount = uniqueNames.length - displayNames.length;
+        
+        let namesText = displayNames.map((n) => `"${n}"`).join(', ');
+        if (othersCount > 0) namesText += `, dan ${othersCount} lainnya`;
+
+        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Transaksi ini sementara dipisahkan ke kategori lain, namun Anda bisa merapikannya nanti di menu Transaksi.`);
+      }
+
+      setImportWarnings(warnings);
+
+      const skippedCount = parsed.skippedRows.length;
+      const hasReconciliationWarning = warnings.some((warning) => warning.startsWith('Kategori'));
+      const summary = `${importedCount} item RAB dan ${importedTransactionCount} transaksi berhasil diimpor dari "${parsed.project.name}"`
+        + (skippedCount > 0 ? `, ${skippedCount} baris dilewati` : '')
+        + (hasReconciliationWarning ? ', ada selisih rekonsiliasi' : '');
+
       try {
         await rabApi.recordImport({
           projectId: project.id,
           fileName: file.name,
           status: 'success',
-          summary: `${importedCount} item RAB dan ${importedTransactionCount} transaksi berhasil diimpor dari "${parsed.project.name}"`,
+          summary,
           errors: [],
         });
       } catch {
         // Riwayat import bersifat opsional, tidak boleh menggagalkan alur import utama.
       }
 
-      setImportDialogOpen(false);
+      if (warnings.length === 0) {
+        setImportDialogOpen(false);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
       setImportError(message);
@@ -510,6 +601,8 @@ export function useRabController(
     importLoading,
     importError,
     setImportError,
+    importWarnings,
+    setImportWarnings,
     rabItemError,
     setRabItemError,
     rabItemDraft,

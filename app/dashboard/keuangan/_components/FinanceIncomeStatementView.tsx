@@ -1,303 +1,440 @@
 'use client';
 
-import { useState } from 'react';
-
-import DeleteIcon from '@mui/icons-material/Delete';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import SearchIcon from '@mui/icons-material/Search';
+import React, { useState } from 'react';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
+import Collapse from '@mui/material/Collapse';
+import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
+import TableFooter from '@mui/material/TableFooter';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import { formatRupiah } from '@/lib/formatters';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeReports' | 'labaRugiActions'>;
+type Props = Pick<UseKeuanganControllerResult, 'financeReports' | 'labaRugiActions'> & {
+  productionSales?: UseKeuanganControllerResult['productionSales'];
+};
 
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    belum_ada_realisasi: 'Belum ada realisasi',
-    sesuai_rencana: 'Sesuai rencana',
-    hemat: 'Hemat',
-    over_budget: 'Over budget',
-    di_atas_target: 'Di atas target',
-    di_bawah_target: 'Di bawah target',
-  };
-  return labels[status] ?? status;
-}
-
-const ROW_DELETE_TRANSITION_MS = 220;
-
-export default function FinanceIncomeStatementView({ financeReports, labaRugiActions }: Props) {
-  const { summary } = financeReports.incomeStatementComparison;
-  const { filteredRows } = labaRugiActions;
-  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
-
-  // Fades rows out first so the underlying multi-step delete (one request per item)
-  // finishes while they're already invisible, instead of visibly flickering row by row.
-  const animateThenDelete = async (ids: string[], action: () => Promise<void>) => {
-    setPendingDeleteIds((prev) => new Set([...prev, ...ids]));
-    await new Promise((resolve) => setTimeout(resolve, ROW_DELETE_TRANSITION_MS));
-    try {
-      await action();
-    } finally {
-      setPendingDeleteIds((prev) => {
-        const next = new Set(prev);
-        ids.forEach((id) => next.delete(id));
-        return next;
-      });
-    }
-  };
-
-  const selectableRowIds = filteredRows.filter((row) => row.itemId).map((row) => row.itemId as string);
-  const allVisibleSelected =
-    selectableRowIds.length > 0 && selectableRowIds.every((id) => labaRugiActions.selectedItemIds.includes(id));
-  const someSelected = labaRugiActions.selectedItemIds.length > 0 && !allVisibleSelected;
+function WorksheetGroupedSection({
+  testId,
+  title,
+  groups,
+  totalLabel,
+  totalAmount,
+  tone,
+}: {
+  testId: string;
+  title: string;
+  groups: UseKeuanganControllerResult['financeReports']['incomeStatementWorksheet']['expenseGroups'];
+  totalLabel: string;
+  totalAmount: number;
+  tone: 'income' | 'expense';
+}) {
+  const isIncome = tone === 'income';
+  const headerBg = isIncome ? 'success.50' : 'error.50';
+  const titleColor = isIncome ? 'success.dark' : 'error.dark';
+  const badgeColor = isIncome ? 'success' : 'error';
 
   return (
-    <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CardContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Laba Rugi Rencana vs Aktual</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Rencana laba {formatRupiah(summary.plannedProfit)} dibanding aktual {formatRupiah(summary.actualProfit)}.
+    <Box data-testid={testId} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box
+        sx={{
+          px: 2.5,
+          py: 1.5,
+          bgcolor: headerBg,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: titleColor }}>
+          {title}
         </Typography>
+        <Chip
+          label={`Total: ${formatRupiah(totalAmount)}`}
+          size="small"
+          color={badgeColor}
+          variant="outlined"
+          sx={{ fontWeight: 700, bgcolor: 'background.paper' }}
+        />
+      </Box>
 
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1.5 }}>
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Jenis</InputLabel>
-            <Select
-              value={labaRugiActions.filterJenis}
-              label="Jenis"
-              onChange={(event) => labaRugiActions.setFilterJenis(event.target.value as typeof labaRugiActions.filterJenis)}
-            >
-              <MenuItem value="semua">Semua Jenis</MenuItem>
-              <MenuItem value="expense">Pengeluaran</MenuItem>
-              <MenuItem value="income">Pendapatan</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            size="small"
-            placeholder="Cari item atau kategori..."
-            value={labaRugiActions.searchQuery}
-            onChange={(event) => labaRugiActions.setSearchQuery(event.target.value)}
-            sx={{ minWidth: 220, flex: { xs: '1 1 100%', sm: '0 1 auto' } }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          {labaRugiActions.selectedItemIds.length > 0 && (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 1.5,
-                py: 0.75,
-                borderRadius: 2,
-                bgcolor: 'action.hover',
-                ml: { sm: 'auto' },
-              }}
-            >
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {labaRugiActions.selectedItemIds.length} item dipilih
-              </Typography>
-              <Button size="small" variant="text" onClick={labaRugiActions.clearSelection} sx={{ textTransform: 'none' }}>
-                Batalkan
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<DeleteSweepIcon />}
-                onClick={() => labaRugiActions.setBulkDeleteConfirm(true)}
-                sx={{ borderRadius: 2, textTransform: 'none' }}
-              >
-                Hapus {labaRugiActions.selectedItemIds.length}
-              </Button>
-            </Box>
-          )}
-        </Box>
-
-        <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <Table size="small">
-            <TableHead>
+      <TableContainer sx={{ flex: 1 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 700, color: 'text.secondary', width: '70%' }}>Jenis / Kategori</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', width: '30%' }}>
+                Jumlah
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {groups.length === 0 ? (
               <TableRow>
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    size="small"
-                    checked={allVisibleSelected}
-                    indeterminate={someSelected}
-                    disabled={selectableRowIds.length === 0}
-                    onChange={() => {
-                      if (allVisibleSelected) {
-                        labaRugiActions.clearSelection();
-                      } else {
-                        selectableRowIds.forEach((id) => {
-                          if (!labaRugiActions.selectedItemIds.includes(id)) labaRugiActions.toggleSelect(id);
-                        });
-                      }
-                    }}
-                  />
+                <TableCell colSpan={2} align="center" sx={{ py: 3, color: 'text.disabled' }}>
+                  Belum ada data {title.toLowerCase()}
                 </TableCell>
-                <TableCell>Kategori</TableCell>
-                <TableCell>Item</TableCell>
-                <TableCell>Jenis</TableCell>
-                <TableCell align="right">Rencana</TableCell>
-                <TableCell align="right">Aktual</TableCell>
-                <TableCell align="right">Selisih</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Aksi</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredRows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
-                    {financeReports.incomeStatementComparison.rows.length === 0
-                      ? 'Belum ada data laba rugi.'
-                      : 'Tidak ada baris yang cocok dengan filter.'}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredRows.map((row) => {
-                  const rowKey = `${row.categoryId}-${row.itemId ?? row.itemName}`;
-                  const isSelected = Boolean(row.itemId) && labaRugiActions.selectedItemIds.includes(row.itemId as string);
-                  const isPendingDelete = Boolean(row.itemId) && pendingDeleteIds.has(row.itemId as string);
-                  return (
-                    <TableRow
-                      key={rowKey}
-                      selected={isSelected}
-                      hover={Boolean(row.itemId)}
-                      onClick={() => row.itemId && labaRugiActions.toggleSelect(row.itemId)}
-                      sx={{
-                        cursor: row.itemId ? 'pointer' : 'default',
-                        transition: `opacity ${ROW_DELETE_TRANSITION_MS}ms ease, transform ${ROW_DELETE_TRANSITION_MS}ms ease`,
-                        opacity: isPendingDelete ? 0 : 1,
-                        transform: isPendingDelete ? 'translateX(12px)' : 'none',
-                      }}
-                    >
-                      <TableCell padding="checkbox" onClick={(event) => event.stopPropagation()}>
-                        <Checkbox
-                          size="small"
-                          checked={isSelected}
-                          disabled={!row.itemId}
-                          onChange={() => row.itemId && labaRugiActions.toggleSelect(row.itemId)}
-                        />
-                      </TableCell>
-                      <TableCell>{row.categoryName}</TableCell>
-                      <TableCell>{row.itemName}</TableCell>
-                      <TableCell>{row.type === 'income' ? 'Pendapatan' : 'Pengeluaran'}</TableCell>
-                      <TableCell align="right">{formatRupiah(row.planned)}</TableCell>
-                      <TableCell align="right">{formatRupiah(row.actual)}</TableCell>
-                      <TableCell align="right">{formatRupiah(row.variance)}</TableCell>
-                      <TableCell><Chip size="small" label={statusLabel(row.status)} /></TableCell>
-                      <TableCell align="right" onClick={(event) => event.stopPropagation()}>
-                        {isSelected && row.itemId && (
-                          <Box sx={{ display: 'inline-flex', gap: 0.5 }}>
-                            <IconButton
-                              size="small"
-                              aria-label={`Edit item RAB ${row.itemName}`}
-                              onClick={() => labaRugiActions.editRow(row)}
-                            >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              aria-label={`Hapus item RAB ${row.itemName}`}
-                              onClick={() => labaRugiActions.setDeleteTargetRow(row)}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        )}
+            ) : (
+              groups.map((group) => (
+                <React.Fragment key={group.id}>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell colSpan={2} sx={{ fontWeight: 800, py: 1, color: 'text.primary' }}>
+                      {group.label}
+                    </TableCell>
+                  </TableRow>
+                  {group.items.map((item) => (
+                    <TableRow key={item.id} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                      <TableCell sx={{ pl: 4, py: 0.75, color: 'text.secondary' }}>{item.label}</TableCell>
+                      <TableCell align="right" sx={{ py: 0.75, fontWeight: 600 }}>
+                        {formatRupiah(item.amount)}
                       </TableCell>
                     </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </CardContent>
+                  ))}
+                  <TableRow>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        py: 0.75,
+                        pr: 2,
+                        fontStyle: 'italic',
+                        fontWeight: 700,
+                        color: 'text.secondary',
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      Sub-total
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        py: 0.75,
+                        fontWeight: 800,
+                        color: titleColor,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      {formatRupiah(group.subtotal)}
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))
+            )}
+          </TableBody>
+          <TableFooter>
+            <TableRow sx={{ bgcolor: 'action.hover' }}>
+              <TableCell sx={{ fontWeight: 800, py: 1.25 }}>{totalLabel}</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 900, py: 1.25, color: titleColor, fontSize: '0.95rem' }}>
+                {formatRupiah(totalAmount)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}
 
-      <Dialog open={Boolean(labaRugiActions.deleteTargetRow)} onClose={() => labaRugiActions.setDeleteTargetRow(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>Hapus item RAB?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Item RAB &quot;{labaRugiActions.deleteTargetRow?.itemName}&quot; akan dihapus permanen dan tidak dapat dikembalikan.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => labaRugiActions.setDeleteTargetRow(null)} sx={{ textTransform: 'none' }}>Batal</Button>
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={async () => {
-              const id = labaRugiActions.deleteTargetRow?.itemId;
-              labaRugiActions.setDeleteTargetRow(null);
-              if (id) await animateThenDelete([id], () => labaRugiActions.confirmDeleteRow(id));
-            }}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
-            Hapus
-          </Button>
-        </DialogActions>
-      </Dialog>
+function SummaryModernSection({
+  totalPendapatan,
+  totalPengeluaran,
+  labaRugi,
+}: {
+  totalPendapatan: number;
+  totalPengeluaran: number;
+  labaRugi: number;
+}) {
+  const isProfit = labaRugi >= 0;
+  const profitColor = isProfit ? 'success.main' : 'error.main';
+  const badgeText = labaRugi > 0 ? 'SURPLUS (LABA)' : labaRugi < 0 ? 'DEFISIT (RUGI)' : 'IMPAS';
 
-      <Dialog open={labaRugiActions.bulkDeleteConfirm} onClose={() => labaRugiActions.setBulkDeleteConfirm(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Hapus {labaRugiActions.selectedItemIds.length} item RAB?</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Item RAB yang dipilih akan dihapus permanen dan tidak dapat dikembalikan.
+  return (
+    <Box
+      data-testid="income-statement-summary-panel"
+      sx={{
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <Box
+        sx={{
+          px: 2.5,
+          py: 1.5,
+          bgcolor: 'action.hover',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+          Ringkasan Laba / Rugi
+        </Typography>
+        <Chip
+          label={badgeText}
+          size="small"
+          color={isProfit ? 'success' : 'error'}
+          sx={{ fontWeight: 800 }}
+        />
+      </Box>
+
+      <TableContainer>
+        <Table size="small">
+          <TableBody>
+            <TableRow hover>
+              <TableCell sx={{ py: 1.25, fontWeight: 700 }}>Total Pendapatan</TableCell>
+              <TableCell align="right" sx={{ py: 1.25, fontWeight: 800, color: 'success.main' }}>
+                {formatRupiah(totalPendapatan)}
+              </TableCell>
+            </TableRow>
+            <TableRow hover>
+              <TableCell sx={{ py: 1.25, fontWeight: 700 }}>Total Pengeluaran</TableCell>
+              <TableCell align="right" sx={{ py: 1.25, fontWeight: 800, color: 'error.main' }}>
+                {formatRupiah(totalPengeluaran)}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+          <TableFooter>
+            <TableRow sx={{ bgcolor: isProfit ? 'success.50' : 'error.50' }}>
+              <TableCell
+                sx={{
+                  py: 1.5,
+                  fontWeight: 900,
+                  fontSize: '0.95rem',
+                  color: isProfit ? 'success.dark' : 'error.dark',
+                  borderBottom: '3px double',
+                  borderColor: 'divider',
+                }}
+              >
+                Laba/Rugi
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  py: 1.5,
+                  fontWeight: 900,
+                  fontSize: '1.05rem',
+                  color: profitColor,
+                  borderBottom: '3px double',
+                  borderColor: 'divider',
+                }}
+              >
+                {formatRupiah(labaRugi)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+}
+
+function KelayakanUsahaSection({
+  kelayakanUsaha,
+  productionSales,
+}: {
+  kelayakanUsaha: NonNullable<UseKeuanganControllerResult['financeReports']['kelayakanUsaha']>;
+  productionSales?: UseKeuanganControllerResult['productionSales'];
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const metrics = [
+    {
+      label: 'HPP',
+      value: kelayakanUsaha.hpp != null ? `${formatRupiah(kelayakanUsaha.hpp)} / ${kelayakanUsaha.satuan}` : '-',
+    },
+    {
+      label: 'BEP Produksi',
+      value:
+        kelayakanUsaha.bepProduksi != null
+          ? `${kelayakanUsaha.bepProduksi.toLocaleString('id-ID', { maximumFractionDigits: 2 })} ${kelayakanUsaha.satuan}`
+          : '-',
+    },
+    {
+      label: 'B/C Ratio',
+      value: kelayakanUsaha.bcRatio != null ? kelayakanUsaha.bcRatio.toFixed(2) : '-',
+    },
+    {
+      label: 'Status',
+      value: kelayakanUsaha.kelayakanStatus?.toUpperCase() ?? '-',
+    },
+  ];
+
+  return (
+    <Box
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'action.hover',
+      }}
+    >
+      <Box
+        sx={{
+          p: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <Box sx={{ minWidth: 200 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+            Kelayakan Usaha
           </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => labaRugiActions.setBulkDeleteConfirm(false)} sx={{ textTransform: 'none' }}>Batal</Button>
+          <Typography variant="caption" color="text.secondary">
+            Asumsi Produksi & Penjualan
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
           <Button
-            variant="contained"
-            color="error"
-            startIcon={<DeleteSweepIcon />}
-            onClick={async () => {
-              const ids = labaRugiActions.selectedItemIds;
-              labaRugiActions.setBulkDeleteConfirm(false);
-              await animateThenDelete(ids, labaRugiActions.handleBulkDelete);
-            }}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
+            variant="text"
+            size="small"
+            endIcon={expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
-            Hapus
+            {expanded ? 'Sembunyikan' : 'Tampilkan'}
           </Button>
-        </DialogActions>
-      </Dialog>
-    </Card>
+        </Stack>
+      </Box>
+      <Collapse in={expanded}>
+        <Box sx={{ p: 2.5, pt: 0 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, minmax(110px, 1fr))' },
+              gap: 1.5,
+              alignItems: 'center',
+            }}
+          >
+            {metrics.map((metric) => (
+              <Box key={metric.label} sx={{ borderLeft: '2px solid', borderColor: 'divider', pl: 1.5 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                  {metric.label}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.25 }}>
+                  {metric.value}
+                </Typography>
+              </Box>
+            ))}
+            {productionSales && (
+              <Box sx={{ pl: { xs: 0, md: 1.5 } }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    productionSales.openDialog();
+                  }}
+                  fullWidth
+                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: 'background.paper' }}
+                >
+                  Atur Asumsi
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Collapse>
+    </Box>
+  );
+}
+
+export default function FinanceIncomeStatementView({ financeReports, productionSales }: Props) {
+  const { kelayakanUsaha, labaRugi } = financeReports;
+  const incomeStatementWorksheet = financeReports.incomeStatementWorksheet ?? {
+    incomeGroups: [],
+    expenseGroups: [],
+    totalPendapatan: labaRugi.totalPendapatan,
+    totalPengeluaran: labaRugi.totalPengeluaran,
+    labaRugi: labaRugi.labaRugi,
+  };
+
+  const hasWorksheetData =
+    incomeStatementWorksheet.incomeGroups.length > 0 ||
+    incomeStatementWorksheet.expenseGroups.length > 0;
+
+  return (
+    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {hasWorksheetData ? (
+        <Card
+          data-testid="income-statement-card"
+          sx={{
+            borderRadius: 2.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: 1,
+            overflow: 'hidden',
+          }}
+        >
+          {kelayakanUsaha && (
+            <KelayakanUsahaSection kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
+          )}
+
+          <Grid container>
+            {/* Left Column: Pengeluaran Grouped */}
+            <Grid size={{ xs: 12, lg: 7 }}>
+              <WorksheetGroupedSection
+                testId="income-statement-expense-panel"
+                title="Pengeluaran"
+                groups={incomeStatementWorksheet.expenseGroups}
+                totalLabel="Total Pengeluaran"
+                totalAmount={incomeStatementWorksheet.totalPengeluaran}
+                tone="expense"
+              />
+            </Grid>
+
+            {/* Right Column: Pendapatan Grouped + Summary */}
+            <Grid size={{ xs: 12, lg: 5 }} sx={{ display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{ flex: 1 }}>
+                <WorksheetGroupedSection
+                  testId="income-statement-income-panel"
+                  title="Pendapatan"
+                  groups={incomeStatementWorksheet.incomeGroups}
+                  totalLabel="Total Pendapatan"
+                  totalAmount={incomeStatementWorksheet.totalPendapatan}
+                  tone="income"
+                />
+              </Box>
+
+              <SummaryModernSection
+                totalPendapatan={incomeStatementWorksheet.totalPendapatan}
+                totalPengeluaran={incomeStatementWorksheet.totalPengeluaran}
+                labaRugi={incomeStatementWorksheet.labaRugi}
+              />
+            </Grid>
+          </Grid>
+        </Card>
+      ) : (
+        <Card sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 8, borderRadius: 2.5 }}>
+          <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
+            <Typography variant="body1" sx={{ fontWeight: 700 }}>
+              Belum ada data transaksi
+            </Typography>
+            <Typography variant="body2" sx={{ mt: 0.5 }}>
+              Tambahkan transaksi pengeluaran atau pendapatan untuk melihat laporan laba rugi.
+            </Typography>
+          </Box>
+        </Card>
+      )}
+    </Box>
   );
 }

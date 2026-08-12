@@ -20,6 +20,7 @@ export interface DbTransaction {
   tanggal: string;
   keterangan: string;
   project_id?: string | null;
+  scenario_id?: string | null;
   rab_category_id?: string | null;
   rab_item_id?: string | null;
   volume?: number | null;
@@ -81,6 +82,49 @@ export interface DbRabImport {
   status: 'success' | 'failed';
   summary: string | null;
   errors: string[] | null;
+  created_at: string;
+}
+
+export interface DbFinanceScenario {
+  id: string;
+  user_id: string;
+  project_id: string;
+  mode: 'PROJECTION' | 'REALIZATION';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbFinancingAssumptions {
+  id: string;
+  scenario_id: string;
+  saldo_kas_awal: number;
+  modal_sendiri: number;
+  nilai_pinjaman: number;
+  bunga_per_periode: number;
+  tanggal_pencairan: string | null;
+  tanggal_pembayaran: string | null;
+  biaya_lain: number;
+  updated_at: string;
+}
+
+export interface DbProductionSalesAssumptions {
+  id: string;
+  scenario_id: string;
+  produksi: number | null;
+  satuan: string | null;
+  harga_jual: number | null;
+  updated_at: string;
+}
+
+export interface DbMigrationAuditLog {
+  id: string;
+  user_id: string;
+  project_id: string;
+  entity_type: 'rab_category' | 'rab_item' | 'transaction';
+  entity_id: string;
+  previous_scenario_id: string | null;
+  new_scenario_id: string | null;
+  action: 'auto_migrate_rab' | 'classify_transaction' | 'rollback_classification';
   created_at: string;
 }
 

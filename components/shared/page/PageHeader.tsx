@@ -37,7 +37,7 @@ export function PageHeader({
   sx,
 }: PageHeaderProps) {
   return (
-    <Box component="header" sx={mergeSx(pageHeaderSx, sx)}>
+    <Box component="header" sx={mergeSx(pageHeaderSx, { display: { xs: 'none', md: 'flex' } }, sx)}>
       <Box sx={pageHeaderLeadingSx}>
         {icon ? <Box sx={pageHeaderIconSx}>{icon}</Box> : null}
         <Box sx={pageHeaderTextSx}>

@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
 import Chip from '@mui/material/Chip';
+import Collapse from '@mui/material/Collapse';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -63,13 +64,19 @@ import type { HighlightItemIdentifierWithType } from '@mui/x-charts/models';
 
 import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';
+import { FinanceComparisonView } from './FinanceComparisonView';
+import FinanceFinancingView from './FinanceFinancingView';
 import FinanceIncomeStatementView from './FinanceIncomeStatementView';
 import FinanceProjectToolbar from './FinanceProjectToolbar';
+import FinancingAssumptionsDialog from './FinancingAssumptionsDialog';
+import ProductionSalesAssumptionsDialog from './ProductionSalesAssumptionsDialog';
 import RabImportDialog from './RabImportDialog';
 import RabItemDialog from './RabItemDialog';
 import RabTransactionLinkDialog from './RabTransactionLinkDialog';
 import RabPlanningView from './RabPlanningView';
 import TransactionBatchDialog from './TransactionBatchDialog';
+import UnclassifiedTransactionsBanner from './UnclassifiedTransactionsBanner';
+import TransactionClassificationDialog from './TransactionClassificationDialog';
 
 const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
   ssr: false,
@@ -197,14 +204,19 @@ export default function KeuanganView({
   financeTab,
   setFinanceTab,
   financeProject,
+  financeScenario,
   rab,
   rabTransactionLink,
   financeReports,
+  financing,
+  financeComparison,
+  productionSales,
   labaRugiActions,
   financeExport,
   handleOpenFinanceReportDialog,
   transactionBatch,
   transactionMaster,
+  migration,
   searchQuery,
   setSearchQuery,
   sortColumn,
@@ -222,7 +234,7 @@ export default function KeuanganView({
   const [distributionPanelOpen, setDistributionPanelOpen] = useState(true);
   const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const [distributionHighlightedItem, setDistributionHighlightedItem] =
-    useState<HighlightItemIdentifierWithType<'pie'> | null>(null);
+    useState<{ type?: 'pie'; seriesId: string; dataIndex?: number } | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -256,44 +268,59 @@ export default function KeuanganView({
           pr: 0.5,
         }}
       >
-        {finalPieData.map((item) => (
-          <Box
-            key={item.id}
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: '10px minmax(0, 1fr) auto',
-              alignItems: 'center',
-              columnGap: 1,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 2,
-              px: 1,
-              py: 0.75,
-              bgcolor: 'background.paper',
-            }}
-          >
+        {finalPieData.map((item, index) => {
+          const isHighlighted = distributionHighlightedItem?.dataIndex === index;
+          return (
             <Box
-              aria-hidden
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                bgcolor: item.color,
+              key={item.id}
+              onClick={() => {
+                setDistributionHighlightedItem((prev) =>
+                  prev?.dataIndex === index
+                    ? null
+                    : { type: 'pie', seriesId: EXPENSE_DISTRIBUTION_SERIES_ID, dataIndex: index }
+                );
               }}
-            />
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 800, color: 'text.primary' }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {formatRupiah(item.value)}
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '10px minmax(0, 1fr) auto',
+                alignItems: 'center',
+                columnGap: 1,
+                border: '1px solid',
+                borderColor: isHighlighted ? 'primary.main' : 'divider',
+                borderRadius: 2,
+                px: 1,
+                py: 0.75,
+                bgcolor: isHighlighted ? (theme) => alpha(theme.palette.primary.main, 0.04) : 'background.paper',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                },
+              }}
+            >
+              <Box
+                aria-hidden
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: item.color,
+                }}
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" noWrap sx={{ display: 'block', fontWeight: 800, color: 'text.primary' }}>
+                  {item.label}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {formatRupiah(item.value)}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.primary' }}>
+                {formatDistributionPercentage(item.percentage)}
               </Typography>
             </Box>
-            <Typography variant="caption" sx={{ fontWeight: 900, color: 'text.primary' }}>
-              {formatDistributionPercentage(item.percentage)}
-            </Typography>
-          </Box>
-        ))}
+          );
+        })}
       </Box>
     );
   };
@@ -356,9 +383,11 @@ export default function KeuanganView({
       <FinanceProjectToolbar
         financeAccess={financeAccess}
         financeProject={financeProject}
+        financeScenario={financeScenario}
         rab={rab}
         financeExport={financeExport}
         reportLoading={reportLoading}
+        transactionBatch={transactionBatch}
         onOpenPdfReport={handleOpenFinanceReportDialog}
       />
 
@@ -384,6 +413,8 @@ export default function KeuanganView({
         <Tab value="rab" label="RAB" />
         <Tab value="laba-rugi" label="Laba Rugi" />
         <Tab value="arus-kas" label="Arus Kas" />
+        <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
+        <Tab value="perbandingan" label="Perbandingan" />
       </Tabs>
 
       {financeTab === 'buku-besar' && (
@@ -392,6 +423,10 @@ export default function KeuanganView({
         data-finance-fill-height="true"
         sx={financePanelSx}
       >
+        <UnclassifiedTransactionsBanner
+          unclassifiedCount={migration.unclassifiedCount}
+          onOpenDialog={migration.openDialog}
+        />
         <Grid container spacing={1.5}>
           <Grid size={{ xs: 12, md: 4 }}>
             <Card data-guide-target="finance-summary" sx={{ height: '100%' }}>
@@ -1100,19 +1135,28 @@ export default function KeuanganView({
           </Card>
         </Box>
 
-          <Card
-            data-testid="finance-distribution-card"
-            data-finance-card-align="ledger"
-            data-finance-card-fill-bottom="true"
+          <Collapse
+            orientation="horizontal"
+            in={distributionPanelOpen}
             sx={{
-              width: { md: 300, lg: 330 },
-              flexShrink: 0,
-              alignSelf: 'stretch',
-              minHeight: 0,
-              display: { xs: 'none', md: distributionPanelOpen ? 'flex' : 'none' },
-              flexDirection: 'column',
+              display: { xs: 'none', md: 'block' },
+              '& .MuiCollapse-wrapper': { height: '100%' },
+              '& .MuiCollapse-wrapperInner': { height: '100%' },
             }}
           >
+            <Card
+              data-testid="finance-distribution-card"
+              data-finance-card-align="ledger"
+              data-finance-card-fill-bottom="true"
+              sx={{
+                width: { md: 300, lg: 330 },
+                flexShrink: 0,
+                height: '100%',
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
             <CardHeader
               title={
                 <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
@@ -1151,17 +1195,13 @@ export default function KeuanganView({
                   onHighlightChange={(item) => setDistributionHighlightedItem(item)}
                   width={300}
                   height={210}
-                  slotProps={{
-                    legend: {
-                      direction: 'horizontal',
-                      position: { vertical: 'bottom', horizontal: 'center' },
-                    },
-                  }}
+                  hideLegend
                 />
               </Box>
               {renderDistributionBreakdown()}
             </CardContent>
           </Card>
+          </Collapse>
         </Box>
 
         <Dialog
@@ -1199,13 +1239,9 @@ export default function KeuanganView({
               highlightedItem={distributionHighlightedItem}
               onHighlightChange={(item) => setDistributionHighlightedItem(item)}
               width={320}
-              height={280}
-              slotProps={{
-                legend: {
-                  direction: 'horizontal',
-                  position: { vertical: 'bottom', horizontal: 'center' },
-                },
-              }}
+              height={220}
+              margin={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hideLegend
             />
             <Box sx={{ width: '100%', maxWidth: 360 }}>
               {renderDistributionBreakdown(240)}
@@ -1230,7 +1266,11 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceIncomeStatementView financeReports={financeReports} labaRugiActions={labaRugiActions} />
+          <FinanceIncomeStatementView
+            financeReports={financeReports}
+            labaRugiActions={labaRugiActions}
+            productionSales={productionSales}
+          />
         </Box>
       )}
       {financeTab === 'arus-kas' && (
@@ -1240,6 +1280,24 @@ export default function KeuanganView({
           sx={financePanelSx}
         >
           <FinanceCashFlowView financeReports={financeReports} />
+        </Box>
+      )}
+      {financeTab === 'arus-kas-pasca-pembiayaan' && (
+        <Box
+          data-testid="finance-panel-arus-kas-pasca-pembiayaan"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
+          <FinanceFinancingView financing={financing} />
+        </Box>
+      )}
+      {financeTab === 'perbandingan' && (
+        <Box
+          data-testid="finance-panel-perbandingan"
+          data-finance-fill-height="true"
+          sx={financePanelSx}
+        >
+          <FinanceComparisonView {...financeComparison} />
         </Box>
       )}
 
@@ -1252,6 +1310,8 @@ export default function KeuanganView({
       <RabTransactionLinkDialog link={rabTransactionLink} />
       <RabImportDialog rab={rab} />
       <RabItemDialog rab={rab} />
+      <FinancingAssumptionsDialog financing={financing} />
+      <ProductionSalesAssumptionsDialog controller={productionSales} />
 
       {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog
@@ -1631,6 +1691,21 @@ export default function KeuanganView({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <TransactionClassificationDialog
+        open={migration.dialogOpen}
+        onClose={migration.closeDialog}
+        unclassifiedTransactions={migration.unclassifiedTransactions}
+        projectionScenarioId={
+          financeScenario.scenarios.find((s) => s.mode === 'PROJECTION')?.id ?? null
+        }
+        realizationScenarioId={
+          financeScenario.scenarios.find((s) => s.mode === 'REALIZATION')?.id ?? null
+        }
+        onClassify={migration.handleClassifyTransactions}
+        isSubmitting={migration.isSubmitting}
+        submitError={migration.submitError}
+      />
 
       {/* Snackbar feedback */}
       <Snackbar

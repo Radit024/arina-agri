@@ -5,23 +5,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useLocalStorage from '@/hooks/useLocalStorage';
-import { aiApi } from '@/lib/api';
-import { generatePdfReport, getPeriodeLabel } from '@/lib/pdfReport';
 import { useTranslations } from 'next-intl';
 import { trackPageView } from '@/lib/analytics/trackPageView';
 
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactionsForScenario } from '@/hooks/useTransactionsForScenario';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
 import { nextLedgerSortState } from './ledgerSort';
+import { getModeLabel, getModeSlug } from '@/lib/finance/scenarioLabels';
 import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
 import { useFinanceReportController } from './useFinanceReportController';
+import { useFinanceScenarioController } from './useFinanceScenarioController';
+import { useFinancingController } from './useFinancingController';
+import { useComparisonController } from './useComparisonController';
 import { useLabaRugiActionsController } from './useLabaRugiActionsController';
 import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
 import { useTransactionBatchController } from './useTransactionBatchController';
 import { useTransactionMasterController } from './useTransactionMasterController';
+import { useMigrationController } from './useMigrationController';
+import { useProductionSalesController } from './useProductionSalesController';
+import { generatePdfReport } from '@/lib/pdfReport';
 
 type BepHppInputs = {
   totalBiaya: number;
@@ -56,8 +61,6 @@ export function useKeuanganController() {
     void trackPageView('keuangan');
   }, []);
 
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
-  
   const bepKey = `arina-bfa-inputs-${user?.id || 'guest'}`;
   const [bepHppInputs, setBepHppInputs] = useLocalStorage<BepHppInputs>(bepKey, {
     totalBiaya: 0,
@@ -82,7 +85,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas'>('buku-besar');
+  const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan' | 'perbandingan'>('buku-besar');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
   const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>('desc');
@@ -93,38 +96,58 @@ export function useKeuanganController() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const financeProject = useFinanceProjectController();
-  const rab = useRabController(financeProject.selectedProject, addTransaction);
+  const financeScenario = useFinanceScenarioController(financeProject.selectedProject?.id);
+  const {
+    transactions,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+    reload: reloadTransactions,
+  } = useTransactionsForScenario(financeScenario.activeScenario?.id ?? null);
+  const migration = useMigrationController({
+    projectId: financeProject.selectedProject?.id ?? null,
+    onSuccess: () => {
+      void reloadTransactions();
+    },
+  });
+  const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
   const clearSelectionTxs = () => setSelectedTxIds([]);
-  const projectScopedTransactions = useMemo(() => {
-    const selectedProjectId = financeProject.selectedProject?.id;
-    if (!selectedProjectId) return transactions;
-    return transactions.filter((tx) => tx.projectId === selectedProjectId);
-  }, [financeProject.selectedProject?.id, transactions]);
   const rabTransactionLink = useRabTransactionLinkController({
     rabItems: rab.items,
-    transactions: projectScopedTransactions,
+    transactions,
     updateTransaction,
+  });
+  const productionSales = useProductionSalesController({
+    scenarioId: financeScenario.activeScenario?.id ?? null,
   });
   const financeReports = useFinanceReportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
     transactions,
+    productionSalesAssumptions: productionSales.assumptions,
   });
-  const labaRugiActions = useLabaRugiActionsController({
-    rows: financeReports.incomeStatementComparison.rows,
-    rabItems: rab.items,
-    openRabItemEditDialog: rab.openRabItemEditDialog,
-    deleteRabItem: rab.deleteRabItem,
+  const financing = useFinancingController({
+    scenarioId: financeScenario.activeScenario?.id ?? null,
+    arusKasBulanan: financeReports.arusKasBulanan,
   });
+  const financeComparison = useComparisonController({
+    scenarios: financeScenario.scenarios,
+    project: financeProject.selectedProject,
+    active: financeTab === 'perbandingan',
+  });
+  const labaRugiActions = useLabaRugiActionsController();
+  const activeMode = financeScenario.activeMode;
+  const modeLabel = getModeLabel(activeMode);
+  const modeSlug = getModeSlug(activeMode);
   const hasSelectedProject = Boolean(financeProject.selectedProject);
-  const hasProjectData = hasSelectedProject && (projectScopedTransactions.length > 0 || rab.items.length > 0);
+  const hasProjectData = hasSelectedProject && (transactions.length > 0 || rab.items.length > 0);
   const financeAccess = {
     hasSelectedProject,
     hasProjectData,
     canInputFinance: hasSelectedProject,
-    canExportFinance: hasSelectedProject && hasProjectData,
+    canExportFinance: hasSelectedProject,
   };
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
@@ -134,10 +157,12 @@ export function useKeuanganController() {
     endMonth: financeReports.reportEndMonth,
     canExport: financeAccess.canExportFinance,
     hasProjectData: financeAccess.hasProjectData,
+    modeLabel,
+    modeSlug,
   });
   const reportPeriodeLabel = financeReports.reportStartMonth === financeReports.reportEndMonth
-    ? getPeriodeLabel(financeReports.reportStartMonth)
-    : `${getPeriodeLabel(financeReports.reportStartMonth)} - ${getPeriodeLabel(financeReports.reportEndMonth)}`;
+    ? financeReports.reportStartMonth
+    : `${financeReports.reportStartMonth} s.d. ${financeReports.reportEndMonth}`;
   const reportPeriodKey = financeReports.reportStartMonth === financeReports.reportEndMonth
     ? financeReports.reportStartMonth
     : `${financeReports.reportStartMonth}_sd_${financeReports.reportEndMonth}`;
@@ -294,7 +319,6 @@ export function useKeuanganController() {
 
   const getFinanceExportBlockedMessage = () => {
     if (!financeAccess.hasSelectedProject) return 'Buat atau pilih proyek terlebih dahulu';
-    if (!financeAccess.hasProjectData) return 'Tambahkan transaksi atau RAB sebelum export laporan';
     return null;
   };
 
@@ -307,14 +331,13 @@ export function useKeuanganController() {
     setAiDialogOpen(true);
   };
 
-  // ─── Generate PDF (manual, tanpa AI) ──────────────────────────
+  // ─── Generate PDF (manual, tanpa AI) ─────────────────────────────────────────
   const handleGeneratePdfManual = async () => {
     const blockedMessage = getFinanceExportBlockedMessage();
     if (blockedMessage) {
       setReportError(blockedMessage);
       return;
     }
-
     setReportLoading(true);
     setReportError(null);
     try {
@@ -327,41 +350,48 @@ export function useKeuanganController() {
         project: financeProject.selectedProject,
         rabItems: rab.items,
         transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
+        userName: user?.email ?? undefined,
+        modeLabel,
+        modeSlug,
       });
-    } catch {
-      setReportError(t('reportDialog.error.failed'));
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : 'Gagal membuat laporan PDF');
     } finally {
       setReportLoading(false);
     }
   };
 
-  // ─── Generate PDF (dengan AI Saran) ────────────────────────────
+  // ─── Generate PDF (dengan AI Saran) ───────────────────────────────────────────
   const handleGeneratePdfAI = async () => {
+    if (aiQuotaRemaining <= 0) {
+      setReportError(`Kuota laporan AI bulan ini sudah habis (${MAX_AI_REPORTS_PER_MONTH} laporan/bulan).`);
+      return;
+    }
     const blockedMessage = getFinanceExportBlockedMessage();
     if (blockedMessage) {
       setReportError(blockedMessage);
       return;
     }
-
-    if (aiQuotaRemaining <= 0) return;
     setReportLoading(true);
     setReportError(null);
     try {
-      const result = await aiApi.generateFinancialReport({
-        periode: reportPeriodeLabel,
+      const payload = {
+        periode: reportPeriodKey,
         totalPendapatan: reportTotals.totalPendapatan,
         totalPengeluaran: reportTotals.totalPengeluaran,
         labaBersih: reportTotals.labaBersih,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        project: financeProject.selectedProject,
-        rabItems: rab.items,
         transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
+        userName: user?.email ?? undefined,
+      };
+      const response = await fetch('/api/ai/financial-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
+      const result = await response.json() as { success: boolean; message?: string; data?: { analysis: string } };
+      if (!result.success || !result.data?.analysis) {
+        throw new Error(result.message ?? 'Gagal mendapatkan analisis AI');
+      }
       consumeAiQuota();
       await generatePdfReport({
         periode: reportPeriodKey,
@@ -372,19 +402,19 @@ export function useKeuanganController() {
         project: financeProject.selectedProject,
         rabItems: rab.items,
         transactions: financeReports.reportTransactions,
-        incomeStatementComparison: financeReports.incomeStatementComparison,
-        cashFlowComparison: financeReports.cashFlowComparison,
-        userName: user?.user_metadata?.full_name || user?.email?.split('@')[0] || undefined,
-        aiAnalysis: result.analysis,
+        userName: user?.email ?? undefined,
+        aiAnalysis: result.data.analysis,
+        modeLabel,
+        modeSlug,
       });
-    } catch {
-      setReportError(t('reportDialog.error.aiFailed'));
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : 'Gagal membuat laporan PDF+AI');
     } finally {
       setReportLoading(false);
     }
   };
 
-  const monthFilteredTransactions = projectScopedTransactions.filter((tx) =>
+  const monthFilteredTransactions = transactions.filter((tx) =>
     filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
   );
 
@@ -488,12 +518,12 @@ export function useKeuanganController() {
     () =>
       Array.from(
         new Set(
-          projectScopedTransactions
+          transactions
             .map((t) => t.tanggal.slice(0, 7))
             .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
         )
       ).sort((a, b) => a.localeCompare(b)),
-    [projectScopedTransactions]
+    [transactions]
   );
 
   const getBulanLabel = (bulanKey: string) => {
@@ -607,13 +637,18 @@ export function useKeuanganController() {
     ledgerTotalPages,
     financeAccess,
     financeProject,
+    financeScenario,
     rab,
     rabTransactionLink: guardedRabTransactionLink,
     financeReports,
+    financing,
+    financeComparison,
+    productionSales,
     labaRugiActions,
     financeExport,
     transactionBatch: guardedTransactionBatch,
     transactionMaster,
+    migration,
     searchQuery,
     setSearchQuery,
     sortColumn,

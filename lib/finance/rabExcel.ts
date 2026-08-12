@@ -607,8 +607,11 @@ function writeRabSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, rabIte
   sheet.getRow(headerRow).values = ['NO', 'URAIAN', 'VOLUME', 'SATUAN', 'HARGA SATUAN (RP)', 'TOTAL RENCANA', 'BULAN KAS'];
   applyHeader(sheet.getRow(headerRow));
 
-  const expenseGroups = groupRabItemsByCategory(rabItems.filter((item) => item.type === 'expense'));
-  const incomeGroups = groupRabItemsByCategory(rabItems.filter((item) => item.type === 'income'));
+  const isExpense = (type: string) => type === 'expense' || type === 'pengeluaran';
+  const isIncome = (type: string) => type === 'income' || type === 'pendapatan';
+
+  const expenseGroups = groupRabItemsByCategory(rabItems.filter((item) => isExpense(item.type)));
+  const incomeGroups = groupRabItemsByCategory(rabItems.filter((item) => isIncome(item.type)));
 
   let rowNumber = headerRow + 1;
   let markerIndex = 0;

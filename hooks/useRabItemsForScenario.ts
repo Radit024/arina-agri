@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useSessionStorage from '@/hooks/useSessionStorage';
@@ -41,7 +41,12 @@ export function useRabItemsForScenario(scenarioId: string | null) {
       setImports(next.imports);
       return next;
     });
-  }, []);
+  }, [setLocalState]);
+
+  const localStateRef = useRef(localState);
+  useEffect(() => {
+    localStateRef.current = localState;
+  }, [localState]);
 
   const loadData = useCallback(async () => {
     if (!isHydrated) return;
@@ -54,7 +59,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
         return;
       }
       if (!user || isGuestMode) {
-        syncLocalState(localState);
+        syncLocalState(localStateRef.current);
         setBackendOnline(false);
         setError(null);
         return;
@@ -65,13 +70,13 @@ export function useRabItemsForScenario(scenarioId: string | null) {
       setBackendOnline(true);
       setError(null);
     } catch (err) {
-      syncLocalState(localState);
+      syncLocalState(localStateRef.current);
       setBackendOnline(false);
       setError(err instanceof Error ? err.message : 'Gagal memuat RAB');
     } finally {
       setLoading(false);
     }
-  }, [scenarioId, user, isHydrated, setLocalState]);
+  }, [isGuestMode, isHydrated, scenarioId, syncLocalState, user]);
 
   useEffect(() => {
     loadData();

@@ -95,7 +95,7 @@ export const DEFAULT_FINANCE_CATEGORIES: FinanceCategoryDefinition[] = [
     id: 'default-expense-other',
     jenis: 'pengeluaran',
     label: 'Lainnya',
-    aliases: ['lainnya', 'other', 'lain-lain'],
+    aliases: ['lainnya', 'other', 'lain-lain', 'transport', 'transportasi', 'biaya transport', 'ongkos transport', 'biaya angkut'],
     source: 'default',
   },
   {
@@ -155,6 +155,11 @@ const HIGH_PRIORITY_SAPRODI_LABOR_TERMS = new Set([
   'pembelian herbisida',
   'penyulaman',
   'upah penyulaman',
+  'transport',
+  'transportasi',
+  'biaya transport',
+  'ongkos transport',
+  'biaya angkut',
 ]);
 
 function scoreTerm(term: string, normalizedCategory: string, normalizedInput: string) {

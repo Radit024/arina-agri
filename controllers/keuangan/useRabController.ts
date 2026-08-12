@@ -87,16 +87,7 @@ function parseAliasesInput(value: string) {
   return aliases.length > 0 ? aliases : undefined;
 }
 
-// Alasan skip per baris menyertakan deskripsi baris itu sendiri (mis. "Baris 'Produksi'
-// dilewati (Total Rencana kosong...)") supaya laporan tetap granular per baris. Untuk
-// pengelompokan warning, dua baris yang beda deskripsi tapi sama sebab (mis. dua baris
-// dengan tanggal tak dikenali) harus digabung jadi satu baris warning "N baris dilewati:
-// <sebab>" — jadi kelompokkan berdasarkan klausa penjelasan di dalam kurung, bukan string
-// reason yang utuh (yang selalu unik per baris karena memuat deskripsi).
-function extractSkipReasonLabel(reason: string): string {
-  const parts = reason.split(' karena ');
-  return parts.length > 1 ? `karena ${parts[1]}` : reason;
-}
+
 
 function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
   const warnings: string[] = [];

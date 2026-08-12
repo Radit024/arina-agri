@@ -63,4 +63,14 @@ describe('finance category resolution', () => {
     });
     expect(resolvedUpah?.label).toBe('TENAGA KERJA');
   });
+
+  it('maps transport and transportasi to Lainnya category', () => {
+    const resolvedTransport = resolveFinanceCategory({
+      jenis: 'pengeluaran',
+      kategori: 'Pengeluaran',
+      keterangan: 'Pembayaran biaya transport hasil panen',
+      categories: DEFAULT_FINANCE_CATEGORIES,
+    });
+    expect(resolvedTransport?.label).toBe('Lainnya');
+  });
 });

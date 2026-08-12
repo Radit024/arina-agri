@@ -1,12 +1,11 @@
 'use client';
 
 import AppBar from '@mui/material/AppBar';
-import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useReducedMotion } from 'framer-motion';
@@ -24,7 +23,6 @@ const titleMap: Array<{ prefix: string; key: string }> = [
 export default function MobileTopAppBar() {
   const t = useTranslations('MobileNav');
   const pathname = usePathname();
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
 
   const titleKey = titleMap.find((item) => pathname.startsWith(item.prefix))?.key ?? 'dashboard';

@@ -162,6 +162,13 @@ export function suggestRabItemsForTransaction({
           }
         }
 
+        // --- CONTEXTUAL PRIORITY BOOST ---
+        // If the transaction starts with the candidate (e.g. "transport hasil panen"), 
+        // the candidate ("transport") is the primary subject, not a modifier ("panen").
+        if (cleanNorm.startsWith(candidate) && isExactName) {
+           currentScore += 20;
+        }
+
         if (currentScore > maxScore) {
           maxScore = currentScore;
           reasons.push(...currentReasons);

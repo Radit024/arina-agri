@@ -15,30 +15,31 @@ export function useFinanceScenarios(projectId: string | null) {
     if (authLoading) return;
     setLoading(true);
     try {
-      if (!projectId) {
-        setScenarios([]);
-        setError(null);
-        return;
-      }
       if (!user || isGuestMode) {
+        const pid = projectId || 'default';
         const now = new Date().toISOString();
         const mockScenarios: ApiFinanceScenario[] = [
           {
-            id: `guest-proj-${projectId}`,
-            projectId,
+            id: `guest-proj-${pid}`,
+            projectId: pid,
             mode: 'PROJECTION',
             createdAt: now,
             updatedAt: now,
           },
           {
-            id: `guest-real-${projectId}`,
-            projectId,
+            id: `guest-real-${pid}`,
+            projectId: pid,
             mode: 'REALIZATION',
             createdAt: now,
             updatedAt: now,
           },
         ];
         setScenarios(mockScenarios);
+        setError(null);
+        return;
+      }
+      if (!projectId) {
+        setScenarios([]);
         setError(null);
         return;
       }

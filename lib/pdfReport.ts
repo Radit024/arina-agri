@@ -65,18 +65,34 @@ interface JsPdfWithPageCount {
   };
 }
 
-function formatReportRp(value: number) {
-  return `Rp ${Math.abs(value).toLocaleString('id-ID')}`;
+import { buildIncomeStatementWorksheetData } from '@/lib/finance/incomeStatementWorksheet';
+
+function formatReportAmount(value: number, isExpense = false) {
+  if (value === 0 || isNaN(value)) return '-';
+  const absVal = Math.abs(value).toLocaleString('id-ID');
+  if (isExpense || value < 0) {
+    return `(${absVal})`;
+  }
+  return absVal;
 }
 
 export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
   const tables: PdfReportTable[] = [];
   const rabItems = data.rabItems ?? [];
-  const sortedTransactions = [...data.transactions].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const sortedTransactions = [...data.transactions].sort((a, b) => {
+    const timeA = new Date(a.tanggal).getTime();
+    const timeB = new Date(b.tanggal).getTime();
+    if (isNaN(timeA) || isNaN(timeB)) {
+      return a.tanggal.localeCompare(b.tanggal);
+    }
+    return timeA - timeB;
+  });
+  const rabItemNameById = new Map(rabItems.map((item) => [item.id, item.name]));
 
+  // 1. RAB Table (Bulan Kas column removed per audit directive §3)
   tables.push({
     title: 'RENCANA ANGGARAN BIAYA (RAB)',
-    head: [['Jenis', 'Kategori', 'Item', 'Volume', 'Satuan', 'Harga Satuan', 'Total Rencana', 'Bulan Kas']],
+    head: [['Jenis', 'Kategori', 'Nama Item', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Total Rencana (Rp)']],
     body: rabItems.length > 0
       ? rabItems.map((item) => [
           item.type === 'income' ? 'Pendapatan' : 'Pengeluaran',
@@ -84,11 +100,10 @@ export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
           item.name,
           String(item.volume),
           item.unit,
-          formatReportRp(item.unitPrice),
-          formatReportRp(item.plannedTotal),
-          item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-',
+          formatReportAmount(item.unitPrice),
+          formatReportAmount(item.plannedTotal, item.type === 'expense'),
         ])
-      : [['Belum ada item RAB', '', '', '', '', '', '', '']],
+      : [['Belum ada item RAB', '', '', '', '', '', '']],
     columnStyles: {
       3: { halign: 'right' },
       5: { halign: 'right' },
@@ -96,26 +111,80 @@ export function buildPdfReportTables(data: ReportData): PdfReportTable[] {
     },
   });
 
+  // 2. Daily Transactions Table (Resolves human-readable Item RAB names per audit directive §2 & accounting format §5)
   tables.push({
     title: 'CATATAN TRANSAKSI HARIAN',
-    head: [['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan', 'Pengeluaran', 'Pemasukan', 'Item RAB']],
+    head: [['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)', 'Item RAB']],
     body: sortedTransactions.length > 0
-      ? sortedTransactions.map((tx) => [
-          formatDateLong(tx.tanggal),
-          tx.keterangan || tx.kategori,
-          tx.volume == null ? '' : String(tx.volume),
-          tx.satuan ?? '',
-          tx.hargaSatuan == null ? '' : formatReportRp(tx.hargaSatuan),
-          tx.jenis === 'pengeluaran' ? formatReportRp(tx.nominal) : '-',
-          tx.jenis === 'pendapatan' ? formatReportRp(tx.nominal) : '-',
-          tx.rabItemId ?? '-',
-        ])
+      ? sortedTransactions.map((tx) => {
+          const rabItemName = tx.rabItemId ? (rabItemNameById.get(tx.rabItemId) ?? '-') : '-';
+          return [
+            formatDateLong(tx.tanggal),
+            tx.keterangan || tx.kategori,
+            tx.volume == null ? '' : String(tx.volume),
+            tx.satuan ?? '',
+            tx.hargaSatuan == null ? '' : formatReportAmount(tx.hargaSatuan),
+            tx.jenis === 'pengeluaran' ? formatReportAmount(tx.nominal, true) : '-',
+            tx.jenis === 'pendapatan' ? formatReportAmount(tx.nominal) : '-',
+            rabItemName,
+          ];
+        })
       : [['Belum ada transaksi harian', '', '', '', '', '', '', '']],
     columnStyles: {
       2: { halign: 'right' },
       4: { halign: 'right' },
       5: { halign: 'right' },
       6: { halign: 'right' },
+    },
+  });
+
+  // 3. Income Statement / Laba Rugi Summary Table (Per audit directive §4)
+  const incomeStatementData = buildIncomeStatementWorksheetData({
+    transactions: data.transactions,
+    rabItems,
+  });
+
+  const labaRugiRows: string[][] = [];
+
+  incomeStatementData.incomeGroups.forEach((group) => {
+    labaRugiRows.push([group.label, 'Pendapatan', formatReportAmount(group.subtotal)]);
+  });
+
+  incomeStatementData.expenseGroups.forEach((group) => {
+    labaRugiRows.push([group.label, 'Pengeluaran', formatReportAmount(group.subtotal, true)]);
+  });
+
+  labaRugiRows.push(['TOTAL PEMASUKAN', 'Pendapatan', formatReportAmount(incomeStatementData.totalPendapatan)]);
+  labaRugiRows.push(['TOTAL PENGELUARAN', 'Pengeluaran', formatReportAmount(incomeStatementData.totalPengeluaran, true)]);
+  labaRugiRows.push([
+    incomeStatementData.labaRugi >= 0 ? 'LABA BERSIH' : 'RUGI BERSIH',
+    '-',
+    formatReportAmount(incomeStatementData.labaRugi, incomeStatementData.labaRugi < 0),
+  ]);
+
+  tables.push({
+    title: 'RINGKASAN LABA RUGI (INCOME STATEMENT)',
+    head: [['Kategori / Pos Keuangan', 'Jenis', 'Jumlah (Rp)']],
+    body: labaRugiRows,
+    columnStyles: {
+      2: { halign: 'right' },
+    },
+  });
+
+  // 4. Cash Flow / Arus Kas Summary Table (Per audit directive §4)
+  tables.push({
+    title: 'RINGKASAN ARUS KAS (CASH FLOW STATEMENT)',
+    head: [['Keterangan Arus Kas', 'Jumlah (Rp)']],
+    body: [
+      ['Penerimaan Kas (Pemasukan)', formatReportAmount(data.totalPendapatan)],
+      ['Pengeluaran Kas (Pengeluaran Operasional)', formatReportAmount(data.totalPengeluaran, true)],
+      [
+        data.labaBersih >= 0 ? 'Arus Kas Bersih (Net Cash Flow)' : 'Defisit Arus Kas Bersih',
+        formatReportAmount(data.labaBersih, data.labaBersih < 0),
+      ],
+    ],
+    columnStyles: {
+      1: { halign: 'right' },
     },
   });
 
@@ -307,12 +376,11 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
       columnStyles: table.columnStyles,
       didParseCell: (hookData) => {
         if (hookData.section !== 'body') return;
-        const rawValue = String(hookData.cell.raw ?? '');
-        if (rawValue.startsWith('+')) {
-          hookData.cell.styles.textColor = [22, 163, 74];
-        }
-        if (rawValue.startsWith('-')) {
+        const rawValue = String(hookData.cell.raw ?? '').trim();
+        if (rawValue.includes('(') || rawValue.startsWith('-') || rawValue === 'RUGI BERSIH' || rawValue === 'Defisit Arus Kas Bersih') {
           hookData.cell.styles.textColor = [220, 38, 38];
+        } else if (rawValue.startsWith('+') || rawValue === 'LABA BERSIH' || rawValue === 'TOTAL PEMASUKAN') {
+          hookData.cell.styles.textColor = [22, 163, 74];
         }
       },
     });

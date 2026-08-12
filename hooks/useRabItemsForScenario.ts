@@ -30,7 +30,7 @@ export function useRabItemsForScenario(scenarioId: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [backendOnline, setBackendOnline] = useState(true);
-  const storageKey = `arina-scenario-rab-${user?.id ?? 'guest'}-${scenarioId ?? 'none'}`;
+  const storageKey = `arina-scenario-rab-${user?.id ?? 'guest'}-${scenarioId ?? (isGuestMode ? 'guest-default' : 'none')}`;
   const [localState, setLocalState, isHydrated] = useSessionStorage<RabLocalState>(storageKey, { categories: [], items: [], imports: [] });
 
   const syncLocalState = useCallback((update: RabLocalState | ((prev: RabLocalState) => RabLocalState)) => {

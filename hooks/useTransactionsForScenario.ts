@@ -12,7 +12,7 @@ import useSessionStorage from '@/hooks/useSessionStorage';
  */
 export function useTransactionsForScenario(scenarioId: string | null) {
   const { user, loading: authLoading, isGuestMode } = useAuth();
-  const storageKey = `arina-scenario-transactions-${scenarioId ?? 'none'}`;
+  const storageKey = `arina-scenario-transactions-${scenarioId ?? (isGuestMode ? 'guest-default' : 'none')}`;
   const [transactions, setTransactions] = useSessionStorage<ApiTransaction[]>(storageKey, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

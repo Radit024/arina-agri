@@ -95,13 +95,24 @@ export function useFinanceProjects() {
     if (backendOnline && user && !isGuestMode) {
       await financeProjectApi.delete(id);
     }
-    setLocalProjects((prev) => prev.filter((project) => project.id !== id));
-    setProjects((prev) => prev.filter((project) => project.id !== id));
+    const remaining = localProjectsRef.current.filter((project) => project.id !== id);
+    localProjectsRef.current = remaining;
+    setLocalProjects(remaining);
+    setProjects(remaining);
 
     try {
       if (typeof window !== 'undefined') {
         const userId = user?.id ?? 'guest';
+        const currentSelected = window.localStorage.getItem('arina-selected-finance-project');
+        if (currentSelected && (currentSelected === id || currentSelected.includes(id))) {
+          window.localStorage.removeItem('arina-selected-finance-project');
+        }
         window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-${id}`);
+        window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-guest-proj-${id}`);
+        window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-guest-real-${id}`);
+        window.sessionStorage.removeItem(`arina-scenario-transactions-guest-proj-${id}`);
+        window.sessionStorage.removeItem(`arina-scenario-transactions-guest-real-${id}`);
+        window.sessionStorage.removeItem(`arina-scenario-transactions-${id}`);
         window.sessionStorage.removeItem(`arina-finance-scenario-mode-${id}`);
       }
     } catch {

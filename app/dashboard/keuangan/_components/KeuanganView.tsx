@@ -60,7 +60,6 @@ import DialogActions from '@mui/material/DialogActions';
 import Fab from '@mui/material/Fab';
 import Skeleton from '@mui/material/Skeleton';
 import Snackbar from '@mui/material/Snackbar';
-import type { HighlightItemIdentifierWithType } from '@mui/x-charts/models';
 
 import { PageHeader, PageShell } from '@/components/shared/page';
 import FinanceCashFlowView from './FinanceCashFlowView';

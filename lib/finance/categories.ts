@@ -29,14 +29,52 @@ export const DEFAULT_FINANCE_CATEGORIES: FinanceCategoryDefinition[] = [
     id: 'default-expense-pesticide',
     jenis: 'pengeluaran',
     label: 'Pestisida',
-    aliases: ['pestisida', 'pesticide', 'obat tanaman', 'insektisida', 'fungisida', 'herbisida'],
+    aliases: ['pestisida', 'pesticide', 'obat tanaman', 'insektisida', 'fungisida'],
+    source: 'default',
+  },
+  {
+    id: 'default-expense-saprodi',
+    jenis: 'pengeluaran',
+    label: 'SAPRODI',
+    aliases: [
+      'saprodi',
+      'dolomit',
+      'pembelian dolomit',
+      'herbisida',
+      'pembelian herbisida',
+      'sarana produksi',
+      'benih',
+      'bibit',
+      'biji',
+    ],
     source: 'default',
   },
   {
     id: 'default-expense-labor',
     jenis: 'pengeluaran',
-    label: 'Tenaga Kerja',
-    aliases: ['tenaga kerja', 'labor', 'gaji', 'upah', 'pekerja', 'buruh'],
+    label: 'TENAGA KERJA',
+    aliases: [
+      'tenaga kerja',
+      'labor',
+      'gaji',
+      'upah',
+      'pekerja',
+      'buruh',
+      'penyulaman',
+      'upah penyulaman',
+      'olah lahan',
+      'tanam',
+      'panen',
+      'matun',
+      'semprot',
+    ],
+    source: 'default',
+  },
+  {
+    id: 'default-expense-land-rent',
+    jenis: 'pengeluaran',
+    label: 'SEWA LAHAN',
+    aliases: ['sewa lahan', 'sewa', 'lahan', 'sewa tanah', 'biaya tetap'],
     source: 'default',
   },
   {
@@ -50,21 +88,21 @@ export const DEFAULT_FINANCE_CATEGORIES: FinanceCategoryDefinition[] = [
     id: 'default-expense-tools',
     jenis: 'pengeluaran',
     label: 'Alat Tani',
-    aliases: ['alat tani', 'alat', 'peralatan', 'cangkul', 'sprayer', 'sewa alat'],
+    aliases: ['alat tani', 'alat', 'peralatan', 'cangkul', 'sprayer', 'sewa alat', 'alsintan', 'jasa alsintan'],
     source: 'default',
   },
   {
     id: 'default-expense-other',
     jenis: 'pengeluaran',
     label: 'Lainnya',
-    aliases: ['lainnya', 'other'],
+    aliases: ['lainnya', 'other', 'lain-lain', 'transport', 'transportasi', 'biaya transport', 'ongkos transport', 'biaya angkut'],
     source: 'default',
   },
   {
     id: 'default-income-harvest-sales',
     jenis: 'pendapatan',
     label: 'Penjualan Hasil Panen',
-    aliases: ['penjualan', 'jual', 'panen', 'hasil panen', 'penjualan panen', 'penjualan cabai'],
+    aliases: ['penjualan', 'jual', 'panen', 'hasil panen', 'penjualan panen', 'penerimaan', 'penjualan cabai', 'penjualan padi'],
     source: 'default',
   },
   {
@@ -109,13 +147,48 @@ function categoryTerms(category: FinanceCategoryDefinition) {
     .filter(Boolean);
 }
 
+const GENERIC_CATEGORY_TERMS = new Set(['lainnya', 'other', 'lain-lain', 'pembelian', 'transaksi', 'pengeluaran', 'pemasukan']);
+const HIGH_PRIORITY_SAPRODI_LABOR_TERMS = new Set([
+  'dolomit',
+  'pembelian dolomit',
+  'herbisida',
+  'pembelian herbisida',
+  'penyulaman',
+  'upah penyulaman',
+  'transport',
+  'transportasi',
+  'biaya transport',
+  'ongkos transport',
+  'biaya angkut',
+]);
+
 function scoreTerm(term: string, normalizedCategory: string, normalizedInput: string) {
   if (!term) return 0;
-  if (normalizedCategory === term) return 10_000 + term.length;
+
+  const inputWords = normalizedInput.split(' ');
+  const isHighPriorityKeyword = HIGH_PRIORITY_SAPRODI_LABOR_TERMS.has(term) && inputWords.includes(term);
+
+  if (isHighPriorityKeyword) {
+    return 15_000 + term.length;
+  }
+
+  if (normalizedCategory === term) {
+    if (GENERIC_CATEGORY_TERMS.has(term)) return 3_000 + term.length;
+    return 10_000 + term.length;
+  }
   if (normalizedInput === term) return 9_000 + term.length;
+
+  if (inputWords.includes(term)) return 8_800 + term.length;
   if (normalizedInput.startsWith(`${term} `)) return 8_000 + term.length;
   if (normalizedInput.endsWith(` ${term}`)) return 7_000 + term.length;
   if (normalizedInput.includes(` ${term} `)) return 6_000 + term.length;
+
+  const termWords = term.split(' ');
+  const matchCount = termWords.filter((w) => w.length >= 3 && inputWords.includes(w)).length;
+  if (matchCount > 0) {
+    return 4_000 + matchCount * 1_000 + term.length;
+  }
+
   return 0;
 }
 

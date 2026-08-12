@@ -64,7 +64,7 @@ function addTransactionToGroups({
   index: number;
 }) {
   const groupLabel = rabItem?.categoryName ?? getDefaultGroupLabel(transaction.jenis, transaction.kategori);
-  const groupKey = rabItem?.categoryId ?? slugify(groupLabel);
+  const groupKey = slugify(groupLabel);
   const itemLabel = rabItem?.name ?? getDefaultItemLabel(transaction);
   const itemKey = rabItem?.id ?? slugify(itemLabel);
   const groupId = `${transaction.jenis === 'pendapatan' ? 'income' : 'expense'}:${groupKey}`;

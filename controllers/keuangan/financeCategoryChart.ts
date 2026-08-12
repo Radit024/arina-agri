@@ -55,11 +55,12 @@ export function buildFinanceExpensePieData({
       customColorIndex += 1;
     }
 
-    const existing = totals.get(label);
-    totals.set(label, {
+    const key = label.toLowerCase();
+    const existing = totals.get(key);
+    totals.set(key, {
       id: label,
       value: (existing?.value ?? 0) + transaction.nominal,
-      label,
+      label: existing?.label ?? label,
       color: existing?.color ?? color,
       percentage: 0,
     });

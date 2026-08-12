@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { financeScenarioApi, migrationApi, type ApiFinanceScenario } from '@/lib/api';
 
 export function useFinanceScenarios(projectId: string | null) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isGuestMode } = useAuth();
   const [scenarios, setScenarios] = useState<ApiFinanceScenario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,8 +15,30 @@ export function useFinanceScenarios(projectId: string | null) {
     if (authLoading) return;
     setLoading(true);
     try {
-      if (!projectId || !user) {
+      if (!projectId) {
         setScenarios([]);
+        setError(null);
+        return;
+      }
+      if (!user || isGuestMode) {
+        const now = new Date().toISOString();
+        const mockScenarios: ApiFinanceScenario[] = [
+          {
+            id: `guest-proj-${projectId}`,
+            projectId,
+            mode: 'PROJECTION',
+            createdAt: now,
+            updatedAt: now,
+          },
+          {
+            id: `guest-real-${projectId}`,
+            projectId,
+            mode: 'REALIZATION',
+            createdAt: now,
+            updatedAt: now,
+          },
+        ];
+        setScenarios(mockScenarios);
         setError(null);
         return;
       }
@@ -36,7 +58,7 @@ export function useFinanceScenarios(projectId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [authLoading, projectId, user]);
+  }, [authLoading, isGuestMode, projectId, user]);
 
   useEffect(() => {
     loadData();

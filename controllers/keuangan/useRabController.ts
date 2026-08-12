@@ -87,16 +87,7 @@ function parseAliasesInput(value: string) {
   return aliases.length > 0 ? aliases : undefined;
 }
 
-// Alasan skip per baris menyertakan deskripsi baris itu sendiri (mis. "Baris 'Produksi'
-// dilewati (Total Rencana kosong...)") supaya laporan tetap granular per baris. Untuk
-// pengelompokan warning, dua baris yang beda deskripsi tapi sama sebab (mis. dua baris
-// dengan tanggal tak dikenali) harus digabung jadi satu baris warning "N baris dilewati:
-// <sebab>" — jadi kelompokkan berdasarkan klausa penjelasan di dalam kurung, bukan string
-// reason yang utuh (yang selalu unik per baris karena memuat deskripsi).
-function extractSkipReasonLabel(reason: string): string {
-  const parts = reason.split(' karena ');
-  return parts.length > 1 ? `karena ${parts[1]}` : reason;
-}
+
 
 function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
   const warnings: string[] = [];
@@ -111,15 +102,6 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
         `Pada kelompok "${entry.categoryName}": Total hasil hitungan aplikasi (Rp${formatRupiah(entry.computedTotal)}) sedikit berbeda dengan angka TOTAL yang Anda tulis (Rp${formatRupiah(entry.declaredTotal)})`,
       );
     }
-  }
-
-  const skipCountByReason = new Map<string, number>();
-  for (const skipped of parsed.skippedRows) {
-    const label = extractSkipReasonLabel(skipped.reason);
-    skipCountByReason.set(label, (skipCountByReason.get(label) ?? 0) + 1);
-  }
-  for (const [label, count] of skipCountByReason) {
-    warnings.push(`${count} baris dilewati: ${label}`);
   }
 
   if (parsed.warnings) {
@@ -507,24 +489,42 @@ export function useRabController(
       const unlinkedTransactionNames: string[] = [];
       if (addTransaction && parsed.transactions.length > 0) {
         const rabItemPool = [...rabState.items, ...createdItems];
+        const categoryDefs = [
+          ...Array.from(categoryIdMap.values()).map((c) => ({
+            id: c.id,
+            jenis: c.type === 'income' ? ('pendapatan' as const) : ('pengeluaran' as const),
+            label: c.name,
+            aliases: [c.name],
+          })),
+          ...DEFAULT_FINANCE_CATEGORIES,
+        ];
+
         for (const transaction of parsed.transactions) {
           const suggestion = suggestRabItemsForTransaction({
             items: rabItemPool,
             transaction: { jenis: transaction.jenis, keterangan: transaction.keterangan },
           })[0];
           const matchedItem = suggestion && suggestion.score >= RAB_SUGGESTION_MIN_SCORE ? suggestion.item : null;
-          
-          if (!matchedItem) {
-            unlinkedTransactionNames.push(transaction.keterangan);
-          }
 
           const resolvedCategory = resolveFinanceCategory({
             jenis: transaction.jenis,
             kategori: matchedItem?.categoryName ?? '',
             keterangan: transaction.keterangan,
-            categories: DEFAULT_FINANCE_CATEGORIES,
+            categories: categoryDefs,
           });
-          const kategori = matchedItem?.categoryName ?? resolvedCategory?.label ?? 'Lainnya';
+
+          const rawKategori = matchedItem?.categoryName ?? resolvedCategory?.label ?? 'Lainnya';
+          const existingCategory = Array.from(categoryIdMap.values()).find(
+            (c) => c.name.toLowerCase() === rawKategori.toLowerCase(),
+          );
+          const kategori = existingCategory ? existingCategory.name : rawKategori;
+          const assignedCategoryId = matchedItem?.categoryId ?? existingCategory?.id ?? null;
+
+          // A transaction is unlinked only if it could NOT be matched to a RAB item AND could NOT be resolved to a known RAB category
+          const isCategoryResolved = Boolean(existingCategory || (resolvedCategory && resolvedCategory.label !== 'Lainnya'));
+          if (!matchedItem && !isCategoryResolved) {
+            unlinkedTransactionNames.push(transaction.keterangan);
+          }
 
           try {
             await addTransaction({
@@ -534,7 +534,7 @@ export function useRabController(
               tanggal: transaction.tanggal,
               keterangan: transaction.keterangan,
               projectId: project.id,
-              rabCategoryId: matchedItem?.categoryId ?? null,
+              rabCategoryId: assignedCategoryId,
               rabItemId: matchedItem?.id ?? null,
               volume: transaction.volume ?? null,
               satuan: transaction.satuan ?? null,
@@ -557,7 +557,7 @@ export function useRabController(
         let namesText = displayNames.map((n) => `"${n}"`).join(', ');
         if (othersCount > 0) namesText += `, dan ${othersCount} lainnya`;
 
-        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Transaksi ini sementara dipisahkan ke kategori lain, namun Anda bisa merapikannya nanti di menu Transaksi.`);
+        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Anda dapat menyesuaikannya nanti di menu Transaksi.`);
       }
 
       setImportWarnings(warnings);

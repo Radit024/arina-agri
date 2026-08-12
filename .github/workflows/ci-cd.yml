@@ -4,9 +4,15 @@ on:
   pull_request:
     branches:
       - main
+      - 'I-FIXED-THE-GODDAMN-PROBLEM-YOU-FUCKING-LAZY-ASS-DUMB-DIPSHIT'
+      - 'feature/*'
+      - 'fix/*'
   push:
     branches:
       - main
+      - 'I-FIXED-THE-GODDAMN-PROBLEM-YOU-FUCKING-LAZY-ASS-DUMB-DIPSHIT'
+      - 'feature/*'
+      - 'fix/*'
   workflow_dispatch:
 
 permissions:

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useAuth } from '@/context/AuthContext';
 import useSessionStorage from '@/hooks/useSessionStorage';
@@ -21,12 +21,17 @@ export function useFinanceProjects() {
   const [error, setError] = useState<string | null>(null);
   const [backendOnline, setBackendOnline] = useState(true);
 
+  const localProjectsRef = useRef(localProjects);
+  useEffect(() => {
+    localProjectsRef.current = localProjects;
+  }, [localProjects]);
+
   const loadData = useCallback(async () => {
     if (authLoading) return;
     setLoading(true);
     try {
       if (!user || isGuestMode) {
-        setProjects(localProjects);
+        setProjects(localProjectsRef.current);
         setBackendOnline(false);
         setError(null);
         return;
@@ -36,13 +41,13 @@ export function useFinanceProjects() {
       setBackendOnline(true);
       setError(null);
     } catch (err) {
-      setProjects(localProjects);
+      setProjects(localProjectsRef.current);
       setBackendOnline(false);
       setError(err instanceof Error ? err.message : 'Gagal memuat proyek keuangan');
     } finally {
       setLoading(false);
     }
-  }, [authLoading, localProjects, user, isGuestMode]);
+  }, [authLoading, user, isGuestMode]);
 
   useEffect(() => {
     loadData();
@@ -92,6 +97,16 @@ export function useFinanceProjects() {
     }
     setLocalProjects((prev) => prev.filter((project) => project.id !== id));
     setProjects((prev) => prev.filter((project) => project.id !== id));
+
+    try {
+      if (typeof window !== 'undefined') {
+        const userId = user?.id ?? 'guest';
+        window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-${id}`);
+        window.sessionStorage.removeItem(`arina-finance-scenario-mode-${id}`);
+      }
+    } catch {
+      // Storage cleanup failure is optional
+    }
   };
 
   const activeProjects = useMemo(

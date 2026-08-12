@@ -55,6 +55,14 @@ const CORE_AGRICULTURAL_NOUNS = new Set([
   'sewa',
   'iuran',
   'transport',
+  'persemaian',
+  'dapog',
+  'pengapuran',
+  'penyiangan',
+  'pemupukan',
+  'pengendalian',
+  'opt',
+  'pengairan',
 ]);
 
 function transactionTypeToRabType(jenis: TransactionJenis): RabEntryType {
@@ -71,10 +79,6 @@ function tokenize(value: string) {
 function expandAgriculturalSynonyms(text: string): string[] {
   const norm = normalizeText(text);
   const synonyms = [norm];
-  const stripped = stripSpecificationNoise(norm);
-  if (stripped && stripped !== norm) {
-    synonyms.push(stripped);
-  }
   if (norm.includes('sulam') || norm.includes('penyulaman')) {
     synonyms.push('sulam', 'penyulaman');
   }
@@ -90,9 +94,11 @@ export function suggestRabItemsForTransaction({
   limit = 5,
 }: RabSuggestionInput): RabItemSuggestion[] {
   const targetType = transactionTypeToRabType(transaction.jenis);
-  const rawSourceText = normalizeText(`${transaction.kategori ?? ''} ${transaction.keterangan ?? ''}`);
-  const cleanedSourceText = stripSpecificationNoise(rawSourceText);
-  const sourceText = `${rawSourceText} ${cleanedSourceText}`.trim();
+  const rawSourceString = `${transaction.kategori ?? ''} ${transaction.keterangan ?? ''}`;
+  const cleanedSourceString = stripSpecificationNoise(rawSourceString);
+  const rawNorm = normalizeText(rawSourceString);
+  const cleanNorm = normalizeText(cleanedSourceString);
+  const sourceText = `${rawNorm} ${cleanNorm}`;
   const sourceTokens = new Set(tokenize(sourceText));
 
   return items
@@ -100,50 +106,78 @@ export function suggestRabItemsForTransaction({
     .map((item): RabItemSuggestion => {
       const baseCandidates = [item.name, item.categoryName ?? '', ...item.aliases]
         .flatMap((val) => {
+          const strippedRaw = stripSpecificationNoise(val);
           const norm = normalizeText(val);
-          const stripped = stripSpecificationNoise(norm);
-          return stripped ? [norm, stripped] : [norm];
+          const stripped = normalizeText(strippedRaw);
+          return stripped !== norm ? [norm, stripped] : [norm];
         })
         .filter(Boolean);
       const candidates = Array.from(new Set(baseCandidates.flatMap(expandAgriculturalSynonyms)));
-      let score = 0;
+      const normalizedItemName = normalizeText(item.name);
+      const strippedItemName = normalizeText(stripSpecificationNoise(item.name));
+      
+      let maxScore = 0;
       const reasons: string[] = [];
 
       // For income entries, if both item and transaction are income, match them strongly
       if (targetType === 'income' && item.type === 'income') {
-        score += 10;
+        maxScore = Math.max(maxScore, 10);
         reasons.push('penerimaan');
       }
 
       for (const candidate of candidates) {
-        if (sourceText.includes(candidate)) {
-          score += candidate.includes(' ') ? 10 : 7;
-          if (CORE_AGRICULTURAL_NOUNS.has(candidate)) {
-            score += 5;
+        let currentScore = 0;
+        const currentReasons: string[] = [];
+        const isExactName = candidate === normalizedItemName || (strippedItemName && candidate === strippedItemName);
+
+        if (rawNorm.includes(candidate) || cleanNorm.includes(candidate)) {
+          currentScore += candidate.includes(' ') ? 10 : 7;
+          
+          const candidateTokens = tokenize(candidate);
+          const coreNounsCount = candidateTokens.filter(t => CORE_AGRICULTURAL_NOUNS.has(t)).length;
+          currentScore += coreNounsCount * 5;
+          
+          if (isExactName) {
+            currentScore += 15;
           }
-          reasons.push(candidate);
-          continue;
+          currentReasons.push(candidate);
+        } else {
+          const candidateTokens = tokenize(candidate);
+          const matches = candidateTokens.filter((token) => sourceTokens.has(token));
+          const matchedCoreNounsCount = matches.filter(t => CORE_AGRICULTURAL_NOUNS.has(t)).length;
+          const hasCoreNoun = matchedCoreNounsCount > 0;
+          const minRequired = hasCoreNoun
+            ? 1
+            : candidateTokens.length <= 1
+            ? 1
+            : Math.max(2, Math.floor(candidateTokens.length * 0.6));
+
+          if (matches.length >= minRequired) {
+            currentScore += matches.length * 2;
+            currentScore += matchedCoreNounsCount * 5;
+            if (isExactName && matches.length === candidateTokens.length) {
+              currentScore += 10;
+            }
+            currentReasons.push(...matches);
+          }
         }
 
-        const candidateTokens = tokenize(candidate);
-        const matches = candidateTokens.filter((token) => sourceTokens.has(token));
-        const hasCoreNoun = candidateTokens.some((t) => CORE_AGRICULTURAL_NOUNS.has(t) && sourceTokens.has(t));
-        const minRequired = hasCoreNoun
-          ? 1
-          : candidateTokens.length <= 1
-          ? 1
-          : Math.max(2, Math.floor(candidateTokens.length * 0.6));
+        // --- CONTEXTUAL PRIORITY BOOST ---
+        // If the transaction starts with the candidate (e.g. "transport hasil panen"), 
+        // the candidate ("transport") is the primary subject, not a modifier ("panen").
+        if (cleanNorm.startsWith(candidate) && isExactName) {
+           currentScore += 20;
+        }
 
-        if (matches.length >= minRequired) {
-          score += matches.length * 2;
-          if (hasCoreNoun) score += 5;
-          reasons.push(...matches);
+        if (currentScore > maxScore) {
+          maxScore = currentScore;
+          reasons.push(...currentReasons);
         }
       }
 
       return {
         item,
-        score,
+        score: maxScore,
         reason: Array.from(new Set(reasons)).join(', '),
       };
     })

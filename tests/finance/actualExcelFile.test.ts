@@ -17,7 +17,7 @@ describe('Strict Verification Against Actual Case Study File (CATATAN KEUANGAN P
       transactions: parsed.transactions.map((tx, idx) => ({
         id: `tx-${idx}`,
         jenis: tx.jenis,
-        kategori: tx.kategori || 'Lainnya',
+        kategori: (tx as { kategori?: string }).kategori || 'Lainnya',
         nominal: tx.nominal,
         tanggal: tx.tanggal,
         keterangan: tx.keterangan,
@@ -59,7 +59,7 @@ describe('Strict Verification Against Actual Case Study File (CATATAN KEUANGAN P
     expect(dolomitTx).toBeDefined();
     const resolvedDolomitCategory = resolveFinanceCategory({
       jenis: 'pengeluaran',
-      kategori: dolomitTx?.kategori || '',
+      kategori: (dolomitTx as { kategori?: string })?.kategori || '',
       keterangan: dolomitTx?.keterangan,
       categories: DEFAULT_FINANCE_CATEGORIES,
     });
@@ -71,7 +71,7 @@ describe('Strict Verification Against Actual Case Study File (CATATAN KEUANGAN P
     expect(penyulamanTx).toBeDefined();
     const resolvedPenyulamanCategory = resolveFinanceCategory({
       jenis: 'pengeluaran',
-      kategori: penyulamanTx?.kategori || '',
+      kategori: (penyulamanTx as { kategori?: string })?.kategori || '',
       keterangan: penyulamanTx?.keterangan,
       categories: DEFAULT_FINANCE_CATEGORIES,
     });

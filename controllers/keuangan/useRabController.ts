@@ -514,10 +514,6 @@ export function useRabController(
             transaction: { jenis: transaction.jenis, keterangan: transaction.keterangan },
           })[0];
           const matchedItem = suggestion && suggestion.score >= RAB_SUGGESTION_MIN_SCORE ? suggestion.item : null;
-          
-          if (!matchedItem) {
-            unlinkedTransactionNames.push(transaction.keterangan);
-          }
 
           const resolvedCategory = resolveFinanceCategory({
             jenis: transaction.jenis,
@@ -531,6 +527,13 @@ export function useRabController(
             (c) => c.name.toLowerCase() === rawKategori.toLowerCase(),
           );
           const kategori = existingCategory ? existingCategory.name : rawKategori;
+          const assignedCategoryId = matchedItem?.categoryId ?? existingCategory?.id ?? null;
+
+          // A transaction is unlinked only if it could NOT be matched to a RAB item AND could NOT be resolved to a known RAB category
+          const isCategoryResolved = Boolean(existingCategory || (resolvedCategory && resolvedCategory.label !== 'Lainnya'));
+          if (!matchedItem && !isCategoryResolved) {
+            unlinkedTransactionNames.push(transaction.keterangan);
+          }
 
           try {
             await addTransaction({
@@ -540,7 +543,7 @@ export function useRabController(
               tanggal: transaction.tanggal,
               keterangan: transaction.keterangan,
               projectId: project.id,
-              rabCategoryId: matchedItem?.categoryId ?? null,
+              rabCategoryId: assignedCategoryId,
               rabItemId: matchedItem?.id ?? null,
               volume: transaction.volume ?? null,
               satuan: transaction.satuan ?? null,
@@ -563,7 +566,7 @@ export function useRabController(
         let namesText = displayNames.map((n) => `"${n}"`).join(', ');
         if (othersCount > 0) namesText += `, dan ${othersCount} lainnya`;
 
-        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Transaksi ini sementara dipisahkan ke kategori lain, namun Anda bisa merapikannya nanti di menu Transaksi.`);
+        warnings.push(`Ada ${unlinkedTransactionNames.length} transaksi harian yang belum terhubung ke kelompok RAB karena namanya berbeda (${namesText}). Anda dapat menyesuaikannya nanti di menu Transaksi.`);
       }
 
       setImportWarnings(warnings);

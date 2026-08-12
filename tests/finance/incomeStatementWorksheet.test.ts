@@ -54,15 +54,15 @@ describe('buildIncomeStatementWorksheetData', () => {
     expect(result.expenseGroups[0].label).toBe('SAPRODI');
     expect(result.expenseGroups[0].subtotal).toBe(734500);
     expect(result.expenseGroups[0].items).toEqual([
-      { id: 'expense:cat-1:rab-1', label: 'Benih', amount: 412500 },
-      { id: 'expense:cat-1:rab-2', label: 'Pupuk NPK Subsidi', amount: 322000 },
+      { id: 'expense:saprodi:rab-1', label: 'Benih', amount: 412500 },
+      { id: 'expense:saprodi:rab-2', label: 'Pupuk NPK Subsidi', amount: 322000 },
     ]);
 
     expect(result.incomeGroups).toHaveLength(1);
     expect(result.incomeGroups[0].label).toBe('Pendapatan');
     expect(result.incomeGroups[0].subtotal).toBe(45500000);
     expect(result.incomeGroups[0].items).toEqual([
-      { id: 'income:cat-2:rab-3', label: 'Penjualan Hasil Panen', amount: 45500000 },
+      { id: 'income:pendapatan:rab-3', label: 'Penjualan Hasil Panen', amount: 45500000 },
     ]);
 
     expect(result.totalPendapatan).toBe(45500000);
@@ -101,5 +101,28 @@ describe('buildIncomeStatementWorksheetData', () => {
     const result = buildIncomeStatementWorksheetData({ transactions, rabItems });
 
     expect(result.expenseGroups.map((g) => g.label)).toEqual(['SAPRODI', 'TENAGA KERJA']);
+  });
+
+  it('merges linked RAB items and unlinked ledger transactions sharing the same category name into a single group', () => {
+    const transactions = [
+      makeTransaction({ id: 'tx-1', nominal: 412500, kategori: 'SAPRODI', keterangan: 'Benih padi', rabItemId: 'rab-1' }),
+      makeTransaction({ id: 'tx-2', nominal: 112000, kategori: 'SAPRODI', keterangan: 'Pembelian dolomit', rabItemId: undefined }),
+      makeTransaction({ id: 'tx-3', nominal: 180000, kategori: 'SAPRODI', keterangan: 'Pembelian herbisida', rabItemId: undefined }),
+    ];
+
+    const rabItems = [
+      makeRabItem({ id: 'rab-1', categoryId: 'cat-saprodi-id', categoryName: 'SAPRODI', name: 'Benih', sortOrder: 1 }),
+    ];
+
+    const result = buildIncomeStatementWorksheetData({ transactions, rabItems });
+
+    expect(result.expenseGroups).toHaveLength(1);
+    expect(result.expenseGroups[0].label).toBe('SAPRODI');
+    expect(result.expenseGroups[0].subtotal).toBe(412500 + 112000 + 180000);
+    expect(result.expenseGroups[0].items.map((i) => i.label)).toEqual([
+      'Benih',
+      'Pembelian dolomit',
+      'Pembelian herbisida',
+    ]);
   });
 });

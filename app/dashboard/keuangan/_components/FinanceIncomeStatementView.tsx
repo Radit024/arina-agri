@@ -389,9 +389,15 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
             <KelayakanUsahaSection kelayakanUsaha={kelayakanUsaha} productionSales={productionSales} />
           )}
 
+          <SummaryModernSection
+            totalPendapatan={incomeStatementWorksheet.totalPendapatan}
+            totalPengeluaran={incomeStatementWorksheet.totalPengeluaran}
+            labaRugi={incomeStatementWorksheet.labaRugi}
+          />
+
           <Grid container>
             {/* Left Column: Pengeluaran Grouped */}
-            <Grid size={{ xs: 12, lg: 7 }}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <WorksheetGroupedSection
                 testId="income-statement-expense-panel"
                 title="Pengeluaran"
@@ -402,8 +408,8 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
               />
             </Grid>
 
-            {/* Right Column: Pendapatan Grouped + Summary */}
-            <Grid size={{ xs: 12, lg: 5 }} sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Right Column: Pendapatan Grouped */}
+            <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', borderLeft: { md: '1px solid' }, borderColor: { md: 'divider' } }}>
               <Box sx={{ flex: 1 }}>
                 <WorksheetGroupedSection
                   testId="income-statement-income-panel"
@@ -414,12 +420,6 @@ export default function FinanceIncomeStatementView({ financeReports, productionS
                   tone="income"
                 />
               </Box>
-
-              <SummaryModernSection
-                totalPendapatan={incomeStatementWorksheet.totalPendapatan}
-                totalPengeluaran={incomeStatementWorksheet.totalPengeluaran}
-                labaRugi={incomeStatementWorksheet.labaRugi}
-              />
             </Grid>
           </Grid>
         </Card>

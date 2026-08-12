@@ -742,8 +742,16 @@ function writeLedgerSheet(sheet: ExcelJS.Worksheet, project: FinanceProject, tra
   applyHeader(sheet.getRow(4));
 
   const rabItemNameById = new Map(rabItems.map((item) => [item.id, item.name]));
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const timeA = new Date(a.tanggal).getTime();
+    const timeB = new Date(b.tanggal).getTime();
+    if (isNaN(timeA) || isNaN(timeB)) {
+      return a.tanggal.localeCompare(b.tanggal);
+    }
+    return timeA - timeB;
+  });
 
-  transactions.forEach((transaction, index) => {
+  sortedTransactions.forEach((transaction, index) => {
     const rowNumber = index + 5;
     sheet.getRow(rowNumber).values = [
       formatDateLong(transaction.tanggal),

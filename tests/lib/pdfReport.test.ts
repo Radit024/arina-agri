@@ -62,8 +62,10 @@ describe('buildPdfReportTables', () => {
     expect(tables.map((table) => table.title)).toEqual([
       'RENCANA ANGGARAN BIAYA (RAB)',
       'CATATAN TRANSAKSI HARIAN',
+      'RINGKASAN LABA RUGI (INCOME STATEMENT)',
+      'RINGKASAN ARUS KAS (CASH FLOW STATEMENT)',
     ]);
     expect(tables.find((table) => table.title === 'RENCANA ANGGARAN BIAYA (RAB)')?.body[0]).toContain('Pupuk Urea');
-    expect(tables.find((table) => table.title === 'CATATAN TRANSAKSI HARIAN')?.body[0]).toContain('rab-pupuk');
+    expect(tables.find((table) => table.title === 'CATATAN TRANSAKSI HARIAN')?.body[0]).toContain('Pupuk Urea');
   });
 });

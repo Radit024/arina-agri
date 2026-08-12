@@ -74,7 +74,7 @@ describe('RabImportDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Import/ }));
 
-    expect(rab.importRabFile).toHaveBeenCalledWith(file);
+    expect(rab.importRabFile).toHaveBeenCalledWith(file, 'default');
   });
 
   it('shows a loading animation over the drop zone and disables interaction while importing', () => {

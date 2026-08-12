@@ -79,10 +79,6 @@ function tokenize(value: string) {
 function expandAgriculturalSynonyms(text: string): string[] {
   const norm = normalizeText(text);
   const synonyms = [norm];
-  const stripped = stripSpecificationNoise(norm);
-  if (stripped && stripped !== norm) {
-    synonyms.push(stripped);
-  }
   if (norm.includes('sulam') || norm.includes('penyulaman')) {
     synonyms.push('sulam', 'penyulaman');
   }
@@ -98,9 +94,11 @@ export function suggestRabItemsForTransaction({
   limit = 5,
 }: RabSuggestionInput): RabItemSuggestion[] {
   const targetType = transactionTypeToRabType(transaction.jenis);
-  const rawSourceText = normalizeText(`${transaction.kategori ?? ''} ${transaction.keterangan ?? ''}`);
-  const cleanedSourceText = stripSpecificationNoise(rawSourceText);
-  const sourceText = `${rawSourceText} ${cleanedSourceText}`.trim();
+  const rawSourceString = `${transaction.kategori ?? ''} ${transaction.keterangan ?? ''}`;
+  const cleanedSourceString = stripSpecificationNoise(rawSourceString);
+  const rawNorm = normalizeText(rawSourceString);
+  const cleanNorm = normalizeText(cleanedSourceString);
+  const sourceText = `${rawNorm} ${cleanNorm}`;
   const sourceTokens = new Set(tokenize(sourceText));
 
   return items
@@ -108,14 +106,15 @@ export function suggestRabItemsForTransaction({
     .map((item): RabItemSuggestion => {
       const baseCandidates = [item.name, item.categoryName ?? '', ...item.aliases]
         .flatMap((val) => {
+          const strippedRaw = stripSpecificationNoise(val);
           const norm = normalizeText(val);
-          const stripped = stripSpecificationNoise(norm);
-          return stripped ? [norm, stripped] : [norm];
+          const stripped = normalizeText(strippedRaw);
+          return stripped !== norm ? [norm, stripped] : [norm];
         })
         .filter(Boolean);
       const candidates = Array.from(new Set(baseCandidates.flatMap(expandAgriculturalSynonyms)));
       const normalizedItemName = normalizeText(item.name);
-      const strippedItemName = stripSpecificationNoise(normalizedItemName);
+      const strippedItemName = normalizeText(stripSpecificationNoise(item.name));
       
       let maxScore = 0;
       const reasons: string[] = [];
@@ -131,11 +130,13 @@ export function suggestRabItemsForTransaction({
         const currentReasons: string[] = [];
         const isExactName = candidate === normalizedItemName || (strippedItemName && candidate === strippedItemName);
 
-        if (sourceText.includes(candidate)) {
+        if (rawNorm.includes(candidate) || cleanNorm.includes(candidate)) {
           currentScore += candidate.includes(' ') ? 10 : 7;
-          if (CORE_AGRICULTURAL_NOUNS.has(candidate)) {
-            currentScore += 5;
-          }
+          
+          const candidateTokens = tokenize(candidate);
+          const coreNounsCount = candidateTokens.filter(t => CORE_AGRICULTURAL_NOUNS.has(t)).length;
+          currentScore += coreNounsCount * 5;
+          
           if (isExactName) {
             currentScore += 15;
           }
@@ -143,7 +144,8 @@ export function suggestRabItemsForTransaction({
         } else {
           const candidateTokens = tokenize(candidate);
           const matches = candidateTokens.filter((token) => sourceTokens.has(token));
-          const hasCoreNoun = candidateTokens.some((t) => CORE_AGRICULTURAL_NOUNS.has(t) && sourceTokens.has(t));
+          const matchedCoreNounsCount = matches.filter(t => CORE_AGRICULTURAL_NOUNS.has(t)).length;
+          const hasCoreNoun = matchedCoreNounsCount > 0;
           const minRequired = hasCoreNoun
             ? 1
             : candidateTokens.length <= 1
@@ -152,7 +154,7 @@ export function suggestRabItemsForTransaction({
 
           if (matches.length >= minRequired) {
             currentScore += matches.length * 2;
-            if (hasCoreNoun) currentScore += 5;
+            currentScore += matchedCoreNounsCount * 5;
             if (isExactName && matches.length === candidateTokens.length) {
               currentScore += 10;
             }

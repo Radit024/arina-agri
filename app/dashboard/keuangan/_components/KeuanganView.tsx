@@ -1307,7 +1307,11 @@ export default function KeuanganView({
         selectedProjectId={financeProject.selectedProject?.id}
       />
       <RabTransactionLinkDialog link={rabTransactionLink} />
-      <RabImportDialog rab={rab} />
+      <RabImportDialog
+        rab={rab}
+        scenarios={financeScenario.scenarios}
+        activeScenarioId={financeScenario.activeScenario?.id ?? null}
+      />
       <RabItemDialog rab={rab} />
       <FinancingAssumptionsDialog financing={financing} />
       <ProductionSalesAssumptionsDialog controller={productionSales} />

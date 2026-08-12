@@ -3,7 +3,7 @@
  * Menggunakan jsPDF + jspdf-autotable.
  */
 
-import { formatDateLong, formatMonthYear } from '@/lib/formatters';
+import { formatDateLong } from '@/lib/formatters';
 import type {
   FinanceProject,
   FinanceTransactionForReport,
@@ -374,14 +374,9 @@ export async function generatePdfReport(data: ReportData): Promise<void> {
       },
       alternateRowStyles: { fillColor: [250, 252, 253] },
       columnStyles: table.columnStyles,
-      didParseCell: (hookData) => {
-        if (hookData.section !== 'body') return;
-        const rawValue = String(hookData.cell.raw ?? '').trim();
-        if (rawValue.includes('(') || rawValue.startsWith('-') || rawValue === 'RUGI BERSIH' || rawValue === 'Defisit Arus Kas Bersih') {
-          hookData.cell.styles.textColor = [220, 38, 38];
-        } else if (rawValue.startsWith('+') || rawValue === 'LABA BERSIH' || rawValue === 'TOTAL PEMASUKAN') {
-          hookData.cell.styles.textColor = [22, 163, 74];
-        }
+      didParseCell: () => {
+        // We only retain this function structure if other logic needs to be added later
+        // or just let it be empty since user requested black and white only.
       },
     });
   });

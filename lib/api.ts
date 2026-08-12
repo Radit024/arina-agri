@@ -980,6 +980,7 @@ export const financeScenarioApi = {
 // ─── Financing Assumptions API ─────────────────────────────────────
 export const financingAssumptionsApi = {
   getByScenario: async (scenarioId: string): Promise<ApiFinancingAssumptions | null> => {
+    if (scenarioId.startsWith('guest-')) return null;
     const user = await resolveCurrentUser();
     if (!user) return null;
     const { data, error } = await supabase
@@ -995,6 +996,7 @@ export const financingAssumptionsApi = {
     scenarioId: string,
     payload: Omit<FinancingAssumptions, 'id' | 'scenarioId'>,
   ): Promise<ApiFinancingAssumptions> => {
+    if (scenarioId.startsWith('guest-')) throw new Error('Fitur asumsi tidak tersedia di mode tamu');
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
     const { data, error } = await supabase
@@ -1021,6 +1023,7 @@ export const financingAssumptionsApi = {
 
 export const productionSalesAssumptionsApi = {
   getByScenario: async (scenarioId: string): Promise<ApiProductionSalesAssumptions | null> => {
+    if (scenarioId.startsWith('guest-')) return null;
     const user = await resolveCurrentUser();
     if (!user) return null;
     const { data, error } = await supabase
@@ -1036,6 +1039,7 @@ export const productionSalesAssumptionsApi = {
     scenarioId: string,
     payload: Omit<ProductionSalesAssumptions, 'id' | 'scenarioId'>,
   ): Promise<ApiProductionSalesAssumptions> => {
+    if (scenarioId.startsWith('guest-')) throw new Error('Fitur asumsi tidak tersedia di mode tamu');
     const user = await resolveCurrentUser();
     if (!user) throw new Error('Belum login');
     const { data, error } = await supabase

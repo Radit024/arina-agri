@@ -431,9 +431,9 @@ export function useRabController(
     setRabBulkDeleteConfirm(false);
   };
 
-  const importRabFile = async (file: File) => {
+  const importRabFile = async (file: File, targetScenarioId?: string) => {
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
-    const scenarioId = scenario?.id;
+    const scenarioId = targetScenarioId ?? scenario?.id;
     setImportLoading(true);
     setImportError(null);
     setImportWarnings([]);

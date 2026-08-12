@@ -1,25 +1,43 @@
 'use client';
 
-import { useRef, useState } from 'react';
-
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Typography from '@mui/material/Typography';
+import { useState, useRef, useEffect } from 'react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+} from '@mui/material';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 
-import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import type { UseRabControllerResult } from '@/controllers/keuangan/useRabController';
+import type { FinanceScenarioEntity } from '@/lib/finance/rabTypes';
 
-type Props = Pick<UseKeuanganControllerResult, 'rab'>;
+interface Props {
+  rab: UseRabControllerResult;
+  scenarios: FinanceScenarioEntity[];
+  activeScenarioId: string | null;
+}
 
-export default function RabImportDialog({ rab }: Props) {
+export default function RabImportDialog({ rab, scenarios, activeScenarioId }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [targetScenarioId, setTargetScenarioId] = useState<string>(activeScenarioId ?? '');
+
+  useEffect(() => {
+    if (activeScenarioId && rab.importDialogOpen) {
+      setTargetScenarioId(activeScenarioId);
+    }
+  }, [activeScenarioId, rab.importDialogOpen]);
 
   const handleClose = () => {
     if (rab.importLoading) return;
@@ -41,9 +59,12 @@ export default function RabImportDialog({ rab }: Props) {
   };
 
   const handleImport = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !targetScenarioId) {
+      rab.setImportError('File dan skenario tujuan harus diisi');
+      return;
+    }
     try {
-      await rab.importRabFile(selectedFile);
+      await rab.importRabFile(selectedFile, targetScenarioId);
       setSelectedFile(null);
     } catch {
       // Pesan error sudah ditampilkan lewat rab.importError.
@@ -87,7 +108,24 @@ export default function RabImportDialog({ rab }: Props) {
         )}
 
         {rab.importWarnings.length === 0 && (
-          <>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="target-scenario-label">Target Mode Skenario</InputLabel>
+              <Select
+                labelId="target-scenario-label"
+                label="Target Mode Skenario"
+                value={targetScenarioId}
+                onChange={(e) => setTargetScenarioId(e.target.value)}
+              >
+                <MenuItem value="" disabled>Pilih Mode Skenario</MenuItem>
+                {scenarios.map((scenario) => (
+                  <MenuItem key={scenario.id} value={scenario.id}>
+                    {scenario.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <input
               ref={fileInputRef}
               type="file"
@@ -165,7 +203,7 @@ export default function RabImportDialog({ rab }: Props) {
                 </Box>
               )}
             </Box>
-          </>
+          </Stack>
         )}
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pt: 3 }}>

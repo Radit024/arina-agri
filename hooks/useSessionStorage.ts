@@ -26,6 +26,7 @@ function useSessionStorage<T>(key: string, initialValue: T) {
     } finally {
       setIsHydrated(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   const setValue = useCallback(

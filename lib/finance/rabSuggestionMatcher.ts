@@ -36,6 +36,18 @@ function tokenize(value: string) {
     .filter((token) => token.length >= 3);
 }
 
+function expandAgriculturalSynonyms(text: string): string[] {
+  const norm = normalizeText(text);
+  const synonyms = [norm];
+  if (norm.includes('sulam') || norm.includes('penyulaman')) {
+    synonyms.push('sulam', 'penyulaman');
+  }
+  if (norm.includes('penerimaan') || norm.includes('penjualan') || norm.includes('panen') || norm.includes('gabah')) {
+    synonyms.push('penerimaan', 'penjualan', 'panen', 'gabah', 'gkp');
+  }
+  return synonyms;
+}
+
 export function suggestRabItemsForTransaction({
   items,
   transaction,
@@ -48,11 +60,18 @@ export function suggestRabItemsForTransaction({
   return items
     .filter((item) => item.type === targetType)
     .map((item): RabItemSuggestion => {
-      const candidates = [item.name, item.categoryName ?? '', ...item.aliases]
+      const baseCandidates = [item.name, item.categoryName ?? '', ...item.aliases]
         .map(normalizeText)
         .filter(Boolean);
+      const candidates = Array.from(new Set(baseCandidates.flatMap(expandAgriculturalSynonyms)));
       let score = 0;
       const reasons: string[] = [];
+
+      // For income entries, if both item and transaction are income, match them strongly
+      if (targetType === 'income' && item.type === 'income') {
+        score += 10;
+        reasons.push('penerimaan');
+      }
 
       for (const candidate of candidates) {
         if (sourceText.includes(candidate)) {
@@ -63,7 +82,8 @@ export function suggestRabItemsForTransaction({
 
         const candidateTokens = tokenize(candidate);
         const matches = candidateTokens.filter((token) => sourceTokens.has(token));
-        if (matches.length > 0) {
+        const minRequired = candidateTokens.length <= 1 ? 1 : Math.max(2, Math.floor(candidateTokens.length * 0.6));
+        if (matches.length >= minRequired) {
           score += matches.length * 2;
           reasons.push(...matches);
         }

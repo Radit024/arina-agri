@@ -3,6 +3,8 @@ import ExcelJS from 'exceljs';
 import { formatDateLong, formatMonthYear, formatDateShort } from '@/lib/formatters';
 import { buildIncomeStatementWorksheetData } from './incomeStatementWorksheet';
 import { computeArusKasBulanan } from './scenarioCalculations';
+import { normalizeFinanceCategoryText } from './categories';
+import { suggestRabItemsForTransaction } from './rabSuggestionMatcher';
 import type {
   FinanceProject,
   FinanceTransactionForReport,
@@ -82,6 +84,7 @@ export interface RabCategoryReconciliation {
 export interface ParsedLedgerResult {
   transactions: ParsedLedgerTransaction[];
   skippedRows: RabParseSkippedRow[];
+  referenceYear?: number;
 }
 
 export interface ParsedRabWorkbook {
@@ -337,22 +340,6 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
       }
     }
 
-    if (finalPlannedTotal > 0) {
-      if (volume === 0 && unitPrice === 0) {
-        warnings.push({
-          rowNumber,
-          description,
-          message: `Jumlah dan Harga Satuan kosong, sehingga aplikasi langsung mencatat total biayanya saja (Rp${finalPlannedTotal})`,
-        });
-      } else if (!unit) {
-        warnings.push({
-          rowNumber,
-          description,
-          message: `Satuan barang/jasa tidak diisi`,
-        });
-      }
-    }
-
     items.push({
       id: `${categoryId}-${slugify(description)}-${rowNumber}`,
       projectId,
@@ -386,6 +373,72 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
   }
 
   const ledgerResult = parseLedgerWorkbook(workbook);
+  const enrichedTransactions: ParsedLedgerTransaction[] = [...ledgerResult.transactions];
+  const referenceYear = ledgerResult.referenceYear ?? new Date().getFullYear();
+
+  // Directive A: Implicit Data Enrichment (Cross-Sheet Validation)
+  // Directive A: Implicit Data Enrichment (Cross-Sheet Validation)
+  // Determine which RAB items have corresponding transactions in the daily ledger.
+  // RAB items with no matching ledger transaction (e.g. Fixed Cost "Sewa Lahan")
+  // are automatically injected so total expenditure matches Laporan Laba Rugi.
+  const matchedRabItemIds = new Set<string>();
+
+  for (const item of items) {
+    const targetJenis: TransactionJenis = item.type === 'income' ? 'pendapatan' : 'pengeluaran';
+    const normItem = normalizeFinanceCategoryText(item.name);
+
+    const isMatched = ledgerResult.transactions.some((tx) => {
+      if (tx.jenis !== targetJenis) return false;
+      const normTx = normalizeFinanceCategoryText(tx.keterangan);
+      if (!normTx) return false;
+
+      // Special case for land rent: MUST contain 'sewa'
+      if (normItem.includes('sewa')) {
+        return normTx.includes('sewa');
+      }
+
+      // Direct match or alias match
+      if (normTx === normItem || normTx.includes(normItem) || normItem.includes(normTx)) return true;
+
+      // Suggestion matcher match
+      const suggestions = suggestRabItemsForTransaction({
+        items: [item],
+        transaction: { jenis: tx.jenis, keterangan: tx.keterangan },
+      });
+      if (suggestions.length > 0 && suggestions[0].score >= 2) return true;
+
+      // Core word match (e.g. 'dolomit' in 'pembelian dolomit', 'herbisida' in 'pembelian herbisida...')
+      const coreTokens = normItem
+        .replace(/[^\w\s]/g, ' ')
+        .split(' ')
+        .filter((t) => t.length >= 4 && !/^\d+$/.test(t) && t !== 'jam' && t !== 'kontak' && t !== '40kg');
+      if (coreTokens.some((token) => normTx.includes(token))) return true;
+
+      return false;
+    });
+
+    if (isMatched) {
+      matchedRabItemIds.add(item.id);
+    }
+  }
+
+  for (const item of items) {
+    if (!item.plannedTotal || item.plannedTotal <= 0) continue;
+    if (matchedRabItemIds.has(item.id)) continue;
+
+    const targetJenis: TransactionJenis = item.type === 'income' ? 'pendapatan' : 'pengeluaran';
+    const defaultDate = enrichedTransactions[0]?.tanggal || `${referenceYear}-01-01`;
+
+    enrichedTransactions.push({
+      tanggal: defaultDate,
+      jenis: targetJenis,
+      keterangan: item.name,
+      nominal: item.plannedTotal,
+      volume: item.volume > 0 ? item.volume : undefined,
+      satuan: item.unit || undefined,
+      hargaSatuan: item.unitPrice > 0 ? item.unitPrice : undefined,
+    });
+  }
 
   return {
     project: {
@@ -401,7 +454,7 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     },
     categories: Array.from(categories.values()),
     items,
-    transactions: ledgerResult.transactions,
+    transactions: enrichedTransactions,
     skippedRows: [...skippedRows, ...ledgerResult.skippedRows],
     reconciliation,
     warnings,
@@ -534,7 +587,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
     });
   });
 
-  return { transactions, skippedRows };
+  return { transactions, skippedRows, referenceYear };
 }
 
 export async function parseRabWorkbookFromArrayBuffer(buffer: ArrayBuffer) {

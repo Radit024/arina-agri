@@ -113,15 +113,6 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
     }
   }
 
-  const skipCountByReason = new Map<string, number>();
-  for (const skipped of parsed.skippedRows) {
-    const label = extractSkipReasonLabel(skipped.reason);
-    skipCountByReason.set(label, (skipCountByReason.get(label) ?? 0) + 1);
-  }
-  for (const [label, count] of skipCountByReason) {
-    warnings.push(`${count} baris dilewati: ${label}`);
-  }
-
   if (parsed.warnings) {
     for (const w of parsed.warnings) {
       const cleanedMessage = w.message.replace('Parser tidak yakin: ', '');
@@ -507,6 +498,16 @@ export function useRabController(
       const unlinkedTransactionNames: string[] = [];
       if (addTransaction && parsed.transactions.length > 0) {
         const rabItemPool = [...rabState.items, ...createdItems];
+        const categoryDefs = [
+          ...Array.from(categoryIdMap.values()).map((c) => ({
+            id: c.id,
+            jenis: c.type === 'income' ? ('pendapatan' as const) : ('pengeluaran' as const),
+            label: c.name,
+            aliases: [c.name],
+          })),
+          ...DEFAULT_FINANCE_CATEGORIES,
+        ];
+
         for (const transaction of parsed.transactions) {
           const suggestion = suggestRabItemsForTransaction({
             items: rabItemPool,
@@ -522,9 +523,14 @@ export function useRabController(
             jenis: transaction.jenis,
             kategori: matchedItem?.categoryName ?? '',
             keterangan: transaction.keterangan,
-            categories: DEFAULT_FINANCE_CATEGORIES,
+            categories: categoryDefs,
           });
-          const kategori = matchedItem?.categoryName ?? resolvedCategory?.label ?? 'Lainnya';
+
+          const rawKategori = matchedItem?.categoryName ?? resolvedCategory?.label ?? 'Lainnya';
+          const existingCategory = Array.from(categoryIdMap.values()).find(
+            (c) => c.name.toLowerCase() === rawKategori.toLowerCase(),
+          );
+          const kategori = existingCategory ? existingCategory.name : rawKategori;
 
           try {
             await addTransaction({

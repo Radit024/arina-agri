@@ -117,12 +117,14 @@ describe('RAB Excel helpers', () => {
 
     const parsed = parseRabWorkbook(workbook);
 
-    expect(parsed.transactions).toEqual([
-      expect.objectContaining({
-        satuan: 'Kg',
-        hargaSatuan: 16_500,
-      }),
-    ]);
+    expect(parsed.transactions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          satuan: 'Kg',
+          hargaSatuan: 16_500,
+        }),
+      ]),
+    );
   });
 
   it('builds export workbook with the expected four worksheets', async () => {
@@ -381,4 +383,55 @@ describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
       expect(parsed.items.map((item) => item.name.toLowerCase())).not.toContain(description.toLowerCase());
     },
   );
+
+  it('performs implicit data enrichment for missing RAB items like Sewa Lahan (Directive A)', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const rabSheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+    rabSheet.getCell('A2').value = 'USAHATANI PADI 1 HA ADE';
+    rabSheet.getCell('A3').value = 'MUSIM TANAM 2026';
+    rabSheet.getRow(6).values = ['NO', 'URAIAN', 'VOLUME', 'SATUAN', 'HARGA SATUAN (RP)', 'TOTAL RENCANA'];
+    rabSheet.getCell('A7').value = 'A';
+    rabSheet.getCell('B7').value = 'BIAYA TETAP';
+    rabSheet.getRow(8).values = [1, 'Sewa Lahan', 1, 'Ha', 21_000_000, 7_000_000];
+
+    const ledgerSheet = workbook.addWorksheet('2. Catatan Transaksi Harian');
+    ledgerSheet.getRow(4).values = ['Tanggal', 'Uraian Transaksi', 'Volume', 'Satuan', 'Harga Satuan (Rp)', 'Pengeluaran (Rp)', 'Pemasukan (Rp)'];
+    ledgerSheet.getRow(5).values = ['01 Ags', 'Pembelian benih', 25, 'Kg', 16_500, 412_500, '-'];
+
+    const parsed = parseRabWorkbook(workbook);
+
+    // "Sewa Lahan" was omitted from Catatan Transaksi Harian, but present in RAB.
+    // The parser MUST automatically enrich transactions so total expenditure includes 7,000,000 IDR.
+    expect(parsed.transactions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          keterangan: 'Sewa Lahan',
+          nominal: 7_000_000,
+          jenis: 'pengeluaran',
+        }),
+      ]),
+    );
+  });
+
+  it('trusts user total as source of truth while recording math difference warning (Reverted Directive B)', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const rabSheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+    rabSheet.getCell('A2').value = 'USAHATANI PADI 1 HA ADE';
+    rabSheet.getCell('A3').value = 'MUSIM TANAM 2026';
+    rabSheet.getRow(6).values = ['NO', 'URAIAN', 'VOLUME', 'SATUAN', 'HARGA SATUAN (RP)', 'TOTAL RENCANA'];
+    rabSheet.getCell('A7').value = 'A';
+    rabSheet.getCell('B7').value = 'BIAYA TETAP';
+    rabSheet.getRow(8).values = [1, 'Sewa Lahan', 1, 'Ha', 21_000_000, 7_000_000];
+
+    const parsed = parseRabWorkbook(workbook);
+
+    const sewaLahanItem = parsed.items.find((item) => item.name === 'Sewa Lahan');
+    expect(sewaLahanItem?.plannedTotal).toBe(7_000_000);
+    expect(parsed.warnings).toEqual([
+      expect.objectContaining({
+        description: 'Sewa Lahan',
+        message: expect.stringContaining('berbeda dengan hasil perkalian'),
+      }),
+    ]);
+  });
 });

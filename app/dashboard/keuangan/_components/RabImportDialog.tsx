@@ -120,7 +120,7 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId }: Pr
                 <MenuItem value="" disabled>Pilih Mode Skenario</MenuItem>
                 {scenarios.map((scenario) => (
                   <MenuItem key={scenario.id} value={scenario.id}>
-                    {scenario.name}
+                    {scenario.mode === 'PROJECTION' ? 'Rencana (Proyeksi)' : 'Aktual (Realisasi)'}
                   </MenuItem>
                 ))}
               </Select>

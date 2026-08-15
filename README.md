@@ -28,6 +28,8 @@
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png" width="100%" alt="" />
 
+> Maintainers and AI contributors: read [MAINTAINER_GUIDE.md](MAINTAINER_GUIDE.md) before changing architecture, finance behavior, database schema, or deployment state.
+
 ## Status Aplikasi
 
 Arina Agri saat ini berjalan sebagai **monolit Next.js App Router**. UI, autentikasi, API internal, integrasi AI, fetch cuaca, fetch berita, scraper harga, webhook, dan cron endpoint berada di dalam aplikasi Next.js.

@@ -23,10 +23,28 @@ function makeXlsxFile(name = 'rab.xlsx') {
   });
 }
 
+const scenarios: Parameters<typeof RabImportDialog>[0]['scenarios'] = [
+  {
+    id: 'scenario-realization',
+    projectId: 'project-1',
+    mode: 'REALIZATION',
+  },
+];
+
+function renderDialog(rab = makeRab()) {
+  return render(
+    <RabImportDialog
+      rab={rab}
+      scenarios={scenarios}
+      activeScenarioId="scenario-realization"
+    />,
+  );
+}
+
 describe('RabImportDialog', () => {
   it('accepts a file dropped onto the drop zone and enables Import', () => {
     const rab = makeRab();
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
     const file = makeXlsxFile('rab-drag.xlsx');
@@ -40,7 +58,7 @@ describe('RabImportDialog', () => {
 
   it('shows drag-active styling while a file is dragged over the drop zone', () => {
     const rab = makeRab();
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
     fireEvent.dragOver(dropZone);
@@ -53,7 +71,7 @@ describe('RabImportDialog', () => {
 
   it('rejects a dropped file that is not .xlsx', () => {
     const rab = makeRab();
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
     const badFile = new File(['dummy'], 'notes.pdf', { type: 'application/pdf' });
@@ -66,7 +84,7 @@ describe('RabImportDialog', () => {
 
   it('calls importRabFile with the dropped file when Import is clicked', async () => {
     const rab = makeRab();
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
     const file = makeXlsxFile('rab-drag.xlsx');
@@ -74,12 +92,12 @@ describe('RabImportDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Import/ }));
 
-    expect(rab.importRabFile).toHaveBeenCalledWith(file);
+    expect(rab.importRabFile).toHaveBeenCalledWith(file, 'scenario-realization');
   });
 
   it('shows a loading animation over the drop zone and disables interaction while importing', () => {
     const rab = makeRab({ importLoading: true });
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     expect(screen.getByText('Menyimpan item RAB dan transaksi, mohon tunggu.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Mengimpor/ })).toBeDisabled();
@@ -99,7 +117,7 @@ describe('RabImportDialog', () => {
         '2 baris dilewati: format tanggal tidak dikenali',
       ],
     });
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     expect(screen.getByText('Import berhasil, namun ada beberapa catatan yang bisa Anda cek:')).toBeInTheDocument();
     expect(screen.getByText(/SAPRODI/)).toBeInTheDocument();
@@ -108,7 +126,7 @@ describe('RabImportDialog', () => {
 
   it('clears import warnings when the dialog is closed', () => {
     const rab = makeRab({ importWarnings: ['1 baris dilewati: tidak ada nominal pengeluaran/pemasukan'] });
-    render(<RabImportDialog rab={rab} />);
+    renderDialog(rab);
 
     fireEvent.click(screen.getByRole('button', { name: 'Tutup' }));
 

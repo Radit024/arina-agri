@@ -95,4 +95,4 @@ A release candidate has a clean scoped diff, passing `npm run ci`, reviewed migr
 
 ## Local verification note (2026-08-15)
 
-The current branch did not pass `npm run ci`. Lint and route generation passed, but TypeScript reported that seven `RabImportDialog` test renders omitted required `scenarios` and `activeScenarioId` props. A separate Vitest run finished with 512 passing and 5 failing tests, all five failures in that dialog suite because `scenarios` was undefined. The i18n check passed. Fix the test fixture/component contract and rerun the complete command before declaring readiness.
+The stale `RabImportDialog` fixtures and finance-scenario migration mock were corrected. The complete `npm run ci` then passed: lint, Next/TypeScript checking, all 111 test files and 517 tests, i18n validation, and the production build. Remote Supabase migration and deployed integration behavior remain separate operator gates.

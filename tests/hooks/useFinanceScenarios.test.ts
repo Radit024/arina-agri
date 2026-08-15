@@ -2,12 +2,15 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useFinanceScenarios } from '@/hooks/useFinanceScenarios';
-import { financeScenarioApi } from '@/lib/api';
+import { financeScenarioApi, migrationApi } from '@/lib/api';
 import type { ApiFinanceScenario } from '@/lib/api';
 
 vi.mock('@/lib/api', () => ({
   financeScenarioApi: {
     getOrCreateForProject: vi.fn(),
+  },
+  migrationApi: {
+    autoMigrateLegacyRab: vi.fn(),
   },
 }));
 
@@ -30,6 +33,8 @@ const realization: ApiFinanceScenario = {
 
 beforeEach(() => {
   vi.mocked(financeScenarioApi.getOrCreateForProject).mockReset();
+  vi.mocked(migrationApi.autoMigrateLegacyRab).mockReset();
+  vi.mocked(migrationApi.autoMigrateLegacyRab).mockResolvedValue(0);
   mockUseAuth.mockReset();
   mockUseAuth.mockReturnValue({ user: { id: 'user-1' }, loading: false });
 });
@@ -43,6 +48,7 @@ describe('useFinanceScenarios', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(financeScenarioApi.getOrCreateForProject).toHaveBeenCalledWith('project-1');
+    expect(migrationApi.autoMigrateLegacyRab).toHaveBeenCalledWith('project-1', 'scenario-projection');
     expect(result.current.scenarios).toEqual([projection, realization]);
     expect(result.current.error).toBeNull();
   });

@@ -45,7 +45,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { formatDateInputValue, formatDateShort, formatRupiah, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation, ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
-import MasterDataDialog from './MasterDataDialog';
+import MasterDataDialog from '@/components/shared/forms/MasterDataDialog';
 import SupplyItemsView from './SupplyItemsView';
 import { useTranslations } from 'next-intl';
 import type {

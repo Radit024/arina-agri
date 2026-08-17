@@ -7,7 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
-import MasterDataDialog from '@/app/dashboard/stok/_components/MasterDataDialog';
+import MasterDataDialog from '@/components/shared/forms/MasterDataDialog';
 import RabItemForm from './RabItemForm';
 
 type Props = Pick<UseKeuanganControllerResult, 'rab'>;

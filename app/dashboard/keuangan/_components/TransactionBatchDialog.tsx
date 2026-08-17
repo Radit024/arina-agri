@@ -18,7 +18,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
-import MasterDataDialog from '@/app/dashboard/stok/_components/MasterDataDialog';
+import MasterDataDialog from '@/components/shared/forms/MasterDataDialog';
 import type { UseTransactionBatchControllerResult } from '@/controllers/keuangan/useTransactionBatchController';
 import type { UseTransactionMasterControllerResult } from '@/controllers/keuangan/useTransactionMasterController';
 import TransactionConfirmView from './TransactionConfirmView';

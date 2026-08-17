@@ -17,15 +17,30 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SettingsIcon from '@mui/icons-material/Settings';
 
-import type { DraftErrors, TransactionDraft } from '@/controllers/keuangan/useTransactionBatchController';
 import { formatDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 
+export type TransactionFormDraft = {
+  id: string;
+  jenis: 'pengeluaran' | 'pendapatan';
+  kategori: string;
+  volume: string;
+  satuan: string;
+  hargaSatuan: string;
+  nominal: string;
+  tanggal: string;
+  keterangan: string;
+  applyRabSuggestion: boolean;
+};
+
+export type TransactionFormFieldName = keyof TransactionFormDraft;
+export type TransactionFormErrors = Record<string, string>;
+
 interface Props {
-  draft: TransactionDraft;
+  draft: TransactionFormDraft;
   kategoriList: string[];
   satuanList: string[];
-  errors: DraftErrors;
-  onFieldChange: (field: keyof TransactionDraft, value: string) => void;
+  errors: TransactionFormErrors;
+  onFieldChange: (field: TransactionFormFieldName, value: string) => void;
   onOpenKategoriDialog: () => void;
   onOpenSatuanDialog: () => void;
   rabSuggestion: string | null;

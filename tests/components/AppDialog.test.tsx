@@ -7,6 +7,21 @@ vi.mock('@mui/material/useMediaQuery', () => ({
 }));
 
 describe('AppDialog', () => {
+  it('renders the optional leading visual', () => {
+    render(
+      <AppDialog
+        leading={<span data-testid="dialog-leading">Panen</span>}
+        open
+        title="Tambah panen"
+        onClose={vi.fn()}
+      >
+        Isi dialog
+      </AppDialog>,
+    );
+
+    expect(screen.getByTestId('dialog-leading')).toBeInTheDocument();
+  });
+
   it('invokes onClose from the named close button', () => {
     const onClose = vi.fn();
 

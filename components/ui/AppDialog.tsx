@@ -19,6 +19,8 @@ export type AppDialogCloseReason = 'backdropClick' | 'escapeKeyDown' | 'closeBut
 export interface AppDialogProps extends Omit<DialogProps, 'children' | 'onClose' | 'title'> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  leading?: React.ReactNode;
+  /** @deprecated Use `leading` instead. */
   leadingVisual?: React.ReactNode;
   children: React.ReactNode;
   actions?: React.ReactNode;
@@ -82,6 +84,7 @@ function createContainerSlotProps(
 export default function AppDialog({
   title,
   subtitle,
+  leading,
   leadingVisual,
   children,
   actions,
@@ -102,6 +105,7 @@ export default function AppDialog({
     : requestedFullScreen;
   const hasActions = actions !== undefined && actions !== null;
   const closeButtonLabel = typeof title === 'string' ? `Tutup dialog ${title}` : 'Tutup dialog';
+  const leadingContent = leading ?? leadingVisual;
 
   const paperSx: SxProps<Theme> = {
     borderRadius: isFullScreen ? 0 : 3,
@@ -133,9 +137,9 @@ export default function AppDialog({
     >
       <DialogTitle component="div" id={titleId} sx={{ m: 0, p: 2.5, pb: subtitle ? 1 : 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-          {leadingVisual && (
+          {leadingContent !== undefined && leadingContent !== null && (
             <Box sx={{ display: 'flex', flexShrink: 0, pt: 0.25 }}>
-              {leadingVisual}
+              {leadingContent}
             </Box>
           )}
           <Box sx={{ minWidth: 0, flex: 1, pr: 1 }}>

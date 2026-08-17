@@ -59,6 +59,7 @@ import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 import { computeBatchPerformance } from '@/hooks/useStok';
 
 import Badge from '@/components/ui/Badge';
+import MetricCard, { type MetricCardIntent } from '@/components/ui/MetricCard';
 
 //  Status badge 
 type StockTranslator = ReturnType<typeof useTranslations>;
@@ -285,23 +286,19 @@ export default function StokView({
       {/* KPI Cards */}
       <Grid data-guide-target="stock-summary" container spacing={2.5} sx={{ mb: 3 }}>
         {[
-          { label: t('kpi.ready'), value: `${summary.totalStokSiapJual.toLocaleString()} kg`, icon: <InventoryIcon />, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.12) },
-          { label: t('kpi.sold'), value: `${summary.stokTerjualMingguIni.toLocaleString()} kg`, icon: <LocalShippingIcon />, color: theme.palette.info.main, bg: alpha(theme.palette.info.main, 0.12) },
-          { label: t('kpi.value'), value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, color: theme.palette.warning.main, bg: alpha(theme.palette.warning.main, 0.12) },
-          { label: t('kpi.alert'), value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.12) },
+          { label: t('kpi.ready'), value: `${summary.totalStokSiapJual.toLocaleString()} kg`, icon: <InventoryIcon />, intent: 'success' },
+          { label: t('kpi.sold'), value: `${summary.stokTerjualMingguIni.toLocaleString()} kg`, icon: <LocalShippingIcon />, intent: 'info' },
+          { label: t('kpi.value'), value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, intent: 'warning' },
+          { label: t('kpi.alert'), value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, intent: 'error' },
         ].map((kpi) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={kpi.label}>
-            <Card sx={{ borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ width: 44, height: 44, borderRadius: 3, bgcolor: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
-                  {kpi.icon}
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>{kpi.label}</Typography>
-                  <Typography variant="h6" sx={{ lineHeight: 1.2, color: kpi.color, fontWeight: 800 }}>{loading ? '...' : kpi.value}</Typography>
-                </Box>
-              </CardContent>
-            </Card>
+            <MetricCard
+              icon={kpi.icon}
+              intent={kpi.intent as MetricCardIntent}
+              label={kpi.label}
+              loading={loading}
+              value={kpi.value}
+            />
           </Grid>
         ))}
       </Grid>

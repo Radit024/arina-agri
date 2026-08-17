@@ -21,9 +21,13 @@ test.describe('reusable UI foundation RAB mobile smoke', () => {
       await page.setViewportSize(viewport);
       await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
 
-      const rabTab = page.getByRole('tab', { name: 'RAB', exact: true });
+      // MobileBottomNav is client-only, so its presence confirms the dashboard
+      // has hydrated before we interact with the controlled finance tabs.
+      await expect(page.locator('[aria-label="Navigasi Utama"]')).toBeVisible();
+      const financeTablist = page.getByRole('tablist', { name: 'Navigasi laporan keuangan' });
+      await expect(financeTablist).toBeVisible();
+      const rabTab = financeTablist.getByRole('tab', { name: 'RAB', exact: true });
       await expect(rabTab).toBeVisible();
-      await page.waitForTimeout(750);
       await rabTab.click();
       await expect(rabTab).toHaveAttribute('aria-selected', 'true');
       const rabPanel = page.getByTestId('finance-panel-rab');
@@ -31,11 +35,16 @@ test.describe('reusable UI foundation RAB mobile smoke', () => {
 
       await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
-      const rabMobileItemOrEmptyState = rabPanel
-        .getByRole('article', { name: /^Item RAB / })
-        .or(rabPanel.getByText('Belum ada proyek'))
-        .or(rabPanel.getByText('Belum ada item RAB.'));
-      await expect(rabMobileItemOrEmptyState).toBeVisible();
+      const rabMobileItems = rabPanel.getByRole('article', { name: /^Item RAB / });
+      if (await rabMobileItems.count()) {
+        await expect(rabMobileItems.first()).toBeVisible();
+      } else {
+        await expect(
+          rabPanel
+            .getByText('Belum ada proyek', { exact: true })
+            .or(rabPanel.getByText('Belum ada item RAB.', { exact: true })),
+        ).toBeVisible();
+      }
     });
   }
 });

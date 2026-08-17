@@ -35,7 +35,6 @@ interface WhatsAppWebhookBody {
   }>;
 }
 
-// ─── Signature Verification ───────────────────────────────────────────────────
 
 function isValidSignature(rawBody: string, signatureHeader: string | null): boolean {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
@@ -54,7 +53,6 @@ function isValidSignature(rawBody: string, signatureHeader: string | null): bool
   }
 }
 
-// ─── Webhook Verification Handshake (GET) ─────────────────────────────────────
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url);
@@ -69,7 +67,6 @@ export async function GET(request: Request): Promise<Response> {
   return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 });
 }
 
-// ─── Incoming Messages (POST) ─────────────────────────────────────────────────
 
 export async function POST(request: Request): Promise<Response> {
   const rawBody = await request.text();

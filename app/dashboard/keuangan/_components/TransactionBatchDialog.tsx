@@ -95,7 +95,6 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
 
   return (
     <>
-      {/* ─── Main Batch Dialog ─── */}
       <Dialog
         open={dialogOpen}
         onClose={requestClose}
@@ -244,7 +243,6 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
         </DialogContent>
       </Dialog>
 
-      {/* ─── Close Confirmation Dialog ─── */}
       <Dialog
         open={closeConfirmOpen}
         onClose={() => setCloseConfirmOpen(false)}
@@ -276,7 +274,6 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
         </DialogActions>
       </Dialog>
 
-      {/* ─── Kelola Kategori Dialog ─── */}
       <MasterDataDialog
         open={kategoriDialogOpen}
         onClose={() => setKategoriDialogOpen(false)}
@@ -289,7 +286,6 @@ export default function TransactionBatchDialog({ batch, master, selectedProjectI
         onClearDeleteError={() => setDeleteKategoriError(null)}
       />
 
-      {/* ─── Kelola Satuan Dialog ─── */}
       <MasterDataDialog
         open={satuanDialogOpen}
         onClose={() => setSatuanDialogOpen(false)}

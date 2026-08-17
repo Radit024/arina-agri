@@ -3,7 +3,6 @@ import Parser from 'rss-parser';
 import { supabaseAdmin } from './supabase';
 import { isAgriRelevant, extractSnippet, extractImageUrl, scrapeOgImage } from './newsHelpers';
 
-// ─── Types ────────────────────────────────────────────────────────
 interface NewsArticleInsert {
   title: string;
   snippet: string | null;
@@ -13,7 +12,6 @@ interface NewsArticleInsert {
   pub_date: string;
 }
 
-// ─── Config ───────────────────────────────────────────────────────
 const RSS_SOURCES = [
   {
     name: 'Berita Pertanian',
@@ -31,7 +29,6 @@ const RSS_SOURCES = [
 
 const ITEMS_PER_SOURCE = 5;
 
-// ─── Core Fetch Logic ─────────────────────────────────────────────
 async function fetchAndUpsertFeed(source: { name: string; url: string }): Promise<number> {
   const parser = new Parser({
     customFields: {
@@ -85,7 +82,6 @@ async function fetchAndUpsertFeed(source: { name: string; url: string }): Promis
   return toInsert.length;
 }
 
-// ─── Main Runner ──────────────────────────────────────────────────
 export async function runNewsFetch(): Promise<void> {
   console.log('[newsScheduler] Mulai fetch berita RSS...');
   let totalInserted = 0;
@@ -105,7 +101,6 @@ export async function runNewsFetch(): Promise<void> {
   console.log(`[newsScheduler] Selesai. Total artikel: ${totalInserted}`);
 }
 
-// ─── Cleanup Logic ────────────────────────────────────────────────
 async function runCleanup(): Promise<void> {
   console.log('[newsScheduler] Menjalankan cleanup berita lama...');
   const thirtyDaysAgo = new Date();
@@ -123,7 +118,6 @@ async function runCleanup(): Promise<void> {
   }
 }
 
-// ─── Scheduler Entry Point ────────────────────────────────────────
 export function startNewsScheduler(): void {
   // Fetch berita 4x sehari: 06:00, 12:00, 18:00, 00:00
   cron.schedule('0 6,12,18,0 * * *', () => {

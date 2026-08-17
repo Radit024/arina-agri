@@ -833,7 +833,6 @@ export default function EnsiklopediaView({
         </Box>
       </Box>
 
-      {/* ── Disease Reference Modal ──────────────────────────────── */}
       <Dialog
         open={diseaseModalOpen}
         onClose={() => setDiseaseModalOpen(false)}
@@ -923,7 +922,6 @@ export default function EnsiklopediaView({
         </DialogContent>
       </Dialog>
 
-      {/* ── Chat History Drawer ──────────────────────────────────── */}
       <Drawer
         anchor="right"
         open={historyDrawerOpen}

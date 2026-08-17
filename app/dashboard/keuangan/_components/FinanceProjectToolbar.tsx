@@ -297,7 +297,6 @@ export default function FinanceProjectToolbar({
 
       <FinanceProjectDialog financeProject={financeProject} />
 
-      {/* ─── Konfirmasi Hapus Proyek ─── */}
       <Dialog
         open={financeProject.deleteProjectConfirmOpen}
         onClose={financeProject.cancelDeleteProject}
@@ -331,7 +330,6 @@ export default function FinanceProjectToolbar({
         </DialogActions>
       </Dialog>
 
-      {/* ─── Konfirmasi Berpindah Mode dengan Draft Belum Tersimpan ─── */}
       <Dialog
         open={modeSwitchConfirmOpen}
         onClose={handleCancelModeSwitch}

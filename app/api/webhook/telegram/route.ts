@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  // ── Security: validate Telegram secret token ─────────────────────────────
   const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
   const actualSecret = request.headers.get('X-Telegram-Bot-Api-Secret-Token');
 

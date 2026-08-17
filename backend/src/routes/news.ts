@@ -3,7 +3,6 @@ import { supabaseAdmin } from '../services/supabase';
 
 const router = Router();
 
-// ─── GET /api/news ────────────────────────────────────────────────
 // Query params: ?limit=10&page=1
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -37,7 +36,6 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// ─── POST /api/news/trigger ───────────────────────────────────────
 // Manual trigger for immediate fetch (dev/testing)
 router.post('/trigger', async (_req: Request, res: Response) => {
   try {

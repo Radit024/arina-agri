@@ -502,7 +502,6 @@ export default function KeuanganView({
         </Grid>
 
         <Box sx={{ flex: 1, display: 'flex', gap: 2, alignItems: 'stretch', minHeight: 0 }}>
-        {/* ─── Buku Besar Transaksi ─── */}
         <Box sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex' }}>
           <Card
             data-guide-target="finance-ledger"
@@ -1283,7 +1282,6 @@ export default function KeuanganView({
         </Box>
       )}
 
-      {/* ─── MODAL: Catat / Edit Transaksi (Batch) ─── */}
       <TransactionBatchDialog
         batch={transactionBatch}
         master={transactionMaster}
@@ -1299,7 +1297,6 @@ export default function KeuanganView({
       <FinancingAssumptionsDialog financing={financing} />
       <ProductionSalesAssumptionsDialog controller={productionSales} />
 
-      {/* ─── MODAL: Analisis Kelayakan Usaha (BFA) ─── */}
       <Dialog
         open={bepHppDialogOpen}
         onClose={() => setBepHppDialogOpen(false)}
@@ -1477,7 +1474,6 @@ export default function KeuanganView({
         </DialogContent>
       </Dialog>
 
-      {/* ─── MODAL: Laporan Keuangan PDF ─── */}
       <Dialog
         open={aiDialogOpen}
         onClose={() => { if (!reportLoading) setAiDialogOpen(false); }}

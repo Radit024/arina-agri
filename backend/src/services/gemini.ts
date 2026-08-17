@@ -6,7 +6,6 @@ function getClient() {
   return new GoogleGenerativeAI(apiKey);
 }
 
-// ─── System Prompts ───────────────────────────────────────────────
 
 export const SYSTEM_PROMPTS = {
   /**
@@ -100,7 +99,6 @@ export const SYSTEM_PROMPTS = {
   ].join('\n'),
 };
 
-// ─── Generate Gemini Reply (Ensiklopedia) ─────────────────────────
 
 export async function generateGeminiReply({ prompt, context, userName }: { prompt: string, context?: string, userName?: string }) {
   const client = getClient();
@@ -134,7 +132,6 @@ export async function generateGeminiReply({ prompt, context, userName }: { promp
   return text.trim();
 }
 
-// ─── Generate Financial Report AI Analysis ────────────────────────
 
 interface FinancialReportTransaction {
   jenis: 'pengeluaran' | 'pendapatan';
@@ -218,7 +215,6 @@ export async function generateFinancialAnalysis({ reportData }: { reportData: Fi
   return text.trim();
 }
 
-// ─── Generate AI-Refined Notification Message ────────────────────
 
 export async function generateNotificationDecisionMessage({
   farmerName,

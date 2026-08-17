@@ -100,7 +100,6 @@ const GradeChip = ({ grade, t }: { grade: string; t: StockTranslator }) => {
   );
 };
 
-// ─── Batch Info Card (Stock Out form) ────────────────────────────
 const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: Theme; t: StockTranslator }) => (
   <Box sx={{
     p: 1.5,
@@ -682,7 +681,7 @@ export default function StokView({
         )}
       </Card>
 
-      {/* ─── Dialog / Bottom Sheet: Tambah Batch ─── */}
+
       {isMobile ? (
         <SwipeableDrawer
           anchor="bottom"
@@ -940,7 +939,6 @@ export default function StokView({
         </Dialog>
       )}
 
-      {/* ─── Dialog / Bottom Sheet: Catat Keluar Stok ─── */}
       {isMobile ? (
         <SwipeableDrawer
           anchor="bottom"
@@ -1179,7 +1177,6 @@ export default function StokView({
         </Dialog>
       )}
 
-      {/* ─── Dialog Konfirmasi Tutup Batch ─── */}
       <Dialog
         open={closeConfirmId !== null}
         onClose={onCancelClose}
@@ -1223,7 +1220,6 @@ export default function StokView({
         </DialogContent>
       </Dialog>
 
-      {/* ─── Grade Master Data Dialog ─── */}
       <MasterDataDialog
         open={gradeDialogOpen}
         onClose={() => setGradeDialogOpen(false)}
@@ -1236,7 +1232,6 @@ export default function StokView({
         onClearDeleteError={onClearGradeDeleteError}
       />
 
-      {/* ─── Location Master Data Dialog ─── */}
       <MasterDataDialog
         open={locationDialogOpen}
         onClose={() => setLocationDialogOpen(false)}

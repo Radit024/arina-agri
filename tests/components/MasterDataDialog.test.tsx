@@ -43,6 +43,18 @@ describe('MasterDataDialog', () => {
     expect(screen.getByRole('button', { name: 'Hapus Grade Premium' })).toBeInTheDocument();
   });
 
+  it('cancels inline editing without closing the dialog when Escape is pressed', () => {
+    const onClose = vi.fn();
+    render(<MasterDataDialog {...makeProps({ onClose })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Grade Premium' }));
+    fireEvent.keyDown(screen.getByDisplayValue('Grade Premium'), { key: 'Escape' });
+
+    expect(screen.getByRole('button', { name: 'Edit Grade Premium' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Simpan Grade Premium' })).not.toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('clears local values and delegates error clearing when closed', () => {
     const onClose = vi.fn();
     const onClearDeleteError = vi.fn();

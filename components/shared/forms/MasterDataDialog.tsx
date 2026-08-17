@@ -148,7 +148,10 @@ export default function MasterDataDialog({
                   disabled={saving}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') handleSaveEdit();
-                    if (event.key === 'Escape') handleCancelEdit();
+                    if (event.key === 'Escape') {
+                      event.stopPropagation();
+                      handleCancelEdit();
+                    }
                   }}
                   sx={{ flex: 1 }}
                 />

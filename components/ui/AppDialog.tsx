@@ -99,10 +99,9 @@ export default function AppDialog({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const titleId = React.useId();
-  const isBottomSheet = isMobile && mobilePresentation === 'bottom-sheet';
-  const isFullScreen = isMobile
-    ? mobilePresentation === 'fullscreen'
-    : requestedFullScreen;
+  const hasExplicitFullScreen = requestedFullScreen !== undefined;
+  const isBottomSheet = isMobile && !hasExplicitFullScreen && mobilePresentation === 'bottom-sheet';
+  const isFullScreen = requestedFullScreen ?? (isMobile && mobilePresentation === 'fullscreen');
   const hasActions = actions !== undefined && actions !== null;
   const closeButtonLabel = typeof title === 'string' ? `Tutup dialog ${title}` : 'Tutup dialog';
   const leadingContent = leading ?? leadingVisual;

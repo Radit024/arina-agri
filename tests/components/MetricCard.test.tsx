@@ -4,11 +4,11 @@ import MetricCard from '@/components/ui/MetricCard';
 
 describe('MetricCard', () => {
   it('renders the supplied metric label and value', () => {
-    render(<MetricCard label="Total panen" value="1.250 kg" />);
+    render(<MetricCard label="Total panen" value={1250} />);
 
     expect(screen.getByRole('region', { name: 'Total panen' })).toBeInTheDocument();
     expect(screen.getByText('Total panen')).toBeInTheDocument();
-    expect(screen.getByText('1.250 kg')).toBeInTheDocument();
+    expect(screen.getByText('1250')).toBeInTheDocument();
   });
 
   it('renders an accessible loading state without formatting the supplied value', () => {

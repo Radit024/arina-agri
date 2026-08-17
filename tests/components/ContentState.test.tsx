@@ -17,6 +17,7 @@ describe('ContentState', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Memuat catatan panen');
+    expect(screen.queryByText('Konten siap')).not.toBeInTheDocument();
   });
 
   it('renders the empty state', () => {
@@ -27,6 +28,7 @@ describe('ContentState', () => {
     );
 
     expect(screen.getByText('Belum ada catatan panen.')).toBeInTheDocument();
+    expect(screen.queryByText('Konten siap')).not.toBeInTheDocument();
   });
 
   it('renders the error state and optional retry control', () => {
@@ -42,5 +44,6 @@ describe('ContentState', () => {
 
     expect(screen.getByText('Catatan panen tidak dapat dimuat.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Coba lagi' })).toBeInTheDocument();
+    expect(screen.queryByText('Konten siap')).not.toBeInTheDocument();
   });
 });

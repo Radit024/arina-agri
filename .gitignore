@@ -56,3 +56,11 @@ AUDIT_REVISI_MANAJEMEN_KEUANGAN.md
 # Microsoft Office Temporary Files
 ~$*
 .~lock.*
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

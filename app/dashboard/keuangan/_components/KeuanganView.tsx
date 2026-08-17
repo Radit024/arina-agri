@@ -55,6 +55,8 @@ import { getPeriodeLabel } from '@/lib/pdfReport';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
 
+import Badge from '@/components/ui/Badge';
+import EmptyState from '@/components/ui/EmptyState';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
 import DialogActions from '@mui/material/DialogActions';
 import Fab from '@mui/material/Fab';
@@ -700,12 +702,11 @@ export default function KeuanganView({
             <CardContent sx={{ pt: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
               <Box sx={{ display: { xs: 'flex', md: 'none' }, flex: 1, minHeight: 0, flexDirection: 'column', gap: 1.5, overflowY: 'auto', pr: 0.5, pb: 2 }}>
                   {displayedTransactions.length === 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, py: 6 }}>
-                      <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {ledgerEmptyMessage}
-                      </Typography>
-                    </Box>
+                    <EmptyState
+                      icon={<AccountBalanceIcon />}
+                      message={ledgerEmptyMessage}
+                      sx={{ py: 6 }}
+                    />
                   ) : (
                     pagedTransactions.map((tx) => (
                       <Card key={tx._id} variant="outlined" sx={{ flexShrink: 0, borderRadius: 3, borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
@@ -715,15 +716,13 @@ export default function KeuanganView({
                             <Typography variant="subtitle2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
                               {tx.kategori}
                             </Typography>
-                            <Chip
+                            <Badge
                               label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                              size="small"
+                              variant="soft"
+                              color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
                               sx={{
-                                backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.error.main, 0.12),
-                                color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
-                                fontWeight: 700,
-                                fontSize: '0.65rem',
                                 height: 20,
+                                fontSize: '0.65rem',
                               }}
                             />
                           </Box>
@@ -963,25 +962,12 @@ export default function KeuanganView({
                   <TableBody>
                     {displayedTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <AccountBalanceIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {ledgerEmptyMessage}
-                            </Typography>
-                            <Button
-                              data-guide-target="finance-add-transaction-empty"
-                              size="small"
-                              variant="outlined"
-                              disabled={financeInputDisabled}
-                              onClick={() => {
-                                if (!financeInputDisabled) transactionBatch.openForCreate();
-                              }}
-                              sx={{ mt: 1, borderRadius: 8 }}
-                            >
-                              {t('ledger.addFirst')}
-                            </Button>
-                          </Box>
+                        <TableCell colSpan={7} align="center">
+                          <EmptyState
+                            icon={<AccountBalanceIcon />}
+                            message={ledgerEmptyMessage}
+                            sx={{ py: 2 }}
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -1001,15 +987,12 @@ export default function KeuanganView({
                               {formatDateLong(tx.tanggal)}
                             </TableCell>
                             <TableCell sx={ledgerRowCellSx}>
-                              <Chip
+                              <Badge
                                 label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                                size="small"
+                                variant="soft"
+                                color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
                                 sx={{
-                                  backgroundColor: tx.jenis === 'pendapatan' ? alpha(theme.palette.success.main, 0.15) : alpha(theme.palette.error.main, 0.15),
-                                  color: tx.jenis === 'pendapatan' ? 'success.dark' : 'error.dark',
-                                  fontWeight: 800,
                                   fontSize: '0.75rem',
-                                  borderRadius: 1.5,
                                 }}
                               />
                             </TableCell>

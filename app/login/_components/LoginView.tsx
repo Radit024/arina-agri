@@ -1,13 +1,9 @@
-import { Controller, type Control, type FieldErrors, type SubmitHandler, type UseFormHandleSubmit } from 'react-hook-form';
+import { type Control, type FieldErrors, type SubmitHandler, type UseFormHandleSubmit } from 'react-hook-form';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
 import LinearProgress from '@mui/material/LinearProgress';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -18,6 +14,8 @@ import ComputerOutlinedIcon from '@mui/icons-material/ComputerOutlined';
 import AuthShell from '@/components/auth/AuthShell';
 import type { LoginForm } from '@/controllers/login/useLoginController';
 import { softBg, softText } from '@/lib/themeColors';
+import Button from '@/components/ui/Button';
+import FormInput from '@/components/ui/FormInput';
 
 type AuthTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -112,67 +110,37 @@ export default function LoginView({
         onSubmit={handleSubmit(onSubmit)}
         sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
       >
-        <Controller
+        <FormInput
           name="email"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('email')}
-              type="email"
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="email"
-              disabled={busy}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+          label={t('email')}
+          type="email"
+          variant="outlined"
+          fullWidth
+          required
+          autoComplete="email"
+          disabled={busy}
+          error={errors.email?.message}
+          startIcon={<EmailOutlinedIcon color="action" />}
         />
 
-        <Controller
+        <FormInput
           name="password"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('password')}
-              type={showPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="current-password"
-              disabled={busy}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={togglePassword} edge="end" size="small" disabled={busy}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+          label={t('password')}
+          type={showPassword ? 'text' : 'password'}
+          variant="outlined"
+          fullWidth
+          required
+          autoComplete="current-password"
+          disabled={busy}
+          error={errors.password?.message}
+          startIcon={<LockOutlinedIcon color="action" />}
+          endIcon={
+            <IconButton onClick={togglePassword} edge="end" size="small" disabled={busy}>
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          }
         />
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1 }}>
@@ -188,15 +156,11 @@ export default function LoginView({
           variant="contained"
           size="large"
           fullWidth
-          disabled={busy}
-          sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+          loading={loading || redirecting}
+          loadingText={submitLabel}
+          sx={{ mt: 2 }}
         >
-          {loading || redirecting ? (
-            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-              <CircularProgress size={20} color="inherit" aria-label={submitLabel} />
-              <span>{submitLabel}</span>
-            </Box>
-          ) : t('submit')}
+          {t('submit')}
         </Button>
 
         <Button
@@ -205,11 +169,11 @@ export default function LoginView({
           size="large"
           fullWidth
           onClick={handleGoogleSignIn}
-          disabled={busy}
-          startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleIcon />}
-          sx={{ py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+          loading={googleLoading}
+          loadingText={t('processing')}
+          startIcon={<GoogleIcon />}
         >
-          {googleLoading ? t('processing') : t('google')}
+          {t('google')}
         </Button>
 
         {localLoginEnabled && (
@@ -219,11 +183,12 @@ export default function LoginView({
             size="large"
             fullWidth
             onClick={handleLocalSignIn}
-            disabled={busy}
-            startIcon={localLoading ? <CircularProgress size={18} color="inherit" /> : <ComputerOutlinedIcon />}
-            sx={{ py: 1.25, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '0.95rem' }}
+            loading={localLoading}
+            loadingText={t('processing')}
+            startIcon={<ComputerOutlinedIcon />}
+            sx={{ py: 1.25, fontSize: '0.95rem' }}
           >
-            {localLoading ? t('processing') : t('localLogin')}
+            {t('localLogin')}
           </Button>
         )}
 

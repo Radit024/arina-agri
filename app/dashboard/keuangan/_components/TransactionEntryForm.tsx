@@ -3,6 +3,8 @@
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid';
@@ -197,8 +199,26 @@ export default function TransactionEntryForm({
 
       {/* RAB Suggestion */}
       {rabSuggestion && (
-        <Alert severity="info" variant="outlined" sx={{ borderRadius: 2, py: 0.5 }}>
-          Akan dihubungkan ke RAB: <strong>{rabSuggestion}</strong>
+        <Alert
+          severity="info"
+          variant="outlined"
+          sx={{ borderRadius: 2, py: 0.5, display: 'flex', alignItems: 'center' }}
+          action={
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={draft.applyRabSuggestion}
+                  onChange={(e) => onFieldChange('applyRabSuggestion', String(e.target.checked))}
+                  sx={{ py: 0 }}
+                />
+              }
+              label={<Typography variant="caption" sx={{ fontWeight: 700 }}>Hubungkan Otomatis</Typography>}
+              sx={{ m: 0 }}
+            />
+          }
+        >
+          Saran RAB: <strong>{rabSuggestion}</strong>
         </Alert>
       )}
     </Box>

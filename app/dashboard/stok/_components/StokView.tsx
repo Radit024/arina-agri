@@ -58,34 +58,30 @@ import { PageActionButton, PageHeader, PageShell } from '@/components/shared/pag
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 import { computeBatchPerformance } from '@/hooks/useStok';
 
-// ─── Status badge ─────────────────────────────────────────────────
+import Badge from '@/components/ui/Badge';
+
+//  Status badge 
 type StockTranslator = ReturnType<typeof useTranslations>;
 
-const StatusChip = ({ status, theme, t }: { status: ApiHarvestBatch['status']; theme: Theme; t: StockTranslator }) => {
+const StatusChip = ({ status, t }: { status: ApiHarvestBatch['status']; t: StockTranslator }) => {
   const map = {
-    aman: { label: t('status.safe'), color: softBg(theme, 'success', 0.14), text: softText(theme, 'success') },
-    menipis: { label: t('status.low'), color: softBg(theme, 'warning', 0.14), text: softText(theme, 'warning') },
-    hampir_kadaluarsa: { label: t('status.expiring'), color: softBg(theme, 'error', 0.14), text: softText(theme, 'error') },
-    habis: { label: t('status.empty'), color: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary },
-  };
+    aman: { label: t('status.safe'), color: 'success' },
+    menipis: { label: t('status.low'), color: 'warning' },
+    hampir_kadaluarsa: { label: t('status.expiring'), color: 'error' },
+    habis: { label: t('status.empty'), color: 'default' },
+  } as const;
   const s = map[status];
   return (
-    <Chip
+    <Badge
       label={s.label}
-      size="small"
-      sx={{ bgcolor: s.color, color: s.text, fontWeight: 700, fontSize: '0.7rem', borderRadius: 1.5 }}
+      color={s.color}
+      variant="soft"
     />
   );
 };
 
-// ─── Grade badge (free-form strings) ─────────────────────────────
-const GRADE_PALETTE = [
-  (t: Theme) => ({ bg: t.palette.success.main, text: accentText(t, 'success') }),
-  (t: Theme) => ({ bg: t.palette.info.main, text: accentText(t, 'info') }),
-  (t: Theme) => ({ bg: t.palette.warning.main, text: accentText(t, 'warning') }),
-  (t: Theme) => ({ bg: t.palette.error.main, text: accentText(t, 'error') }),
-  (t: Theme) => ({ bg: t.palette.primary.main, text: '#fff' }),
-];
+//  Grade badge (free-form strings) 
+const GRADE_PALETTE = ['success', 'info', 'warning', 'error', 'primary'] as const;
 
 function gradeColorIndex(grade: string): number {
   let hash = 0;
@@ -93,13 +89,13 @@ function gradeColorIndex(grade: string): number {
   return hash % GRADE_PALETTE.length;
 }
 
-const GradeChip = ({ grade, theme, t }: { grade: string; theme: Theme; t: StockTranslator }) => {
-  const { bg, text } = GRADE_PALETTE[gradeColorIndex(grade)](theme);
+const GradeChip = ({ grade, t }: { grade: string; t: StockTranslator }) => {
+  const color = GRADE_PALETTE[gradeColorIndex(grade)];
   return (
-    <Chip
+    <Badge
       label={`${t('table.grade')} ${grade}`}
-      size="small"
-      sx={{ bgcolor: bg, color: text, fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
+      color={color}
+      variant="solid"
     />
   );
 };
@@ -119,8 +115,10 @@ const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: The
     <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 800, color: 'text.primary' }}>
       {batch.batchCode}
     </Typography>
-    <GradeChip grade={batch.grade} theme={theme} t={t} />
-    <StatusChip status={batch.status} theme={theme} t={t} />
+    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+      <GradeChip grade={batch.grade} t={t} />
+      <StatusChip status={batch.status} t={t} />
+    </Box>
     <Box sx={{ width: '100%', display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
       <Typography variant="caption" color="text.secondary">
         Sisa: <strong>{batch.stokTersisa} kg</strong>
@@ -261,13 +259,7 @@ export default function StokView({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        meta={!backendOnline ? (
-          <Chip
-            label={t('offlineMode')}
-            size="small"
-            sx={{ bgcolor: alpha(theme.palette.warning.main, 0.12), color: theme.palette.warning.main, fontWeight: 600, fontSize: '0.65rem' }}
-          />
-        ) : undefined}
+
         actions={(
           <>
             <PageActionButton data-guide-target="stock-stock-out" variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)}>
@@ -345,11 +337,15 @@ export default function StokView({
                           <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
                             {b.batchCode}
                           </Typography>
-                          <StatusChip status={b.status} theme={theme} t={t} />
+                          <StatusChip status={b.status} t={t} />
                         </Box>
 
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <StatusChip status={b.status} t={t} />
+                          <GradeChip grade={b.grade} t={t} />
+                        </Box>
                         <Box sx={{ display: 'flex', gap: 1.25, mb: 1.5, alignItems: 'center' }}>
-                          <GradeChip grade={b.grade} theme={theme} t={t} />
+                          <GradeChip grade={b.grade} t={t} />
                           <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                             {b.stokTersisa} kg / {b.beratMasuk} kg
                           </Typography>
@@ -481,7 +477,7 @@ export default function StokView({
                         <TableRow key={b._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
-                          <TableCell><GradeChip grade={b.grade} theme={theme} t={t} /></TableCell>
+                          <TableCell><GradeChip grade={b.grade} t={t} /></TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? softText(theme, 'error') : softText(theme, 'success') }}>
                             {b.stokTersisa} kg
@@ -510,7 +506,7 @@ export default function StokView({
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
-                          <TableCell><StatusChip status={b.status} theme={theme} t={t} /></TableCell>
+                          <TableCell><StatusChip status={b.status} t={t} /></TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                               <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}

@@ -31,7 +31,15 @@ export default function ResponsiveDataView<T>({
           <React.Fragment key={getItemKey(item)}>{renderMobileItem(item)}</React.Fragment>
         ))}
       </Box>
-      <Box sx={{ display: { md: 'block', xs: 'none' }, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: { md: 'flex', xs: 'none' },
+          flex: 1,
+          flexDirection: 'column',
+          minHeight: 0,
+          minWidth: 0,
+        }}
+      >
         {desktop}
       </Box>
     </ContentState>

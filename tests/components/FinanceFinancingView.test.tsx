@@ -1,40 +1,28 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { describe, expect, it, vi } from 'vitest';
 
-import FinanceFinancingView from '@/app/dashboard/keuangan/_components/FinanceFinancingView';
-import type { UseFinancingControllerResult } from '@/controllers/keuangan/useFinancingController';
+import FinanceFinancingView, {
+  type FinanceFinancingViewProps,
+} from '@/app/dashboard/keuangan/_components/FinanceFinancingView';
 
-function makeFinancing(overrides: Partial<UseFinancingControllerResult> = {}): UseFinancingControllerResult {
+function makeProps(overrides: Partial<FinanceFinancingViewProps> = {}): FinanceFinancingViewProps {
   return {
-    assumptions: null,
-    loading: false,
-    error: null,
-    kebutuhanModalKerja: 18_869_000,
-    bunga: null,
     arusKasPascaPembiayaan: [],
+    bunga: null,
     kasAkhirPascaPembiayaan: null,
-    dialogOpen: false,
-    draft: {
-      saldoKasAwal: '', modalSendiri: '', nilaiPinjaman: '', bungaPerPeriode: '',
-      tanggalPencairan: '', tanggalPembayaran: '', biayaLain: '',
-    },
-    openDialog: vi.fn(),
-    closeDialog: vi.fn(),
-    updateDraftField: vi.fn(),
-    submitDraft: vi.fn(),
-    saving: false,
-    saveError: null,
+    kebutuhanModalKerja: 18_869_000,
+    onOpenAssumptions: vi.fn(),
     ...overrides,
   };
 }
 
-function renderView(financing = makeFinancing()) {
+function renderView(props = makeProps()) {
   return {
-    financing,
+    props,
     ...render(
       <ThemeProvider theme={createTheme()}>
-        <FinanceFinancingView financing={financing} />
+        <FinanceFinancingView {...props} />
       </ThemeProvider>,
     ),
   };
@@ -48,23 +36,24 @@ describe('FinanceFinancingView', () => {
     expect(screen.getByText(/Rp\s?18\.869\.000/)).toBeInTheDocument();
   });
 
-  it('shows a call-to-action instead of Bunga/Kas Akhir when assumptions are missing', () => {
+  it('shows exactly one financing assumptions CTA and non-action KPI placeholders when assumptions are missing', () => {
     renderView();
 
-    expect(screen.getAllByText(/Atur Asumsi Pembiayaan/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Atur Asumsi Pembiayaan' })).toHaveLength(1);
+    expect(screen.getAllByText('Belum diatur')).toHaveLength(2);
   });
 
-  it('opens the dialog when the CTA button is clicked', () => {
-    const financing = makeFinancing();
-    renderView(financing);
+  it('opens the dialog once when the financing assumptions CTA is clicked', () => {
+    const onOpenAssumptions = vi.fn();
+    renderView(makeProps({ onOpenAssumptions }));
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Atur Asumsi Pembiayaan/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Atur Asumsi Pembiayaan' }));
 
-    expect(financing.openDialog).toHaveBeenCalled();
+    expect(onOpenAssumptions).toHaveBeenCalledTimes(1);
   });
 
-  it('renders Bunga, Kas Akhir Pasca Pembiayaan, and the monthly table once assumptions exist', () => {
-    renderView(makeFinancing({
+  it('renders Bunga, Kas Akhir, mobile cards, and the desktop monthly table once assumptions exist', () => {
+    renderView(makeProps({
       bunga: 450_000,
       kasAkhirPascaPembiayaan: 22_891_000,
       arusKasPascaPembiayaan: [
@@ -74,10 +63,25 @@ describe('FinanceFinancingView', () => {
     }));
 
     expect(screen.getByText(/Rp\s?450\.000/)).toBeInTheDocument();
-    // Kas Akhir Pasca Pembiayaan equals the last row's cumulative value by
-    // definition, so it legitimately renders twice (summary card + table row).
-    expect(screen.getAllByText(/Rp\s?22\.891\.000/).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('2026-07')).toBeInTheDocument();
-    expect(screen.getByText('2026-12')).toBeInTheDocument();
+    expect(screen.getByRole('article', { name: 'Arus kas pasca pembiayaan Juli 2026' })).toBeInTheDocument();
+
+    const table = screen.getByRole('table', { name: 'Tabel arus kas pasca pembiayaan' });
+    expect(within(table).getByText('Juli 2026')).toBeInTheDocument();
+    expect(within(table).getAllByText(/Rp\s?7\.412\.500/)).toHaveLength(2);
+    expect(within(table).getByText('Desember 2026')).toBeInTheDocument();
+    expect(within(table).getByText(/Rp\s?30\.050\.000/)).toBeInTheDocument();
+  });
+
+  it('shows the financed cash flow empty state without stale table or mobile-card content', () => {
+    renderView(makeProps({
+      bunga: 0,
+      kasAkhirPascaPembiayaan: 0,
+      arusKasPascaPembiayaan: [],
+    }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('Belum ada proyeksi pembiayaan');
+    expect(screen.getByRole('status')).toHaveTextContent('Belum ada proyeksi arus kas setelah pembiayaan.');
+    expect(screen.queryByRole('table', { name: 'Tabel arus kas pasca pembiayaan' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('article')).not.toBeInTheDocument();
   });
 });

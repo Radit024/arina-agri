@@ -1274,7 +1274,13 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceFinancingView financing={financing} />
+          <FinanceFinancingView
+            arusKasPascaPembiayaan={financing.arusKasPascaPembiayaan}
+            bunga={financing.bunga}
+            kasAkhirPascaPembiayaan={financing.kasAkhirPascaPembiayaan}
+            kebutuhanModalKerja={financing.kebutuhanModalKerja}
+            onOpenAssumptions={financing.openDialog}
+          />
         </Box>
       )}
       {financeTab === 'perbandingan' && (

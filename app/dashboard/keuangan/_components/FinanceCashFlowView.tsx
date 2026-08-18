@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
@@ -15,14 +18,27 @@ import TableFooter from '@mui/material/TableFooter';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
-import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
-import { formatMonthYear, formatRupiah, formatDateShort } from '@/lib/formatters';
+import MetricCard from '@/components/ui/MetricCard';
+import ResponsiveDataView from '@/components/ui/ResponsiveDataView';
+import { formatDateShort, formatMonthYear, formatRupiah } from '@/lib/formatters';
 import type { ArusKasBulanan, FinanceTransactionForReport } from '@/lib/finance/rabTypes';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeReports'>;
+import FinanceCashFlowMobileCard from './FinanceCashFlowMobileCard';
+
+export interface FinanceCashFlowReportData {
+  arusKasBulanan: readonly ArusKasBulanan[];
+  reportTransactions: readonly FinanceTransactionForReport[];
+  reportStartMonth: string;
+  reportEndMonth: string;
+}
+
+export interface FinanceCashFlowViewProps {
+  financeReports: FinanceCashFlowReportData;
+  canAddTransaction: boolean;
+  onAddTransaction: () => void;
+  onCreateProject: () => void;
+}
 
 function colorForNet(net: number) {
   if (net > 0) return 'success.main';
@@ -35,65 +51,55 @@ function CashFlowRow({
   transactions,
 }: {
   row: ArusKasBulanan;
-  transactions: FinanceTransactionForReport[];
+  transactions: readonly FinanceTransactionForReport[];
 }) {
   const [open, setOpen] = useState(false);
+  const monthLabel = formatMonthYear(row.bulan);
   const net = row.kasMasuk - row.kasKeluar;
-  
   const monthTransactions = transactions.filter(
-    (tx) => tx.tanggal.slice(0, 7) === row.bulan
+    (transaction) => transaction.tanggal.slice(0, 7) === row.bulan,
   );
 
   return (
     <>
-      <TableRow
-        hover
-        sx={{ '& > *': { borderBottom: open ? 'unset' : undefined } }}
-      >
+      <TableRow hover sx={{ '& > *': { borderBottom: open ? 'unset' : undefined } }}>
         <TableCell sx={{ padding: '0 4px', width: '40px' }}>
-          <IconButton size="small" onClick={() => setOpen(!open)}>
+          <IconButton
+            aria-label={`${open ? 'Tutup' : 'Buka'} detail transaksi ${monthLabel}`}
+            onClick={() => setOpen(!open)}
+            size="small"
+            sx={{ minHeight: 44, minWidth: 44 }}
+          >
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell sx={{ fontWeight: 600 }}>{formatMonthYear(row.bulan)}</TableCell>
-        <TableCell
-          align="right"
-          sx={{ color: row.kasMasuk > 0 ? 'success.main' : 'text.disabled' }}
-        >
+        <TableCell sx={{ fontWeight: 600 }}>{monthLabel}</TableCell>
+        <TableCell align="right" sx={{ color: row.kasMasuk > 0 ? 'success.main' : 'text.disabled' }}>
           {row.kasMasuk > 0 ? `+${formatRupiah(row.kasMasuk)}` : formatRupiah(0)}
         </TableCell>
-        <TableCell
-          align="right"
-          sx={{ color: row.kasKeluar > 0 ? 'error.main' : 'text.disabled' }}
-        >
+        <TableCell align="right" sx={{ color: row.kasKeluar > 0 ? 'error.main' : 'text.disabled' }}>
           {row.kasKeluar > 0 ? `−${formatRupiah(row.kasKeluar)}` : formatRupiah(0)}
         </TableCell>
-        <TableCell
-          align="right"
-          sx={{ fontWeight: 600, color: colorForNet(net) }}
-        >
+        <TableCell align="right" sx={{ color: colorForNet(net), fontWeight: 600 }}>
           {net >= 0 ? '+' : '−'}{formatRupiah(Math.abs(net))}
         </TableCell>
-        <TableCell
-          align="right"
-          sx={{ fontWeight: 700, color: colorForNet(row.kasKumulatif) }}
-        >
+        <TableCell align="right" sx={{ color: colorForNet(row.kasKumulatif), fontWeight: 700 }}>
           {formatRupiah(row.kasKumulatif)}
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell colSpan={6} style={{ paddingBottom: 0, paddingTop: 0 }}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 2, mb: 3 }}>
-              <Typography variant="subtitle2" gutterBottom component="div" sx={{ fontWeight: 700 }}>
-                Detail Transaksi ({formatMonthYear(row.bulan)})
+              <Typography component="div" gutterBottom sx={{ fontWeight: 700 }} variant="subtitle2">
+                Detail Transaksi ({monthLabel})
               </Typography>
               {monthTransactions.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
+                <Typography color="text.secondary" variant="body2">
                   Tidak ada transaksi di bulan ini.
                 </Typography>
               ) : (
-                <Table size="small" aria-label="rincian">
+                <Table aria-label={`Rincian transaksi ${monthLabel}`} size="small">
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ fontWeight: 600 }}>Tanggal</TableCell>
@@ -103,21 +109,21 @@ function CashFlowRow({
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {monthTransactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell>{formatDateShort(tx.tanggal)}</TableCell>
+                    {monthTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell>{formatDateShort(transaction.tanggal)}</TableCell>
                         <TableCell>
-                          <Chip 
-                            label={tx.kategori} 
-                            size="small" 
+                          <Chip
+                            color={transaction.jenis === 'pendapatan' ? 'success' : 'error'}
+                            label={transaction.kategori}
+                            size="small"
+                            sx={{ fontSize: '0.7rem', height: 20 }}
                             variant="outlined"
-                            color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
-                            sx={{ height: 20, fontSize: '0.7rem' }}
                           />
                         </TableCell>
-                        <TableCell>{tx.keterangan || '-'}</TableCell>
-                        <TableCell align="right" sx={{ color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main' }}>
-                          {tx.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(tx.nominal)}
+                        <TableCell>{transaction.keterangan || '-'}</TableCell>
+                        <TableCell align="right" sx={{ color: transaction.jenis === 'pendapatan' ? 'success.main' : 'error.main' }}>
+                          {transaction.jenis === 'pendapatan' ? '+' : '−'}{formatRupiah(transaction.nominal)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -132,98 +138,118 @@ function CashFlowRow({
   );
 }
 
-export default function FinanceCashFlowView({ financeReports }: Props) {
+export default function FinanceCashFlowView({
+  financeReports,
+  canAddTransaction,
+  onAddTransaction,
+  onCreateProject,
+}: FinanceCashFlowViewProps) {
   const { arusKasBulanan, reportTransactions, reportStartMonth, reportEndMonth } = financeReports;
-
   const totalInflow = arusKasBulanan.reduce((sum, row) => sum + row.kasMasuk, 0);
   const totalOutflow = arusKasBulanan.reduce((sum, row) => sum + row.kasKeluar, 0);
   const totalNet = totalInflow - totalOutflow;
   const lastCumulative = arusKasBulanan.at(-1)?.kasKumulatif ?? 0;
+  const emptyAction = canAddTransaction ? (
+    <Button onClick={onAddTransaction} variant="contained">Catat Transaksi</Button>
+  ) : (
+    <Button onClick={onCreateProject} variant="contained">Buat Proyek</Button>
+  );
 
   return (
-    <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CardContent sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
+      <CardContent sx={{ display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
-          sx={{ justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, mb: 2 }}
+          sx={{ alignItems: { sm: 'center', xs: 'flex-start' }, justifyContent: 'space-between', mb: 2 }}
         >
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+            <Typography sx={{ fontWeight: 800 }} variant="h6">
               Arus Kas Bulanan
             </Typography>
             {reportStartMonth && reportEndMonth && (
-              <Typography variant="body2" color="text.secondary">
+              <Typography color="text.secondary" variant="body2">
                 Periode {formatMonthYear(reportStartMonth)} – {formatMonthYear(reportEndMonth)}
               </Typography>
             )}
           </Box>
           <Chip
-            label={totalNet >= 0 ? `Surplus ${formatRupiah(totalNet)}` : `Defisit ${formatRupiah(Math.abs(totalNet))}`}
             color={totalNet >= 0 ? 'success' : 'error'}
-            variant="outlined"
+            label={totalNet >= 0 ? `Surplus ${formatRupiah(totalNet)}` : `Defisit ${formatRupiah(Math.abs(totalNet))}`}
             size="small"
             sx={{ fontWeight: 700 }}
+            variant="outlined"
           />
         </Stack>
 
-        {arusKasBulanan.length === 0 ? (
+        {arusKasBulanan.length > 0 && (
           <Box
             sx={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              py: 6,
-              color: 'text.disabled',
+              display: { md: 'none', xs: 'grid' },
+              gap: 1,
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              mb: 1.5,
             }}
           >
-            <Typography variant="body1" sx={{ fontWeight: 600 }}>
-              Belum ada data arus kas
-            </Typography>
-            <Typography variant="body2">
-              Tambahkan transaksi untuk melihat arus kas bulanan.
-            </Typography>
+            <MetricCard intent="success" label="Kas Masuk" value={formatRupiah(totalInflow)} />
+            <MetricCard intent="error" label="Kas Keluar" value={formatRupiah(totalOutflow)} />
+            <Box sx={{ gridColumn: '1 / -1' }}>
+              <MetricCard intent={lastCumulative >= 0 ? 'success' : 'error'} label="Saldo Akhir" value={formatRupiah(lastCumulative)} />
+            </Box>
           </Box>
-        ) : (
-          <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-            <Table size="small" stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: '40px' }}></TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Bulan</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>Kas Masuk</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>Kas Keluar</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Kas Bersih</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Kumulatif</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {arusKasBulanan.map((row) => (
-                  <CashFlowRow key={row.bulan} row={row} transactions={reportTransactions} />
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow sx={{ bgcolor: 'action.hover' }}>
-                  <TableCell></TableCell>
-                  <TableCell sx={{ fontWeight: 800, fontSize: '1.1rem' }}>Total</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: 'success.main' }}>
-                    +{formatRupiah(totalInflow)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: 'error.main' }}>
-                    −{formatRupiah(totalOutflow)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: colorForNet(totalNet) }}>
-                    {totalNet >= 0 ? '+' : '−'}{formatRupiah(Math.abs(totalNet))}
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '1.1rem', color: colorForNet(lastCumulative) }}>
-                    {formatRupiah(lastCumulative)}
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
         )}
+
+        <ResponsiveDataView
+          data={arusKasBulanan}
+          desktop={(
+            <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+              <Table aria-label="Arus kas bulanan" size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: '40px' }} />
+                    <TableCell sx={{ fontWeight: 700 }}>Bulan</TableCell>
+                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 700 }}>Kas Masuk</TableCell>
+                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>Kas Keluar</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Kas Bersih</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Kumulatif</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {arusKasBulanan.map((row) => (
+                    <CashFlowRow key={row.bulan} row={row} transactions={reportTransactions} />
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell />
+                    <TableCell sx={{ fontSize: '1.1rem', fontWeight: 800 }}>Total</TableCell>
+                    <TableCell align="right" sx={{ color: 'success.main', fontSize: '1.1rem', fontWeight: 800 }}>
+                      +{formatRupiah(totalInflow)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ color: 'error.main', fontSize: '1.1rem', fontWeight: 800 }}>
+                      −{formatRupiah(totalOutflow)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ color: colorForNet(totalNet), fontSize: '1.1rem', fontWeight: 800 }}>
+                      {totalNet >= 0 ? '+' : '−'}{formatRupiah(Math.abs(totalNet))}
+                    </TableCell>
+                    <TableCell align="right" sx={{ color: colorForNet(lastCumulative), fontSize: '1.1rem', fontWeight: 800 }}>
+                      {formatRupiah(lastCumulative)}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
+            </TableContainer>
+          )}
+          emptyAction={emptyAction}
+          emptyMessage={canAddTransaction
+            ? 'Catat transaksi pertama untuk melihat arus kas bulanan.'
+            : 'Buat proyek terlebih dahulu untuk mulai mencatat arus kas.'}
+          emptyTitle="Belum ada data arus kas"
+          getItemKey={(row) => row.bulan}
+          renderMobileItem={(row) => (
+            <FinanceCashFlowMobileCard row={row} transactions={reportTransactions} />
+          )}
+          state={arusKasBulanan.length === 0 ? 'empty' : 'ready'}
+        />
       </CardContent>
     </Card>
   );

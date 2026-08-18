@@ -299,6 +299,34 @@ function makeTransactionMaster() {
   };
 }
 
+function makeFinanceProject(overrides: Record<string, unknown> = {}) {
+  return {
+    projects: [],
+    activeProjects: [],
+    loading: false,
+    error: null,
+    backendOnline: false,
+    reload: vi.fn(),
+    createProject: vi.fn(),
+    updateProject: vi.fn(),
+    deleteProject: vi.fn(),
+    selectedProjectId: null,
+    setSelectedProjectId: vi.fn(),
+    selectedProject: null,
+    projectDialogOpen: false,
+    setProjectDialogOpen: vi.fn(),
+    projectDialogMode: 'create',
+    openCreateProjectDialog: vi.fn(),
+    openEditProjectDialog: vi.fn(),
+    deleteProjectConfirmOpen: false,
+    deletingProject: false,
+    requestDeleteProject: vi.fn(),
+    cancelDeleteProject: vi.fn(),
+    confirmDeleteProject: vi.fn(),
+    ...overrides,
+  };
+}
+
 function makeRabTransactionLink(overrides: Record<string, unknown> = {}) {
   return {
     dialogOpen: false,
@@ -377,30 +405,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     },
     financeTab: 'buku-besar',
     setFinanceTab: vi.fn(),
-    financeProject: {
-      projects: [],
-      activeProjects: [],
-      loading: false,
-      error: null,
-      backendOnline: false,
-      reload: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      selectedProjectId: null,
-      setSelectedProjectId: vi.fn(),
-      selectedProject: null,
-      projectDialogOpen: false,
-      setProjectDialogOpen: vi.fn(),
-      projectDialogMode: 'create',
-      openCreateProjectDialog: vi.fn(),
-      openEditProjectDialog: vi.fn(),
-      deleteProjectConfirmOpen: false,
-      deletingProject: false,
-      requestDeleteProject: vi.fn(),
-      cancelDeleteProject: vi.fn(),
-      confirmDeleteProject: vi.fn(),
-    },
+    financeProject: makeFinanceProject() as KeuanganViewProps['financeProject'],
     financeScenario: {
       activeMode: 'PROJECTION' as const,
       setActiveMode: vi.fn(),
@@ -939,6 +944,44 @@ describe('KeuanganView', () => {
     expect(exportReportButton).toBeEnabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
+  });
+
+  it('meneruskan CTA arus kas kosong ke form transaksi saat proyek sudah dipilih', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      financeTab: 'arus-kas',
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: false,
+        canInputFinance: true,
+        canExportFinance: true,
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const cashFlowPanel = screen.getByTestId('finance-panel-arus-kas');
+    fireEvent.click(within(cashFlowPanel).getByRole('button', { name: 'Catat Transaksi' }));
+    expect(openForCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('meneruskan CTA arus kas kosong ke dialog proyek saat belum ada proyek', () => {
+    const openCreateProjectDialog = vi.fn();
+    renderView({
+      financeTab: 'arus-kas',
+      financeAccess: {
+        hasSelectedProject: false,
+        hasProjectData: false,
+        canInputFinance: false,
+        canExportFinance: false,
+      },
+      financeProject: makeFinanceProject({
+        openCreateProjectDialog,
+      }) as KeuanganViewProps['financeProject'],
+    });
+
+    const cashFlowPanel = screen.getByTestId('finance-panel-arus-kas');
+    fireEvent.click(within(cashFlowPanel).getByRole('button', { name: 'Buat Proyek' }));
+    expect(openCreateProjectDialog).toHaveBeenCalledTimes(1);
   });
 
   it('memaginasi Buku Besar Transaksi menjadi 7 item per halaman', () => {

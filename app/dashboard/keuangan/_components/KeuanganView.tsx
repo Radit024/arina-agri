@@ -1260,7 +1260,12 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceCashFlowView financeReports={financeReports} />
+          <FinanceCashFlowView
+            canAddTransaction={financeAccess.canInputFinance}
+            financeReports={financeReports}
+            onAddTransaction={transactionBatch.openForCreate}
+            onCreateProject={financeProject.openCreateProjectDialog}
+          />
         </Box>
       )}
       {financeTab === 'arus-kas-pasca-pembiayaan' && (

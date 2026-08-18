@@ -92,9 +92,15 @@ test.describe('regular cashflow mobile reports', () => {
         localStorage.setItem('arina-guide:v1:finance', 'true');
       }, localDemoUserId);
       await page.setViewportSize(viewport);
-      await page.goto('/dashboard/keuangan', { waitUntil: 'networkidle' });
+      await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
 
-      await page.getByRole('button', { name: 'Buat Proyek', exact: true }).click();
+      const demoAccount = page.getByText('Akun Demo', { exact: true });
+      const createProject = page.getByRole('button', { name: 'Buat Proyek', exact: true });
+      await expect(demoAccount).toHaveCount(1);
+      await expect(createProject).toHaveCount(1);
+      await expect(createProject).toBeVisible();
+      await expect(createProject).toBeEnabled();
+      await createProject.click();
 
       const projectDialog = page.getByRole('dialog', { name: 'Buat Proyek Baru', exact: true });
       await expect(projectDialog).toBeVisible();

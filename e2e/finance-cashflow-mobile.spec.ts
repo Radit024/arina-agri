@@ -16,7 +16,76 @@ test.describe('regular cashflow mobile reports', () => {
       await page.addInitScript(({ projectId, userId }) => {
         const scenarioId = `guest-proj-${projectId}`;
         const createdAt = '2026-01-01T00:00:00.000Z';
+        const projects = [
+          {
+            id: projectId,
+            name: 'Proyek Arus Kas E2E',
+            commodity: 'Padi',
+            landArea: 1,
+            landAreaUnit: 'ha',
+            seasonLabel: 'MT 2026',
+            startDate: '2026-01-01',
+            endDate: '2026-02-28',
+            status: 'active',
+            createdAt,
+            updatedAt: createdAt,
+          },
+        ];
+        const transactions = [
+          {
+            _id: 'e2e-cashflow-income-january',
+            jenis: 'pendapatan',
+            kategori: 'Penjualan',
+            nominal: 5000000,
+            tanggal: '2026-01-15',
+            keterangan: 'Penjualan gabah Januari',
+            projectId,
+            scenarioId,
+            createdAt,
+            updatedAt: createdAt,
+          },
+          {
+            _id: 'e2e-cashflow-expense-january',
+            jenis: 'pengeluaran',
+            kategori: 'Benih',
+            nominal: 1200000,
+            tanggal: '2026-01-20',
+            keterangan: 'Pembelian benih Januari',
+            projectId,
+            scenarioId,
+            createdAt,
+            updatedAt: createdAt,
+          },
+          {
+            _id: 'e2e-cashflow-income-february',
+            jenis: 'pendapatan',
+            kategori: 'Penjualan',
+            nominal: 3400000,
+            tanggal: '2026-02-12',
+            keterangan: 'Penjualan gabah Februari',
+            projectId,
+            scenarioId,
+            createdAt,
+            updatedAt: createdAt,
+          },
+          {
+            _id: 'e2e-cashflow-expense-february',
+            jenis: 'pengeluaran',
+            kategori: 'Pupuk',
+            nominal: 900000,
+            tanggal: '2026-02-18',
+            keterangan: 'Pembelian pupuk Februari',
+            projectId,
+            scenarioId,
+            createdAt,
+            updatedAt: createdAt,
+          },
+        ];
 
+        // Playwright creates a fresh context per test; clear only this page's
+        // origin storage before setting every value the hooks can hydrate from.
+        localStorage.clear();
+        sessionStorage.clear();
         localStorage.setItem('arina_auth_mode', 'local');
         localStorage.setItem('arina_local_user_id', userId);
         localStorage.setItem('arina_user_id', userId);
@@ -24,83 +93,36 @@ test.describe('regular cashflow mobile reports', () => {
         localStorage.setItem('arina-selected-finance-project', JSON.stringify(projectId));
         localStorage.setItem(`arina-finance-scenario-mode-${projectId}`, JSON.stringify('PROJECTION'));
 
+        // useFinanceProjects first renders as guest before AuthContext resolves
+        // the local user, so both storage keys must hold the selected project.
+        localStorage.setItem('arina-finance-projects-guest', JSON.stringify(projects));
+        localStorage.setItem(`arina-finance-projects-${userId}`, JSON.stringify(projects));
+        sessionStorage.setItem(
+          'arina-finance-projects-guest',
+          JSON.stringify(projects),
+        );
         sessionStorage.setItem(
           `arina-finance-projects-${userId}`,
-          JSON.stringify([
-            {
-              id: projectId,
-              name: 'Proyek Arus Kas E2E',
-              commodity: 'Padi',
-              landArea: 1,
-              landAreaUnit: 'ha',
-              seasonLabel: 'MT 2026',
-              startDate: '2026-01-01',
-              endDate: '2026-02-28',
-              status: 'active',
-              createdAt,
-              updatedAt: createdAt,
-            },
-          ]),
+          JSON.stringify(projects),
         );
         sessionStorage.setItem(
           `arina-scenario-transactions-${scenarioId}`,
-          JSON.stringify([
-            {
-              _id: 'e2e-cashflow-income-january',
-              jenis: 'pendapatan',
-              kategori: 'Penjualan',
-              nominal: 5000000,
-              tanggal: '2026-01-15',
-              keterangan: 'Penjualan gabah Januari',
-              projectId,
-              scenarioId,
-              createdAt,
-              updatedAt: createdAt,
-            },
-            {
-              _id: 'e2e-cashflow-expense-january',
-              jenis: 'pengeluaran',
-              kategori: 'Benih',
-              nominal: 1200000,
-              tanggal: '2026-01-20',
-              keterangan: 'Pembelian benih Januari',
-              projectId,
-              scenarioId,
-              createdAt,
-              updatedAt: createdAt,
-            },
-            {
-              _id: 'e2e-cashflow-income-february',
-              jenis: 'pendapatan',
-              kategori: 'Penjualan',
-              nominal: 3400000,
-              tanggal: '2026-02-12',
-              keterangan: 'Penjualan gabah Februari',
-              projectId,
-              scenarioId,
-              createdAt,
-              updatedAt: createdAt,
-            },
-            {
-              _id: 'e2e-cashflow-expense-february',
-              jenis: 'pengeluaran',
-              kategori: 'Pupuk',
-              nominal: 900000,
-              tanggal: '2026-02-18',
-              keterangan: 'Pembelian pupuk Februari',
-              projectId,
-              scenarioId,
-              createdAt,
-              updatedAt: createdAt,
-            },
-          ]),
+          JSON.stringify(transactions),
+        );
+        localStorage.setItem(
+          `arina-scenario-transactions-${scenarioId}`,
+          JSON.stringify(transactions),
         );
       }, { projectId: localDemoProjectId, userId: localDemoUserId });
       await page.setViewportSize(viewport);
       await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
 
-      // MobileBottomNav is client-only, so its presence confirms the dashboard
-      // has hydrated before we interact with the controlled finance tabs.
+      const selectedProject = page.getByRole('combobox', { name: 'Proyek Arus Kas E2E', exact: true });
+      await expect(selectedProject).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Edit proyek', exact: true })).toBeEnabled();
+
+      // MobileBottomNav is client-only; wait for it only after the selected
+      // project confirms that the auth and finance-project hooks have hydrated.
       await expect(page.locator('[aria-label="Navigasi Utama"]')).toBeVisible();
       const financeTablist = page.getByRole('tablist', { name: 'Navigasi laporan keuangan' });
       await expect(financeTablist).toBeVisible();

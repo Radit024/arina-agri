@@ -14,6 +14,35 @@ test.describe('regular cashflow mobile reports', () => {
       test.skip(browserName !== 'chromium', 'This is a Chromium mobile viewport smoke.');
 
       await page.addInitScript(({ projectId, userId }) => {
+        // The real AuthProvider resolves its local demo session through the
+        // Supabase browser lock. Let the storage-backed project hook hydrate
+        // before that auth transition makes it load its local guest data.
+        // This preserves the app's real local-auth path without any API calls.
+        const originalLockRequest = navigator.locks?.request.bind(navigator.locks) as unknown as (
+          name: string,
+          options: LockOptions,
+          callback: (lock: Lock | null) => Promise<unknown>,
+        ) => Promise<unknown>;
+        let authLockRequests = 0;
+        if (originalLockRequest) {
+          (navigator.locks as unknown as {
+            request: (
+              name: string,
+              options: LockOptions,
+              callback: (lock: Lock | null) => Promise<unknown>,
+            ) => Promise<unknown>;
+          }).request = (name, options, callback) => originalLockRequest(
+            name,
+            options,
+            async (lock) => {
+              if (name.startsWith('lock:') && authLockRequests++ === 0) {
+                await new Promise<void>((resolve) => window.setTimeout(resolve, 100));
+              }
+              return callback(lock);
+            },
+          );
+        }
+
         const scenarioId = `guest-proj-${projectId}`;
         const createdAt = '2026-01-01T00:00:00.000Z';
         const projects = [
@@ -117,7 +146,10 @@ test.describe('regular cashflow mobile reports', () => {
       await page.setViewportSize(viewport);
       await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
 
-      const selectedProject = page.getByRole('combobox', { name: 'Proyek Arus Kas E2E', exact: true });
+      const selectedProject = page
+        .getByRole('combobox')
+        .filter({ hasText: /^Proyek Arus Kas E2E$/ });
+      await expect(selectedProject).toHaveCount(1);
       await expect(selectedProject).toBeVisible();
       await expect(page.getByRole('button', { name: 'Edit proyek', exact: true })).toBeEnabled();
 

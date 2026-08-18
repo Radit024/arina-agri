@@ -31,10 +31,10 @@ Sumber: `E:/CATATAN KEUANGAN PADI 1 Ha ADE.xlsx`.
 | FIN-04 | P1 | Toolbar proyek | Blok mode, pemilih proyek, dan empat aksi mengambil sekitar setengah viewport sebelum konten utama. Pengguna harus melewati area ini setiap membuka tab. | Ringkas toolbar setelah proyek aktif: jadikan pemilih proyek satu baris, letakkan Import/Export dalam menu overflow, dan pertahankan CTA utama sesuai tab. |
 | FIN-05 | P1 | Validasi impor | Selisih Sewa lahan Rp14 juta baru menjadi warning setelah data telah diimpor. Tidak ada layar pratinjau, keputusan nilai, atau tautan langsung ke item bermasalah. | Tambahkan preflight/review sebelum commit: tampilkan baris, nilai file, nilai hasil hitung, pilihan nilai yang dipakai, dan blokir/konfirmasi untuk selisih material. |
 | FIN-06 | P1 | Buku Besar | Dengan 38 transaksi, kartu penuh membuat satu halaman sangat panjang dan hanya enam transaksi per halaman; aksi link/edit/hapus berulang pada setiap kartu. | Tambahkan mode ringkas, baris expandable, filter kategori dan status link RAB. Simpan aksi jarang pada menu overflow agar pemindaian lebih cepat. |
-| FIN-07 | P1 | Pembiayaan dan Perbandingan | Arus Kas Pasca Pembiayaan menampilkan CTA `Atur Asumsi Pembiayaan` berulang dan nilai Bunga/Kas Akhir tanpa konteks. Perbandingan hanya memberi pesan kosong walaupun impor baru selesai. | Satukan CTA pembiayaan menjadi satu empty state terarah; pada Perbandingan tawarkan tindakan langsung untuk mengisi skenario yang belum ada atau mengalokasikan data impor. |
+| FIN-07 | Sebagian selesai | Pembiayaan dan Perbandingan | Arus Kas Pasca Pembiayaan kini memiliki satu CTA dan kartu pembiayaan responsif. Perbandingan masih hanya memberi pesan kosong walaupun impor baru selesai. | Pertahankan satu CTA dan kartu responsif pada Pembiayaan; tambahkan bantuan tindakan langsung pada Perbandingan untuk mengisi skenario yang belum ada atau mengalokasikan data impor. |
 | FIN-08 | P2 | Tab laporan | Enam tab laporan harus digeser horizontal. Tab aktif dapat berada di luar viewport dan pengguna tidak mendapat petunjuk bahwa masih ada tab lain. | Pertahankan scroll, tambahkan fade/gradien atau label `Geser untuk laporan lainnya`; pertimbangkan menu `Laporan` untuk tab lanjutan di layar kecil. |
 | FIN-09 | P2 | Target sentuh | Tombol Buat/Import/Export setinggi 37 px, edit/hapus proyek 40 px, dan CTA asumsi serta expand baris Arus Kas sekitar 31–34 px. | Standarkan aksi primer, ikon, ekspander, dan CTA menjadi minimal 44 × 44 px; gunakan `PageActionButton` secara konsisten. |
-| FIN-10 | P2 | Aksesibilitas Arus Kas | Tombol expand per bulan tidak memiliki label yang terbaca oleh audit dan hanya 34 px. | Tambahkan `aria-label` seperti `Buka rincian Agustus 2026`, target 44 px, serta status expanded yang jelas. |
+| FIN-10 | Selesai | Aksesibilitas Arus Kas | Ekspander kartu Arus Kas reguler kini bernama `Detail transaksi <bulan>`, memiliki target sentuh minimum 44 px, dan mengekspos status expanded. | Tidak ada pekerjaan aktif untuk ekspander Arus Kas reguler; pantau regresi label, target sentuh, dan state expanded. |
 | FIN-11 | P2 | Laba/Rugi | Blok Kelayakan Usaha memperlihatkan HPP, BEP, B/C Ratio, dan Status sebagai `-` tanpa menjelaskan data/asumsi yang diperlukan. | Gunakan empty state yang menjelaskan input yang kurang dan satu CTA `Atur asumsi produksi & penjualan`; jangan tampilkan metrik kosong sebagai hasil. |
 | FIN-12 | P2 | Hasil impor | Setelah warning, dialog hanya menawarkan Tutup. Tidak ada jumlah item RAB/transaksi, baris yang dilewati, atau jalur langsung ke hasil. | Tampilkan ringkasan terstruktur: item dibuat, transaksi dibuat, baris dilewati, warning, dan tombol `Tinjau RAB`/`Tinjau Transaksi`. |
 
@@ -51,9 +51,9 @@ Sumber: `E:/CATATAN KEUANGAN PADI 1 Ha ADE.xlsx`.
 | `/dashboard/keuangan` — Buku Besar | Terisi 38 transaksi; kartu mudah dibaca tetapi terlalu panjang untuk volume tinggi. | FIN-01, FIN-02, FIN-04, FIN-06, FIN-09 |
 | `/dashboard/keuangan` — RAB | Item berhasil ditampilkan saat sesi aktif. Desktop mempertahankan tabel, sementara mobile menampilkan kartu RAB lengkap. | FIN-01, FIN-02, FIN-05 |
 | `/dashboard/keuangan` — Laba Rugi | Angka hasil impor dan kelompok biaya jelas; metrik kelayakan belum memiliki empty state yang memandu. | FIN-04, FIN-11 |
-| `/dashboard/keuangan` — Arus Kas | Periode dan total jelas; detail bulan memakai ekspander kecil tanpa label. | FIN-09, FIN-10 |
-| `/dashboard/keuangan` — Pasca Pembiayaan | Empty state perlu diringkas dan CTA ganda dihapus. | FIN-07, FIN-09 |
-| `/dashboard/keuangan` — Perbandingan | Tidak membantu pengguna menyelesaikan Proyeksi yang kosong setelah impor. | FIN-02, FIN-07 |
+| `/dashboard/keuangan` — Arus Kas | Periode dan total jelas; kartu mobile memiliki ekspander detail berlabel dengan target 44 px. | FIN-09 |
+| `/dashboard/keuangan` — Pasca Pembiayaan | Satu CTA dan kartu pembiayaan responsif sudah diterapkan; bantuan data-skenario pada Perbandingan masih tertunda. | FIN-07 (sebagian), FIN-09 |
+| `/dashboard/keuangan` — Perbandingan | Bantuan untuk mengisi Proyeksi yang kosong setelah impor masih belum tersedia. | FIN-02, FIN-07 (sisa) |
 | `/dashboard/ensiklopedia` | Toolbar aksi Chat terpotong pada 375 px dan aksi bersihkan chat hilang pada 320 px. | GEN-03 |
 | `/dashboard/kalender` | Sel tanggal dan tombol event hanya 26–28 px; seluruh area sel dapat diklik tetapi tidak semantik keyboard. | GEN-04 |
 | `/dashboard/stok` | Kartu stok terbaca baik. Tab riwayat/mutasi perlu affordance geser pada layar sempit. | GEN-07 |
@@ -86,10 +86,10 @@ Audit ini mencakup inventaris statis seluruh komponen `.tsx` di `app/` dan `comp
 - `ContentState` dan `MetricCard` tersedia sebagai primitive presentasional untuk state konten dan ringkasan metrik.
 - `MasterDataDialog` dipindahkan ke `components/shared/forms` agar Keuangan dan Stok memakai kontrak dialog master data yang sama.
 - `TransactionFormFields` menyatukan field presentasional entry/edit transaksi Keuangan tanpa menyatukan skema atau logika controller.
-- `ResponsiveDataView` digunakan pada RAB: tabel desktop tetap tersedia, sedangkan 320–390 px menampilkan kartu RAB yang memuat informasi dan aksi item secara lengkap.
+- `ResponsiveDataView` digunakan pada RAB dan tiga laporan arus kas: `FinanceCashFlowView` (reguler), `FinanceFinancingView` (pasca pembiayaan), serta `FinanceComparisonView` (perbandingan). Tabel desktop tetap tersedia, sedangkan 320–390 px memakai kartu atau accordion sesuai domain.
 - Halaman Stok menjadi pilot `MetricCard` untuk empat ringkasan teratas. Kartu batch, mutasi, dan form tetap khusus domain Stok.
 
-Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 dan FIN-02 (persistensi impor dan isolasi skenario), serta FIN-04 sampai FIN-12 dan backlog halaman lain, tetap ditunda dan harus ditangani sebagai pekerjaan terpisah. Implementasi RAB di atas hanya menutup aspek responsivitas FIN-03; tidak menandai fitur Keuangan lain sebagai selesai.
+Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 dan FIN-02 (persistensi impor dan isolasi skenario), FIN-04 sampai FIN-09, FIN-11, FIN-12, serta backlog halaman lain tetap ditunda dan harus ditangani sebagai pekerjaan terpisah. RAB menutup responsivitas FIN-03, ekspander Arus Kas reguler menutup FIN-10, dan FIN-07 hanya sebagian selesai pada permukaan Pembiayaan; bantuan data-skenario Perbandingan tetap tertunda.
 
 ### Fondasi yang sudah dapat dipakai
 
@@ -108,7 +108,7 @@ Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 d
 |---|---|---|---|---|
 | CMP-01 | P0 | Ada 18 file yang merakit `<Dialog>` sendiri, sementara `components/ui/Modal.tsx` belum memiliki konsumen. Header, tombol tutup, padding, radius, dan aksi footer berulang dengan variasi kecil. | Evolusikan `Modal` menjadi `AppDialog`: header dengan title/subtitle/close berlabel, body scroll, footer sticky, dan default fullscreen/bottom-sheet pada mobile. | Semua dialog Keuangan dan Stok, Pengaturan, Kalender, Ensiklopedia, serta Feedback. |
 | CMP-02 | P0 | `TransactionEntryForm` dan `TransactionEditForm` menduplikasi jenis, tanggal, kategori, satuan, volume, harga, nominal, catatan, serta pengelolaan master data. | Buat `TransactionFormFields` murni presentasional; pembungkus entry/edit hanya menentukan mode, footer, dan callback. | Buku Besar Keuangan; bila kebutuhan stok penjualan matang, field uang/tanggal dapat memakai primitive field yang sama tanpa menyatukan skema bisnis. |
-| CMP-03 | P1 | Masih ada 11 file dengan tabel manual. RAB kini menjadi adopsi pertama `ResponsiveDataView`, tetapi tabel domain lain belum konsisten pada mobile. | Perluas `ResponsiveDataView<T>` dengan `columns` untuk desktop, `renderMobileItem` untuk kartu/accordion, state async, dan indikator scroll bila tabel wajib dipertahankan. | Buku Besar, laporan Keuangan, batch/mutasi Stok, riwayat Cuaca, tabel transaksi Dashboard, dan dialog klasifikasi. |
+| CMP-03 | P1 | Masih ada 11 file dengan tabel manual. `ResponsiveDataView` sudah dipakai RAB serta tiga laporan arus kas: reguler, pasca pembiayaan, dan perbandingan; tabel domain lain belum konsisten pada mobile. | Perluas `ResponsiveDataView<T>` dengan `columns` untuk desktop, `renderMobileItem` untuk kartu/accordion, state async, dan indikator scroll bila tabel wajib dipertahankan. | Buku Besar, laporan Keuangan lain, batch/mutasi Stok, riwayat Cuaca, tabel transaksi Dashboard, dan dialog klasifikasi. |
 | CMP-04 | P1 | `EmptyState` baru dipakai Keuangan; Skeleton/error/empty masih dirakit berbeda di Dashboard, Cuaca, Kabar Pasar, Stok, dan laporan. | Tambahkan `ContentState`/`AsyncSection` yang memisahkan `loading`, `empty`, `error`, dan `retry`, dibangun di atas `EmptyState`. | Semua data API dan laporan, terutama Dashboard, Cuaca, Kabar Pasar, Keuangan, serta Stok. |
 | CMP-05 | P1 | Ada dua `PageHeader`: versi `components/ui` dipakai Dashboard Home, versi `components/shared/page` dipakai fitur dashboard; Ensiklopedia membuat header aksi sendiri. | Tetapkan satu `PageHeader` dashboard dengan slot title, meta, actions, dan mobile action-overflow. Hapus penggunaan versi legacy setelah migrasi. | Dashboard Home, Ensiklopedia, Keuangan, Stok, Cuaca, Kalender, Kabar Pasar, Pengaturan. |
 | CMP-06 | P1 | Ada 19 file dengan `TextField` langsung. `FormInput` hanya dipakai pada autentikasi dan terikat React Hook Form, sedangkan form fitur memakai pola label, format Rupiah, error, select/autocomplete, serta tombol kelola master data berulang. | Tambahkan primitive presentasional `AppField` (text, number, currency, date, select, autocomplete) dan `FieldWithManageAction`; adapter React Hook Form tetap tipis dan terpisah. | Dialog proyek/RAB/asumsi/transaksi, Stok, Kalender, Cuaca, Pengaturan, dan form autentikasi. |
@@ -141,7 +141,7 @@ Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 d
 ### Urutan refactor reusable
 
 1. Bangun dan uji `AppDialog`, `TransactionFormFields`, serta ekstraksi `MasterDataDialog` (CMP-01, CMP-02, CMP-08). Ini mengurangi duplikasi paling besar tanpa mengubah alur data.
-2. Perluas `ResponsiveDataView` dari RAB yang telah selesai ke Buku Besar bersama FIN-06, lalu ke Stok dan laporan tabel (CMP-03).
+2. Pertahankan cakupan `ResponsiveDataView` pada RAB serta Arus Kas reguler, pasca pembiayaan, dan perbandingan; perluas berikutnya ke Buku Besar bersama FIN-06, lalu ke Stok dan laporan tabel lain (CMP-03).
 3. Satukan `PageHeader`, `MetricCard`, `ContentState`, serta `StatusBadge` untuk menutup ketidaksamaan antar halaman (CMP-04, CMP-05, CMP-07, CMP-09).
 4. Migrasikan `AppField` dan `MobileTabBar` secara bertahap setelah kontrak controller stabil (CMP-06, CMP-10).
 
@@ -150,8 +150,8 @@ Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 d
 1. Selesaikan FIN-01 dan FIN-02, lalu tambahkan pengujian import → refresh → pindah skenario → perbandingan.
 2. Ringkas toolbar proyek dan kartu Buku Besar (FIN-04, FIN-06), lalu perluas pola kartu mobile RAB yang sudah selesai ke tabel prioritas lain.
 3. Tambahkan preflight rekonsiliasi Excel (FIN-05) dan hasil impor yang dapat ditindaklanjuti (FIN-12).
-4. Sederhanakan Pembiayaan/Perbandingan dan lengkapi empty state metrik (FIN-07, FIN-11).
-5. Terapkan standar target sentuh 44 px serta perbaikan navigasi/panduan lintas halaman (FIN-09, FIN-10, GEN-01 sampai GEN-08).
+4. Tambahkan bantuan data-skenario pada Perbandingan yang tersisa dari FIN-07, lalu lengkapi empty state metrik Laba/Rugi (FIN-11). Pembiayaan sudah memiliki satu CTA dan kartu responsif.
+5. Terapkan standar target sentuh 44 px yang masih terbuka serta perbaikan navigasi/panduan lintas halaman (FIN-09, GEN-01 sampai GEN-08); ekspander Arus Kas reguler FIN-10 sudah selesai.
 
 ## Kriteria penerimaan regresi
 

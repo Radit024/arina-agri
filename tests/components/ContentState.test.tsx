@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import Button from '@mui/material/Button';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import ContentState from '@/components/ui/ContentState';
 
 describe('ContentState', () => {
@@ -29,6 +30,23 @@ describe('ContentState', () => {
 
     expect(screen.getByText('Belum ada catatan panen.')).toBeInTheDocument();
     expect(screen.queryByText('Konten siap')).not.toBeInTheDocument();
+  });
+
+  it('renders the empty state action', () => {
+    const onAdd = vi.fn();
+
+    render(
+      <ContentState
+        emptyAction={<Button onClick={onAdd}>Catat Transaksi</Button>}
+        emptyMessage="Catat transaksi pertama untuk melihat arus kas."
+        emptyTitle="Belum ada arus kas"
+        state="empty"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Catat Transaksi' }));
+
+    expect(onAdd).toHaveBeenCalledTimes(1);
   });
 
   it('renders the error state and optional retry control', () => {

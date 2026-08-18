@@ -14,6 +14,7 @@ export interface ContentStateProps {
   emptyTitle?: string;
   emptyMessage?: string;
   emptyIcon?: React.ReactNode;
+  emptyAction?: React.ReactNode;
   errorTitle?: string;
   errorMessage?: string;
   errorIcon?: React.ReactNode;
@@ -27,6 +28,7 @@ export default function ContentState({
   emptyTitle = 'Belum ada data',
   emptyMessage = 'Tidak ada data untuk ditampilkan.',
   emptyIcon,
+  emptyAction,
   errorTitle = 'Terjadi kesalahan',
   errorMessage = 'Data tidak dapat dimuat. Silakan coba lagi.',
   errorIcon,
@@ -54,6 +56,7 @@ export default function ContentState({
   if (state === 'empty') {
     return (
       <EmptyState
+        action={emptyAction}
         aria-live="polite"
         icon={emptyIcon}
         message={emptyMessage}

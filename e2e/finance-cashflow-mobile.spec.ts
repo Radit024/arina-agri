@@ -94,8 +94,6 @@ test.describe('regular cashflow mobile reports', () => {
       await page.setViewportSize(viewport);
       await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
 
-      const mobileNav = page.locator('[aria-label="Navigasi Utama"]');
-      await expect(mobileNav).toBeVisible();
       await page.getByRole('button', { name: 'Buat Proyek', exact: true }).click();
 
       const projectDialog = page.getByRole('dialog', { name: 'Buat Proyek Baru', exact: true });

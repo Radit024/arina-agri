@@ -18,29 +18,31 @@ test.describe('regular cashflow mobile reports', () => {
         // Supabase browser lock. Let the storage-backed project hook hydrate
         // before that auth transition makes it load its local guest data.
         // This preserves the app's real local-auth path without any API calls.
-        const originalLockRequest = navigator.locks?.request.bind(navigator.locks) as unknown as (
-          name: string,
-          options: LockOptions,
-          callback: (lock: Lock | null) => Promise<unknown>,
-        ) => Promise<unknown>;
-        let authLockRequests = 0;
+        type LockRequest = {
+          <T>(name: string, callback: LockGrantedCallback<T>): Promise<T>;
+          <T>(name: string, options: LockOptions, callback: LockGrantedCallback<T>): Promise<T>;
+        };
+        const originalLockRequest = navigator.locks?.request.bind(navigator.locks) as LockRequest | undefined;
+        let hasDelayedAuthStorageLock = false;
         if (originalLockRequest) {
-          (navigator.locks as unknown as {
-            request: (
-              name: string,
-              options: LockOptions,
-              callback: (lock: Lock | null) => Promise<unknown>,
-            ) => Promise<unknown>;
-          }).request = (name, options, callback) => originalLockRequest(
-            name,
-            options,
-            async (lock) => {
-              if (name.startsWith('lock:') && authLockRequests++ === 0) {
-                await new Promise<void>((resolve) => window.setTimeout(resolve, 100));
-              }
-              return callback(lock);
-            },
-          );
+          const requestWithAuthHydrationBarrier = (<T>(
+            name: string,
+            optionsOrCallback: LockOptions | LockGrantedCallback<T>,
+            callback?: LockGrantedCallback<T>,
+          ) => {
+            const delegate = () => callback
+              ? originalLockRequest(name, optionsOrCallback as LockOptions, callback)
+              : originalLockRequest(name, optionsOrCallback as LockGrantedCallback<T>);
+            const isSupabaseAuthStorageLock = typeof name === 'string' && name.includes('auth-token');
+
+            if (isSupabaseAuthStorageLock && !hasDelayedAuthStorageLock) {
+              hasDelayedAuthStorageLock = true;
+              return new Promise<void>((resolve) => window.setTimeout(resolve, 100)).then(delegate);
+            }
+
+            return delegate();
+          }) as LockRequest;
+          (navigator.locks as unknown as { request: LockRequest }).request = requestWithAuthHydrationBarrier;
         }
 
         const scenarioId = `guest-proj-${projectId}`;

@@ -89,7 +89,7 @@ Audit ini mencakup inventaris statis seluruh komponen `.tsx` di `app/` dan `comp
 - `ResponsiveDataView` digunakan pada RAB dan tiga laporan arus kas: `FinanceCashFlowView` (reguler), `FinanceFinancingView` (pasca pembiayaan), serta `FinanceComparisonView` (perbandingan). Tabel desktop tetap tersedia, sedangkan 320–390 px memakai kartu atau accordion sesuai domain.
 - Halaman Stok menjadi pilot `MetricCard` untuk empat ringkasan teratas. Kartu batch, mutasi, dan form tetap khusus domain Stok.
 
-Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 dan FIN-02 (persistensi impor dan isolasi skenario), FIN-04 sampai FIN-09, FIN-11, FIN-12, serta backlog halaman lain tetap ditunda dan harus ditangani sebagai pekerjaan terpisah. RAB menutup responsivitas FIN-03, ekspander Arus Kas reguler menutup FIN-10, dan FIN-07 hanya sebagian selesai pada permukaan Pembiayaan; bantuan data-skenario Perbandingan tetap tertunda.
+Catatan batas: fondasi ini **belum** menyelesaikan backlog proses/data. FIN-01 dan FIN-02 (persistensi impor dan isolasi skenario), FIN-04–FIN-06, FIN-08–FIN-09, FIN-11–FIN-12, serta backlog halaman lain tetap ditunda dan harus ditangani sebagai pekerjaan terpisah. RAB menutup responsivitas FIN-03, ekspander Arus Kas reguler menutup FIN-10, dan FIN-07 hanya sebagian selesai pada permukaan Pembiayaan (satu CTA dan kartu responsif); bantuan data-skenario Perbandingan tetap tertunda.
 
 ### Fondasi yang sudah dapat dipakai
 

@@ -92,7 +92,7 @@ test.describe('regular cashflow mobile reports', () => {
         localStorage.setItem('arina-guide:v1:finance', 'true');
       }, localDemoUserId);
       await page.setViewportSize(viewport);
-      await page.goto('/dashboard/keuangan', { waitUntil: 'domcontentloaded' });
+      await page.goto('/dashboard/keuangan', { waitUntil: 'networkidle' });
 
       await page.getByRole('button', { name: 'Buat Proyek', exact: true }).click();
 

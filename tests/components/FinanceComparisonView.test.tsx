@@ -1,26 +1,12 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { FinanceComparisonView } from '@/app/dashboard/keuangan/_components/FinanceComparisonView';
-import type { UseComparisonControllerResult } from '@/controllers/keuangan/useComparisonController';
-import type { ScenarioOutput } from '@/lib/finance/rabTypes';
+import {
+  FinanceComparisonView,
+  type FinanceComparisonViewProps,
+} from '@/app/dashboard/keuangan/_components/FinanceComparisonView';
 
-const emptyOutput: ScenarioOutput = {
-  totalPendapatan: 0,
-  totalBiayaProduksi: 0,
-  labaRugi: 0,
-  hpp: null,
-  bepProduksi: null,
-  bcRatio: null,
-  kategoriTotals: {},
-  arusKasBulanan: [],
-  kebutuhanModalKerja: 0,
-  bunga: 0,
-  kasAkhirPascaPembiayaan: 0,
-};
-
-const baseProps: UseComparisonControllerResult = {
+const baseProps: FinanceComparisonViewProps = {
   comparison: {
     metrics: [
       {
@@ -70,8 +56,6 @@ const baseProps: UseComparisonControllerResult = {
   hasEnoughData: true,
   projectionHasData: true,
   realizationHasData: true,
-  projectionOutput: emptyOutput,
-  realizationOutput: emptyOutput,
 };
 
 describe('FinanceComparisonView', () => {
@@ -103,17 +87,35 @@ describe('FinanceComparisonView', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders comparison metrics table, unmatched badge, and handles null selisihPercent', () => {
+  it('renders comparison metrics, cash-flow cards, and the labelled desktop cash-flow table', () => {
     render(<FinanceComparisonView {...baseProps} />);
     expect(screen.getByText('Metrik Finansial Utama')).toBeInTheDocument();
     expect(screen.getByText('Total Pendapatan')).toBeInTheDocument();
     expect(screen.getByText('HPP')).toBeInTheDocument();
-
-    // Check unmatched badge for 'expense:Pupuk' -> cleaned label 'Pupuk'
     expect(screen.getByText('Pupuk')).toBeInTheDocument();
     expect(screen.getByText('Hanya di Realisasi')).toBeInTheDocument();
-
-    // Check null selisihPercent rendered as '—'
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1);
+
+    expect(screen.getByRole('article', { name: 'Perbandingan arus kas Juni 2026' })).toBeInTheDocument();
+    const cashFlowTable = screen.getByRole('table', { name: 'Tabel perbandingan arus kas bulanan' });
+    expect(cashFlowTable).toHaveTextContent('Bulan');
+    expect(cashFlowTable).toHaveTextContent('Proyeksi (Kas Bersih)');
+    expect(cashFlowTable).toHaveTextContent('Realisasi (Kas Bersih)');
+    expect(cashFlowTable).toHaveTextContent('Selisih (%)');
+    expect(cashFlowTable).toHaveTextContent('2026-06');
+  });
+
+  it('shows the cash-flow empty state without stale mobile or desktop data', () => {
+    render(
+      <FinanceComparisonView
+        {...baseProps}
+        comparison={{ ...baseProps.comparison!, arusKasBulanan: [] }}
+      />,
+    );
+
+    expect(screen.getByText('Belum ada arus kas bulanan')).toBeInTheDocument();
+    expect(screen.getByText('Belum ada data arus kas bulanan yang dapat dibandingkan.')).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: 'Perbandingan arus kas Juni 2026' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Tabel perbandingan arus kas bulanan' })).not.toBeInTheDocument();
   });
 });

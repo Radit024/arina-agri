@@ -19,10 +19,20 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import type { UseComparisonControllerResult } from '@/controllers/keuangan/useComparisonController';
+import ResponsiveDataView from '@/components/ui/ResponsiveDataView';
 import { formatRupiah } from '@/lib/formatters';
+import type { ScenarioComparison } from '@/lib/finance/rabTypes';
 
-type Props = UseComparisonControllerResult;
+import FinanceComparisonCashFlowMobileCard from './FinanceComparisonCashFlowMobileCard';
+
+export interface FinanceComparisonViewProps {
+  comparison: ScenarioComparison | null;
+  loading: boolean;
+  error: string | null;
+  hasEnoughData: boolean;
+  projectionHasData: boolean;
+  realizationHasData: boolean;
+}
 
 function formatMetricValue(label: string, val: number): string {
   if (label === 'HPP') {
@@ -75,7 +85,7 @@ export function FinanceComparisonView({
   hasEnoughData,
   projectionHasData,
   realizationHasData,
-}: Props) {
+}: FinanceComparisonViewProps) {
   if (loading) {
     return (
       <Stack spacing={3} sx={{ py: 2 }}>
@@ -404,64 +414,66 @@ export function FinanceComparisonView({
             Perbandingan surplus/defisit kas tiap bulan antara Proyeksi dan Realisasi.
           </Typography>
         </Box>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'background.default' }}>
-                <TableCell sx={{ fontWeight: 700 }}>Bulan</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>
-                  Proyeksi (Kas Bersih)
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>
-                  Realisasi (Kas Bersih)
-                </TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>
-                  Selisih
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700 }}>
-                  Selisih (%)
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {arusKasBulanan.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                    Belum ada data arus kas bulanan yang dapat dibandingkan.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                arusKasBulanan.map((row) => (
-                  <TableRow key={row.bulan} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
-                    <TableCell sx={{ fontWeight: 600 }}>{row.bulan}</TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'monospace' }}>
-                      {formatRupiah(row.proyeksi)}
+        <ResponsiveDataView
+          data={arusKasBulanan}
+          desktop={(
+            <TableContainer>
+              <Table aria-label="Tabel perbandingan arus kas bulanan">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'background.default' }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Bulan</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      Proyeksi (Kas Bersih)
                     </TableCell>
-                    <TableCell align="right" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                      {formatRupiah(row.realisasi)}
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      Realisasi (Kas Bersih)
                     </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        color:
-                          row.selisih > 0
-                            ? 'success.main'
-                            : row.selisih < 0
-                              ? 'error.main'
-                              : 'text.primary',
-                      }}
-                    >
-                      {row.selisih > 0 ? `+${formatRupiah(row.selisih)}` : formatRupiah(row.selisih)}
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>
+                      Selisih
                     </TableCell>
-                    <TableCell align="center">{formatSelisihPercent(row.selisihPercent)}</TableCell>
+                    <TableCell align="center" sx={{ fontWeight: 700 }}>
+                      Selisih (%)
+                    </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {arusKasBulanan.map((row) => (
+                    <TableRow key={row.bulan} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                      <TableCell sx={{ fontWeight: 600 }}>{row.bulan}</TableCell>
+                      <TableCell align="right" sx={{ fontFamily: 'monospace' }}>
+                        {formatRupiah(row.proyeksi)}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                        {formatRupiah(row.realisasi)}
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{
+                          fontFamily: 'monospace',
+                          fontWeight: 700,
+                          color:
+                            row.selisih > 0
+                              ? 'success.main'
+                              : row.selisih < 0
+                                ? 'error.main'
+                                : 'text.primary',
+                        }}
+                      >
+                        {row.selisih > 0 ? `+${formatRupiah(row.selisih)}` : formatRupiah(row.selisih)}
+                      </TableCell>
+                      <TableCell align="center">{formatSelisihPercent(row.selisihPercent)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+          emptyMessage="Belum ada data arus kas bulanan yang dapat dibandingkan."
+          emptyTitle="Belum ada arus kas bulanan"
+          getItemKey={(row) => row.bulan}
+          renderMobileItem={(row) => <FinanceComparisonCashFlowMobileCard row={row} />}
+          state={arusKasBulanan.length === 0 ? 'empty' : 'ready'}
+        />
       </Card>
     </Stack>
   );

@@ -1289,7 +1289,14 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <FinanceComparisonView {...financeComparison} />
+          <FinanceComparisonView
+            comparison={financeComparison.comparison}
+            error={financeComparison.error}
+            hasEnoughData={financeComparison.hasEnoughData}
+            loading={financeComparison.loading}
+            projectionHasData={financeComparison.projectionHasData}
+            realizationHasData={financeComparison.realizationHasData}
+          />
         </Box>
       )}
 

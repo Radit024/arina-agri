@@ -17,7 +17,6 @@ import { alpha } from '@mui/material/styles';
 import type { NewsArticle } from '@/lib/types/news';
 import { elevatedShadow, softBg, softText } from '@/lib/themeColors';
 
-// ─── Helpers ──────────────────────────────────────────────────────
 type KabarPasarTranslator = ReturnType<typeof useTranslations>;
 
 function formatRelativeDate(dateStr: string, t: KabarPasarTranslator, locale: string): string {
@@ -38,7 +37,6 @@ function formatRelativeDate(dateStr: string, t: KabarPasarTranslator, locale: st
   }).format(date);
 }
 
-// ─── Image Fallback ───────────────────────────────────────────────
 function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
   return (
     <Box
@@ -60,7 +58,6 @@ function NewsImageFallback({ size }: { size: 'widget' | 'full' }) {
   );
 }
 
-// ─── Widget Card (horizontal, compact) ───────────────────────────
 function WidgetCard({ article }: { article: NewsArticle }) {
   const t = useTranslations('KabarPasar');
   const locale = useLocale();
@@ -176,7 +173,6 @@ function WidgetCard({ article }: { article: NewsArticle }) {
   );
 }
 
-// ─── Full Card (vertical, rich) ───────────────────────────────────
 function FullCard({ article }: { article: NewsArticle }) {
   const t = useTranslations('KabarPasar');
   const locale = useLocale();
@@ -326,7 +322,6 @@ function FullCard({ article }: { article: NewsArticle }) {
   );
 }
 
-// ─── Skeleton Loaders ─────────────────────────────────────────────
 export function NewsCardSkeleton({ variant }: { variant: 'widget' | 'full' }) {
   if (variant === 'widget') {
     return (
@@ -366,7 +361,6 @@ export function NewsCardSkeleton({ variant }: { variant: 'widget' | 'full' }) {
 
 import { memo } from 'react';
 
-// ─── Main Export ──────────────────────────────────────────────────
 interface NewsCardProps {
   article: NewsArticle;
   variant?: 'widget' | 'full';

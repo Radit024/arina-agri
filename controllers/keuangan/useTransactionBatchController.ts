@@ -17,6 +17,7 @@ export type TransactionDraft = {
   nominal: string;
   tanggal: string;
   keterangan: string;
+  applyRabSuggestion: boolean;
 };
 
 export type DraftErrors = Record<string, string>;
@@ -35,6 +36,7 @@ function createEmptyDraft(): TransactionDraft {
     nominal: '',
     tanggal: new Date().toISOString().split('T')[0],
     keterangan: '',
+    applyRabSuggestion: true,
   };
 }
 
@@ -88,6 +90,7 @@ function draftFromTransaction(tx: ApiTransaction): TransactionDraft {
     nominal,
     tanggal: tx.tanggal,
     keterangan: tx.keterangan ?? '',
+    applyRabSuggestion: false, // Editing an existing transaction doesn't auto-link unless user wants
   };
 }
 
@@ -165,6 +168,10 @@ export function useTransactionBatchController(
 
         if (field === 'hargaSatuan') {
           updated.hargaSatuan = formatNumber(value);
+        }
+
+        if (field === 'applyRabSuggestion') {
+          updated.applyRabSuggestion = value === 'true';
         }
 
         return updated;
@@ -255,7 +262,7 @@ export function useTransactionBatchController(
     getProjectId: () => string | undefined,
     options: { applyRabSuggestion?: boolean } = {}
   ): Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> => {
-    const applyRabSuggestion = options.applyRabSuggestion ?? true;
+    const applyRabSuggestion = options.applyRabSuggestion !== undefined ? options.applyRabSuggestion : draft.applyRabSuggestion;
     const rabLink = applyRabSuggestion ? getRabLinkForDraft(draft) : null;
 
     const payload: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> = {
@@ -286,7 +293,8 @@ export function useTransactionBatchController(
     for (let i = 0; i < drafts.length; i++) {
       const draft = drafts[i];
       const isEditDraft = i === 0 && editingTransactionId !== null;
-      const payload = buildTransactionPayload(draft, getProjectId, { applyRabSuggestion: !isEditDraft });
+      // If it's an edit, we typically don't apply RAB suggestion automatically unless draft.applyRabSuggestion is true
+      const payload = buildTransactionPayload(draft, getProjectId, { applyRabSuggestion: isEditDraft ? draft.applyRabSuggestion : undefined });
 
       try {
         if (isEditDraft && editingTransactionId) {

@@ -13,6 +13,13 @@ function makeRab(overrides: Partial<Parameters<typeof RabImportDialog>[0]['rab']
     importWarnings: [],
     setImportWarnings: vi.fn(),
     importRabFile: vi.fn(),
+    preflightData: null,
+    setPreflightData: vi.fn(),
+    preflightFile: null,
+    importSummary: null,
+    setImportSummary: vi.fn(),
+    confirmPreflightAndImport: vi.fn(),
+    resetImportState: vi.fn(),
     ...overrides,
   } as Parameters<typeof RabImportDialog>[0]['rab'];
 }
@@ -34,7 +41,7 @@ describe('RabImportDialog', () => {
     fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
     expect(screen.getByText('rab-drag.xlsx')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Import/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Lanjutkan Impor/ })).toBeEnabled();
     expect(rab.setImportError).toHaveBeenCalledWith(null);
   });
 
@@ -64,7 +71,7 @@ describe('RabImportDialog', () => {
     expect(screen.queryByText('notes.pdf')).not.toBeInTheDocument();
   });
 
-  it('calls importRabFile with the dropped file when Import is clicked', async () => {
+  it('calls importRabFile with the dropped file when Lanjutkan Impor is clicked', async () => {
     const rab = makeRab();
     render(<RabImportDialog rab={rab} scenarios={[]} activeScenarioId="default" />);
 
@@ -72,7 +79,7 @@ describe('RabImportDialog', () => {
     const file = makeXlsxFile('rab-drag.xlsx');
     fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
-    fireEvent.click(screen.getByRole('button', { name: /Import/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Lanjutkan Impor/ }));
 
     expect(rab.importRabFile).toHaveBeenCalledWith(file, 'default');
   });
@@ -81,8 +88,8 @@ describe('RabImportDialog', () => {
     const rab = makeRab({ importLoading: true });
     render(<RabImportDialog rab={rab} scenarios={[]} activeScenarioId="default" />);
 
-    expect(screen.getByText('Menyimpan item RAB dan transaksi, mohon tunggu.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Mengimpor/ })).toBeDisabled();
+    expect(screen.getAllByText(/Membaca/).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /Membaca File/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Batal' })).toBeDisabled();
 
     const dropZone = screen.getByText(/Klik atau seret file/).closest('div')!;
@@ -92,26 +99,74 @@ describe('RabImportDialog', () => {
     expect(screen.queryByText('should-be-ignored.xlsx')).not.toBeInTheDocument();
   });
 
-  it('shows a warning alert with each reported import warning', () => {
+  it('shows preflight review when preflightData is present and calls confirmPreflightAndImport on confirm', () => {
+    const confirmPreflightAndImport = vi.fn();
+    const sampleFile = makeXlsxFile('rab-sample.xlsx');
     const rab = makeRab({
-      importWarnings: [
-        'Kategori "SAPRODI": jumlah item (Rp425.000) tidak cocok dengan TOTAL di sheet (Rp412.500), selisih Rp12.500',
-        '2 baris dilewati: format tanggal tidak dikenali',
-      ],
+      preflightData: {
+        project: { id: 'p1', name: 'Proyek Padi', commodity: 'Padi', landArea: 1, landAreaUnit: 'Ha', seasonLabel: '2026', startDate: '2026-01-01', endDate: '2026-04-30', status: 'active' },
+        categories: [
+          { id: 'cat-saprodi', projectId: 'p1', name: 'SAPRODI', type: 'expense', sortOrder: 1 },
+        ],
+        items: [{ id: 'item-1', projectId: 'p1', categoryId: 'cat-saprodi', categoryName: 'SAPRODI', type: 'expense', name: 'Bibit', volume: 1, unit: 'kg', unitPrice: 500000, plannedTotal: 500000, sortOrder: 1, aliases: [] }],
+        transactions: [],
+        skippedRows: [],
+        reconciliation: [
+          { categoryId: 'cat-saprodi', categoryName: 'SAPRODI', declaredTotal: 500000, computedTotal: 500000, difference: 0 },
+        ],
+        warnings: [],
+      },
+      preflightFile: sampleFile,
+      confirmPreflightAndImport,
     });
+
     render(<RabImportDialog rab={rab} scenarios={[]} activeScenarioId="default" />);
 
-    expect(screen.getByText('Import berhasil, namun ada beberapa catatan yang bisa Anda cek:')).toBeInTheDocument();
-    expect(screen.getByText(/SAPRODI/)).toBeInTheDocument();
-    expect(screen.getByText(/2 baris dilewati/)).toBeInTheDocument();
+    expect(screen.getByText('Pemeriksaan Total per Kelompok Biaya')).toBeInTheDocument();
+    expect(screen.getByText('SAPRODI')).toBeInTheDocument();
+
+    const confirmBtn = screen.getByRole('button', { name: 'Konfirmasi & Simpan ke Sistem' });
+    expect(confirmBtn).toBeInTheDocument();
+    fireEvent.click(confirmBtn);
+
+    expect(confirmPreflightAndImport).toHaveBeenCalled();
   });
 
-  it('clears import warnings when the dialog is closed', () => {
-    const rab = makeRab({ importWarnings: ['1 baris dilewati: tidak ada nominal pengeluaran/pemasukan'] });
+  it('shows import summary results when importSummary is present', () => {
+    const rab = makeRab({
+      importSummary: {
+        projectName: 'Proyek Padi',
+        importedItemsCount: 5,
+        importedTransactionCount: 12,
+        skippedCount: 0,
+        warnings: ['Peringatan rekonsiliasi non-kritis'],
+        reconciliation: [],
+        skippedRows: [],
+      },
+    });
+
     render(<RabImportDialog rab={rab} scenarios={[]} activeScenarioId="default" />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tutup' }));
+    expect(screen.getByText('Hasil Impor Excel')).toBeInTheDocument();
+    expect(screen.getByText('Impor Berhasil Disimpan')).toBeInTheDocument();
+    expect(screen.getByText('Item RAB Dibuat')).toBeInTheDocument();
+    expect(screen.getByText('Transaksi Dicatat')).toBeInTheDocument();
 
-    expect(rab.setImportWarnings).toHaveBeenCalledWith([]);
+    const finishBtn = screen.getByRole('button', { name: 'Selesai' });
+    expect(finishBtn).toBeInTheDocument();
+    fireEvent.click(finishBtn);
+
+    expect(rab.resetImportState).toHaveBeenCalled();
+    expect(rab.setImportDialogOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('resets import state and closes when Batal is clicked', () => {
+    const rab = makeRab();
+    render(<RabImportDialog rab={rab} scenarios={[]} activeScenarioId="default" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
+
+    expect(rab.resetImportState).toHaveBeenCalled();
+    expect(rab.setImportDialogOpen).toHaveBeenCalledWith(false);
   });
 });

@@ -1,8 +1,5 @@
 import type { TouchEvent } from 'react';
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
 import InputLabel from '@mui/material/InputLabel';
@@ -13,7 +10,7 @@ import Select from '@mui/material/Select';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
-import { PageShell } from '@/components/shared/page';
+import { PageHeader, PageShell } from '@/components/shared/page';
 import { formatRupiah } from '@/lib/formatters';
 import type {
   DashboardCategoryPoint,
@@ -23,6 +20,7 @@ import type {
 } from '@/lib/dashboard/summary';
 import type { NewsArticle } from '@/lib/types/news';
 import DashboardSkeleton from './DashboardSkeleton';
+import Card from '@/components/ui/Card';
 
 type DashboardHomeTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -122,54 +120,34 @@ export default function DashboardHomeView({
             <DashboardSkeleton />
           ) : (
             <>
-              <Box
-                sx={{
-                  mb: 5,
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', md: 'flex-end' },
-                  gap: 2,
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: 'success.main', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', mb: 1 }}
-                  >
-                    {greeting}
-                  </Typography>
-                  <Typography
-                    component="h1"
-                    variant="h3"
-                    sx={{ fontFamily: 'var(--font-sora)', color: 'text.primary', fontWeight: 800, letterSpacing: 0, mb: 1 }}
-                  >
-                    {firstName}.
-                  </Typography>
-                </Box>
-                <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-                  <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                    {formattedToday}
-                  </Typography>
-                  <FormControl size="small" sx={{ mt: 1.5, minWidth: { xs: '100%', sm: 260 } }}>
-                    <InputLabel id="dashboard-finance-scope-label">{t('financeScope.label')}</InputLabel>
-                    <Select
-                      labelId="dashboard-finance-scope-label"
-                      label={t('financeScope.label')}
-                      value={financeScope.selectedProjectId ?? ''}
-                      onChange={(event) => financeScope.setSelectedProjectId(event.target.value || null)}
-                      sx={{ textAlign: 'left', borderRadius: 2 }}
-                    >
-                      <MenuItem value="">{t('financeScope.allProjects')}</MenuItem>
-                      {financeScope.projects.map((project) => (
-                        <MenuItem key={project.id} value={project.id}>
-                          {project.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
+              <PageHeader
+                subtitle={greeting}
+                title={`${firstName}.`}
+                actions={
+                  <>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                      {formattedToday}
+                    </Typography>
+                    <FormControl size="small" sx={{ mt: 1.5, minWidth: { xs: '100%', sm: 260 } }}>
+                      <InputLabel id="dashboard-finance-scope-label">{t('financeScope.label')}</InputLabel>
+                      <Select
+                        labelId="dashboard-finance-scope-label"
+                        label={t('financeScope.label')}
+                        value={financeScope.selectedProjectId ?? ''}
+                        onChange={(event) => financeScope.setSelectedProjectId(event.target.value || null)}
+                        sx={{ textAlign: 'left', borderRadius: 2 }}
+                      >
+                        <MenuItem value="">{t('financeScope.allProjects')}</MenuItem>
+                        {financeScope.projects.map((project) => (
+                          <MenuItem key={project.id} value={project.id}>
+                            {project.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </>
+                }
+              />
 
               <DashboardKPI
                 totalPengeluaran={kpi.totalPengeluaran}
@@ -228,24 +206,10 @@ function ProjectPerformancePanel({
 }) {
   return (
     <Card
-      sx={{
-        mb: 4,
-        borderRadius: 4,
-        border: '1px solid',
-        borderColor: 'divider',
-        boxShadow: 'none',
-      }}
+      title={t('financeScope.performance.title')}
+      subheader={t('financeScope.performance.subheader')}
+      sx={{ mb: 4 }}
     >
-      <CardHeader
-        title={
-          <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 700 }}>
-            {t('financeScope.performance.title')}
-          </Typography>
-        }
-        subheader={t('financeScope.performance.subheader')}
-        sx={{ pb: 0 }}
-      />
-      <CardContent>
         <Grid container spacing={2}>
           {rows.slice(0, 4).map((row, index) => (
             <Grid key={`${row.projectId ?? 'unassigned'}-${row.projectName}`} size={{ xs: 12, sm: 6, lg: 3 }}>
@@ -289,7 +253,6 @@ function ProjectPerformancePanel({
             </Grid>
           ))}
         </Grid>
-      </CardContent>
     </Card>
   );
 }

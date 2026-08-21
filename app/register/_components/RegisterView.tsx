@@ -1,12 +1,7 @@
-import { Controller, type Control, type FieldErrors, type SubmitHandler, type UseFormHandleSubmit } from 'react-hook-form';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -16,6 +11,10 @@ import PersonIcon from '@mui/icons-material/Person';
 import GoogleIcon from '@mui/icons-material/Google';
 import AuthShell from '@/components/auth/AuthShell';
 import type { RegisterForm } from '@/controllers/register/useRegisterController';
+import { Control, FieldErrors, SubmitHandler, UseFormHandleSubmit } from 'react-hook-form';
+
+import Button from '@/components/ui/Button';
+import FormInput from '@/components/ui/FormInput';
 
 type AuthTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -68,129 +67,71 @@ export default function RegisterView({
       )}
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-        <Controller
+        <FormInput
           name="fullName"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('fullName')}
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="name"
-              disabled={loading || googleLoading}
-              error={!!errors.fullName}
-              helperText={errors.fullName?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="action" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+          label={t('fullName')}
+          autoComplete="name"
+          disabled={loading || googleLoading}
+          error={errors.fullName?.message}
+          startIcon={<PersonIcon color="action" />}
         />
 
-        <Controller
+        <FormInput
           name="email"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('email')}
-              type="email"
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="email"
-              disabled={loading || googleLoading}
-              error={!!errors.email}
-              helperText={errors.email?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+          label={t('email')}
+          type="email"
+          autoComplete="email"
+          disabled={loading || googleLoading}
+          error={errors.email?.message}
+          startIcon={<EmailOutlinedIcon color="action" />}
         />
 
-        <Controller
+        <FormInput
           name="password"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('password')}
-              type={showPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="new-password"
+          label={t('password')}
+          type={showPassword ? 'text' : 'password'}
+          autoComplete="new-password"
+          disabled={loading || googleLoading}
+          error={errors.password?.message}
+          startIcon={<LockOutlinedIcon color="action" />}
+          endIcon={
+            <IconButton
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+              onClick={togglePassword}
+              edge="end"
+              size="small"
               disabled={loading || googleLoading}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={togglePassword} edge="end" size="small" disabled={loading || googleLoading}>
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
+              {showPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          }
         />
 
-        <Controller
+        <FormInput
           name="confirmPassword"
           control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label={t('confirmPassword')}
-              type={showConfirmPassword ? 'text' : 'password'}
-              variant="outlined"
-              fullWidth
-              required
-              autoComplete="new-password"
+          label={t('confirmPassword')}
+          type={showConfirmPassword ? 'text' : 'password'}
+          autoComplete="new-password"
+          disabled={loading || googleLoading}
+          error={errors.confirmPassword?.message}
+          startIcon={<LockOutlinedIcon color="action" />}
+          endIcon={
+            <IconButton
+              aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
+              onClick={toggleConfirmPassword}
+              edge="end"
+              size="small"
               disabled={loading || googleLoading}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword?.message}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlinedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={toggleConfirmPassword} edge="end" size="small" disabled={loading || googleLoading}>
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          )}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
+              {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+            </IconButton>
+          }
         />
 
         <Button
@@ -199,9 +140,11 @@ export default function RegisterView({
           size="large"
           fullWidth
           disabled={loading || googleLoading}
-          sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+          loading={loading}
+          loadingText={t('submit')}
+          sx={{ mt: 2 }}
         >
-          {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
+          {t('submit')}
         </Button>
 
         <Button
@@ -211,16 +154,17 @@ export default function RegisterView({
           fullWidth
           onClick={handleGoogleSignIn}
           disabled={loading || googleLoading}
-          startIcon={googleLoading ? <CircularProgress size={18} color="inherit" /> : <GoogleIcon />}
-          sx={{ py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+          loading={googleLoading}
+          loadingText={t('processing')}
+          startIcon={!googleLoading && <GoogleIcon />}
         >
-          {googleLoading ? t('processing') : t('google')}
+          {t('google')}
         </Button>
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 0.5, minHeight: 44 }}>
             {t('hasAccount')}{' '}
-            <Link href="/login" style={{ textDecoration: 'none' }}>
+            <Link href="/login" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
               <Typography component="span" variant="body2" color="primary.main" sx={{ fontWeight: 700 }}>
                 {t('loginNow')}
               </Typography>

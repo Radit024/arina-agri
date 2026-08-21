@@ -22,6 +22,7 @@ const draft: TransactionDraft = {
   nominal: '200.000',
   tanggal: '2026-06-19',
   keterangan: 'Urea',
+  applyRabSuggestion: true,
 };
 
 function makeBatch(overrides: Partial<Batch> & { submitEdit?: Batch['submitAll'] } = {}): Batch {

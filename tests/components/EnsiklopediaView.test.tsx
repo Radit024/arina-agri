@@ -4,9 +4,16 @@ import EnsiklopediaView from '@/app/dashboard/ensiklopedia/_components/Ensiklope
 import { shouldSubmitChatShortcut } from '@/controllers/ensiklopedia/useEnsiklopediaController';
 import { describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
+import ChatMarkdownRenderer from '@/app/dashboard/ensiklopedia/_components/ChatMarkdownRenderer';
 
 vi.mock('next-intl', () => ({
   useMessages: () => ({}),
+}));
+
+vi.mock('next/dynamic', () => ({
+  default: () => function DynamicMarkdownStub(props: { content: string }) {
+    return <ChatMarkdownRenderer {...props} />;
+  },
 }));
 
 const theme = createTheme();

@@ -29,7 +29,6 @@ const EastJavaMap = dynamic(
   }
 );
 
-// ─── Price Trend Chart (used on Kabar Pasar page) ─────────────────
 export function PriceTrendChart() {
   const t = useTranslations('KabarPasar.priceChart');
   const { regionPrices, averagePrice, loading } = useCommodityPrices(30);
@@ -70,7 +69,6 @@ export function PriceTrendChart() {
   );
 }
 
-// ─── Price KPI Widget (compact, used on Dashboard) ─────────────────
 export function PriceKpiWidget() {
   const t = useTranslations('KabarPasar.priceChart');
   const { todayPrice, priceDelta, priceDeltaPct, isTrendingUp, loading } = useCommodityPrices(7);

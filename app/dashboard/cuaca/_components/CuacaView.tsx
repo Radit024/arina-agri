@@ -279,7 +279,21 @@ export default function CuacaView({
                 </Typography>
               )}
               {weatherError && (
-                <Alert severity="info" sx={{ mt: 1 }}>
+                <Alert
+                  severity="warning"
+                  sx={{ mt: 1.25, borderRadius: 2 }}
+                  action={
+                    <Button
+                      color="inherit"
+                      size="small"
+                      onClick={handleUseGpsLocation}
+                      disabled={gpsStatus === 'loading'}
+                      sx={{ fontWeight: 700, minHeight: 36 }}
+                    >
+                      {t('gps.buttons.enable')}
+                    </Button>
+                  }
+                >
                   {weatherError}
                 </Alert>
               )}

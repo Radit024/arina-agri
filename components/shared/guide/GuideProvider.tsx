@@ -42,11 +42,8 @@ export function useGuide() {
 function getAutoGuide(pathname: string) {
   if (typeof window === 'undefined') return null;
 
-  const pageGuide = getGuideForPathname(pathname);
-  if (pageGuide && !isGuideSeen(window.localStorage, pageGuide.id)) {
-    return pageGuide;
-  }
-
+  // GEN-01: Only auto-prompt global onboarding tour on /dashboard root for first-time visitors.
+  // Sub-page tours remain available on-demand via openGuide().
   if (pathname === '/dashboard' && !isGuideSeen(window.localStorage, GLOBAL_GUIDE.id)) {
     return GLOBAL_GUIDE;
   }

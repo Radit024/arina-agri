@@ -74,7 +74,6 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
         minHeight: { xs: 280, md: 260 },
       }}
     >
-      {/* ─── Left: Map (65%) ───────────────────────────────────────── */}
       <Box
         sx={{
           flex: { xs: 'none', md: '0 0 65%' },
@@ -166,7 +165,6 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
         )}
       </Box>
 
-      {/* ─── Right: Info Panel (35%) ──────────────────────────────── */}
       <Box
         sx={{
           flex: { xs: 'none', md: '0 0 35%' },

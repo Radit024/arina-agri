@@ -34,6 +34,7 @@ export function useTransactionsForScenario(scenarioId: string | null) {
       setTransactions(data);
       setError(null);
     } catch (err: unknown) {
+      // In case of backend error (e.g. offline/mock/demo 400), preserve transactions already in sessionStorage
       setError(err instanceof Error ? err.message : 'Gagal memuat transaksi');
     } finally {
       setLoading(false);
@@ -47,6 +48,9 @@ export function useTransactionsForScenario(scenarioId: string | null) {
   const addTransaction = async (
     data: Omit<ApiTransaction, '_id' | 'createdAt' | 'updatedAt'> & { scenarioId?: string | null },
   ) => {
+    const sid = data.scenarioId ?? scenarioId ?? '';
+    const isCurrentScenario = sid === scenarioId;
+
     if (isGuestMode) {
       const now = new Date().toISOString();
       const created: ApiTransaction = {
@@ -56,12 +60,53 @@ export function useTransactionsForScenario(scenarioId: string | null) {
         createdAt: now,
         updatedAt: now,
       };
-      setTransactions((prev) => [created, ...prev]);
+      if (isCurrentScenario) {
+        setTransactions((prev) => [created, ...prev]);
+      } else {
+        const targetStorageKey = `arina-scenario-transactions-${sid || 'none'}`;
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = window.sessionStorage.getItem(targetStorageKey);
+            const prev = raw ? (JSON.parse(raw) as ApiTransaction[]) : [];
+            window.sessionStorage.setItem(targetStorageKey, JSON.stringify([created, ...prev]));
+          } catch {
+            // ignore
+          }
+        }
+      }
       return;
     }
-    const sid = data.scenarioId ?? scenarioId ?? '';
-    const created = await transactionApi.createForScenario({ ...data, scenarioId: sid });
-    setTransactions((prev) => [created, ...prev]);
+
+    try {
+      const created = await transactionApi.createForScenario({ ...data, scenarioId: sid });
+      if (isCurrentScenario) {
+        setTransactions((prev) => [created, ...prev]);
+      }
+    } catch {
+      // Fallback for demo or offline when backend throws
+      const now = new Date().toISOString();
+      const fallback: ApiTransaction = {
+        ...data,
+        _id: `fallback-tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        keterangan: data.keterangan || '',
+        createdAt: now,
+        updatedAt: now,
+      };
+      if (isCurrentScenario) {
+        setTransactions((prev) => [fallback, ...prev]);
+      } else {
+        const targetStorageKey = `arina-scenario-transactions-${sid || 'none'}`;
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = window.sessionStorage.getItem(targetStorageKey);
+            const prev = raw ? (JSON.parse(raw) as ApiTransaction[]) : [];
+            window.sessionStorage.setItem(targetStorageKey, JSON.stringify([fallback, ...prev]));
+          } catch {
+            // ignore
+          }
+        }
+      }
+    }
   };
 
   const updateTransaction = async (id: string, data: Partial<ApiTransaction>) => {

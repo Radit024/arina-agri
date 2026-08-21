@@ -30,24 +30,30 @@
 
 ## Status Aplikasi
 
-Arina Agri saat ini berjalan sebagai **monolit Next.js App Router**. UI, autentikasi, API internal, integrasi AI, fetch cuaca, fetch berita, scraper harga, webhook, dan cron endpoint berada di dalam aplikasi Next.js.
+> Dokumentasi ini mencerminkan kondisi branch **`Reusable-UI`** per **22 Agustus 2026** — hasil refactor arsitektur komponen UI dan penghapusan backend Express legacy.
 
-Folder `backend/` masih ada sebagai sumber Express/Node lama dan referensi layanan, tetapi jalur utama development dan deployment sekarang adalah root project Next.js. Script root `npm run dev`, `npm run build`, dan `npm run ci` tidak menjalankan folder `backend/`.
+Arina Agri berjalan sebagai **monolit Next.js App Router murni**. UI, autentikasi, API internal, integrasi AI, fetch cuaca, fetch berita, scraper harga, webhook, dan cron endpoint semuanya berada di dalam satu aplikasi Next.js — tidak ada lagi backend Express terpisah.
+
+Folder `backend/` (Express/Node.js lama) **sudah dihapus sepenuhnya** dari repository, termasuk dependency yang hanya dipakai olehnya (`axios`, `firebase-admin`, `mongodb`). Satu-satunya jalur development dan deployment sekarang adalah root project Next.js via `npm run dev`, `npm run build`, dan `npm run ci`.
+
+> ⚠️ **Catatan bersih-bersih**: folder `server/` (Express + MongoDB + Firebase Admin) masih tertinggal di repository sebagai kode yatim piatu — tidak direferensikan oleh script `package.json` manapun, dan dependency-nya (`mongodb`, `firebase-admin`, `axios`) sudah tidak ada lagi di `package.json`. Folder ini sebaiknya dihapus pada pembersihan berikutnya agar konsisten dengan status "monolit Next.js murni" di atas.
 
 Status runtime saat ini:
 
 | Area | Status |
 | :--- | :--- |
-| Frontend dashboard | Aktif di `app/dashboard/**` |
+| Frontend dashboard | Aktif di `app/dashboard/**`, memakai design system reusable di `components/ui/**` |
 | API utama | Aktif di `app/api/**/route.ts` |
-| Auth | Supabase Auth, dengan mock session otomatis saat `NODE_ENV=development` |
-| Database | Supabase/Postgres |
-| AI | Gemini untuk chat ensiklopedia dan analisis laporan keuangan |
+| Auth | Supabase Auth, dengan mock session otomatis saat `NODE_ENV=development`; middleware terpusat di `proxy.ts` (pengganti `middleware.ts` di Next.js 16) |
+| Database | Supabase/Postgres, migrasi terkelola di `supabase/migrations/**` |
+| Data fetching client | SWR (`lib/swr/fetcher.ts`) untuk data yang butuh cache/dedup/revalidate |
+| AI | Gemini untuk chat ensiklopedia (dengan markdown+KaTeX renderer terpisah) dan analisis laporan keuangan |
 | Cuaca | BMKG Open Data, lokasi manual/GPS, cache server |
 | Harga komoditas | Siskaperbapo Jawa Timur untuk Cabai Rawit Merah |
 | Berita | Google News RSS pertanian/komoditas, disimpan ke Supabase |
 | Notifikasi | WhatsApp Cloud API atau Telegram Bot API, dengan decision engine cuaca |
-| Deployment | GitHub Actions + Vercel, termasuk preview dan production deploy |
+| Testing | Vitest (unit/component) + Playwright (`e2e/**`) untuk smoke test end-to-end |
+| Deployment | GitHub Actions (`ci-cd.yml`, `playwright.yml`) + Vercel, termasuk preview dan production deploy |
 
 ## Sekilas Tentang Arina Agri
 
@@ -67,13 +73,15 @@ Aplikasi ini menggabungkan data operasional pengguna, data cuaca BMKG, berita pe
 
 ### Manajemen Keuangan
 
-- CRUD transaksi pemasukan dan pengeluaran.
+- CRUD transaksi pemasukan dan pengeluaran, dengan form field yang sudah disatukan (`TransactionFormFields`) antara mode tambah dan edit.
 - Filter transaksi berdasarkan bulan dan jenis transaksi.
 - Ringkasan pemasukan, pengeluaran, laba bersih, dan distribusi kategori biaya.
-- Ekspor buku besar ke `.xlsx` memakai ExcelJS.
+- Skenario keuangan (RAB, realisasi, perbandingan) dengan tampilan **kartu ringkas khusus mobile** untuk Arus Kas, Arus Kas Pasca Pembiayaan, dan Perbandingan — tabel desktop tetap utuh, tampilan mobile beralih ke kartu lewat `ResponsiveDataView`.
+- Ekspor buku besar ke `.xlsx` memakai ExcelJS, serta import RAB dari Excel.
 - Ekspor laporan PDF memakai jsPDF.
 - Laporan PDF AI dengan analisis dan rekomendasi Gemini, dibatasi 3 laporan AI per bulan per user.
 - Kalkulator HPP dan BEP untuk membaca harga pokok produksi dan titik impas.
+- Master data kategori/satuan dikelola lewat dialog terpadu (`MasterDataDialog`) yang dipakai bersama oleh modul Keuangan dan Stok.
 
 ### Manajemen Stok Panen
 
@@ -113,6 +121,25 @@ Aplikasi ini menggabungkan data operasional pengguna, data cuaca BMKG, berita pe
 - Riwayat percakapan tersimpan di browser per user.
 - Konteks cuaca BMKG dikirim sebagai konteks tambahan agar jawaban lebih relevan.
 - Referensi cepat penyakit seperti antraknosa, virus kuning, ulat grayak, dan kutu kebul.
+- Rendering markdown dan rumus matematika (KaTeX) pada balasan AI ditangani komponen terpisah `ChatMarkdownRenderer`, sehingga library markdown/KaTeX tidak perlu dimuat di halaman lain.
+
+## Sistem UI Reusable (Design System)
+
+Sejak refactor "Reusable UI Foundation", komponen presentational lintas fitur dipusatkan di dua lokasi agar Keuangan, Stok, dan modul lain tidak lagi menduplikasi UI yang sama:
+
+| Komponen | Lokasi | Fungsi |
+| :--- | :--- | :--- |
+| `AppDialog` | `components/ui/AppDialog.tsx` | Dialog aksesibel dengan header, body scrollable, actions, dan mode presentasi mobile (fullscreen/bottom-sheet). `Modal.tsx` kini jadi re-export kompatibilitas dari `AppDialog`. |
+| `ContentState` | `components/ui/ContentState.tsx` | Komposisi state loading/empty/error/retry/ready yang seragam, termasuk slot aksi opsional di empty state. |
+| `MetricCard` | `components/ui/MetricCard.tsx` | Kartu metrik presentational (label, value, icon, intent, trend, loading) tanpa logika format angka domain. |
+| `ResponsiveDataView` | `components/ui/ResponsiveDataView.tsx` | Menukar tabel desktop dan renderer kartu mobile secara otomatis berdasarkan breakpoint, dengan penanganan state bersama. |
+| `StatusBadge` | `components/ui/StatusBadge.tsx` | Badge status seragam (mis. status stok, status transaksi). |
+| `AppField` | `components/ui/AppField.tsx` | Wrapper field form standar (label, error, helper text) di atas komponen MUI. |
+| `MasterDataDialog` | `components/shared/forms/MasterDataDialog.tsx` | Dialog kelola data master (kategori, satuan, dll) yang dipakai bersama oleh Keuangan dan Stok — dulunya milik modul Stok saja. |
+| `FieldWithManageAction` | `components/shared/forms/FieldWithManageAction.tsx` | Field select dengan tombol aksi "kelola" di sampingnya (mis. buka `MasterDataDialog`). |
+| `MobileTabBar` | `components/shared/navigation/MobileTabBar.tsx` | Tab bar khusus mobile; `components/ui/MobileTabBar.tsx` kini hanya re-export kompatibilitas. |
+
+Prinsip arsitektur: komponen di `components/ui` dan `components/shared` bersifat **presentational-only** — semua data, mutasi, validasi, dan state scenario/project tetap dipegang penuh oleh controller masing-masing fitur (`controllers/**`). Detail rencana refactor ada di `docs/superpowers/plans/2026-08-18-reusable-ui-foundation.md` dan `docs/superpowers/plans/2026-08-18-finance-cashflow-mobile.md`.
 
 ### Pengaturan, Navigasi, dan UX
 
@@ -129,21 +156,40 @@ Aplikasi ini menggabungkan data operasional pengguna, data cuaca BMKG, berita pe
 ```text
 arina-agri/
 +-- app/                  # Next.js App Router: pages, layouts, API routes
-|   +-- api/              # Route handlers untuk AI, cuaca, berita, cron, notifikasi
-|   +-- dashboard/        # Modul dashboard utama
+|   +-- api/              # Route handlers: ai, calendar, cron, feedback, finance,
+|   |                     #   health, location, news, notification, profile,
+|   |                     #   stok, weather, webhook
+|   +-- dashboard/        # Modul dashboard utama (keuangan, stok, cuaca, kalender,
+|   |                     #   kabar-pasar, ensiklopedia, pengaturan)
 |   +-- login/            # Auth email/password dan Google OAuth
 |   +-- register/
-+-- components/           # Komponen UI reusable
++-- components/
+|   +-- ui/                    # Design system primitives (AppDialog, ContentState,
+|   |                          #   MetricCard, ResponsiveDataView, StatusBadge, AppField, ...)
+|   +-- shared/
+|   |   +-- forms/             # MasterDataDialog, FieldWithManageAction
+|   |   +-- navigation/        # MobileTabBar
+|   |   +-- guide/             # Onboarding tour provider
+|   |   +-- page/              # Page-level layout helper
+|   +-- dashboard/, news/      # Komponen spesifik fitur (chart, peta, kartu berita)
 +-- controllers/          # Controller/hook presentational boundary per fitur
 +-- hooks/                # Hook data dan state client
-+-- lib/                  # API client, formatter, Supabase, PDF, server modules
++-- lib/
 |   +-- server/           # Modul server-only untuk AI, BMKG, cron, news, notifikasi
+|   +-- swr/               # Fetcher SWR bersama (lib/swr/fetcher.ts)
+|   +-- finance/           # Kalkulasi RAB, cashflow, import/export Excel
 +-- messages/             # Terjemahan id/en untuk next-intl
++-- supabase/
+|   +-- migrations/       # Migrasi schema Postgres terkelola
+|   +-- config.toml
 +-- tests/                # Vitest, Testing Library, server/unit/component tests
-+-- docs/                 # Deployment, database, dan catatan desain
++-- e2e/                  # Playwright end-to-end smoke test
++-- docs/                 # Deployment, database, audit, dan rencana refactor
 +-- public/               # Logo dan asset publik
-+-- backend/              # Express runtime lama/opsional, bukan jalur utama Next.js
++-- proxy.ts              # Middleware Next.js 16 (proteksi route /dashboard dan /api)
 ```
+
+> **Legacy/orphaned**: folder `server/` (Express + MongoDB + Firebase Admin) masih ada di repo tapi tidak dipakai jalur manapun — lihat catatan di bagian [Status Aplikasi](#status-aplikasi).
 
 Alur data utama:
 
@@ -179,6 +225,12 @@ Endpoint API utama:
 | `/api/dashboard/summary` | GET | Ringkasan dashboard dari transaksi, cuaca, harga, dan berita |
 | `/api/ai/gemini` | POST | Chat ensiklopedia AI |
 | `/api/ai/financial-report` | POST | Analisis laporan keuangan AI |
+| `/api/finance/transactions` | POST | Buat transaksi keuangan |
+| `/api/stok/batches` | POST | Buat batch stok panen |
+| `/api/calendar/events` | GET/POST/PATCH/DELETE | CRUD jadwal Smart Kalender |
+| `/api/feedback` | GET/POST | Baca/kirim feedback pengguna |
+| `/api/profile` | GET/PATCH | Baca/perbarui profil pengguna |
+| `/api/analytics/events` | POST | Catat page view/event penggunaan fitur |
 | `/api/weather/forecast` | GET | Prakiraan BMKG per `adm4` |
 | `/api/weather/warnings` | GET | Peringatan dini BMKG |
 | `/api/location/search` | GET | Pencarian wilayah manual |
@@ -207,12 +259,27 @@ Tabel Supabase yang dipakai aplikasi:
 - `commodity_prices`
 - `news_articles`
 - `notification_schedules`
+- `finance_scenarios` — skenario RAB/realisasi/perbandingan per proyek keuangan
+- `migration_audit_log` — audit trail migrasi schema
+- `user_feedbacks` — feedback pengguna dari menu Feedback
+- Master data grade/lokasi dan enhancement form stok (lihat migrasi `grade_location_master`, `stock_form_enhancement`, `supply_management`)
 
-Indeks performa dashboard tersedia di:
+Migrasi schema dikelola di `supabase/migrations/` (urut kronologis, prefix timestamp `YYYYMMDDHHMMSS`):
 
-```text
-docs/database/dashboard-performance-indexes.sql
-```
+| Migrasi | Fungsi |
+| :--- | :--- |
+| `20260609000000_grade_location_master.sql` | Master data grade dan lokasi gudang |
+| `20260609000001_stock_form_enhancement.sql` | Penyempurnaan form input stok |
+| `20260613000000_supply_management.sql` | Manajemen bahan pendukung/supply |
+| `20260617000000_finance_transaction_master.sql` | Master kategori transaksi keuangan |
+| `20260730000000_usage_analytics.sql` | Tabel analytics penggunaan fitur |
+| `20260802000000_finance_scenarios.sql` | Skenario RAB/realisasi/perbandingan keuangan |
+| `20260804000000_migration_audit_log.sql` | Audit log migrasi schema |
+| `20260821000000_user_feedbacks.sql` | Tabel feedback pengguna |
+| `20260821000001_chat_input_channel_identities.sql` | Identitas channel input chat (WhatsApp/Telegram) |
+| `20260821000002_dashboard_performance_indexes.sql` | Indeks performa query dashboard |
+
+Referensi SQL tambahan (view/snapshot, bukan migrasi terurut) ada di `docs/database/`.
 
 Integrasi eksternal:
 
@@ -234,11 +301,14 @@ Integrasi eksternal:
 | Styling dan motion | Emotion, Framer Motion, CSS variables |
 | Form dan validasi | React Hook Form, Zod |
 | Auth dan data | Supabase JS |
+| Data fetching client | SWR (`lib/swr/fetcher.ts`) |
 | AI | `@google/generative-ai` |
+| Markdown & math rendering | `react-markdown`, `remark-gfm`, `remark-math`, `rehype-katex`, `katex` (khusus `ChatMarkdownRenderer`) |
 | Dokumen dan export | ExcelJS, jsPDF, jspdf-autotable, file-saver |
 | News/scraping | rss-parser, cheerio |
-| Testing | Vitest, Testing Library, jsdom |
-| Deployment | GitHub Actions, Vercel CLI, Vercel Cron |
+| Testing unit/component | Vitest, Testing Library, jsdom |
+| Testing end-to-end | Playwright (`e2e/**`) |
+| Deployment | GitHub Actions (`ci-cd.yml`, `playwright.yml`), Vercel CLI, Vercel Cron |
 
 ## Panduan Instalasi
 
@@ -303,9 +373,10 @@ Langkah lokal:
 
 Catatan development:
 
-- Di development, `AuthProvider` membuat mock user otomatis sehingga halaman login akan mengarahkan ke dashboard.
+- Di development, `AuthProvider` membuat mock user otomatis (mode Tamu) sehingga halaman login akan mengarahkan ke dashboard tanpa perlu login sungguhan.
 - Fitur yang membaca/menulis Supabase tetap membutuhkan environment Supabase valid.
-- Folder `backend/` tidak perlu dijalankan untuk flow utama Next.js.
+- Proteksi route ditangani `proxy.ts` di root project (Next.js 16 mengganti `middleware.ts` konvensional dengan `proxy.ts`).
+- Tidak ada lagi backend Express terpisah yang perlu dijalankan — semua API ada di `app/api/**`.
 
 ## Environment Variables
 
@@ -380,37 +451,51 @@ npm run perf:bundles
 
 # Smoke check deployment, butuh DEPLOYMENT_URL
 npm run smoke:deploy
+
+# End-to-end test (Playwright) — install browser sekali sebelumnya
+npx playwright install --with-deps
+npx playwright test
 ```
 
-Backend Express lama dapat dijalankan terpisah hanya jika memang dibutuhkan untuk eksperimen legacy:
-
-```bash
-cd backend
-npm install
-npm run dev
-```
+> Folder `backend/` (Express legacy) sudah dihapus dari repository — tidak ada lagi jalur `cd backend && npm run dev`. Jika menemukan folder `server/` di root, folder itu adalah kode yatim piatu yang tidak dipakai jalur manapun (lihat [Status Aplikasi](#status-aplikasi)), bukan bagian dari alur development.
 
 ## Testing
 
-Test berada di folder `tests/` dan mencakup:
+Test berada di dua lokasi:
 
-- server logic untuk BMKG, dashboard summary, cron auth, Gemini validator, news, notification schedule, dan price parser.
-- component tests untuk mobile navigation, guide provider, dan halaman cuaca.
-- hook tests untuk dashboard summary.
+**`tests/`** (Vitest + Testing Library) mencakup:
+
+- server logic untuk BMKG, dashboard summary, cron auth, Gemini validator, news, notification schedule, price parser, dan validator schema Zod.
+- middleware/`proxy.ts` (proteksi route dashboard dan API).
+- component tests untuk primitives design system (`AppDialog`, `ContentState`, `MetricCard`, `ResponsiveDataView`, `StatusBadge`, `MasterDataDialog`), mobile navigation, guide provider, kartu mobile Keuangan (cash flow, financing, comparison), dan halaman cuaca.
+- hook tests untuk dashboard summary dan skenario RAB/transaksi.
 - script tests untuk CI/CD, bundle summary, dan smoke deploy.
-- basic smoke test aplikasi.
 
-Quality gate penuh:
+**`e2e/`** (Playwright) mencakup:
+
+- `finance-cashflow-mobile.spec.ts` — smoke test tampilan mobile Arus Kas/Financing/Perbandingan dengan data terisi.
+- `reusable-ui-foundation.spec.ts` — smoke test komponen UI reusable.
+- `example.spec.ts` — contoh dasar Playwright.
+
+Quality gate penuh (unit/component + lint + typecheck + build):
 
 ```bash
 npm run ci
 ```
 
+Quality gate end-to-end (terpisah, dijalankan workflow `playwright.yml`):
+
+```bash
+npx playwright test
+```
+
 ## Deployment
 
-Deployment utama memakai **GitHub Actions + Vercel CLI**.
+Deployment utama memakai **GitHub Actions + Vercel CLI**, dengan dua workflow terpisah.
 
-Workflow `.github/workflows/ci-cd.yml` menjalankan:
+### `ci-cd.yml`
+
+Menjalankan pada push/PR ke `main`, `feature/*`, atau `fix/*`:
 
 1. Install dependencies.
 2. Lint.
@@ -422,6 +507,10 @@ Workflow `.github/workflows/ci-cd.yml` menjalankan:
 8. Preview deploy untuk pull request dari repo yang sama.
 9. Production deploy saat push ke `main` atau `workflow_dispatch`.
 10. Smoke check terhadap deployment.
+
+### `playwright.yml`
+
+Menjalankan pada push/PR ke `main`/`master`: install browser Playwright lalu `npx playwright test`, dengan laporan hasil diunggah sebagai artifact `playwright-report`.
 
 Dokumentasi deployment lebih detail ada di:
 
@@ -448,7 +537,9 @@ Authorization: Bearer <CRON_SECRET>
 - Data cuaca memakai BMKG. Jika fetch gagal, UI menampilkan state error/fallback sesuai modul.
 - Data transaksi, kalender, dan stok memiliki mock fallback saat tidak ada session pengguna.
 - Development auth memakai mock user, sehingga untuk menguji multi-user atau policy RLS perlu menjalankan mode production-like dengan Supabase Auth asli.
-- `docs/database/dashboard-performance-indexes.sql` hanya berisi indeks, bukan schema lengkap.
+- `docs/database/dashboard-performance-indexes.sql` hanya berisi indeks, bukan schema lengkap; migrasi schema lengkap ada di `supabase/migrations/`.
+- Panggilan `/api/notification/schedule` untuk sesi Tamu (mock user) akan mengembalikan `401 Unauthorized` karena token Tamu bukan token Supabase asli — ini perilaku yang diketahui, dicatat di `docs/performance-audit-2026-08-21.md`.
+- Untuk audit performa terbaru (bundle size per halaman, temuan mobile, dan daftar perbaikan berprioritas), lihat `docs/performance-audit-2026-08-21.md`.
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/grass.png" width="100%" alt="" />

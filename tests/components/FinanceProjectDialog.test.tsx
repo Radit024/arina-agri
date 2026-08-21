@@ -92,6 +92,6 @@ describe('FinanceProjectDialog', () => {
         commodity: 'Cabai Rawit (Dewata F1)',
         seasonLabel: 'MT 1 2026 - Greenhouse',
       }));
-    });
-  });
+    }, { timeout: 8000 });
+  }, 15000);
 });

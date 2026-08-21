@@ -1,4 +1,4 @@
-import ExcelJS from 'exceljs';
+import type ExcelJS from 'exceljs';
 
 import { formatDateLong, formatMonthYear, formatDateShort } from '@/lib/formatters';
 import { buildIncomeStatementWorksheetData } from './incomeStatementWorksheet';
@@ -591,6 +591,7 @@ export function parseLedgerWorkbook(workbook: ExcelJS.Workbook): ParsedLedgerRes
 }
 
 export async function parseRabWorkbookFromArrayBuffer(buffer: ArrayBuffer) {
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer);
   return parseRabWorkbook(workbook);
@@ -1037,6 +1038,7 @@ export async function buildFinanceExportWorkbook({
   endMonth,
   modeLabel,
 }: FinanceExportWorkbookInput) {
+  const ExcelJS = (await import('exceljs')).default;
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Arina Agri';
   workbook.created = new Date();

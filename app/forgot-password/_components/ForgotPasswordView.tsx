@@ -1,16 +1,15 @@
-import { Controller, type Control, type FieldErrors, type SubmitHandler, type UseFormHandleSubmit } from 'react-hook-form';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import InputAdornment from '@mui/material/InputAdornment';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircle';
 import Link from 'next/link';
 import AuthShell from '@/components/auth/AuthShell';
 import type { ForgotPasswordForm } from '@/controllers/forgot-password/useForgotPasswordController';
+import { Control, FieldErrors, SubmitHandler, UseFormHandleSubmit } from 'react-hook-form';
+
+import Button from '@/components/ui/Button';
+import FormInput from '@/components/ui/FormInput';
 
 type AuthTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -70,32 +69,15 @@ export default function ForgotPasswordView({
           )}
 
           <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <Controller
+            <FormInput
               name="email"
               control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label={t('email')}
-                  type="email"
-                  variant="outlined"
-                  fullWidth
-                  required
-                  autoComplete="email"
-                  disabled={loading}
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <EmailOutlinedIcon color="action" />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-              )}
+              label={t('email')}
+              type="email"
+              autoComplete="email"
+              disabled={loading}
+              error={errors.email?.message}
+              startIcon={<EmailOutlinedIcon color="action" />}
             />
 
             <Button
@@ -104,13 +86,15 @@ export default function ForgotPasswordView({
               size="large"
               fullWidth
               disabled={loading}
-              sx={{ mt: 2, py: 1.5, borderRadius: 2, textTransform: 'none', fontWeight: 700, fontSize: '1rem' }}
+              loading={loading}
+              loadingText={t('submit')}
+              sx={{ mt: 2 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : t('submit')}
+              {t('submit')}
             </Button>
 
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Link href="/login" style={{ textDecoration: 'none' }}>
+              <Link href="/login" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
                 <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
                   {t('back')}
                 </Typography>

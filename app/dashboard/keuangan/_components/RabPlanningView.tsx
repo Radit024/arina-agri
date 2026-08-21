@@ -33,12 +33,133 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+import ContentState from '@/components/ui/ContentState';
+import MetricCard from '@/components/ui/MetricCard';
+import ResponsiveDataView from '@/components/ui/ResponsiveDataView';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+import type { RabItem } from '@/lib/finance/rabTypes';
 import { formatMonthYear, formatRupiah } from '@/lib/formatters';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'>;
 
 const ROW_DELETE_TRANSITION_MS = 220;
+
+interface RabMobileItemCardProps {
+  item: RabItem;
+  isPendingDelete: boolean;
+  isSelected: boolean;
+  onDelete: () => void;
+  onEdit: () => void;
+  onSelect: () => void;
+}
+
+function RabMobileItemCard({
+  item,
+  isPendingDelete,
+  isSelected,
+  onDelete,
+  onEdit,
+  onSelect,
+}: RabMobileItemCardProps) {
+  const typeLabel = item.type === 'income' ? 'Pendapatan' : 'Pengeluaran';
+
+  return (
+    <Card
+      aria-label={`Item RAB ${item.name}`}
+      component="article"
+      variant="outlined"
+      sx={{
+        minWidth: 0,
+        mb: 1.5,
+        opacity: isPendingDelete ? 0 : 1,
+        pointerEvents: isPendingDelete ? 'none' : 'auto',
+        transform: isPendingDelete ? 'translateX(12px)' : 'none',
+        transition: `opacity ${ROW_DELETE_TRANSITION_MS}ms ease, transform ${ROW_DELETE_TRANSITION_MS}ms ease`,
+      }}
+    >
+      <CardContent sx={{ '&:last-child': { pb: 2 }, minWidth: 0, p: 2 }}>
+        <Box sx={{ alignItems: 'flex-start', display: 'flex', gap: 1, minWidth: 0 }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography color={item.type === 'income' ? 'success.main' : 'error.main'} variant="caption">
+              {typeLabel}
+            </Typography>
+            <Typography component="h3" sx={{ fontWeight: 800, overflowWrap: 'anywhere' }} variant="subtitle1">
+              {item.name}
+            </Typography>
+          </Box>
+          <Box
+            onClick={(event) => event.stopPropagation()}
+            sx={{ alignItems: 'center', display: 'flex', flexShrink: 0, gap: 0.25 }}
+          >
+            <Checkbox
+              checked={isSelected}
+              onChange={onSelect}
+              size="small"
+              slotProps={{ input: { 'aria-label': `Pilih item RAB ${item.name}` } }}
+              sx={{ minHeight: 44, minWidth: 44 }}
+            />
+            {isSelected && (
+              <>
+                <IconButton
+                  aria-label={`Edit item RAB ${item.name}`}
+                  onClick={onEdit}
+                  size="small"
+                  sx={{ minHeight: 44, minWidth: 44 }}
+                >
+                  <EditOutlinedIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={`Hapus item RAB ${item.name}`}
+                  color="error"
+                  onClick={onDelete}
+                  size="small"
+                  sx={{ minHeight: 44, minWidth: 44 }}
+                >
+                  <DeleteIcon fontSize="small" />
+                </IconButton>
+              </>
+            )}
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gap: 1.5,
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            minWidth: 0,
+            mt: 1.5,
+          }}
+        >
+          <Box sx={{ gridColumn: '1 / -1', minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Kategori</Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">
+              {item.categoryName ?? item.categoryId}
+            </Typography>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Volume</Typography>
+            <Typography variant="body2">{item.volume} {item.unit}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Harga satuan</Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">{formatRupiah(item.unitPrice)}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Total rencana</Typography>
+            <Typography sx={{ fontWeight: 800, overflowWrap: 'anywhere' }} variant="body2">{formatRupiah(item.plannedTotal)}</Typography>
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Bulan kas</Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">
+              {item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}
+            </Typography>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function RabPlanningView({ financeProject, rab }: Props) {
   const [selectedRabItemId, setSelectedRabItemId] = useState<string | null>(null);
@@ -64,10 +185,11 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
     return (
       <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <CardContent>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>Belum ada proyek</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Buat proyek untuk mulai menyusun rencana anggaran biaya.
-          </Typography>
+          <ContentState
+            emptyMessage="Buat proyek untuk mulai menyusun rencana anggaran biaya."
+            emptyTitle="Belum ada proyek"
+            state="empty"
+          />
         </CardContent>
       </Card>
     );
@@ -81,30 +203,30 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
   return (
     <>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="caption" color="text.secondary">Pendapatan Rencana</Typography>
-            <Typography variant="h6" color="success.main" sx={{ fontWeight: 800 }}>
-              {formatRupiah(rab.totals.plannedIncome)}
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="caption" color="text.secondary">Biaya Rencana</Typography>
-            <Typography variant="h6" color="error.main" sx={{ fontWeight: 800 }}>
-              {formatRupiah(rab.totals.plannedExpense)}
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="caption" color="text.secondary">Laba Rencana</Typography>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: rab.totals.plannedProfit >= 0 ? 'success.main' : 'error.main' }}>
-              {formatRupiah(Math.abs(rab.totals.plannedProfit))}
-            </Typography>
-          </CardContent>
-        </Card>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <MetricCard
+            intent="success"
+            label="Pendapatan Rencana"
+            loading={rab.loading}
+            value={formatRupiah(rab.totals.plannedIncome)}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <MetricCard
+            intent="error"
+            label="Biaya Rencana"
+            loading={rab.loading}
+            value={formatRupiah(rab.totals.plannedExpense)}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <MetricCard
+            intent={rab.totals.plannedProfit >= 0 ? 'success' : 'error'}
+            label="Laba Rencana"
+            loading={rab.loading}
+            value={formatRupiah(Math.abs(rab.totals.plannedProfit))}
+          />
+        </Box>
       </Stack>
 
       <Card sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -213,101 +335,123 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
             </Alert>
           )}
 
-          <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      size="small"
-                      checked={allVisibleSelected}
-                      indeterminate={someSelected}
-                      disabled={rab.filteredRabItems.length === 0}
-                      onChange={() => {
-                        if (allVisibleSelected) {
-                          rab.clearRabItemSelection();
-                        } else {
-                          rab.filteredRabItems.forEach((item) => {
-                            if (!rab.selectedRabItemIds.includes(item.id)) rab.toggleSelectRabItem(item.id);
-                          });
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>Kategori</TableCell>
-                  <TableCell>Item</TableCell>
-                  <TableCell>Jenis</TableCell>
-                  <TableCell align="right">Volume</TableCell>
-                  <TableCell>Satuan</TableCell>
-                  <TableCell align="right">Harga Satuan</TableCell>
-                  <TableCell align="right">Total</TableCell>
-                  <TableCell>Bulan Kas</TableCell>
-                  <TableCell align="right">Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rab.filteredRabItems.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
-                      {rab.items.length === 0 ? 'Belum ada item RAB.' : 'Tidak ada item RAB yang cocok dengan filter.'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rab.filteredRabItems.map((item) => {
-                    const isSelected = rab.selectedRabItemIds.includes(item.id);
-                    const isPendingDelete = pendingDeleteIds.has(item.id);
-                    return (
-                      <TableRow
-                        key={item.id}
-                        selected={isSelected}
-                        hover
-                        onClick={() => rab.toggleSelectRabItem(item.id)}
-                        sx={{
-                          cursor: 'pointer',
-                          transition: `opacity ${ROW_DELETE_TRANSITION_MS}ms ease, transform ${ROW_DELETE_TRANSITION_MS}ms ease`,
-                          opacity: isPendingDelete ? 0 : 1,
-                          transform: isPendingDelete ? 'translateX(12px)' : 'none',
-                        }}
-                      >
-                        <TableCell padding="checkbox" onClick={(event) => event.stopPropagation()}>
-                          <Checkbox size="small" checked={isSelected} onChange={() => rab.toggleSelectRabItem(item.id)} />
-                        </TableCell>
-                        <TableCell>{item.categoryName ?? item.categoryId}</TableCell>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell>{item.type === 'income' ? 'Pendapatan' : 'Pengeluaran'}</TableCell>
-                        <TableCell align="right">{item.volume}</TableCell>
-                        <TableCell>{item.unit}</TableCell>
-                        <TableCell align="right">{formatRupiah(item.unitPrice)}</TableCell>
-                        <TableCell align="right">{formatRupiah(item.plannedTotal)}</TableCell>
-                        <TableCell>{item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}</TableCell>
-                        <TableCell align="right" onClick={(event) => event.stopPropagation()}>
-                          {isSelected && (
-                            <Box sx={{ display: 'inline-flex', gap: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                aria-label={`Edit item RAB ${item.name}`}
-                                onClick={() => rab.openRabItemEditDialog(item)}
-                              >
-                                <EditOutlinedIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                aria-label={`Hapus item RAB ${item.name}`}
-                                onClick={() => setSelectedRabItemId(item.id)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <ResponsiveDataView
+            data={rab.filteredRabItems}
+            desktop={(
+              <TableContainer sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                <Table aria-label="Daftar item RAB" size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell padding="checkbox">
+                        <Checkbox
+                          size="small"
+                          checked={allVisibleSelected}
+                          indeterminate={someSelected}
+                          onChange={() => {
+                            if (allVisibleSelected) {
+                              rab.clearRabItemSelection();
+                            } else {
+                              rab.filteredRabItems.forEach((item) => {
+                                if (!rab.selectedRabItemIds.includes(item.id)) rab.toggleSelectRabItem(item.id);
+                              });
+                            }
+                          }}
+                          slotProps={{ input: { 'aria-label': 'Pilih semua item RAB' } }}
+                        />
+                      </TableCell>
+                      <TableCell>Kategori</TableCell>
+                      <TableCell>Item</TableCell>
+                      <TableCell>Jenis</TableCell>
+                      <TableCell align="right">Volume</TableCell>
+                      <TableCell>Satuan</TableCell>
+                      <TableCell align="right">Harga Satuan</TableCell>
+                      <TableCell align="right">Total</TableCell>
+                      <TableCell>Bulan Kas</TableCell>
+                      <TableCell align="right">Aksi</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {rab.filteredRabItems.map((item) => {
+                      const isSelected = rab.selectedRabItemIds.includes(item.id);
+                      const isPendingDelete = pendingDeleteIds.has(item.id);
+                      return (
+                        <TableRow
+                          key={item.id}
+                          selected={isSelected}
+                          hover
+                          onClick={() => rab.toggleSelectRabItem(item.id)}
+                          sx={{
+                            cursor: 'pointer',
+                            opacity: isPendingDelete ? 0 : 1,
+                            transform: isPendingDelete ? 'translateX(12px)' : 'none',
+                            transition: `opacity ${ROW_DELETE_TRANSITION_MS}ms ease, transform ${ROW_DELETE_TRANSITION_MS}ms ease`,
+                          }}
+                        >
+                          <TableCell padding="checkbox" onClick={(event) => event.stopPropagation()}>
+                            <Checkbox
+                              checked={isSelected}
+                              onChange={() => rab.toggleSelectRabItem(item.id)}
+                              size="small"
+                              slotProps={{ input: { 'aria-label': `Pilih item RAB ${item.name}` } }}
+                            />
+                          </TableCell>
+                          <TableCell>{item.categoryName ?? item.categoryId}</TableCell>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.type === 'income' ? 'Pendapatan' : 'Pengeluaran'}</TableCell>
+                          <TableCell align="right">{item.volume}</TableCell>
+                          <TableCell>{item.unit}</TableCell>
+                          <TableCell align="right">{formatRupiah(item.unitPrice)}</TableCell>
+                          <TableCell align="right">{formatRupiah(item.plannedTotal)}</TableCell>
+                          <TableCell>{item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}</TableCell>
+                          <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                            {isSelected && (
+                              <Box sx={{ display: 'inline-flex', gap: 0.5 }}>
+                                <IconButton
+                                  aria-label={`Edit item RAB ${item.name}`}
+                                  onClick={() => rab.openRabItemEditDialog(item)}
+                                  size="small"
+                                  sx={{ minHeight: 44, minWidth: 44 }}
+                                >
+                                  <EditOutlinedIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  aria-label={`Hapus item RAB ${item.name}`}
+                                  color="error"
+                                  onClick={() => setSelectedRabItemId(item.id)}
+                                  size="small"
+                                  sx={{ minHeight: 44, minWidth: 44 }}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            emptyMessage={rab.items.length === 0 ? 'Belum ada item RAB.' : 'Tidak ada item RAB yang cocok dengan filter.'}
+            emptyTitle={rab.items.length === 0 ? 'Belum ada item RAB' : 'Tidak ada item yang cocok'}
+            errorMessage={rab.error ?? undefined}
+            errorTitle="RAB tidak dapat dimuat"
+            getItemKey={(item) => item.id}
+            loadingLabel="Memuat item RAB..."
+            renderMobileItem={(item) => (
+              <RabMobileItemCard
+                isPendingDelete={pendingDeleteIds.has(item.id)}
+                isSelected={rab.selectedRabItemIds.includes(item.id)}
+                item={item}
+                onDelete={() => setSelectedRabItemId(item.id)}
+                onEdit={() => rab.openRabItemEditDialog(item)}
+                onSelect={() => rab.toggleSelectRabItem(item.id)}
+              />
+            )}
+            retry={<Button onClick={rab.reload} sx={{ textTransform: 'none' }}>Coba lagi</Button>}
+            state={rab.error ? 'error' : rab.loading ? 'loading' : rab.filteredRabItems.length === 0 ? 'empty' : 'ready'}
+          />
         </CardContent>
       </Card>
 

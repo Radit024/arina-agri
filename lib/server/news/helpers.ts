@@ -1,5 +1,4 @@
 import Parser from 'rss-parser';
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 export const AGRI_KEYWORDS = [
@@ -42,13 +41,18 @@ export function extractImageUrl(item: Parser.Item & { enclosure?: { url?: string
  */
 async function decodeGoogleNewsUrl(sourceUrl: string): Promise<string | null> {
   try {
-    const response = await axios.get(sourceUrl, {
+    const response = await fetch(sourceUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
-      }
+      },
     });
 
-    const $ = cheerio.load(response.data);
+    if (!response.ok) {
+      return null;
+    }
+
+    const responseText = await response.text();
+    const $ = cheerio.load(responseText);
     const dataP = $('c-wiz[data-p]').attr('data-p');
     if (!dataP) {
       return null;
@@ -63,18 +67,20 @@ async function decodeGoogleNewsUrl(sourceUrl: string): Promise<string | null> {
       ])
     };
 
-    const postResponse = await axios.post(
-      'https://news.google.com/_/DotsSplashUi/data/batchexecute',
-      new URLSearchParams(payload).toString(),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
-        }
-      }
-    );
+    const postResponse = await fetch('https://news.google.com/_/DotsSplashUi/data/batchexecute', {
+      method: 'POST',
+      body: new URLSearchParams(payload).toString(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
+      },
+    });
 
-    const cleanData = postResponse.data.replace(")]}'\n\n", "");
+    if (!postResponse.ok) {
+      return null;
+    }
+
+    const cleanData = (await postResponse.text()).replace(")]}'\n\n", "");
     const outerArray = JSON.parse(cleanData);
     const innerArrayString = outerArray[0][2];
     const finalUrl = JSON.parse(innerArrayString)[1];
@@ -102,14 +108,22 @@ export async function scrapeOgImage(url: string): Promise<string | null> {
       }
     }
 
-    const response = await axios.get(targetUrl, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+    const response = await fetch(targetUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
       },
-      timeout: 8000
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timeoutId));
 
-    const $ = cheerio.load(response.data);
+    if (!response.ok) {
+      return null;
+    }
+
+    const responseText = await response.text();
+    const $ = cheerio.load(responseText);
     const ogImage = $('meta[property="og:image"]').attr('content') || $('meta[name="og:image"]').attr('content');
     return ogImage || null;
   } catch (err) {

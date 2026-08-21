@@ -333,7 +333,7 @@ export default function Sidebar() {
             <List sx={{ p: 0.5 }}>
               <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
-                  onClick={() => router.push(pathname + '?settings=true&tab=general')}
+                  onClick={() => router.push('/dashboard/pengaturan')}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: 'text.secondary' }}>

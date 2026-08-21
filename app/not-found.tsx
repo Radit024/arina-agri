@@ -82,10 +82,12 @@ export default function NotFound() {
             variant="contained"
             startIcon={<HomeIcon />}
             size="large"
+            data-touch-target="44"
             sx={{ 
               borderRadius: 8, 
               px: 4, 
-              py: 1.5, 
+              py: 1.5,
+              minHeight: 44,
               fontWeight: 700,
               fontSize: '1rem',
               textTransform: 'none',

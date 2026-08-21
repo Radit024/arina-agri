@@ -35,7 +35,16 @@ export default function CalendarDayCell({
 }: CalendarDayCellProps) {
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      aria-label={`Jadwal tanggal ${dateLabel}`}
       data-testid="calendar-day-cell"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onAdd();
+        }
+      }}
       sx={(theme) => ({
         minHeight: { xs: 58, sm: 72, md: 92 },
         borderRadius: 1.5,
@@ -44,7 +53,13 @@ export default function CalendarDayCell({
         backgroundColor: isToday ? softBg(theme, 'primary', 0.14) : 'transparent',
         transition: 'background-color 140ms ease, border-color 140ms ease',
         touchAction: 'manipulation',
+        cursor: 'pointer',
         '&:hover': { backgroundColor: 'action.hover' },
+        '&:focus-visible': {
+          outline: '2px solid',
+          outlineColor: 'primary.main',
+          outlineOffset: 1,
+        },
       })}
       onClick={onAdd}
     >
@@ -102,7 +117,7 @@ export default function CalendarDayCell({
                   borderLeftColor: colors.dot,
                   borderRadius: 1,
                   justifyContent: 'flex-start',
-                  minHeight: { xs: 26, sm: 28 },
+                  minHeight: { xs: 28, sm: 30 },
                   overflow: 'hidden',
                   px: { xs: 0.55, sm: 0.7 },
                   py: 0.3,

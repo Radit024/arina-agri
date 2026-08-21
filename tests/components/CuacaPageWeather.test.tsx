@@ -193,7 +193,6 @@ describe('CuacaPage GPS', () => {
 
   afterEach(async () => {
     cleanup();
-    await new Promise((resolve) => setTimeout(resolve, 0));
     vi.clearAllMocks();
     vi.unstubAllGlobals();
     clearNavigatorGeolocation();
@@ -236,8 +235,7 @@ describe('CuacaPage GPS', () => {
 
     render(<CuacaPage />);
 
-    await screen.findByText('emptyWeather.title');
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(await screen.findByText('emptyWeather.title')).toBeInTheDocument();
     expect(getCurrentPosition).not.toHaveBeenCalled();
     expect(weatherApi.getForecast).not.toHaveBeenCalled();
     expect(weatherApi.getWarnings).not.toHaveBeenCalled();
@@ -338,8 +336,7 @@ describe('CuacaPage GPS', () => {
 
     render(<CuacaPage />);
 
-    await screen.findByRole('button', { name: /nyalakan gps/i });
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    expect(await screen.findByRole('button', { name: /nyalakan gps/i })).toBeInTheDocument();
     expect(getCurrentPosition).not.toHaveBeenCalled();
   });
 

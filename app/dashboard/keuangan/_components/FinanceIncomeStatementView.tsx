@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import CalculateIcon from '@mui/icons-material/Calculate';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
@@ -230,12 +231,9 @@ function SummaryModernSection({
               <TableCell
                 align="right"
                 sx={{
+                  fontWeight: 800,
                   py: 1.5,
-                  fontWeight: 900,
-                  fontSize: '1.05rem',
-                  color: profitColor,
-                  borderBottom: '3px double',
-                  borderColor: 'divider',
+                  color: isProfit ? 'success.main' : 'error.main',
                 }}
               >
                 {formatRupiah(labaRugi)}
@@ -256,6 +254,11 @@ function KelayakanUsahaSection({
   productionSales?: UseKeuanganControllerResult['productionSales'];
 }) {
   const [expanded, setExpanded] = useState(true);
+  const isUnconfigured =
+    kelayakanUsaha.hpp == null &&
+    kelayakanUsaha.bepProduksi == null &&
+    kelayakanUsaha.bcRatio == null;
+
   const metrics = [
     {
       label: 'HPP',
@@ -273,8 +276,17 @@ function KelayakanUsahaSection({
       value: kelayakanUsaha.bcRatio != null ? kelayakanUsaha.bcRatio.toFixed(2) : '-',
     },
     {
-      label: 'Status',
-      value: kelayakanUsaha.kelayakanStatus?.toUpperCase() ?? '-',
+      label: 'Status Kelayakan',
+      value:
+        kelayakanUsaha.kelayakanStatus === 'untung' ? (
+          <Chip label="UNTUNG" color="success" size="small" sx={{ fontWeight: 800, height: 24 }} />
+        ) : kelayakanUsaha.kelayakanStatus === 'impas' ? (
+          <Chip label="IMPAS" color="warning" size="small" sx={{ fontWeight: 800, height: 24 }} />
+        ) : kelayakanUsaha.kelayakanStatus === 'rugi' ? (
+          <Chip label="RUGI" color="error" size="small" sx={{ fontWeight: 800, height: 24 }} />
+        ) : (
+          '-'
+        ),
     },
   ];
 
@@ -301,10 +313,10 @@ function KelayakanUsahaSection({
             Kelayakan Usaha
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Asumsi Produksi & Penjualan
+            Asumsi Produksi & Penjualan (HPP, BEP, B/C Ratio)
           </Typography>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
           <Button
             variant="text"
             size="small"
@@ -315,43 +327,113 @@ function KelayakanUsahaSection({
           </Button>
         </Stack>
       </Box>
+
       <Collapse in={expanded}>
         <Box sx={{ p: 2.5, pt: 0 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, minmax(110px, 1fr))' },
-              gap: 1.5,
-              alignItems: 'center',
-            }}
-          >
-            {metrics.map((metric) => (
-              <Box key={metric.label} sx={{ borderLeft: '2px solid', borderColor: 'divider', pl: 1.5 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
-                  {metric.label}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, mt: 0.25 }}>
-                  {metric.value}
-                </Typography>
+          {isUnconfigured ? (
+            <Card
+              variant="outlined"
+              sx={{
+                p: 3,
+                borderRadius: 2.5,
+                bgcolor: 'background.paper',
+                border: '1px dashed',
+                borderColor: 'divider',
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 2,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    bgcolor: 'primary.50',
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <CalculateIcon />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                    Asumsi Produksi Belum Dikonfigurasi
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', maxWidth: 460, mt: 0.25 }}>
+                    Masukkan proyeksi volume panen dan harga jual untuk menghitung HPP, BEP, dan rasio kelayakan usaha secara otomatis.
+                  </Typography>
+                </Box>
               </Box>
-            ))}
-            {productionSales && (
-              <Box sx={{ pl: { xs: 0, md: 1.5 } }}>
+
+              {productionSales && (
                 <Button
-                  variant="outlined"
-                  size="small"
+                  variant="contained"
                   onClick={(e) => {
                     e.stopPropagation();
                     productionSales.openDialog();
                   }}
-                  fullWidth
-                  sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: 'background.paper' }}
+                  sx={{
+                    minHeight: 44,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    bgcolor: 'primary.main',
+                  }}
                 >
-                  Atur Asumsi
+                  Atur Asumsi Sekarang
                 </Button>
-              </Box>
-            )}
-          </Box>
+              )}
+            </Card>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, minmax(110px, 1fr))' },
+                gap: 1.5,
+                alignItems: 'center',
+              }}
+            >
+              {metrics.map((metric) => (
+                <Box key={metric.label} sx={{ borderLeft: '2px solid', borderColor: 'divider', pl: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+                    {metric.label}
+                  </Typography>
+                  <Typography component="div" variant="body2" sx={{ fontWeight: 800, mt: 0.5 }}>
+                    {metric.value}
+                  </Typography>
+                </Box>
+              ))}
+              {productionSales && (
+                <Box sx={{ pl: { xs: 0, md: 1.5 } }}>
+                  <Button
+                    variant="outlined"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      productionSales.openDialog();
+                    }}
+                    fullWidth
+                    sx={{
+                      minHeight: 44,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      borderRadius: 2,
+                      bgcolor: 'background.paper',
+                    }}
+                  >
+                    Atur Ulang Asumsi
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
       </Collapse>
     </Box>

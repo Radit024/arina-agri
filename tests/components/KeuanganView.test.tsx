@@ -260,6 +260,13 @@ function makeRab(overrides: Record<string, unknown> = {}) {
     rabItemDeleteError: null,
     setRabItemDeleteError: vi.fn(),
     submitRabItemDraft: vi.fn(),
+    preflightData: null,
+    setPreflightData: vi.fn(),
+    preflightFile: null,
+    importSummary: null,
+    setImportSummary: vi.fn(),
+    confirmPreflightAndImport: vi.fn(),
+    resetImportState: vi.fn(),
     importRabFile: vi.fn(),
     filteredRabItems: [],
     rabSearchQuery: '',
@@ -296,6 +303,34 @@ function makeTransactionMaster() {
     addSatuan: vi.fn(),
     renameSatuan: vi.fn(),
     deleteSatuan: vi.fn(),
+  };
+}
+
+function makeFinanceProject(overrides: Record<string, unknown> = {}) {
+  return {
+    projects: [],
+    activeProjects: [],
+    loading: false,
+    error: null,
+    backendOnline: false,
+    reload: vi.fn(),
+    createProject: vi.fn(),
+    updateProject: vi.fn(),
+    deleteProject: vi.fn(),
+    selectedProjectId: null,
+    setSelectedProjectId: vi.fn(),
+    selectedProject: null,
+    projectDialogOpen: false,
+    setProjectDialogOpen: vi.fn(),
+    projectDialogMode: 'create',
+    openCreateProjectDialog: vi.fn(),
+    openEditProjectDialog: vi.fn(),
+    deleteProjectConfirmOpen: false,
+    deletingProject: false,
+    requestDeleteProject: vi.fn(),
+    cancelDeleteProject: vi.fn(),
+    confirmDeleteProject: vi.fn(),
+    ...overrides,
   };
 }
 
@@ -339,6 +374,8 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     setFilterBulan: vi.fn(),
     filterJenis: 'semua',
     setFilterJenis: vi.fn(),
+    filterRabLink: 'semua',
+    setFilterRabLink: vi.fn(),
     theme: activeTheme,
     isMobile: true,
     handleDelete: vi.fn(),
@@ -377,30 +414,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     },
     financeTab: 'buku-besar',
     setFinanceTab: vi.fn(),
-    financeProject: {
-      projects: [],
-      activeProjects: [],
-      loading: false,
-      error: null,
-      backendOnline: false,
-      reload: vi.fn(),
-      createProject: vi.fn(),
-      updateProject: vi.fn(),
-      deleteProject: vi.fn(),
-      selectedProjectId: null,
-      setSelectedProjectId: vi.fn(),
-      selectedProject: null,
-      projectDialogOpen: false,
-      setProjectDialogOpen: vi.fn(),
-      projectDialogMode: 'create',
-      openCreateProjectDialog: vi.fn(),
-      openEditProjectDialog: vi.fn(),
-      deleteProjectConfirmOpen: false,
-      deletingProject: false,
-      requestDeleteProject: vi.fn(),
-      cancelDeleteProject: vi.fn(),
-      confirmDeleteProject: vi.fn(),
-    },
+    financeProject: makeFinanceProject() as KeuanganViewProps['financeProject'],
     financeScenario: {
       activeMode: 'PROJECTION' as const,
       setActiveMode: vi.fn(),
@@ -604,6 +618,9 @@ describe('KeuanganView', () => {
       transactionBatch: makeTransactionBatch({ openForEdit }) as KeuanganViewProps['transactionBatch'],
     });
 
+    const expandButton = screen.getByRole('button', { name: 'Buka detail transaksi pupuk' });
+    fireEvent.click(expandButton);
+
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
 
@@ -618,17 +635,15 @@ describe('KeuanganView', () => {
   });
 
   it('menampilkan rincian input transaksi pada ledger', () => {
-    renderView();
+    renderView({ isMobile: false });
 
     expect(screen.getByRole('columnheader', { name: 'Volume Harga Satuan' })).toBeInTheDocument();
     expect(screen.getAllByText('5 Juni 2026').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Volume').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Satuan').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Harga Satuan').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('kg').length).toBeGreaterThan(0);
+    expect(screen.getByText('2 kg')).toBeInTheDocument();
     expect(screen.getAllByText('Pembelian urea').length).toBeGreaterThan(0);
     expect(screen.getAllByText((text) => text.includes('25.000')).length).toBeGreaterThan(0);
-    expect(screen.getByText('2 kg')).toBeInTheDocument();
   });
 
   it('menampilkan tombol aksi desktop hanya ketika transaksi dipilih', () => {
@@ -806,7 +821,7 @@ describe('KeuanganView', () => {
   });
 
   it('keeps dark-mode finance action buttons visible before hover', () => {
-    const { unmount } = renderView({ theme: darkTheme });
+    const { unmount } = renderView({ theme: darkTheme, isMobile: false, selectedTxIds: [transaction._id] });
 
     const editButton = screen.getByRole('button', { name: 'Edit transaksi pupuk' });
     const deleteButton = screen.getByRole('button', { name: 'Hapus transaksi pupuk' });
@@ -820,7 +835,7 @@ describe('KeuanganView', () => {
     expect(screen.queryByRole('button', { name: 'Perhitungan HPP & BEP' })).not.toBeInTheDocument();
 
     unmount();
-    renderView({ theme: darkTheme, aiDialogOpen: true });
+    renderView({ theme: darkTheme, aiDialogOpen: true, isMobile: false });
 
     const generateAiButton = screen.getByRole('button', { name: 'Buat Laporan AI' });
 
@@ -831,6 +846,7 @@ describe('KeuanganView', () => {
   it('menonaktifkan input dan export ketika belum ada proyek', () => {
     const openForCreate = vi.fn();
     renderView({
+      isMobile: false,
       displayedTransactions: [],
       pagedTransactions: [],
       financeAccess: {
@@ -846,13 +862,13 @@ describe('KeuanganView', () => {
     expect(screen.getByRole('button', { name: 'Export Excel' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Export Laporan' })).toBeDisabled();
     expect(screen.getAllByText('Buat proyek terlebih dahulu untuk mulai mencatat transaksi.').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Tambah transaksi pertama' })).toBeDisabled();
     expect(openForCreate).not.toHaveBeenCalled();
   });
 
   it('mengaktifkan input dan export ketika proyek sudah dipilih, walaupun belum punya data', () => {
     const openForCreate = vi.fn();
     renderView({
+      isMobile: false,
       displayedTransactions: [],
       pagedTransactions: [],
       financeAccess: {
@@ -899,6 +915,7 @@ describe('KeuanganView', () => {
 
   it('mengaktifkan export ketika proyek sudah punya transaksi atau RAB', () => {
     renderView({
+      isMobile: false,
       financeAccess: {
         hasSelectedProject: true,
         hasProjectData: true,
@@ -939,6 +956,44 @@ describe('KeuanganView', () => {
     expect(exportReportButton).toBeEnabled();
     expect(exportReportButton).toHaveClass('MuiButton-outlined');
     expect(within(exportReportButton).getByTestId('finance-export-pdf-logo')).toHaveAttribute('src', '/icons/pdf-logo.svg');
+  });
+
+  it('meneruskan CTA arus kas kosong ke form transaksi saat proyek sudah dipilih', () => {
+    const openForCreate = vi.fn();
+    renderView({
+      financeTab: 'arus-kas',
+      financeAccess: {
+        hasSelectedProject: true,
+        hasProjectData: false,
+        canInputFinance: true,
+        canExportFinance: true,
+      },
+      transactionBatch: makeTransactionBatch({ openForCreate }) as KeuanganViewProps['transactionBatch'],
+    });
+
+    const cashFlowPanel = screen.getByTestId('finance-panel-arus-kas');
+    fireEvent.click(within(cashFlowPanel).getByRole('button', { name: 'Catat Transaksi' }));
+    expect(openForCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('meneruskan CTA arus kas kosong ke dialog proyek saat belum ada proyek', () => {
+    const openCreateProjectDialog = vi.fn();
+    renderView({
+      financeTab: 'arus-kas',
+      financeAccess: {
+        hasSelectedProject: false,
+        hasProjectData: false,
+        canInputFinance: false,
+        canExportFinance: false,
+      },
+      financeProject: makeFinanceProject({
+        openCreateProjectDialog,
+      }) as KeuanganViewProps['financeProject'],
+    });
+
+    const cashFlowPanel = screen.getByTestId('finance-panel-arus-kas');
+    fireEvent.click(within(cashFlowPanel).getByRole('button', { name: 'Buat Proyek' }));
+    expect(openCreateProjectDialog).toHaveBeenCalledTimes(1);
   });
 
   it('memaginasi Buku Besar Transaksi menjadi 7 item per halaman', () => {

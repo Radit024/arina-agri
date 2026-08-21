@@ -5,21 +5,19 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SaveIcon from '@mui/icons-material/Save';
-import SettingsIcon from '@mui/icons-material/Settings';
 
 import type {
   RabItemFormDraft,
   RabItemFormField,
 } from '@/controllers/keuangan/useRabController';
 import { formatRupiah } from '@/lib/formatters';
+import AppField from '@/components/ui/AppField';
+import FieldWithManageAction from '@/components/shared/forms/FieldWithManageAction';
 
 interface Props {
   draft: RabItemFormDraft;
@@ -59,21 +57,23 @@ export default function RabItemForm({
     >
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 5 }}>
-          <TextField
+          <AppField
             name="type"
             label="Jenis RAB"
-            select
+            type="select"
             value={draft.type}
-            onChange={(event) => onFieldChange('type', event.target.value)}
-            fullWidth
-            size="small"
-          >
-            <MenuItem value="expense">Pengeluaran</MenuItem>
-            <MenuItem value="income">Pendapatan</MenuItem>
-          </TextField>
+            onChange={(val) => onFieldChange('type', val)}
+            options={[
+              { label: 'Pengeluaran', value: 'expense' },
+              { label: 'Pendapatan', value: 'income' },
+            ]}
+          />
         </Grid>
         <Grid size={{ xs: 12, sm: 7 }}>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+          <FieldWithManageAction
+            onManage={onOpenCategoryDialog}
+            manageLabel="Kelola Kategori RAB"
+          >
             <FormControl fullWidth size="small" required>
               <InputLabel id={categoryLabelId}>Kategori RAB</InputLabel>
               <Select
@@ -91,158 +91,122 @@ export default function RabItemForm({
                 ))}
               </Select>
             </FormControl>
-            <IconButton
-              size="small"
-              onClick={onOpenCategoryDialog}
-              title="Kelola Kategori RAB"
-              aria-label="Kelola Kategori RAB"
-              sx={{ mt: 0.5, flexShrink: 0 }}
-            >
-              <SettingsIcon fontSize="small" />
-            </IconButton>
-          </Box>
+          </FieldWithManageAction>
         </Grid>
       </Grid>
 
-      <TextField
+      <AppField
         name="name"
         label="Nama Item"
         value={draft.name}
-        onChange={(event) => onFieldChange('name', event.target.value)}
-        fullWidth
-        size="small"
+        onChange={(val) => onFieldChange('name', val)}
         required
         placeholder="Contoh: Pupuk Urea"
       />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField
+          <AppField
             name="volume"
             label="Volume"
-            value={draft.volume}
-            onChange={(event) => onFieldChange('volume', event.target.value)}
             type="number"
-            fullWidth
-            size="small"
+            value={draft.volume}
+            onChange={(val) => onFieldChange('volume', val)}
             required
-            slotProps={{ input: { inputProps: { min: 0, step: 'any' } } }}
+            min={0}
+            step={0.01}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField
+          <AppField
             name="unit"
             label="Satuan"
             value={draft.unit}
-            onChange={(event) => onFieldChange('unit', event.target.value)}
-            fullWidth
-            size="small"
+            onChange={(val) => onFieldChange('unit', val)}
             required
             placeholder="kg, karung, HOK"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 4 }}>
-          <TextField
+          <AppField
             name="unitPrice"
             label="Harga Satuan"
-            value={draft.unitPrice}
-            onChange={(event) => onFieldChange('unitPrice', event.target.value)}
             type="number"
-            fullWidth
-            size="small"
+            value={draft.unitPrice}
+            onChange={(val) => onFieldChange('unitPrice', val)}
             required
-            slotProps={{
-              input: {
-                inputProps: { min: 0, step: 'any' },
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>
-                      Rp
-                    </Typography>
-                  </InputAdornment>
-                ),
-              },
-            }}
+            min={0}
+            startIcon={<Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>Rp</Typography>}
           />
         </Grid>
       </Grid>
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, sm: 6 }}>
-          <TextField
+          <AppField
             name="plannedCashMonth"
             label="Bulan Kas Rencana"
             value={draft.plannedCashMonth}
-            onChange={(event) => onFieldChange('plannedCashMonth', event.target.value)}
-            fullWidth
-            size="small"
+            onChange={(val) => onFieldChange('plannedCashMonth', val)}
             placeholder="2026-08"
             helperText="Format YYYY-MM"
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
           <Box
-            sx={{
-              height: '100%',
-              minHeight: 56,
+            sx={(theme) => ({
+              p: 1.5,
+              borderRadius: 2,
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 2,
-              px: 1.5,
+              bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50',
+              height: '100%',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 1.5,
-              bgcolor: 'action.hover',
-            }}
+              flexDirection: 'column',
+              justifyContent: 'center',
+            })}
           >
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
+            <Typography variant="caption" color="text.secondary">
               Total Rencana
             </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 900, color: 'success.main' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: draft.type === 'income' ? 'success.main' : 'error.main' }}>
               {formatRupiah(plannedTotal)}
             </Typography>
           </Box>
         </Grid>
       </Grid>
 
-      <TextField
+      <AppField
         name="aliases"
-        label="Alias / Kata Kunci"
+        label="Alias / Kata Kunci Pencocokan"
         value={draft.aliases}
-        onChange={(event) => onFieldChange('aliases', event.target.value)}
-        fullWidth
-        size="small"
-        multiline
-        rows={2}
-        helperText="Pisahkan dengan koma, titik koma, atau baris baru agar transaksi Buku Besar lebih mudah cocok ke item RAB."
-        placeholder="Contoh: urea, pupuk nitrogen, pemupukan dasar"
+        onChange={(val) => onFieldChange('aliases', val)}
+        placeholder="Contoh: urea, pupuk subsidi (pisahkan dengan koma)"
+        helperText="Digunakan untuk mendeteksi transaksi Buku Besar yang cocok secara otomatis."
       />
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, pt: 0.5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
         <Button
+          type="button"
           variant="outlined"
           color="inherit"
           onClick={onCancel}
           disabled={submitting}
-          sx={{ borderRadius: 8, textTransform: 'none' }}
+          data-touch-target="44"
+          sx={{ minHeight: 44, px: 2.5, borderRadius: 2 }}
         >
           Batal
         </Button>
         <Button
           type="submit"
           variant="contained"
-          startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+          color="primary"
           disabled={submitting}
-          sx={{
-            borderRadius: 8,
-            textTransform: 'none',
-            fontWeight: 800,
-            bgcolor: 'success.main',
-            '&:hover': { bgcolor: 'success.dark' },
-          }}
+          startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+          data-touch-target="44"
+          sx={{ minHeight: 44, px: 3, borderRadius: 2, fontWeight: 700 }}
         >
-          {submitting ? 'Menyimpan...' : (submitLabel ?? 'Simpan Item')}
+          {submitting ? 'Menyimpan...' : submitLabel ?? 'Tambah Item'}
         </Button>
       </Box>
     </Box>

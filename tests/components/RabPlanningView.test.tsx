@@ -176,8 +176,8 @@ describe('RabPlanningView', () => {
     const setRabSearchQuery = vi.fn();
     renderView({ setRabFilterJenis, setRabSearchQuery });
 
-    expect(screen.getByText('Pupuk Urea')).toBeInTheDocument();
-    expect(screen.getByText('Penjualan Padi')).toBeInTheDocument();
+    expect(screen.getAllByText('Pupuk Urea')).toHaveLength(2);
+    expect(screen.getAllByText('Penjualan Padi')).toHaveLength(2);
 
     fireEvent.change(screen.getByPlaceholderText('Cari item atau kategori...'), { target: { value: 'urea' } });
     expect(setRabSearchQuery).toHaveBeenCalledWith('urea');
@@ -196,18 +196,54 @@ describe('RabPlanningView', () => {
       selectedRabItemIds: ['rab-pupuk-urea'],
     });
 
-    const editButton = screen.getByRole('button', { name: 'Edit item RAB Pupuk Urea' });
+    const desktopTable = screen.getByRole('table', { name: 'Daftar item RAB' });
+    const editButton = within(desktopTable).getByRole('button', { name: 'Edit item RAB Pupuk Urea' });
     fireEvent.click(editButton);
     expect(openRabItemEditDialog).toHaveBeenCalledWith(pupukUrea);
 
-    expect(screen.queryByRole('button', { name: /Edit item RAB Penjualan Padi/i })).not.toBeInTheDocument();
+    expect(within(desktopTable).queryByRole('button', { name: /Edit item RAB Penjualan Padi/i })).not.toBeInTheDocument();
+  });
+
+  it('renders a selected RAB mobile card with its details and edit action', () => {
+    const toggleSelectRabItem = vi.fn();
+    const openRabItemEditDialog = vi.fn();
+    renderView({
+      openRabItemEditDialog,
+      selectedRabItemIds: ['rab-pupuk-urea'],
+      toggleSelectRabItem,
+    });
+
+    const mobileCard = screen.getByRole('article', { name: 'Item RAB Pupuk Urea' });
+    expect(within(mobileCard).getByText('Saprodi')).toBeInTheDocument();
+    expect(within(mobileCard).getByText('10 karung')).toBeInTheDocument();
+    expect(within(mobileCard).getByText(/Rp\s*200\.000/)).toBeInTheDocument();
+
+    fireEvent.click(within(mobileCard).getByRole('checkbox'));
+    expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-pupuk-urea');
+    fireEvent.click(within(mobileCard).getByRole('button', { name: 'Edit item RAB Pupuk Urea' }));
+    expect(openRabItemEditDialog).toHaveBeenCalledWith(pupukUrea);
+  });
+
+  it('renders an error ContentState without stale RAB items', () => {
+    renderView({ error: 'RAB tidak dapat dimuat.' });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('RAB tidak dapat dimuat.');
+    expect(screen.queryByRole('article', { name: 'Item RAB Pupuk Urea' })).not.toBeInTheDocument();
+  });
+
+  it('renders an empty-filter ContentState without stale RAB items', () => {
+    renderView({ filteredRabItems: [] });
+
+    expect(screen.getByText('Tidak ada item RAB yang cocok dengan filter.')).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: 'Item RAB Pupuk Urea' })).not.toBeInTheDocument();
   });
 
   it('deletes a single item after confirming in the delete dialog', async () => {
     const deleteRabItem = vi.fn(async () => {});
     renderView({ selectedRabItemIds: ['rab-pupuk-urea'], deleteRabItem });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Hapus item RAB Pupuk Urea' }));
+    const desktopTable = screen.getByRole('table', { name: 'Daftar item RAB' });
+    fireEvent.click(within(desktopTable).getByRole('button', { name: 'Hapus item RAB Pupuk Urea' }));
 
     const confirmDialog = await screen.findByRole('dialog', { name: /Hapus item RAB\?/i });
     fireEvent.click(within(confirmDialog).getByRole('button', { name: 'Hapus' }));
@@ -244,7 +280,8 @@ describe('RabPlanningView', () => {
     const toggleSelectRabItem = vi.fn();
     renderView({ toggleSelectRabItem });
 
-    const selectAllCheckbox = screen.getAllByRole('checkbox')[0];
+    const desktopTable = screen.getByRole('table', { name: 'Daftar item RAB' });
+    const selectAllCheckbox = within(desktopTable).getByRole('checkbox', { name: 'Pilih semua item RAB' });
     fireEvent.click(selectAllCheckbox);
 
     expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-pupuk-urea');

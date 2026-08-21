@@ -13,15 +13,27 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { formatRupiah } from '@/lib/formatters';
-import type { UseFinancingControllerResult } from '@/controllers/keuangan/useFinancingController';
+import ResponsiveDataView from '@/components/ui/ResponsiveDataView';
+import { formatMonthYear, formatRupiah } from '@/lib/formatters';
+import type { ArusKasPascaPembiayaanBulanan } from '@/lib/finance/rabTypes';
 
-type Props = {
-  financing: UseFinancingControllerResult;
+import FinanceFinancingMobileCard from './FinanceFinancingMobileCard';
+
+export interface FinanceFinancingViewProps {
+  arusKasPascaPembiayaan: readonly ArusKasPascaPembiayaanBulanan[];
+  bunga: number | null;
+  kasAkhirPascaPembiayaan: number | null;
+  kebutuhanModalKerja: number;
+  onOpenAssumptions: () => void;
 };
 
-export default function FinanceFinancingView({ financing }: Props) {
-  const { kebutuhanModalKerja, bunga, kasAkhirPascaPembiayaan, arusKasPascaPembiayaan, openDialog } = financing;
+export default function FinanceFinancingView({
+  arusKasPascaPembiayaan,
+  bunga,
+  kasAkhirPascaPembiayaan,
+  kebutuhanModalKerja,
+  onOpenAssumptions,
+}: FinanceFinancingViewProps) {
   const hasAssumptions = bunga !== null;
 
   return (
@@ -42,11 +54,7 @@ export default function FinanceFinancingView({ financing }: Props) {
               {hasAssumptions ? (
                 <Typography variant="h6" sx={{ fontWeight: 900 }}>{formatRupiah(bunga)}</Typography>
               ) : (
-                <Box sx={{ mt: 1 }}>
-                  <Button size="small" variant="outlined" onClick={openDialog} sx={{ borderRadius: 8 }}>
-                    Atur Asumsi Pembiayaan
-                  </Button>
-                </Box>
+                <Typography color="text.secondary" sx={{ mt: 1 }} variant="body2">Belum diatur</Typography>
               )}
             </CardContent>
           </Card>
@@ -58,11 +66,7 @@ export default function FinanceFinancingView({ financing }: Props) {
               {hasAssumptions ? (
                 <Typography variant="h6" sx={{ fontWeight: 900 }}>{formatRupiah(kasAkhirPascaPembiayaan ?? 0)}</Typography>
               ) : (
-                <Box sx={{ mt: 1 }}>
-                  <Button size="small" variant="outlined" onClick={openDialog} sx={{ borderRadius: 8 }}>
-                    Atur Asumsi Pembiayaan
-                  </Button>
-                </Box>
+                <Typography color="text.secondary" sx={{ mt: 1 }} variant="body2">Belum diatur</Typography>
               )}
             </CardContent>
           </Card>
@@ -79,31 +83,41 @@ export default function FinanceFinancingView({ financing }: Props) {
               <Typography variant="body2" color="text.secondary">
                 Atur asumsi pembiayaan untuk melihat proyeksi arus kas setelah pembiayaan.
               </Typography>
-              <Button variant="contained" onClick={openDialog} sx={{ borderRadius: 8 }}>
+              <Button variant="contained" onClick={onOpenAssumptions} sx={{ borderRadius: 8 }}>
                 Atur Asumsi Pembiayaan
               </Button>
             </Box>
           ) : (
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Bulan</TableCell>
-                    <TableCell align="right">Kas Setelah Pembiayaan</TableCell>
-                    <TableCell align="right">Kas Kumulatif Setelah Pembiayaan</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {arusKasPascaPembiayaan.map((row) => (
-                    <TableRow key={row.bulan}>
-                      <TableCell>{row.bulan}</TableCell>
-                      <TableCell align="right">{formatRupiah(row.kasSetelahPembiayaan)}</TableCell>
-                      <TableCell align="right">{formatRupiah(row.kasKumulatifSetelahPembiayaan)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <ResponsiveDataView
+              data={arusKasPascaPembiayaan}
+              desktop={
+                <TableContainer>
+                  <Table aria-label="Tabel arus kas pasca pembiayaan" size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Bulan</TableCell>
+                        <TableCell align="right">Kas Setelah Pembiayaan</TableCell>
+                        <TableCell align="right">Kas Kumulatif Setelah Pembiayaan</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {arusKasPascaPembiayaan.map((row) => (
+                        <TableRow key={row.bulan}>
+                          <TableCell>{formatMonthYear(row.bulan)}</TableCell>
+                          <TableCell align="right">{formatRupiah(row.kasSetelahPembiayaan)}</TableCell>
+                          <TableCell align="right">{formatRupiah(row.kasKumulatifSetelahPembiayaan)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              }
+              emptyMessage="Belum ada proyeksi arus kas setelah pembiayaan."
+              emptyTitle="Belum ada proyeksi pembiayaan"
+              getItemKey={(row) => row.bulan}
+              renderMobileItem={(row) => <FinanceFinancingMobileCard row={row} />}
+              state={arusKasPascaPembiayaan.length === 0 ? 'empty' : 'ready'}
+            />
           )}
         </CardContent>
       </Card>

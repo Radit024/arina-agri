@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
@@ -29,7 +29,7 @@ vi.mock('@/hooks/useStok', () => ({
 const theme = createTheme();
 const staleBatchId = '790300ba-7b48-410c-8282-d2a8b9a4f8d7';
 
-function StokViewHarness() {
+function StokViewHarness({ stockOutDialogOpen = true }: { stockOutDialogOpen?: boolean } = {}) {
   const batchForm = useForm<BatchFormInput, unknown, BatchFormOutput>({
     defaultValues: {
       tanggalPanen: '2026-06-01',
@@ -82,7 +82,7 @@ function StokViewHarness() {
         setMutToDate={vi.fn()}
         setStockOutDialogOpen={vi.fn()}
         setTab={vi.fn()}
-        stockOutDialogOpen
+        stockOutDialogOpen={stockOutDialogOpen}
         stockOutForm={stockOutForm}
         summary={{
           totalStokSiapJual: 0,
@@ -122,6 +122,20 @@ function StokViewHarness() {
 }
 
 describe('StokView', () => {
+  it('renders the four stock summaries through labelled metric sections', () => {
+    render(<StokViewHarness stockOutDialogOpen={false} />);
+
+    const ready = screen.getByRole('region', { name: 'kpi.ready' });
+    const sold = screen.getByRole('region', { name: 'kpi.sold' });
+    const value = screen.getByRole('region', { name: 'kpi.value' });
+    const alert = screen.getByRole('region', { name: 'kpi.alert' });
+
+    expect(within(ready).getByText('0 kg')).toBeInTheDocument();
+    expect(within(sold).getByText('0 kg')).toBeInTheDocument();
+    expect(within(value).getByText(/Rp\s?0/)).toBeInTheDocument();
+    expect(within(alert).getByText('0 batch')).toBeInTheDocument();
+  });
+
   it('does not pass stale batch ids to the stock-out batch select', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
     const consoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});

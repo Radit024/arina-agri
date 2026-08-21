@@ -59,6 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (nextSession?.user) {
       clearDevelopmentAuthMode();
       localStorage.setItem(ARINA_USER_ID_STORAGE_KEY, nextSession.user.id);
+      if (typeof document !== 'undefined') {
+        document.cookie = 'arina_guest_session=; path=/; max-age=0; SameSite=Lax';
+      }
     } else {
       localStorage.removeItem(ARINA_USER_ID_STORAGE_KEY);
     }
@@ -71,6 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setUser(null);
       return;
+    }
+
+    if (typeof document !== 'undefined') {
+      document.cookie = 'arina_guest_session=1; path=/; max-age=604800; SameSite=Lax';
     }
 
     const localUser = buildLocalUser(localUserId);
@@ -90,6 +97,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     clearLocalDevelopmentAuth();
     sessionStorage.clear();
+    if (typeof document !== 'undefined') {
+      document.cookie = 'arina_guest_session=; path=/; max-age=0; SameSite=Lax';
+    }
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);

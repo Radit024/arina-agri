@@ -45,7 +45,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-form';
 import { formatDateInputValue, formatDateShort, formatRupiah, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation, ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
-import MasterDataDialog from './MasterDataDialog';
+import MasterDataDialog from '@/components/shared/forms/MasterDataDialog';
 import SupplyItemsView from './SupplyItemsView';
 import { useTranslations } from 'next-intl';
 import type {
@@ -58,34 +58,31 @@ import { PageActionButton, PageHeader, PageShell } from '@/components/shared/pag
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 import { computeBatchPerformance } from '@/hooks/useStok';
 
-// ─── Status badge ─────────────────────────────────────────────────
+import StatusBadge, { type StatusIntent } from '@/components/ui/StatusBadge';
+import MetricCard, { type MetricCardIntent } from '@/components/ui/MetricCard';
+import MobileTabBar from '@/components/ui/MobileTabBar';
+
+// Status badge
 type StockTranslator = ReturnType<typeof useTranslations>;
 
-const StatusChip = ({ status, theme, t }: { status: ApiHarvestBatch['status']; theme: Theme; t: StockTranslator }) => {
-  const map = {
-    aman: { label: t('status.safe'), color: softBg(theme, 'success', 0.14), text: softText(theme, 'success') },
-    menipis: { label: t('status.low'), color: softBg(theme, 'warning', 0.14), text: softText(theme, 'warning') },
-    hampir_kadaluarsa: { label: t('status.expiring'), color: softBg(theme, 'error', 0.14), text: softText(theme, 'error') },
-    habis: { label: t('status.empty'), color: alpha(theme.palette.grey[500], 0.12), text: theme.palette.text.secondary },
+const StatusChip = ({ status, t }: { status: ApiHarvestBatch['status']; t: StockTranslator }) => {
+  const map: Record<ApiHarvestBatch['status'], { label: string; intent: StatusIntent }> = {
+    aman: { label: t('status.safe'), intent: 'success' },
+    menipis: { label: t('status.low'), intent: 'warning' },
+    hampir_kadaluarsa: { label: t('status.expiring'), intent: 'error' },
+    habis: { label: t('status.empty'), intent: 'neutral' },
   };
-  const s = map[status];
+  const s = map[status] ?? { label: status, intent: 'neutral' };
   return (
-    <Chip
+    <StatusBadge
       label={s.label}
-      size="small"
-      sx={{ bgcolor: s.color, color: s.text, fontWeight: 700, fontSize: '0.7rem', borderRadius: 1.5 }}
+      intent={s.intent}
     />
   );
 };
 
-// ─── Grade badge (free-form strings) ─────────────────────────────
-const GRADE_PALETTE = [
-  (t: Theme) => ({ bg: t.palette.success.main, text: accentText(t, 'success') }),
-  (t: Theme) => ({ bg: t.palette.info.main, text: accentText(t, 'info') }),
-  (t: Theme) => ({ bg: t.palette.warning.main, text: accentText(t, 'warning') }),
-  (t: Theme) => ({ bg: t.palette.error.main, text: accentText(t, 'error') }),
-  (t: Theme) => ({ bg: t.palette.primary.main, text: '#fff' }),
-];
+// Grade badge (free-form strings)
+const GRADE_PALETTE: StatusIntent[] = ['success', 'info', 'warning', 'error', 'primary'];
 
 function gradeColorIndex(grade: string): number {
   let hash = 0;
@@ -93,18 +90,16 @@ function gradeColorIndex(grade: string): number {
   return hash % GRADE_PALETTE.length;
 }
 
-const GradeChip = ({ grade, theme, t }: { grade: string; theme: Theme; t: StockTranslator }) => {
-  const { bg, text } = GRADE_PALETTE[gradeColorIndex(grade)](theme);
+const GradeChip = ({ grade, t }: { grade: string; t: StockTranslator }) => {
+  const intent = GRADE_PALETTE[gradeColorIndex(grade)];
   return (
-    <Chip
+    <StatusBadge
       label={`${t('table.grade')} ${grade}`}
-      size="small"
-      sx={{ bgcolor: bg, color: text, fontWeight: 800, fontSize: '0.7rem', borderRadius: 1.5 }}
+      intent={intent}
     />
   );
 };
 
-// ─── Batch Info Card (Stock Out form) ────────────────────────────
 const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: Theme; t: StockTranslator }) => (
   <Box sx={{
     p: 1.5,
@@ -119,8 +114,10 @@ const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: The
     <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 800, color: 'text.primary' }}>
       {batch.batchCode}
     </Typography>
-    <GradeChip grade={batch.grade} theme={theme} t={t} />
-    <StatusChip status={batch.status} theme={theme} t={t} />
+    <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+      <GradeChip grade={batch.grade} t={t} />
+      <StatusChip status={batch.status} t={t} />
+    </Box>
     <Box sx={{ width: '100%', display: 'flex', gap: 2, mt: 0.5, flexWrap: 'wrap' }}>
       <Typography variant="caption" color="text.secondary">
         Sisa: <strong>{batch.stokTersisa} kg</strong>
@@ -261,13 +258,7 @@ export default function StokView({
       <PageHeader
         title={t('title')}
         subtitle={t('subtitle')}
-        meta={!backendOnline ? (
-          <Chip
-            label={t('offlineMode')}
-            size="small"
-            sx={{ bgcolor: alpha(theme.palette.warning.main, 0.12), color: theme.palette.warning.main, fontWeight: 600, fontSize: '0.65rem' }}
-          />
-        ) : undefined}
+
         actions={(
           <>
             <PageActionButton data-guide-target="stock-stock-out" variant="outlined" startIcon={<LocalShippingIcon />} onClick={() => setStockOutDialogOpen(true)}>
@@ -294,34 +285,36 @@ export default function StokView({
       {/* KPI Cards */}
       <Grid data-guide-target="stock-summary" container spacing={2.5} sx={{ mb: 3 }}>
         {[
-          { label: t('kpi.ready'), value: `${summary.totalStokSiapJual.toLocaleString()} kg`, icon: <InventoryIcon />, color: theme.palette.success.main, bg: alpha(theme.palette.success.main, 0.12) },
-          { label: t('kpi.sold'), value: `${summary.stokTerjualMingguIni.toLocaleString()} kg`, icon: <LocalShippingIcon />, color: theme.palette.info.main, bg: alpha(theme.palette.info.main, 0.12) },
-          { label: t('kpi.value'), value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, color: theme.palette.warning.main, bg: alpha(theme.palette.warning.main, 0.12) },
-          { label: t('kpi.alert'), value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, color: theme.palette.error.main, bg: alpha(theme.palette.error.main, 0.12) },
+          { label: t('kpi.ready'), value: `${summary.totalStokSiapJual.toLocaleString()} kg`, icon: <InventoryIcon />, intent: 'success' },
+          { label: t('kpi.sold'), value: `${summary.stokTerjualMingguIni.toLocaleString()} kg`, icon: <LocalShippingIcon />, intent: 'info' },
+          { label: t('kpi.value'), value: formatRupiah(summary.estimasiNilaiStok), icon: <MonetizationOnIcon />, intent: 'warning' },
+          { label: t('kpi.alert'), value: `${summary.batchHampirKadaluarsa} batch`, icon: <WarningAmberIcon />, intent: 'error' },
         ].map((kpi) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={kpi.label}>
-            <Card sx={{ borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ width: 44, height: 44, borderRadius: 3, bgcolor: kpi.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: kpi.color }}>
-                  {kpi.icon}
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block' }}>{kpi.label}</Typography>
-                  <Typography variant="h6" sx={{ lineHeight: 1.2, color: kpi.color, fontWeight: 800 }}>{loading ? '...' : kpi.value}</Typography>
-                </Box>
-              </CardContent>
-            </Card>
+            <MetricCard
+              icon={kpi.icon}
+              intent={kpi.intent as MetricCardIntent}
+              label={kpi.label}
+              loading={loading}
+              value={kpi.value}
+            />
           </Grid>
         ))}
       </Grid>
 
       {/* Tabs */}
       <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Tab label={t('tabs.batches')} />
-          <Tab label={t('tabs.mutations')} />
-          <Tab label={t('tabs.supply')} />
-        </Tabs>
+        <MobileTabBar
+          ariaLabel="Navigasi stok"
+          value={tab}
+          onChange={(v) => setTab(Number(v))}
+          sx={{ px: 2 }}
+          tabs={[
+            { id: 0, label: t('tabs.batches') },
+            { id: 1, label: t('tabs.mutations') },
+            { id: 2, label: t('tabs.supply') },
+          ]}
+        />
 
         {/* Tab 1: Batch List */}
         {tab === 0 && (
@@ -345,11 +338,15 @@ export default function StokView({
                           <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
                             {b.batchCode}
                           </Typography>
-                          <StatusChip status={b.status} theme={theme} t={t} />
+                          <StatusChip status={b.status} t={t} />
                         </Box>
 
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <StatusChip status={b.status} t={t} />
+                          <GradeChip grade={b.grade} t={t} />
+                        </Box>
                         <Box sx={{ display: 'flex', gap: 1.25, mb: 1.5, alignItems: 'center' }}>
-                          <GradeChip grade={b.grade} theme={theme} t={t} />
+                          <GradeChip grade={b.grade} t={t} />
                           <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                             {b.stokTersisa} kg / {b.beratMasuk} kg
                           </Typography>
@@ -481,7 +478,7 @@ export default function StokView({
                         <TableRow key={b._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
-                          <TableCell><GradeChip grade={b.grade} theme={theme} t={t} /></TableCell>
+                          <TableCell><GradeChip grade={b.grade} t={t} /></TableCell>
                           <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
                           <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? softText(theme, 'error') : softText(theme, 'success') }}>
                             {b.stokTersisa} kg
@@ -510,7 +507,7 @@ export default function StokView({
                           </TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
                           <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
-                          <TableCell><StatusChip status={b.status} theme={theme} t={t} /></TableCell>
+                          <TableCell><StatusChip status={b.status} t={t} /></TableCell>
                           <TableCell>
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
                               <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
@@ -686,7 +683,7 @@ export default function StokView({
         )}
       </Card>
 
-      {/* ─── Dialog / Bottom Sheet: Tambah Batch ─── */}
+
       {isMobile ? (
         <SwipeableDrawer
           anchor="bottom"
@@ -944,7 +941,6 @@ export default function StokView({
         </Dialog>
       )}
 
-      {/* ─── Dialog / Bottom Sheet: Catat Keluar Stok ─── */}
       {isMobile ? (
         <SwipeableDrawer
           anchor="bottom"
@@ -1183,7 +1179,6 @@ export default function StokView({
         </Dialog>
       )}
 
-      {/* ─── Dialog Konfirmasi Tutup Batch ─── */}
       <Dialog
         open={closeConfirmId !== null}
         onClose={onCancelClose}
@@ -1227,7 +1222,6 @@ export default function StokView({
         </DialogContent>
       </Dialog>
 
-      {/* ─── Grade Master Data Dialog ─── */}
       <MasterDataDialog
         open={gradeDialogOpen}
         onClose={() => setGradeDialogOpen(false)}
@@ -1240,7 +1234,6 @@ export default function StokView({
         onClearDeleteError={onClearGradeDeleteError}
       />
 
-      {/* ─── Location Master Data Dialog ─── */}
       <MasterDataDialog
         open={locationDialogOpen}
         onClose={() => setLocationDialogOpen(false)}

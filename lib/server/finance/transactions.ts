@@ -69,7 +69,7 @@ function parseCreatePayload(body: CreateTransactionPayload) {
   if (
     (body.jenis !== 'pengeluaran' && body.jenis !== 'pendapatan') ||
     typeof body.kategori !== 'string' || !body.kategori.trim() ||
-    typeof body.nominal !== 'number' ||
+    typeof body.nominal !== 'number' || body.nominal <= 0 ||
     typeof body.tanggal !== 'string' || !body.tanggal.trim()
   ) {
     return null;

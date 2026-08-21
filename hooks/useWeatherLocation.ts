@@ -11,7 +11,7 @@ import {
 } from '@/lib/weatherLocation';
 
 export function useWeatherLocation() {
-  const { session } = useAuth();
+  const { session, isGuestMode } = useAuth();
   const [gpsLocation, setGpsLocation, gpsLocationHydrated] = useLocalStorage<GpsLocationSnapshot | null>(
     WEATHER_GPS_LOCATION_KEY,
     null
@@ -25,7 +25,7 @@ export function useWeatherLocation() {
   const hydrationAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!isWeatherLocationHydrated || !session?.access_token) return;
+    if (!isWeatherLocationHydrated || !session?.access_token || isGuestMode) return;
     if (hydrationAttemptedRef.current) return;
     hydrationAttemptedRef.current = true;
 
@@ -51,7 +51,7 @@ export function useWeatherLocation() {
           console.warn('[useWeatherLocation] Failed to hydrate from schedule:', err);
         });
     }
-  }, [isWeatherLocationHydrated, session?.access_token, gpsLocation?.adm4, setGpsLocation]);
+  }, [isWeatherLocationHydrated, session?.access_token, isGuestMode, gpsLocation?.adm4, setGpsLocation]);
 
   const activeLocation = useMemo(() => {
     return gpsLocation;

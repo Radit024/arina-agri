@@ -28,6 +28,7 @@ export async function trackPageView(feature: AnalyticsFeature): Promise<void> {
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ feature }),
       cache: 'no-store',
+      keepalive: true,
     });
   } catch (error) {
     console.error('[trackPageView] Gagal mencatat page view:', error);

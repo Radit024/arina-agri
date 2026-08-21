@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Sora } from 'next/font/google';
 import Script from 'next/script';
-import 'katex/dist/katex.min.css';
 import './globals.css';
 import MuiProvider from '@/components/shared/MuiProvider';
 import { NextIntlClientProvider } from 'next-intl';
@@ -18,6 +17,7 @@ const sora = Sora({
   subsets: ['latin'],
   variable: '--font-sora',
   display: 'swap',
+  preload: false,
 });
 
 export const metadata: Metadata = {

@@ -35,13 +35,18 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import ReactMarkdown from 'react-markdown';
-import rehypeKatex from 'rehype-katex';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
+import dynamic from 'next/dynamic';
 import { useMessages } from 'next-intl';
 import { PageActionButton } from '@/components/shared/page';
 import { accentText, softBg, softText } from '@/lib/themeColors';
+
+const ChatMarkdownRenderer = dynamic(
+  () => import('./ChatMarkdownRenderer'),
+  {
+    ssr: false,
+    loading: () => <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>...</Typography>,
+  }
+);
 
 interface QuickReferenceDisease {
   id: string;
@@ -689,12 +694,7 @@ export default function EnsiklopediaView({
                         },
                       }}
                     >
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+                      <ChatMarkdownRenderer content={msg.content} />
                     </Box>
                   )}
                 </Box>

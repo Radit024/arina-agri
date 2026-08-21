@@ -85,6 +85,7 @@ export function useKeuanganController() {
   }>({ open: false, message: '', severity: 'success' });
   const [filterBulan, setFilterBulan] = useState('semua');
   const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
+  const [filterRabLink, setFilterRabLink] = useState<'semua' | 'linked' | 'unlinked'>('semua');
   const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan' | 'perbandingan'>('buku-besar');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
@@ -547,6 +548,12 @@ export function useKeuanganController() {
       (tx) => filterJenis === 'semua' || tx.jenis === filterJenis
     );
 
+    if (filterRabLink === 'linked') {
+      result = result.filter((tx) => Boolean(tx.rabItemId || tx.rabCategoryId));
+    } else if (filterRabLink === 'unlinked') {
+      result = result.filter((tx) => !tx.rabItemId && !tx.rabCategoryId);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
@@ -570,13 +577,13 @@ export function useKeuanganController() {
       else if (sortColumn === 'jenis') cmp = a.jenis.localeCompare(b.jenis);
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [monthFilteredTransactions, filterJenis, searchQuery, sortColumn, sortDir]);
+  }, [monthFilteredTransactions, filterJenis, filterRabLink, searchQuery, sortColumn, sortDir]);
 
   const ledgerTotalPages = Math.max(1, Math.ceil(displayedTransactions.length / LEDGER_PAGE_SIZE));
 
   useEffect(() => {
     setLedgerPage(1);
-  }, [filterBulan, filterJenis, searchQuery, sortColumn, sortDir]);
+  }, [filterBulan, filterJenis, filterRabLink, searchQuery, sortColumn, sortDir]);
 
   useEffect(() => {
     if (ledgerPage > ledgerTotalPages) setLedgerPage(ledgerTotalPages);
@@ -605,6 +612,8 @@ export function useKeuanganController() {
     setFilterBulan,
     filterJenis,
     setFilterJenis,
+    filterRabLink,
+    setFilterRabLink,
     financeTab,
     setFinanceTab,
     theme,

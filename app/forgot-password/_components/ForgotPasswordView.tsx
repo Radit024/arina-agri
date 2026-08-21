@@ -94,7 +94,7 @@ export default function ForgotPasswordView({
             </Button>
 
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Link href="/login" style={{ textDecoration: 'none' }}>
+              <Link href="/login" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
                 <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
                   {t('back')}
                 </Typography>

@@ -6,9 +6,24 @@ import { useRabItemsForScenario } from '@/hooks/useRabItemsForScenario';
 import { sumRabItemsByType } from '@/lib/finance/rabCalculations';
 import { rabApi, transactionApi, type ApiFinanceProject } from '@/lib/api';
 import { DEFAULT_FINANCE_CATEGORIES, resolveFinanceCategory } from '@/lib/finance/categories';
-import { parseRabWorkbookFromArrayBuffer, type ParsedRabWorkbook } from '@/lib/finance/rabExcel';
+import {
+  parseRabWorkbookFromArrayBuffer,
+  type ParsedRabWorkbook,
+  type RabCategoryReconciliation,
+  type RabParseSkippedRow,
+} from '@/lib/finance/rabExcel';
 import { suggestRabItemsForTransaction } from '@/lib/finance/rabSuggestionMatcher';
 import type { FinanceScenarioEntity, RabEntryType, RabItem } from '@/lib/finance/rabTypes';
+
+export interface RabImportSummary {
+  projectName: string;
+  importedItemsCount: number;
+  importedTransactionCount: number;
+  skippedCount: number;
+  warnings: string[];
+  reconciliation: RabCategoryReconciliation[];
+  skippedRows: RabParseSkippedRow[];
+}
 
 const RAB_SUGGESTION_MIN_SCORE = 5;
 const RECONCILIATION_ABSOLUTE_TOLERANCE = 1000;
@@ -87,8 +102,6 @@ function parseAliasesInput(value: string) {
   return aliases.length > 0 ? aliases : undefined;
 }
 
-
-
 function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
   const warnings: string[] = [];
 
@@ -132,7 +145,7 @@ function validateRabItemDraft(draft: RabItemDraft) {
 
 export function useRabController(
   project: ApiFinanceProject | null,
-  addTransaction?: (data: Parameters<typeof transactionApi.create>[0]) => Promise<void>,
+  addTransaction?: (data: Parameters<typeof transactionApi.create>[0] & { scenarioId?: string | null }) => Promise<void>,
   scenario?: FinanceScenarioEntity | null,
 ) {
   const rabState = useRabItemsForScenario(scenario?.id ?? null);
@@ -142,6 +155,9 @@ export function useRabController(
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [preflightData, setPreflightData] = useState<ParsedRabWorkbook | null>(null);
+  const [preflightFile, setPreflightFile] = useState<File | null>(null);
+  const [importSummary, setImportSummary] = useState<RabImportSummary | null>(null);
   const [rabItemError, setRabItemError] = useState<string | null>(null);
   const [rabItemDraft, setRabItemDraft] = useState<RabItemFormDraft>(createRabItemFormDraft);
   const [rabItemSubmitting, setRabItemSubmitting] = useState(false);
@@ -431,19 +447,13 @@ export function useRabController(
     setRabBulkDeleteConfirm(false);
   };
 
-  const importRabFile = async (file: File, targetScenarioId?: string) => {
+  const executeParsedImport = async (parsed: ParsedRabWorkbook, file: File, targetScenarioId?: string) => {
     if (!project) throw new Error('Pilih proyek terlebih dahulu');
     const scenarioId = targetScenarioId ?? scenario?.id;
     setImportLoading(true);
     setImportError(null);
     setImportWarnings([]);
     try {
-      const buffer = await file.arrayBuffer();
-      const parsed = await parseRabWorkbookFromArrayBuffer(buffer);
-      if (parsed.items.length === 0) {
-        throw new Error('Tidak ada item RAB yang terbaca dari file ini');
-      }
-
       const categoryIdMap = new Map<string, Awaited<ReturnType<typeof rabState.createCategory>>>();
       for (const category of parsed.categories) {
         const existingCategory = rabState.categories.find(
@@ -520,7 +530,6 @@ export function useRabController(
           const kategori = existingCategory ? existingCategory.name : rawKategori;
           const assignedCategoryId = matchedItem?.categoryId ?? existingCategory?.id ?? null;
 
-          // A transaction is unlinked only if it could NOT be matched to a RAB item AND could NOT be resolved to a known RAB category
           const isCategoryResolved = Boolean(existingCategory || (resolvedCategory && resolvedCategory.label !== 'Lainnya'));
           if (!matchedItem && !isCategoryResolved) {
             unlinkedTransactionNames.push(transaction.keterangan);
@@ -539,6 +548,7 @@ export function useRabController(
               volume: transaction.volume ?? null,
               satuan: transaction.satuan ?? null,
               hargaSatuan: transaction.hargaSatuan ?? null,
+              scenarioId: scenarioId ?? null,
             });
             importedTransactionCount += 1;
           } catch {
@@ -577,12 +587,21 @@ export function useRabController(
           errors: [],
         });
       } catch {
-        // Riwayat import bersifat opsional, tidak boleh menggagalkan alur import utama.
+        // Riwayat import bersifat opsional
       }
 
-      if (warnings.length === 0) {
-        setImportDialogOpen(false);
-      }
+      setImportSummary({
+        projectName: parsed.project.name,
+        importedItemsCount: importedCount,
+        importedTransactionCount,
+        skippedCount,
+        warnings,
+        reconciliation: parsed.reconciliation,
+        skippedRows: parsed.skippedRows,
+      });
+
+      setPreflightData(null);
+      setPreflightFile(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
       setImportError(message);
@@ -590,6 +609,56 @@ export function useRabController(
     } finally {
       setImportLoading(false);
     }
+  };
+
+  const importRabFile = async (file: File, targetScenarioId?: string, skipPreflightCheck = false) => {
+    if (!project) throw new Error('Pilih proyek terlebih dahulu');
+    setImportLoading(true);
+    setImportError(null);
+    setImportWarnings([]);
+    setImportSummary(null);
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const parsed = await parseRabWorkbookFromArrayBuffer(buffer);
+      if (parsed.items.length === 0) {
+        throw new Error('Tidak ada item RAB yang terbaca dari file ini');
+      }
+
+      const warnings = buildImportWarnings(parsed);
+      const hasMaterialDiscrepancy = parsed.reconciliation.some(
+        (r) => Math.abs(r.difference) > Math.max(RECONCILIATION_ABSOLUTE_TOLERANCE, Math.abs(r.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE)
+      );
+
+      if (!skipPreflightCheck && (hasMaterialDiscrepancy || warnings.length > 0)) {
+        setPreflightData(parsed);
+        setPreflightFile(file);
+        setImportWarnings(warnings);
+        setImportLoading(false);
+        return;
+      }
+
+      await executeParsedImport(parsed, file, targetScenarioId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Gagal mengimpor file Excel';
+      setImportError(message);
+      setImportLoading(false);
+      throw new Error(message);
+    }
+  };
+
+  const confirmPreflightAndImport = async (targetScenarioId?: string) => {
+    if (!preflightData || !preflightFile) return;
+    await executeParsedImport(preflightData, preflightFile, targetScenarioId);
+  };
+
+  const resetImportState = () => {
+    setImportSummary(null);
+    setPreflightData(null);
+    setPreflightFile(null);
+    setImportError(null);
+    setImportWarnings([]);
+    setImportLoading(false);
   };
 
   return {
@@ -603,6 +672,13 @@ export function useRabController(
     setImportError,
     importWarnings,
     setImportWarnings,
+    preflightData,
+    setPreflightData,
+    preflightFile,
+    importSummary,
+    setImportSummary,
+    confirmPreflightAndImport,
+    resetImportState,
     rabItemError,
     setRabItemError,
     rabItemDraft,

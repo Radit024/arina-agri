@@ -84,13 +84,35 @@ export function useRabItemsForScenario(scenarioId: string | null) {
 
   const createCategory = async (payload: Omit<ApiRabCategory, 'id'> & { scenarioId?: string }) => {
     const sid = payload.scenarioId ?? scenarioId ?? '';
+    const isCurrentScenario = sid === scenarioId;
+
     if (backendOnline && user && sid && !isGuestMode) {
-      const created = await rabApi.createCategoryForScenario({ ...payload, scenarioId: sid });
-      setCategories((prev) => [...prev, created]);
-      return created;
+      try {
+        const created = await rabApi.createCategoryForScenario({ ...payload, scenarioId: sid });
+        if (isCurrentScenario) {
+          setCategories((prev) => [...prev, created]);
+        }
+        return created;
+      } catch {
+        // Fallback to local storage when backend fails
+      }
     }
+
     const created: ApiRabCategory = { ...payload, id: createLocalId('rab-category') };
-    syncLocalState((prev) => ({ ...prev, categories: [...prev.categories, created] }));
+    if (isCurrentScenario) {
+      syncLocalState((prev) => ({ ...prev, categories: [...prev.categories, created] }));
+    } else {
+      const targetStorageKey = `arina-scenario-rab-${user?.id ?? 'guest'}-${sid || (isGuestMode ? 'guest-default' : 'none')}`;
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = window.sessionStorage.getItem(targetStorageKey);
+          const prev: RabLocalState = raw ? JSON.parse(raw) : { categories: [], items: [], imports: [] };
+          window.sessionStorage.setItem(targetStorageKey, JSON.stringify({ ...prev, categories: [...prev.categories, created] }));
+        } catch {
+          // ignore
+        }
+      }
+    }
     return created;
   };
 
@@ -133,13 +155,35 @@ export function useRabItemsForScenario(scenarioId: string | null) {
 
   const createItem = async (payload: Omit<ApiRabItem, 'id'> & { scenarioId?: string }) => {
     const sid = payload.scenarioId ?? scenarioId ?? '';
+    const isCurrentScenario = sid === scenarioId;
+
     if (backendOnline && user && sid && !isGuestMode) {
-      const created = await rabApi.createItemForScenario({ ...payload, scenarioId: sid });
-      setItems((prev) => [...prev, created]);
-      return created;
+      try {
+        const created = await rabApi.createItemForScenario({ ...payload, scenarioId: sid });
+        if (isCurrentScenario) {
+          setItems((prev) => [...prev, created]);
+        }
+        return created;
+      } catch {
+        // Fallback to local storage when backend fails
+      }
     }
+
     const created: ApiRabItem = { ...payload, id: createLocalId('rab-item') };
-    syncLocalState((prev) => ({ ...prev, items: [...prev.items, created] }));
+    if (isCurrentScenario) {
+      syncLocalState((prev) => ({ ...prev, items: [...prev.items, created] }));
+    } else {
+      const targetStorageKey = `arina-scenario-rab-${user?.id ?? 'guest'}-${sid || (isGuestMode ? 'guest-default' : 'none')}`;
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = window.sessionStorage.getItem(targetStorageKey);
+          const prev: RabLocalState = raw ? JSON.parse(raw) : { categories: [], items: [], imports: [] };
+          window.sessionStorage.setItem(targetStorageKey, JSON.stringify({ ...prev, items: [...prev.items, created] }));
+        } catch {
+          // ignore
+        }
+      }
+    }
     return created;
   };
 

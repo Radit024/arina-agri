@@ -98,7 +98,14 @@ export default function RegisterView({
           error={errors.password?.message}
           startIcon={<LockOutlinedIcon color="action" />}
           endIcon={
-            <IconButton onClick={togglePassword} edge="end" size="small" disabled={loading || googleLoading}>
+            <IconButton
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+              onClick={togglePassword}
+              edge="end"
+              size="small"
+              disabled={loading || googleLoading}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
               {showPassword ? <VisibilityOff /> : <Visibility />}
             </IconButton>
           }
@@ -114,7 +121,14 @@ export default function RegisterView({
           error={errors.confirmPassword?.message}
           startIcon={<LockOutlinedIcon color="action" />}
           endIcon={
-            <IconButton onClick={toggleConfirmPassword} edge="end" size="small" disabled={loading || googleLoading}>
+            <IconButton
+              aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
+              onClick={toggleConfirmPassword}
+              edge="end"
+              size="small"
+              disabled={loading || googleLoading}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
               {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
             </IconButton>
           }
@@ -148,9 +162,9 @@ export default function RegisterView({
         </Button>
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 0.5, minHeight: 44 }}>
             {t('hasAccount')}{' '}
-            <Link href="/login" style={{ textDecoration: 'none' }}>
+            <Link href="/login" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
               <Typography component="span" variant="body2" color="primary.main" sx={{ fontWeight: 700 }}>
                 {t('loginNow')}
               </Typography>

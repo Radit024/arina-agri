@@ -3,7 +3,11 @@
 import React from 'react';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
@@ -32,6 +36,8 @@ export interface FinanceComparisonViewProps {
   hasEnoughData: boolean;
   projectionHasData: boolean;
   realizationHasData: boolean;
+  onSwitchMode?: (mode: 'PROJECTION' | 'REALIZATION') => void;
+  onNavigateTab?: (tab: 'buku-besar' | 'rab') => void;
 }
 
 function formatMetricValue(label: string, val: number): string {
@@ -56,35 +62,28 @@ function formatSelisihPercent(percent: number | null): React.ReactNode {
     );
   }
 
-  const formatted = `${(percent * 100).toLocaleString('id-ID', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })}%`;
-
   const isPositive = percent > 0;
-  const isZero = percent === 0;
+  const isNegative = percent < 0;
+  const color = isPositive ? 'success.main' : isNegative ? 'error.main' : 'text.primary';
+  const prefix = isPositive ? '+' : '';
 
   return (
-    <Chip
-      label={isPositive ? `+${formatted}` : formatted}
-      size="small"
-      color={isZero ? 'default' : isPositive ? 'success' : 'error'}
-      variant="outlined"
-      sx={{
-        fontWeight: 700,
-        borderRadius: '8px',
-      }}
-    />
+    <Typography variant="body2" sx={{ fontWeight: 700, color }}>
+      {prefix}
+      {percent.toFixed(2)}%
+    </Typography>
   );
 }
 
-export function FinanceComparisonView({
+export default function FinanceComparisonView({
   comparison,
   loading,
   error,
   hasEnoughData,
   projectionHasData,
   realizationHasData,
+  onSwitchMode,
+  onNavigateTab,
 }: FinanceComparisonViewProps) {
   if (loading) {
     return (
@@ -125,16 +124,15 @@ export function FinanceComparisonView({
     return (
       <Card
         sx={{
-          my: 4,
-          p: 4,
-          textAlign: 'center',
+          my: 3,
+          p: { xs: 2.5, sm: 4 },
           borderRadius: 3,
           border: '1px dashed',
           borderColor: 'divider',
           bgcolor: 'background.default',
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, alignItems: 'center', textAlign: 'center' }}>
           <Box
             sx={{
               p: 2,
@@ -146,12 +144,125 @@ export function FinanceComparisonView({
           >
             <CompareArrowsIcon sx={{ fontSize: 36 }} />
           </Box>
-          <Typography variant="h6" color="text.primary" sx={{ fontWeight: 700 }}>
-            Perbandingan Proyeksi vs Realisasi
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
-            {gatingMessage}
-          </Typography>
+          <Box>
+            <Typography variant="h6" color="text.primary" sx={{ fontWeight: 800 }}>
+              Perbandingan Proyeksi vs Realisasi
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 540, mt: 0.5 }}>
+              {gatingMessage}
+            </Typography>
+          </Box>
+
+          {/* Status scenario cards */}
+          <Grid container spacing={2} sx={{ width: '100%', maxWidth: 640, mt: 0.5 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  textAlign: 'left',
+                  borderRadius: 2,
+                  borderColor: projectionHasData ? 'success.200' : 'divider',
+                  bgcolor: projectionHasData ? 'success.50' : 'background.paper',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    {projectionHasData ? (
+                      <CheckCircleIcon color="success" fontSize="small" />
+                    ) : (
+                      <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                    )}
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Mode Rencana (Proyeksi)
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {projectionHasData
+                      ? '✓ Data RAB / anggaran rencana telah terisi.'
+                      : 'Belum ada data rencana anggaran.'}
+                  </Typography>
+                </Box>
+
+                {!projectionHasData && onSwitchMode && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => {
+                      onSwitchMode('PROJECTION');
+                      onNavigateTab?.('rab');
+                    }}
+                    sx={{ minHeight: 44, mt: 2, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    Isi Rencana Anggaran
+                  </Button>
+                )}
+              </Card>
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Card
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  textAlign: 'left',
+                  borderRadius: 2,
+                  borderColor: realizationHasData ? 'success.200' : 'divider',
+                  bgcolor: realizationHasData ? 'success.50' : 'background.paper',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    {realizationHasData ? (
+                      <CheckCircleIcon color="success" fontSize="small" />
+                    ) : (
+                      <RadioButtonUncheckedIcon color="disabled" fontSize="small" />
+                    )}
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Mode Aktual (Realisasi)
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">
+                    {realizationHasData
+                      ? '✓ Data transaksi riil di lapangan telah tercatat.'
+                      : 'Belum ada catatan transaksi aktual.'}
+                  </Typography>
+                </Box>
+
+                {!realizationHasData && onSwitchMode && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    endIcon={<ArrowForwardIcon />}
+                    onClick={() => {
+                      onSwitchMode('REALIZATION');
+                      onNavigateTab?.('buku-besar');
+                    }}
+                    sx={{
+                      minHeight: 44,
+                      mt: 2,
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      bgcolor: 'success.main',
+                      '&:hover': { bgcolor: 'success.dark' },
+                    }}
+                  >
+                    Catat Transaksi Aktual
+                  </Button>
+                )}
+              </Card>
+            </Grid>
+          </Grid>
         </Box>
       </Card>
     );
@@ -478,3 +589,5 @@ export function FinanceComparisonView({
     </Stack>
   );
 }
+
+export { FinanceComparisonView };

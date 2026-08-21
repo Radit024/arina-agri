@@ -10,7 +10,7 @@ import Select from '@mui/material/Select';
 import DashboardKPI from '@/components/dashboard/DashboardKPI';
 import { TrendChart, KategoriChart } from '@/components/dashboard/DashboardCharts';
 import NewsWidget from '@/components/dashboard/NewsWidget';
-import { PageShell } from '@/components/shared/page';
+import { PageHeader, PageShell } from '@/components/shared/page';
 import { formatRupiah } from '@/lib/formatters';
 import type {
   DashboardCategoryPoint,
@@ -21,7 +21,6 @@ import type {
 import type { NewsArticle } from '@/lib/types/news';
 import DashboardSkeleton from './DashboardSkeleton';
 import Card from '@/components/ui/Card';
-import PageHeader from '@/components/ui/PageHeader';
 
 type DashboardHomeTranslator = (key: string, values?: Record<string, string | number>) => string;
 

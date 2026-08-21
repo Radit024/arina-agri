@@ -46,6 +46,8 @@ import LinkIcon from '@mui/icons-material/Link';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Checkbox from '@mui/material/Checkbox';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
@@ -174,6 +176,10 @@ export default function KeuanganView({
   setSnackbar,
   filterBulan,
   setFilterBulan,
+  filterJenis,
+  setFilterJenis,
+  filterRabLink,
+  setFilterRabLink,
   theme,
   isMobile,
   handleDelete,
@@ -232,6 +238,15 @@ export default function KeuanganView({
 }: UseKeuanganControllerResult) {
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [expandedMobileTxIds, setExpandedMobileTxIds] = useState<Set<string>>(new Set());
+  const toggleExpandMobileTx = (id: string) => {
+    setExpandedMobileTxIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const [distributionPanelOpen, setDistributionPanelOpen] = useState(true);
   const [distributionDialogOpen, setDistributionDialogOpen] = useState(false);
   const [distributionHighlightedItem, setDistributionHighlightedItem] =
@@ -392,31 +407,53 @@ export default function KeuanganView({
         onOpenPdfReport={handleOpenFinanceReportDialog}
       />
 
-      <Tabs
-        value={financeTab}
-        onChange={(_, value) => setFinanceTab(value)}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-        aria-label="Navigasi laporan keuangan"
+      <Box
         sx={{
+          position: 'relative',
           mb: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-          '& .MuiTab-root': {
-            minHeight: 44,
-            textTransform: 'none',
-            fontWeight: 700,
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: 24,
+            pointerEvents: 'none',
+            display: { xs: 'block', md: 'none' },
+            background: (theme) => `linear-gradient(to right, transparent, ${theme.palette.background.default})`,
           },
         }}
       >
-        <Tab value="buku-besar" label="Buku Besar" />
-        <Tab value="rab" label="RAB" />
-        <Tab value="laba-rugi" label="Laba Rugi" />
-        <Tab value="arus-kas" label="Arus Kas" />
-        <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
-        <Tab value="perbandingan" label="Perbandingan" />
-      </Tabs>
+        <Tabs
+          value={financeTab}
+          onChange={(_, value) => setFinanceTab(value)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          aria-label="Navigasi laporan keuangan"
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              minHeight: 44,
+              textTransform: 'none',
+              fontWeight: 700,
+              px: { xs: 1.75, sm: 2.5 },
+            },
+            '& .MuiTabs-scrollButtons': {
+              '&.Mui-disabled': { opacity: 0.3 },
+              width: { xs: 36, sm: 40 },
+            },
+          }}
+        >
+          <Tab value="buku-besar" label="Buku Besar" />
+          <Tab value="rab" label="RAB" />
+          <Tab value="laba-rugi" label="Laba Rugi" />
+          <Tab value="arus-kas" label="Arus Kas" />
+          <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
+          <Tab value="perbandingan" label="Perbandingan" />
+        </Tabs>
+      </Box>
 
       {financeTab === 'buku-besar' && (
       <Box
@@ -697,9 +734,57 @@ export default function KeuanganView({
                 </Box>
               )}
             </Box>
-
             <CardContent sx={{ pt: 0, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 }, pb: 2, position: 'relative' }}>
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, flex: 1, minHeight: 0, flexDirection: 'column', gap: 1.5, overflowY: 'auto', pr: 0.5, pb: 2 }}>
+              {/* Quick filter chips for mobile & tablet */}
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 0.75, flexWrap: 'wrap', mb: 1.5, px: 0.5 }}>
+                <Chip
+                  label="Semua Jenis"
+                  size="small"
+                  clickable
+                  color={filterJenis === 'semua' ? 'primary' : 'default'}
+                  variant={filterJenis === 'semua' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterJenis('semua')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+                <Chip
+                  label="Pemasukan"
+                  size="small"
+                  clickable
+                  color={filterJenis === 'pendapatan' ? 'success' : 'default'}
+                  variant={filterJenis === 'pendapatan' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterJenis(filterJenis === 'pendapatan' ? 'semua' : 'pendapatan')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+                <Chip
+                  label="Pengeluaran"
+                  size="small"
+                  clickable
+                  color={filterJenis === 'pengeluaran' ? 'error' : 'default'}
+                  variant={filterJenis === 'pengeluaran' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterJenis(filterJenis === 'pengeluaran' ? 'semua' : 'pengeluaran')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+                <Chip
+                  label={filterRabLink === 'linked' ? '✓ Terhubung RAB' : 'RAB Terhubung'}
+                  size="small"
+                  clickable
+                  color={filterRabLink === 'linked' ? 'primary' : 'default'}
+                  variant={filterRabLink === 'linked' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterRabLink(filterRabLink === 'linked' ? 'semua' : 'linked')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+                <Chip
+                  label={filterRabLink === 'unlinked' ? '⚠ Belum ke RAB' : 'Belum Terhubung'}
+                  size="small"
+                  clickable
+                  color={filterRabLink === 'unlinked' ? 'warning' : 'default'}
+                  variant={filterRabLink === 'unlinked' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterRabLink(filterRabLink === 'unlinked' ? 'semua' : 'unlinked')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+              </Box>
+
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, flex: 1, minHeight: 0, flexDirection: 'column', gap: 1, overflowY: 'auto', pr: 0.5, pb: 2 }}>
                   {displayedTransactions.length === 0 ? (
                     <EmptyState
                       icon={<AccountBalanceIcon />}
@@ -707,143 +792,188 @@ export default function KeuanganView({
                       sx={{ py: 6 }}
                     />
                   ) : (
-                    pagedTransactions.map((tx) => (
-                      <Card key={tx._id} variant="outlined" sx={{ flexShrink: 0, borderRadius: 3, borderColor: 'divider', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                        <CardContent sx={{ p: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                          {/* Row 1: Kategori & Status Badge */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>
-                              {tx.kategori}
-                            </Typography>
-                            <Badge
-                              label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                              variant="soft"
-                              color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
-                              sx={{
-                                height: 20,
-                                fontSize: '0.65rem',
-                              }}
-                            />
-                          </Box>
-
-                          {/* Row 2: Tanggal & Nominal */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="caption" color="text.secondary">
-                              {formatDateLong(tx.tanggal)}
-                            </Typography>
-                            <Typography
-                              variant="subtitle1"
-                              sx={{
-                                fontWeight: 800,
-                                color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
-                            </Typography>
-                          </Box>
-
-                          {hasLedgerInputDetails(tx) && (
-                            <Box
-                              sx={{
-                                display: 'grid',
-                                gridTemplateColumns: 'auto minmax(0, 1fr)',
-                                columnGap: 1,
-                                rowGap: 0.5,
-                                bgcolor: alpha(theme.palette.text.primary, 0.025),
-                                borderRadius: 1.5,
-                                p: 1,
-                              }}
-                            >
-                              <Typography variant="caption" color="text.secondary">
-                                {t('ledger.columns.quantity')}
-                              </Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
-                                {formatLedgerQuantity(tx.volume)}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {t('ledger.columns.unit')}
-                              </Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right', overflowWrap: 'anywhere' }}>
-                                {tx.satuan || '-'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {t('ledger.columns.unitPrice')}
-                              </Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
-                                {tx.hargaSatuan == null ? '-' : formatRupiah(tx.hargaSatuan)}
-                              </Typography>
+                    pagedTransactions.map((tx) => {
+                      const isExpanded = expandedMobileTxIds.has(tx._id);
+                      return (
+                        <Card
+                          key={tx._id}
+                          variant="outlined"
+                          sx={{
+                            flexShrink: 0,
+                            borderRadius: 2.5,
+                            borderColor: 'divider',
+                            transition: 'all 0.15s ease',
+                            boxShadow: isExpanded ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                          }}
+                        >
+                          {/* Compact Row Header (Clickable) */}
+                          <Box
+                            onClick={() => toggleExpandMobileTx(tx._id)}
+                            sx={{
+                              p: 1.5,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              cursor: 'pointer',
+                              '&:hover': { bgcolor: 'action.hover' },
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
+                              <Box
+                                sx={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: '50%',
+                                  bgcolor: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <Box sx={{ minWidth: 0, flex: 1 }}>
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  {tx.kategori}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {formatDateLong(tx.tanggal)}
+                                </Typography>
+                              </Box>
                             </Box>
-                          )}
-                          
-                          {/* Row 3: Keterangan (optional) */}
-                          {tx.keterangan && (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1.5 }}>
-                              &quot;{tx.keterangan}&quot;
-                            </Typography>
-                          )}
-                          {getRabLinkLabel(tx) && (
-                            <Chip
-                              icon={<LinkIcon />}
-                              label={getRabLinkLabel(tx)}
-                              size="small"
-                              sx={{
-                                alignSelf: 'flex-start',
-                                borderRadius: 1.5,
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                color: 'primary.dark',
-                                fontWeight: 700,
-                                '& .MuiChip-icon': { color: 'primary.main' },
-                              }}
-                            />
-                          )}
 
-                          {/* Row 4: Action Footer Buttons */}
-                          <Divider sx={{ my: 0.5 }} />
-                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                            <IconButton
-                              data-touch-target="44"
-                              size="small"
-                              aria-label={`Hubungkan RAB transaksi ${tx.kategori}`}
-                              onClick={() => rabTransactionLink.openForTransactions([tx._id])}
-                              sx={(theme) => ({
-                                width: 44,
-                                height: 44,
-                                ...financeActionIconButtonSx(theme, 'primary'),
-                              })}
-                            >
-                              <LinkIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              data-touch-target="44"
-                              size="small"
-                              aria-label={`Edit transaksi ${tx.kategori}`}
-                              onClick={() => transactionBatch.openForEdit(tx)}
-                              sx={(theme) => ({
-                                width: 44,
-                                height: 44,
-                                ...financeActionIconButtonSx(theme, 'primary'),
-                              })}
-                            >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              data-touch-target="44"
-                              size="small"
-                              aria-label={`Hapus transaksi ${tx.kategori}`}
-                              onClick={() => handleDelete(tx._id)}
-                              sx={(theme) => ({
-                                width: 44,
-                                height: 44,
-                                ...financeActionIconButtonSx(theme, 'error'),
-                              })}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{
+                                  fontWeight: 800,
+                                  color: tx.jenis === 'pendapatan' ? 'success.main' : 'error.main',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {tx.jenis === 'pendapatan' ? '+' : '-'}{formatRupiah(tx.nominal)}
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                aria-label={isExpanded ? `Tutup detail transaksi ${tx.kategori}` : `Buka detail transaksi ${tx.kategori}`}
+                                sx={{ width: 44, height: 44 }}
+                              >
+                                {isExpanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                              </IconButton>
+                            </Box>
                           </Box>
-                        </CardContent>
-                      </Card>
-                    ))
+
+                          {/* Expanded Details */}
+                          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                            <Divider />
+                            <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5, bgcolor: alpha(theme.palette.text.primary, 0.015) }}>
+                              {hasLedgerInputDetails(tx) && (
+                                <Box
+                                  sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'auto minmax(0, 1fr)',
+                                    columnGap: 1,
+                                    rowGap: 0.5,
+                                    bgcolor: alpha(theme.palette.text.primary, 0.025),
+                                    borderRadius: 1.5,
+                                    p: 1,
+                                  }}
+                                >
+                                  <Typography variant="caption" color="text.secondary">
+                                    {t('ledger.columns.quantity')}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
+                                    {formatLedgerQuantity(tx.volume)}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {t('ledger.columns.unit')}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right', overflowWrap: 'anywhere' }}>
+                                    {tx.satuan || '-'}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    {t('ledger.columns.unitPrice')}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, textAlign: 'right' }}>
+                                    {tx.hargaSatuan == null ? '-' : formatRupiah(tx.hargaSatuan)}
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              {tx.keterangan && (
+                                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', bgcolor: alpha(theme.palette.text.primary, 0.02), p: 1, borderRadius: 1.5 }}>
+                                  &quot;{tx.keterangan}&quot;
+                                </Typography>
+                              )}
+
+                              {getRabLinkLabel(tx) && (
+                                <Chip
+                                  icon={<LinkIcon />}
+                                  label={getRabLinkLabel(tx)}
+                                  size="small"
+                                  sx={{
+                                    alignSelf: 'flex-start',
+                                    borderRadius: 1.5,
+                                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                    color: 'primary.dark',
+                                    fontWeight: 700,
+                                    '& .MuiChip-icon': { color: 'primary.main' },
+                                  }}
+                                />
+                              )}
+
+                              {/* Action Footer Buttons */}
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 0.5 }}>
+                                <IconButton
+                                  data-touch-target="44"
+                                  size="small"
+                                  aria-label={`Hubungkan RAB transaksi ${tx.kategori}`}
+                                  onClick={() => rabTransactionLink.openForTransactions([tx._id])}
+                                  sx={(theme) => ({
+                                    width: 44,
+                                    height: 44,
+                                    ...financeActionIconButtonSx(theme, 'primary'),
+                                  })}
+                                >
+                                  <LinkIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  data-touch-target="44"
+                                  size="small"
+                                  aria-label={`Edit transaksi ${tx.kategori}`}
+                                  onClick={() => transactionBatch.openForEdit(tx)}
+                                  sx={(theme) => ({
+                                    width: 44,
+                                    height: 44,
+                                    ...financeActionIconButtonSx(theme, 'primary'),
+                                  })}
+                                >
+                                  <EditOutlinedIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                  data-touch-target="44"
+                                  size="small"
+                                  aria-label={`Hapus transaksi ${tx.kategori}`}
+                                  onClick={() => handleDelete(tx._id)}
+                                  sx={(theme) => ({
+                                    width: 44,
+                                    height: 44,
+                                    ...financeActionIconButtonSx(theme, 'error'),
+                                  })}
+                                >
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          </Collapse>
+                        </Card>
+                      );
+                    })
                   )}
                   {displayedTransactions.length > 0 && (
                     <Box sx={{ display: 'flex', justifyContent: 'center', flexShrink: 0, py: 1 }}>
@@ -1296,6 +1426,8 @@ export default function KeuanganView({
             loading={financeComparison.loading}
             projectionHasData={financeComparison.projectionHasData}
             realizationHasData={financeComparison.realizationHasData}
+            onSwitchMode={financeScenario.setActiveMode}
+            onNavigateTab={(tab) => setFinanceTab(tab)}
           />
         </Box>
       )}
@@ -1310,6 +1442,7 @@ export default function KeuanganView({
         rab={rab}
         scenarios={financeScenario.scenarios}
         activeScenarioId={financeScenario.activeScenario?.id ?? null}
+        onNavigateTab={(tab) => setFinanceTab(tab)}
       />
       <RabItemDialog rab={rab} />
       <FinancingAssumptionsDialog financing={financing} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { UseEnsiklopediaControllerResult } from '@/controllers/ensiklopedia/useEnsiklopediaController';
 import AddCommentOutlinedIcon from '@mui/icons-material/AddCommentOutlined';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -8,6 +9,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import EmojiNatureOutlinedIcon from '@mui/icons-material/EmojiNatureOutlined';
 import HistoryIcon from '@mui/icons-material/History';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SendIcon from '@mui/icons-material/Send';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import CustomSpaIcon from '@mui/icons-material/SpaOutlined'; // Using a similar icon
@@ -24,6 +26,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -82,6 +88,8 @@ export default function EnsiklopediaView({
 }: UseEnsiklopediaControllerResult) {
   const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const intlMessages = useMessages() as EncyclopediaMessages;
+  const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
+  const isMoreOpen = Boolean(moreAnchorEl);
 
   return (
     <Box
@@ -140,7 +148,8 @@ export default function EnsiklopediaView({
         </Box>
 
         {/* Right Side: Actions */}
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: { xs: 0.75, sm: 1 }, alignItems: 'center' }}>
+          {/* New Chat */}
           <PageActionButton
             aria-label={t('newChat')}
             data-touch-target="44"
@@ -177,6 +186,7 @@ export default function EnsiklopediaView({
             </IconButton>
           </Tooltip>
 
+          {/* Desktop/Tablet: Quick Reference */}
           <PageActionButton
             data-guide-target="ai-quick-reference"
             data-touch-target="44"
@@ -193,35 +203,20 @@ export default function EnsiklopediaView({
           >
             {t('quickReference.title')}
           </PageActionButton>
-          <Tooltip title={t('quickReference.title')}>
-            <IconButton
-              aria-label={t('quickReference.title')}
-              data-guide-target="ai-quick-reference"
-              data-touch-target="44"
-              onClick={() => setDiseaseModalOpen(true)}
-              size="small"
-              sx={{
-                display: { xs: 'flex', sm: 'none' },
-                minHeight: 44,
-                minWidth: 44,
-                color: 'text.secondary',
-                '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05), color: 'text.primary' },
-              }}
-            >
-              <BugReportOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
 
+          {/* History Drawer Trigger */}
           <PageActionButton
             aria-label={t('historyOpen')}
             data-touch-target="44"
             variant="outlined"
-            startIcon={<HistoryIcon sx={{ mr: { xs: -0.5, sm: 0 } }} />}
+            startIcon={<HistoryIcon sx={{ mr: { xs: 0, sm: 0 } }} />}
             onClick={() => setHistoryDrawerOpen(true)}
             size="small"
             sx={{
               fontWeight: 600,
-              px: { xs: 1.5, sm: 2 },
+              px: { xs: 1.25, sm: 2 },
+              minHeight: 44,
+              minWidth: { xs: 44, sm: 'auto' },
               fontSize: { xs: '0.75rem', sm: '0.8125rem' },
               borderColor: alpha(theme.palette.primary.main, 0.3),
               color: 'primary.main',
@@ -229,8 +224,9 @@ export default function EnsiklopediaView({
             }}
           >
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{t('historyTitle')}</Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{t('historyTitle')}</Box>
           </PageActionButton>
+
+          {/* Desktop/Tablet: Clear Chat */}
           <Tooltip title={t('currentChatClear')}>
             <IconButton
               aria-label={t('currentChatClear')}
@@ -238,6 +234,7 @@ export default function EnsiklopediaView({
               onClick={handleClearChat}
               size="small"
               sx={{
+                display: { xs: 'none', sm: 'flex' },
                 minHeight: 44,
                 minWidth: 44,
                 color: 'text.secondary',
@@ -247,6 +244,66 @@ export default function EnsiklopediaView({
               <DeleteOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+
+          {/* Mobile Overflow Menu (xs) */}
+          <Box sx={{ display: { xs: 'flex', sm: 'none' } }}>
+            <IconButton
+              aria-label="Menu Aksi Tambahan"
+              data-touch-target="44"
+              onClick={(e) => setMoreAnchorEl(e.currentTarget)}
+              size="small"
+              sx={{
+                minHeight: 44,
+                minWidth: 44,
+                color: 'text.secondary',
+                '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.05) },
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={moreAnchorEl}
+              open={isMoreOpen}
+              onClose={() => setMoreAnchorEl(null)}
+              slotProps={{
+                paper: {
+                  sx: { borderRadius: 2, minWidth: 200, boxShadow: theme.shadows[4] },
+                },
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  setMoreAnchorEl(null);
+                  setDiseaseModalOpen(true);
+                }}
+                data-guide-target="ai-quick-reference"
+                sx={{ minHeight: 44, py: 1 }}
+              >
+                <ListItemIcon sx={{ color: 'text.secondary', minWidth: 36 }}>
+                  <BugReportOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t('quickReference.title')}
+                  slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: 600 } } }}
+                />
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setMoreAnchorEl(null);
+                  handleClearChat();
+                }}
+                sx={{ minHeight: 44, py: 1, color: 'error.main' }}
+              >
+                <ListItemIcon sx={{ color: 'error.main', minWidth: 36 }}>
+                  <DeleteOutlinedIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t('currentChatClear')}
+                  slotProps={{ primary: { sx: { fontSize: '0.875rem', fontWeight: 600, color: 'error.main' } } }}
+                />
+              </MenuItem>
+            </Menu>
+          </Box>
         </Box>
       </Box>
 

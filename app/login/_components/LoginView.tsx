@@ -137,14 +137,21 @@ export default function LoginView({
           error={errors.password?.message}
           startIcon={<LockOutlinedIcon color="action" />}
           endIcon={
-            <IconButton onClick={togglePassword} edge="end" size="small" disabled={busy}>
+            <IconButton
+              aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+              onClick={togglePassword}
+              edge="end"
+              size="small"
+              disabled={busy}
+              sx={{ minWidth: 44, minHeight: 44 }}
+            >
               {showPassword ? <VisibilityOff /> : <Visibility />}
             </IconButton>
           }
         />
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1 }}>
-          <Link href="/forgot-password" style={{ textDecoration: 'none' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -0.5 }}>
+          <Link href="/forgot-password" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
             <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
               {t('forgotPassword')}
             </Typography>
@@ -186,16 +193,16 @@ export default function LoginView({
             loading={localLoading}
             loadingText={t('processing')}
             startIcon={<ComputerOutlinedIcon />}
-            sx={{ py: 1.25, fontSize: '0.95rem' }}
+            sx={{ py: 1.25, fontSize: '0.95rem', minHeight: 44 }}
           >
             {t('localLogin')}
           </Button>
         )}
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 0.5, minHeight: 44 }}>
             {t('noAccount')}{' '}
-            <Link href="/register" style={{ textDecoration: 'none' }}>
+            <Link href="/register" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', minHeight: 44 }}>
               <Typography component="span" variant="body2" color="primary.main" sx={{ fontWeight: 700 }}>
                 {t('registerNow')}
               </Typography>

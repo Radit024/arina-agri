@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Pagination from '@mui/material/Pagination';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import IconButton from '@mui/material/IconButton';
@@ -129,12 +130,14 @@ export default function KabarPasarView({
               label={t(cat.key)}
               onClick={() => onCategoryChange(cat.value)}
               variant={activeCategory === cat.value ? 'filled' : 'outlined'}
-              size="small"
+              data-touch-target="44"
               sx={(theme) => ({
                 fontWeight: 600,
-                fontSize: '0.8125rem',
-                height: 32,
+                fontSize: '0.85rem',
+                minHeight: 40,
+                px: 1,
                 cursor: 'pointer',
+                borderRadius: 2,
                 borderColor: activeCategory === cat.value ? 'primary.main' : 'divider',
                 bgcolor: activeCategory === cat.value ? 'primary.main' : 'transparent',
                 color: activeCategory === cat.value ? accentText(theme, 'primary') : theme.palette.text.secondary,
@@ -161,10 +164,25 @@ export default function KabarPasarView({
             bgcolor: softBg(theme, 'error', 0.14),
           })}
         >
-          <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-            <Typography variant="body2" sx={(theme) => ({ color: softText(theme, 'error'), fontWeight: 600 })}>
-              {t('error', { error })}
-            </Typography>
+          <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, py: 2, '&:last-child': { pb: 2 } }}>
+            <Box>
+              <Typography variant="subtitle2" sx={(theme) => ({ color: softText(theme, 'error'), fontWeight: 700 })}>
+                Gagal memuat berita pasar
+              </Typography>
+              <Typography variant="body2" sx={(theme) => ({ color: softText(theme, 'error'), mt: 0.25 })}>
+                {t('error', { error })}
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={onRefetch}
+              startIcon={<RefreshIcon />}
+              data-touch-target="44"
+              sx={{ minHeight: 44, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            >
+              {t('refetch')}
+            </Button>
           </CardContent>
         </Card>
       ) : null}
@@ -229,12 +247,8 @@ export default function KabarPasarView({
                 showLastButton
                 sx={{
                   '& .MuiPaginationItem-root': {
-                    fontWeight: 500,
-                  },
-                  '& .Mui-selected': {
-                    bgcolor: 'primary.main !important',
-                    color: 'white',
-                    fontWeight: 700,
+                    fontFamily: 'var(--font-sora)',
+                    fontWeight: 600,
                   },
                 }}
               />

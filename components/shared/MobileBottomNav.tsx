@@ -65,7 +65,7 @@ const mobileFeatureGroups: MobileFeatureGroup[] = [
     titleKey: 'pengaturanSection',
     items: [
       { key: 'guide', icon: <HelpOutlineOutlinedIcon />, path: null, action: 'guide' },
-      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: null, action: 'settings' },
+      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: '/dashboard/pengaturan' },
       { key: 'beriMasukan', icon: <ChatBubbleOutlineOutlinedIcon />, path: null, action: 'feedback' },
     ],
   },
@@ -133,12 +133,7 @@ export default function MobileBottomNav() {
     }
 
     if (item.action === 'settings') {
-      router.push(pathname + '?settings=true&tab=general');
-      return;
-    }
-
-    if (item.action === 'feedback') {
-      setIsFeedbackOpen(true);
+      router.push('/dashboard/pengaturan');
       return;
     }
 

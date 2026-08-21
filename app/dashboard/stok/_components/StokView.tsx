@@ -305,11 +305,46 @@ export default function StokView({
 
       {/* Tabs */}
       <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Tab label={t('tabs.batches')} />
-          <Tab label={t('tabs.mutations')} />
-          <Tab label={t('tabs.supply')} />
-        </Tabs>
+        <Box
+          sx={{
+            position: 'relative',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: 24,
+              pointerEvents: 'none',
+              display: { xs: 'block', md: 'none' },
+              background: (theme) => `linear-gradient(to right, transparent, ${theme.palette.background.paper})`,
+            },
+          }}
+        >
+          <Tabs
+            value={tab}
+            onChange={(_, v) => setTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: 2,
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              minHeight: 48,
+              '& .MuiTab-root': {
+                minHeight: 48,
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+              },
+            }}
+          >
+            <Tab label={t('tabs.batches')} />
+            <Tab label={t('tabs.mutations')} />
+            <Tab label={t('tabs.supply')} />
+          </Tabs>
+        </Box>
 
         {/* Tab 1: Batch List */}
         {tab === 0 && (

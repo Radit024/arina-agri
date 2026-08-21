@@ -17,6 +17,7 @@ import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { PriceTrendChart } from '@/components/dashboard/PriceCharts';
 import type { NewsArticle } from '@/lib/types/news';
 import { accentText, softBg, softHoverBg, softText } from '@/lib/themeColors';
+import { StatusChip } from '@/components/ui/StatusBadge';
 
 type KabarPasarTranslator = (key: string, values?: Record<string, string | number>) => string;
 
@@ -125,29 +126,12 @@ export default function KabarPasarView({
           }}
         >
           {categories.map((cat) => (
-            <Chip
+            <StatusChip
               key={cat.value}
               label={t(cat.key)}
               onClick={() => onCategoryChange(cat.value)}
-              variant={activeCategory === cat.value ? 'filled' : 'outlined'}
-              data-touch-target="44"
-              sx={(theme) => ({
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                minHeight: 40,
-                px: 1,
-                cursor: 'pointer',
-                borderRadius: 2,
-                borderColor: activeCategory === cat.value ? 'primary.main' : 'divider',
-                bgcolor: activeCategory === cat.value ? 'primary.main' : 'transparent',
-                color: activeCategory === cat.value ? accentText(theme, 'primary') : theme.palette.text.secondary,
-                transition: 'all 0.18s ease-out',
-                '&:hover': {
-                  bgcolor: activeCategory === cat.value ? 'primary.dark' : softHoverBg(theme, 'success'),
-                  borderColor: 'primary.main',
-                  color: activeCategory === cat.value ? accentText(theme, 'primary') : softText(theme, 'success'),
-                },
-              })}
+              selected={activeCategory === cat.value}
+              intent="primary"
             />
           ))}
         </Stack>

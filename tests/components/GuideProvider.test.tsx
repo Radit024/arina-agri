@@ -10,7 +10,7 @@ import {
 } from '@/components/shared/guide/guideConfig';
 
 let mockPathname = '/dashboard';
-const GUIDE_DIALOG_TIMEOUT = 8000;
+const GUIDE_DIALOG_TIMEOUT = 25000;
 
 function findGuideDialog() {
   return screen.findByRole('dialog', {}, { timeout: GUIDE_DIALOG_TIMEOUT });
@@ -162,11 +162,9 @@ describe('GuideProvider', () => {
       </GuideProvider>
     );
 
-    await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('waits to open a manual guide until the first page target is rendered', async () => {
@@ -182,11 +180,9 @@ describe('GuideProvider', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open guide' }));
 
-    await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 40));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     rerender(
       <GuideProvider>

@@ -58,31 +58,31 @@ import { PageActionButton, PageHeader, PageShell } from '@/components/shared/pag
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 import { computeBatchPerformance } from '@/hooks/useStok';
 
-import Badge from '@/components/ui/Badge';
+import StatusBadge, { type StatusIntent } from '@/components/ui/StatusBadge';
 import MetricCard, { type MetricCardIntent } from '@/components/ui/MetricCard';
+import MobileTabBar from '@/components/ui/MobileTabBar';
 
-//  Status badge 
+// Status badge
 type StockTranslator = ReturnType<typeof useTranslations>;
 
 const StatusChip = ({ status, t }: { status: ApiHarvestBatch['status']; t: StockTranslator }) => {
-  const map = {
-    aman: { label: t('status.safe'), color: 'success' },
-    menipis: { label: t('status.low'), color: 'warning' },
-    hampir_kadaluarsa: { label: t('status.expiring'), color: 'error' },
-    habis: { label: t('status.empty'), color: 'default' },
-  } as const;
-  const s = map[status];
+  const map: Record<ApiHarvestBatch['status'], { label: string; intent: StatusIntent }> = {
+    aman: { label: t('status.safe'), intent: 'success' },
+    menipis: { label: t('status.low'), intent: 'warning' },
+    hampir_kadaluarsa: { label: t('status.expiring'), intent: 'error' },
+    habis: { label: t('status.empty'), intent: 'neutral' },
+  };
+  const s = map[status] ?? { label: status, intent: 'neutral' };
   return (
-    <Badge
+    <StatusBadge
       label={s.label}
-      color={s.color}
-      variant="soft"
+      intent={s.intent}
     />
   );
 };
 
-//  Grade badge (free-form strings) 
-const GRADE_PALETTE = ['success', 'info', 'warning', 'error', 'primary'] as const;
+// Grade badge (free-form strings)
+const GRADE_PALETTE: StatusIntent[] = ['success', 'info', 'warning', 'error', 'primary'];
 
 function gradeColorIndex(grade: string): number {
   let hash = 0;
@@ -91,12 +91,11 @@ function gradeColorIndex(grade: string): number {
 }
 
 const GradeChip = ({ grade, t }: { grade: string; t: StockTranslator }) => {
-  const color = GRADE_PALETTE[gradeColorIndex(grade)];
+  const intent = GRADE_PALETTE[gradeColorIndex(grade)];
   return (
-    <Badge
+    <StatusBadge
       label={`${t('table.grade')} ${grade}`}
-      color={color}
-      variant="solid"
+      intent={intent}
     />
   );
 };
@@ -305,46 +304,17 @@ export default function StokView({
 
       {/* Tabs */}
       <Card data-guide-target="stock-tabs" sx={{ borderRadius: 4, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Box
-          sx={{
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: 24,
-              pointerEvents: 'none',
-              display: { xs: 'block', md: 'none' },
-              background: (theme) => `linear-gradient(to right, transparent, ${theme.palette.background.paper})`,
-            },
-          }}
-        >
-          <Tabs
-            value={tab}
-            onChange={(_, v) => setTab(v)}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            sx={{
-              px: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-              minHeight: 48,
-              '& .MuiTab-root': {
-                minHeight: 48,
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: '0.875rem',
-              },
-            }}
-          >
-            <Tab label={t('tabs.batches')} />
-            <Tab label={t('tabs.mutations')} />
-            <Tab label={t('tabs.supply')} />
-          </Tabs>
-        </Box>
+        <MobileTabBar
+          ariaLabel="Navigasi stok"
+          value={tab}
+          onChange={(v) => setTab(Number(v))}
+          sx={{ px: 2 }}
+          tabs={[
+            { id: 0, label: t('tabs.batches') },
+            { id: 1, label: t('tabs.mutations') },
+            { id: 2, label: t('tabs.supply') },
+          ]}
+        />
 
         {/* Tab 1: Batch List */}
         {tab === 0 && (

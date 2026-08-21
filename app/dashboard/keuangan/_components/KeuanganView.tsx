@@ -32,6 +32,7 @@ import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import dynamic from 'next/dynamic';
+import MobileTabBar from '@/components/ui/MobileTabBar';
 
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
@@ -407,53 +408,20 @@ export default function KeuanganView({
         onOpenPdfReport={handleOpenFinanceReportDialog}
       />
 
-      <Box
-        sx={{
-          position: 'relative',
-          mb: 2,
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: 24,
-            pointerEvents: 'none',
-            display: { xs: 'block', md: 'none' },
-            background: (theme) => `linear-gradient(to right, transparent, ${theme.palette.background.default})`,
-          },
-        }}
-      >
-        <Tabs
-          value={financeTab}
-          onChange={(_, value) => setFinanceTab(value)}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          aria-label="Navigasi laporan keuangan"
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            '& .MuiTab-root': {
-              minHeight: 44,
-              textTransform: 'none',
-              fontWeight: 700,
-              px: { xs: 1.75, sm: 2.5 },
-            },
-            '& .MuiTabs-scrollButtons': {
-              '&.Mui-disabled': { opacity: 0.3 },
-              width: { xs: 36, sm: 40 },
-            },
-          }}
-        >
-          <Tab value="buku-besar" label="Buku Besar" />
-          <Tab value="rab" label="RAB" />
-          <Tab value="laba-rugi" label="Laba Rugi" />
-          <Tab value="arus-kas" label="Arus Kas" />
-          <Tab value="arus-kas-pasca-pembiayaan" label="Arus Kas Pasca Pembiayaan" />
-          <Tab value="perbandingan" label="Perbandingan" />
-        </Tabs>
-      </Box>
+      <MobileTabBar
+        ariaLabel="Navigasi laporan keuangan"
+        value={financeTab}
+        onChange={(value) => setFinanceTab(value)}
+        containerSx={{ mb: 2 }}
+        tabs={[
+          { id: 'buku-besar', label: 'Buku Besar' },
+          { id: 'rab', label: 'RAB' },
+          { id: 'laba-rugi', label: 'Laba Rugi' },
+          { id: 'arus-kas', label: 'Arus Kas' },
+          { id: 'arus-kas-pasca-pembiayaan', label: 'Arus Kas Pasca Pembiayaan' },
+          { id: 'perbandingan', label: 'Perbandingan' },
+        ]}
+      />
 
       {financeTab === 'buku-besar' && (
       <Box

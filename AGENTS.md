@@ -9,6 +9,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 Semua fitur dan halaman dalam project ini HARUS dipisahkan secara tegas antara UI (View) dan Controller (Logika). 
 Aturan:
 1. Komponen UI (`_components/XxxView.tsx`) HANYA bertanggung jawab untuk rendering dan styling (menerima props, menampilkan data).
-2. Controller (`useXxxController.ts`) bertanggung jawab menangani semua logika bisnis, state management, dan pemanggilan API.
+2. Controller (`controllers/<fitur>/useXxxController.ts` atau `controllers/<fitur>/XxxController.tsx`) bertanggung jawab menangani semua logika bisnis, state management, dan pemanggilan API.
 3. Halaman utama (`page.tsx`) bertugas menghubungkan Controller dengan komponen UI View.
 <!-- END:architecture-rules -->

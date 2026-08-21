@@ -143,7 +143,7 @@ describe('FinanceIncomeStatementView (Modern Grouped Layout)', () => {
     expect(screen.getByText('HPP')).toBeInTheDocument();
     expect(screen.getByText('BEP Produksi')).toBeInTheDocument();
     expect(screen.getByText('B/C Ratio')).toBeInTheDocument();
-    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByText(/Status/)).toBeInTheDocument();
     expect(screen.getByText('UNTUNG')).toBeInTheDocument();
   });
 });

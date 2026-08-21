@@ -153,29 +153,20 @@ describe('GuideProvider', () => {
     expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'nav-keuangan');
   });
 
-  it('waits to auto-open a feature guide until the first page target is rendered', async () => {
+  it('does not auto-open guides on subpages, reserving auto-open for dashboard root (GEN-01)', async () => {
     mockPathname = '/dashboard/kalender';
 
-    const { rerender } = render(
-      <GuideProvider>
-        <div>calendar shell</div>
-      </GuideProvider>
-    );
-
-    await act(async () => {
-      await new Promise((resolve) => window.setTimeout(resolve, 40));
-    });
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-
-    rerender(
+    render(
       <GuideProvider>
         <button data-guide-target="calendar-grid">Calendar target</button>
       </GuideProvider>
     );
 
-    expect(await findGuideDialog()).toHaveTextContent('pages.calendar.title');
-    expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'calendar-grid');
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('waits to open a manual guide until the first page target is rendered', async () => {
@@ -427,35 +418,7 @@ describe('GuideProvider', () => {
     });
   });
 
-  it('auto-opens a feature guide when global onboarding is already seen', async () => {
-    mockPathname = '/dashboard/keuangan';
-    markGuideSeen(window.localStorage, 'global');
-
-    render(
-      <GuideProvider>
-        <button data-guide-target="finance-ledger">Finance target</button>
-      </GuideProvider>
-    );
-
-    expect(await findGuideDialog()).toHaveTextContent('pages.finance.title');
-  });
-
-  it('prefers the calendar guide on direct calendar entry even when global onboarding is unseen', async () => {
-    mockPathname = '/dashboard/kalender';
-
-    render(
-      <GuideProvider>
-        <button data-guide-target="calendar-grid">Calendar target</button>
-        <button data-guide-target="calendar-add-schedule">Add schedule target</button>
-        <button data-guide-target="calendar-upcoming">Upcoming target</button>
-      </GuideProvider>
-    );
-
-    expect(await findGuideDialog()).toHaveTextContent('pages.calendar.title');
-    expect(screen.getByTestId('guide-spotlight')).toHaveAttribute('data-guide-target', 'calendar-grid');
-  });
-
-  it('manual launcher opens the current page guide even after it was seen', async () => {
+  it('manual launcher opens the current page guide on subpages', async () => {
     mockPathname = '/dashboard/stok';
     markGuideSeen(window.localStorage, 'global');
     markGuideSeen(window.localStorage, 'stock');

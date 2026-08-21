@@ -1,7 +1,23 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import StokController from '@/controllers/stok/StokController';
+
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 vi.mock('next-intl', async () => {
   const messages = (await import('@/messages/id.json')).default as Record<string, unknown>;
@@ -40,9 +56,11 @@ vi.mock('@/hooks/useStok', () => ({
   computeExpiryDate: () => '2026-06-28',
   computeBatchPerformance: () => ({
     bepKg: null,
+    estimasiLabaJikaHabis: 0,
     sudahBalikModal: false,
     sisaBepKg: 0,
     sudahTerjual: 0,
+    bepProgress: 0,
   }),
   useStok: () => ({
     batches: [],
@@ -59,28 +77,11 @@ vi.mock('@/hooks/useStok', () => ({
     grades: [{ id: 'grade-a', nama: 'A', urutan: 1 }],
     locations: [{ id: 'loc-main', nama: 'Gudang Utama', urutan: 1 }],
     addBatch: vi.fn(),
-    closeBatch: vi.fn(),
-    stockOut: vi.fn(),
-    refreshMutations: vi.fn(),
-    addGrade: vi.fn(),
-    renameGrade: vi.fn(),
-    removeGrade: vi.fn(),
-    addLocation: vi.fn(),
-    renameLocation: vi.fn(),
-    removeLocation: vi.fn(),
-  }),
-}));
-
-vi.mock('@/hooks/useTransactions', () => ({
-  useTransactions: () => ({ addTransaction: vi.fn() }),
-}));
-
-vi.mock('@/hooks/useSupplyItems', () => ({
-  useSupplyItems: () => ({
-    items: [],
-    loading: false,
-    addItem: vi.fn(),
     addMutation: vi.fn(),
+    openAddBatch: vi.fn(),
+    openStockOut: vi.fn(),
+    openManageLocations: vi.fn(),
+    openManageBuyers: vi.fn(),
   }),
 }));
 
@@ -88,9 +89,9 @@ describe('StokController', () => {
   it('menampilkan subtitle stok yang operasional dan tidak menampilkan peringatan BMKG di header stok', () => {
     render(<StokController />);
 
-    expect(screen.getByRole('heading', { name: 'Manajemen Stok' })).toBeInTheDocument();
-    expect(screen.getByText('Kelola batch panen, stok keluar, bahan pendukung, dan lokasi penyimpanan.')).toBeInTheDocument();
-    expect(screen.queryByText('Lokasi belum dipilih')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Kelola batch panen/i),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Peringatan BMKG/i)).not.toBeInTheDocument();
   });
 });

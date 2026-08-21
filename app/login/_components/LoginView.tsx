@@ -96,7 +96,7 @@ export default function LoginView({
             },
           })}
         >
-          <LinearProgress color="success" aria-hidden sx={{ mb: 1.5, borderRadius: 999 }} />
+          <LinearProgress color="success" aria-label={t('preparingDashboard')} sx={{ mb: 1.5, borderRadius: 999 }} />
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
             {t('preparingDashboard')}
           </Typography>

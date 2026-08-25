@@ -186,7 +186,7 @@ export default function FinanceCashFlowView({
             sx={{
               display: { md: 'none', xs: 'grid' },
               gap: 1,
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
               mb: 1.5,
             }}
           >

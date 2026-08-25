@@ -23,6 +23,9 @@ export async function recordEvent(input: RecordEventInput): Promise<void> {
     });
 
     if (error) {
+      if (error.code === '23503') {
+        return;
+      }
       console.error('[recordEvent] Gagal mencatat usage event:', error.message);
     }
   } catch (error) {

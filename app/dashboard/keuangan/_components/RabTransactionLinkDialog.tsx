@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -19,6 +21,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import SearchIcon from '@mui/icons-material/Search';
 
 import type { UseRabTransactionLinkControllerResult } from '@/controllers/keuangan/useRabTransactionLinkController';
+import type { RabItem } from '@/lib/finance/rabTypes';
 import { formatRupiah } from '@/lib/formatters';
 
 interface Props {
@@ -32,13 +35,30 @@ function targetTypeLabel(type: UseRabTransactionLinkControllerResult['targetRabT
 }
 
 export default function RabTransactionLinkDialog({ link }: Props) {
+  const [overwriteItem, setOverwriteItem] = useState<RabItem | null>(null);
   const targetCount = link.targetTransactions.length;
   const hasMixedTypes = targetCount > 0 && !link.targetRabType;
   const emptyMessage = hasMixedTypes
     ? 'Pilih transaksi dengan jenis yang sama sebelum menghubungkan RAB.'
     : 'Belum ada item RAB yang cocok dengan transaksi ini.';
 
+  const handleOptionClick = (item: RabItem) => {
+    const existingLinks = link.targetTransactions.filter(
+      (tx) => tx.rabItemId && tx.rabItemId !== item.id,
+    );
+    if (existingLinks.length > 0) {
+      setOverwriteItem(item);
+      return;
+    }
+    void link.linkToRabItem(item);
+  };
+
+  const overwriteCount = overwriteItem
+    ? link.targetTransactions.filter((tx) => tx.rabItemId && tx.rabItemId !== overwriteItem.id).length
+    : 0;
+
   return (
+    <>
     <Dialog
       open={link.dialogOpen}
       onClose={link.closeDialog}
@@ -110,9 +130,7 @@ export default function RabTransactionLinkDialog({ link }: Props) {
                 key={item.id}
                 aria-label={`Hubungkan RAB ${item.name}`}
                 disabled={link.submitting}
-                onClick={() => {
-                  void link.linkToRabItem(item);
-                }}
+                onClick={() => handleOptionClick(item)}
                 sx={(theme) => ({
                   width: '100%',
                   alignItems: 'stretch',
@@ -176,5 +194,35 @@ export default function RabTransactionLinkDialog({ link }: Props) {
         </Button>
       </DialogActions>
     </Dialog>
+
+    <Dialog
+      open={Boolean(overwriteItem)}
+      onClose={() => setOverwriteItem(null)}
+      maxWidth="xs"
+      fullWidth
+      aria-labelledby="overwrite-link-title"
+    >
+      <DialogTitle id="overwrite-link-title">Ganti link RAB?</DialogTitle>
+      <DialogContent>
+        <Typography variant="body2" color="text.secondary">
+          {overwriteCount} transaksi sudah terhubung ke item RAB lain. Ganti dengan &quot;{overwriteItem?.name}&quot;?
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button onClick={() => setOverwriteItem(null)} sx={{ textTransform: 'none' }}>Batal</Button>
+        <Button
+          variant="contained"
+          onClick={() => {
+            const item = overwriteItem;
+            setOverwriteItem(null);
+            if (item) void link.linkToRabItem(item);
+          }}
+          sx={{ borderRadius: 2, textTransform: 'none' }}
+        >
+          Ganti Link
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 }

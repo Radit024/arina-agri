@@ -796,6 +796,14 @@ export default function KeuanganView({
                             }}
                           >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
+                              <Checkbox
+                                size="small"
+                                checked={selectedTxIds.includes(tx._id)}
+                                onClick={(event) => event.stopPropagation()}
+                                onChange={() => toggleSelectTx(tx._id)}
+                                slotProps={{ input: { 'aria-label': `Pilih transaksi ${tx.kategori} ${formatDateShort(tx.tanggal)}` } }}
+                                sx={{ p: 0.5, mr: 0.25, flexShrink: 0 }}
+                              />
                               <Box
                                 sx={{
                                   width: 10,
@@ -990,6 +998,27 @@ export default function KeuanganView({
                   >
                     <AddCircleIcon />
                   </Fab>
+              </Box>
+
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.75, mb: 1, flexShrink: 0 }}>
+                <Chip
+                  label={filterRabLink === 'linked' ? '✓ Terhubung RAB' : 'RAB Terhubung'}
+                  size="small"
+                  clickable
+                  color={filterRabLink === 'linked' ? 'primary' : 'default'}
+                  variant={filterRabLink === 'linked' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterRabLink(filterRabLink === 'linked' ? 'semua' : 'linked')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
+                <Chip
+                  label={filterRabLink === 'unlinked' ? '⚠ Belum ke RAB' : 'Belum Terhubung'}
+                  size="small"
+                  clickable
+                  color={filterRabLink === 'unlinked' ? 'warning' : 'default'}
+                  variant={filterRabLink === 'unlinked' ? 'filled' : 'outlined'}
+                  onClick={() => setFilterRabLink(filterRabLink === 'unlinked' ? 'semua' : 'unlinked')}
+                  sx={{ fontWeight: 600, height: 32 }}
+                />
               </Box>
 
               <TableContainer sx={{ display: { xs: 'none', md: 'block' }, flex: 1, minHeight: 0, overflowX: 'hidden', overflowY: 'auto' }}>

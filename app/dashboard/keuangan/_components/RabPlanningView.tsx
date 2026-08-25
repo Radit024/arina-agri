@@ -433,7 +433,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
                 </Table>
               </TableContainer>
             )}
-            emptyMessage={rab.items.length === 0 ? 'Belum ada item RAB.' : 'Tidak ada item RAB yang cocok dengan filter.'}
+            emptyMessage={rab.items.length === 0 ? 'Tambahkan item pertama atau import dari Excel untuk mulai menyusun rencana anggaran.' : 'Tidak ada item RAB yang cocok dengan filter.'}
             emptyTitle={rab.items.length === 0 ? 'Belum ada item RAB' : 'Tidak ada item yang cocok'}
             errorMessage={rab.error ?? undefined}
             errorTitle="RAB tidak dapat dimuat"

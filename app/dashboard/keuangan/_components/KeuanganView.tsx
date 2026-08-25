@@ -803,7 +803,7 @@ export default function KeuanganView({
                                 checked={selectedTxIds.includes(tx._id)}
                                 onClick={(event) => event.stopPropagation()}
                                 onChange={() => toggleSelectTx(tx._id)}
-                                slotProps={{ input: { 'aria-label': `Pilih transaksi ${tx.kategori} ${formatDateShort(tx.tanggal)}` } }}
+                                slotProps={{ input: { 'aria-label': `Pilih transaksi ${tx.keterangan || tx.kategori}` } }}
                                 sx={{ p: 0.5, mr: 0.25, flexShrink: 0 }}
                               />
                               <Box
@@ -1245,20 +1245,28 @@ export default function KeuanganView({
                                   )}
                                 </Box>
                                 {getRabLinkLabel(tx) && (
-                                  <Chip
-                                    icon={<LinkIcon />}
-                                    label={getRabLinkLabel(tx)}
-                                    size="small"
-                                    sx={{
-                                      alignSelf: 'flex-start',
-                                      height: 22,
-                                      borderRadius: 1.5,
-                                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                      color: 'primary.dark',
-                                      fontWeight: 700,
-                                      '& .MuiChip-icon': { color: 'primary.main' },
-                                    }}
-                                  />
+                                  <Tooltip title={getRabLinkLabel(tx)} arrow placement="top">
+                                    <Chip
+                                      icon={<LinkIcon />}
+                                      label={getRabLinkLabel(tx)}
+                                      size="small"
+                                      sx={{
+                                        alignSelf: 'flex-start',
+                                        height: 22,
+                                        maxWidth: 240,
+                                        borderRadius: 1.5,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        color: 'primary.dark',
+                                        fontWeight: 700,
+                                        '& .MuiChip-label': {
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                        },
+                                        '& .MuiChip-icon': { color: 'primary.main' },
+                                      }}
+                                    />
+                                  </Tooltip>
                                 )}
                               </Box>
                             </TableCell>

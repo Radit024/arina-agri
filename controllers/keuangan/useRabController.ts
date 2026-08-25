@@ -425,6 +425,8 @@ export function useRabController(
       setRabItemDialogOpen(false);
       setEditingRabItemId(null);
       setRabItemDraft(createRabItemFormDraft());
+    } catch {
+      // Error message is set in rabItemError by addRabItem/updateRabItem
     } finally {
       setRabItemSubmitting(false);
     }

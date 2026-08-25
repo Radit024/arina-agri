@@ -49,6 +49,7 @@ export default function RabItemForm({
     <Box
       component="form"
       data-testid="rab-item-form"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit();
@@ -74,7 +75,7 @@ export default function RabItemForm({
             onManage={onOpenCategoryDialog}
             manageLabel="Kelola Kategori RAB"
           >
-            <FormControl fullWidth size="small" required>
+            <FormControl fullWidth size="small">
               <InputLabel id={categoryLabelId}>Kategori RAB</InputLabel>
               <Select
                 id={categorySelectId}

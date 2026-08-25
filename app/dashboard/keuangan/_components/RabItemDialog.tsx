@@ -22,9 +22,10 @@ export default function RabItemDialog({ rab }: Props) {
         onClose={rab.closeRabItemDialog}
         maxWidth="sm"
         fullWidth
+        aria-labelledby="rab-item-dialog-title"
         slotProps={{ paper: { sx: { borderRadius: 4 } } }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle id="rab-item-dialog-title" sx={{ pb: 1 }}>
           <Typography component="span" variant="h6" sx={{ display: 'block', fontFamily: 'var(--font-sora)', fontWeight: 800, lineHeight: 1.2 }}>
             {isEditing ? 'Edit Item RAB' : 'Tambah Item RAB'}
           </Typography>

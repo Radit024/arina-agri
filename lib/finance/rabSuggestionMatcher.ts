@@ -76,16 +76,45 @@ function tokenize(value: string) {
     .filter((token) => token.length >= 3);
 }
 
+const AGRICULTURAL_CATEGORY_SYNONYMS: Record<string, string[]> = {
+  saprodi: ['saprodi', 'pupuk', 'pestisida', 'benih', 'bibit', 'obat', 'herbisida', 'fungisida', 'insektisida', 'dolomit'],
+  pupuk: ['pupuk', 'saprodi', 'urea', 'npk', 'pemupukan'],
+  pestisida: ['pestisida', 'saprodi', 'opt', 'pengendalian opt', 'herbisida', 'fungisida', 'insektisida'],
+  benih: ['benih', 'bibit', 'saprodi', 'persemaian'],
+  bibit: ['bibit', 'benih', 'saprodi', 'persemaian'],
+  'tenaga kerja': ['tenaga kerja', 'upah', 'gaji', 'borongan', 'hok', 'pekerja'],
+  upah: ['upah', 'tenaga kerja', 'gaji', 'borongan', 'hok', 'pekerja'],
+  alsintan: ['jasa alsintan', 'alsintan', 'traktor', 'combine', 'harvester', 'alat mesin', 'sewa traktor', 'bajak'],
+  'jasa alsintan': ['jasa alsintan', 'alsintan', 'traktor', 'combine', 'harvester', 'alat mesin', 'sewa traktor', 'bajak'],
+  irigasi: ['irigasi & air', 'irigasi', 'pengairan', 'pompa air', 'pompa', 'iuran air'],
+  'irigasi & air': ['irigasi & air', 'irigasi', 'pengairan', 'pompa air', 'pompa', 'iuran air'],
+  'alat tani': ['alat tani', 'cangkul', 'sprayer', 'semprot', 'alat semprot', 'gembor', 'terpal', 'karung'],
+  operasional: ['operasional', 'transport', 'bbm', 'bensin', 'solar', 'sewa lahan', 'konsumsi'],
+  'penjualan hasil panen': ['penjualan hasil panen', 'penjualan', 'panen', 'gabah', 'gkp', 'hasil panen'],
+};
+
 function expandAgriculturalSynonyms(text: string): string[] {
   const norm = normalizeText(text);
-  const synonyms = [norm];
+  const synonyms = new Set<string>([norm]);
   if (norm.includes('sulam') || norm.includes('penyulaman')) {
-    synonyms.push('sulam', 'penyulaman');
+    synonyms.add('sulam');
+    synonyms.add('penyulaman');
   }
   if (norm.includes('penerimaan') || norm.includes('penjualan') || norm.includes('panen') || norm.includes('gabah')) {
-    synonyms.push('penerimaan', 'penjualan', 'panen', 'gabah', 'gkp');
+    synonyms.add('penerimaan');
+    synonyms.add('penjualan');
+    synonyms.add('panen');
+    synonyms.add('gabah');
+    synonyms.add('gkp');
   }
-  return synonyms;
+
+  for (const [key, mapping] of Object.entries(AGRICULTURAL_CATEGORY_SYNONYMS)) {
+    if (norm === key || norm.includes(key)) {
+      mapping.forEach((s) => synonyms.add(s));
+    }
+  }
+
+  return Array.from(synonyms);
 }
 
 export function suggestRabItemsForTransaction({

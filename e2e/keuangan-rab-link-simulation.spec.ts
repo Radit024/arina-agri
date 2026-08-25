@@ -208,7 +208,7 @@ async function getTxChipText(page: Page, rec: Recorder, kategori: string, catata
       const row = el.closest('tr') ?? el.closest('[role="article"]') ?? el.closest('.MuiBox-root');
       return row ? (row.textContent ?? '') : '';
     });
-    if (rowText.includes(catatan) || rowText.includes(kategori)) {
+    if (rowText.includes(catatan)) {
       found = (await chipElement.innerText()).trim();
       break;
     }
@@ -218,24 +218,25 @@ async function getTxChipText(page: Page, rec: Recorder, kategori: string, catata
 }
 
 async function linkTransactionViaRow(page: Page, rec: Recorder, isMobileDevice: boolean, kategori: string) {
-  if (isMobileDevice) {
-    const expandButton = await firstVisible(page.getByRole('button', { name: `Buka detail transaksi ${kategori}` }));
-    if (expandButton) {
-      await expandButton.click();
-      await page.waitForTimeout(400);
+  let existingButton = await firstVisible(page.getByRole('button', { name: `Hubungkan RAB transaksi ${kategori}` }));
+  if (!existingButton) {
+    if (isMobileDevice) {
+      const expandButton = await firstVisible(page.getByRole('button', { name: `Buka detail transaksi ${kategori}` }));
+      if (expandButton) {
+        await expandButton.click();
+        await page.waitForTimeout(400);
+      }
+    } else {
+      await page.getByRole('row', { name: new RegExp(kategori) }).first().click();
+      await page.waitForTimeout(300);
     }
-  } else {
-    const row = page.getByRole('row', { name: new RegExp(kategori) }).first();
-    await row.click();
-    await page.waitForTimeout(300);
+    existingButton = await firstVisible(page.getByRole('button', { name: `Hubungkan RAB transaksi ${kategori}` }));
   }
-
-  const linkButton = await firstVisible(page.getByRole('button', { name: `Hubungkan RAB transaksi ${kategori}` }));
-  if (!linkButton) {
+  if (!existingButton) {
     rec.finding('bug', 'linking', `Tombol "Hubungkan RAB transaksi ${kategori}" tidak ditemukan setelah baris dipilih/di-expand.`);
     return null;
   }
-  await linkButton.click();
+  await existingButton.click();
 
   const dialog = page.locator('.MuiDialog-paper').filter({ hasText: 'akan disambungkan ke item RAB' });
   await expect(dialog).toBeVisible({ timeout: 15_000 });
@@ -310,9 +311,9 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
   dialog = await openRabItemDialog(page, rec);
   await dialog.getByRole('button', { name: 'Tambah Item', exact: true }).click();
   await page.waitForTimeout(500);
-  const validationAlert = await firstVisible(dialog.getByText(/Pilihan kategori tidak boleh kosong/i));
+  const validationAlert = await firstVisible(dialog.getByText(/tidak boleh kosong/i));
   rec.finding(validationAlert ? 'ok' : 'warn', 'rab-validasi', validationAlert
-    ? 'Validasi form RAB muncul saat submit kosong (Alert di dalam dialog).'
+    ? `Validasi Indonesia muncul saat submit kosong: "${(await validationAlert.innerText()).trim()}"`
     : 'Tidak ada validasi terlihat saat submit form RAB kosong.');
   await shot(page, rec.device, 'rab-form-validation');
   await dialog.getByRole('button', { name: 'Batal', exact: true }).click();
@@ -326,14 +327,14 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
   await expectAnyVisible(page.getByText('Jual Cabai Merah'));
   const pendapatanCard = page.locator('[aria-label="Pendapatan Rencana"]');
   await expect(pendapatanCard).toContainText('Rp 6.000.000', { timeout: 10_000 });
-  const labaCard = page.locator('[aria-label="Laba Rencana"]');
-  const labaText = (await labaCard.innerText()).replace(/\s+/g, ' ').trim();
-  rec.result.rabSummary = `Pendapatan Rencana Rp 6.000.000 | Biaya Rencana Rp 8.500.000 | Laba Rencana: ${labaText}`;
+  const labaCard = page.locator('[aria-label="Laba Rencana"], [aria-label="Rugi Rencana"]').first();
+  const labaText = (await labaCard.innerText().catch(() => '(kartu tidak ditemukan)')).replace(/\s+/g, ' ').trim();
+  rec.result.rabSummary = `Pendapatan Rencana Rp 6.000.000 | Biaya Rencana Rp 8.500.000 | ${labaText}`;
   rec.step(`RAB ringkasan: ${rec.result.rabSummary}`);
-  if (!/-2\.500\.000/.test(labaText)) {
-    rec.finding('logic', 'rab-total', `Laba Rencana tidak menunjukkan -Rp 2.500.000 (6.000.000 − 8.500.000). Tampil: "${labaText}"`);
+  if (labaText.includes('Rugi Rencana') && labaText.includes('2.500.000')) {
+    rec.finding('ok', 'rab-total', 'LOGIC-01 terverifikasi fixed: kartu menampilkan "Rugi Rencana Rp 2.500.000" (bukan laba positif).');
   } else {
-    rec.finding('ok', 'rab-total', 'Laba Rencana benar: -Rp 2.500.000 (defisit rencana).');
+    rec.finding('bug', 'rab-total', `Kartu laba/rugi rencana tidak sesuai (harapnya "Rugi Rencana Rp 2.500.000"): "${labaText}"`);
   }
   await checkOverflow(page, rec, 'tab RAB terisi');
   await shot(page, rec.device, 'rab-populated');
@@ -388,86 +389,88 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
 
   rec.step('Bulk: pilih 2 transaksi pengeluaran → Hubungkan RAB sekaligus');
   if (isMobileDevice) {
-    rec.finding('logic', 'bulk', 'Mobile: kartu transaksi TIDAK memiliki checkbox seleksi — fitur bulk link "Hubungkan RAB" hanya tersedia di desktop (parity gap).');
+    const cb1 = await firstVisible(page.getByRole('checkbox', { name: 'Pilih transaksi Beli 2 karung NPK' }));
+    const cb2 = await firstVisible(page.getByRole('checkbox', { name: 'Pilih transaksi Beli 1 karung NPK tambahan' }));
+    if (!cb1 || !cb2) {
+      rec.finding('bug', 'bulk', 'Checkbox pilih transaksi tidak ditemukan di kartu mobile.');
+    } else {
+      await cb1.click();
+      await cb2.click();
+    }
   } else {
     await page.getByRole('row', { name: /Beli 2 karung NPK/ }).first().click();
     await page.getByRole('row', { name: /Beli 1 karung NPK tambahan/ }).first().click();
-    await page.waitForTimeout(400);
-    const bulkButton = await firstVisible(page.getByRole('button', { name: 'Hubungkan RAB', exact: true }));
-    if (!bulkButton) {
-      rec.finding('bug', 'bulk', 'Bulk bar / tombol "Hubungkan RAB" tidak muncul setelah memilih 2 transaksi.');
-    } else {
-      await bulkButton.click();
-      linkDialog = page.locator('.MuiDialog-paper').filter({ hasText: 'akan disambungkan ke item RAB' });
-      await expect(linkDialog).toBeVisible({ timeout: 15_000 });
-      await shot(page, rec.device, 'link-dialog-bulk');
-      await pickRabOptionAndVerify(page, rec, linkDialog, 'Pupuk NPK 200kg', /2 transaksi berhasil dihubungkan ke RAB/);
-      rec.finding('ok', 'bulk', 'Bulk link 2 transaksi ke satu item RAB berhasil (multi-link diizinkan).');
-      rec.finding('ok', 'bulk', 'PERILAKU: relink transaksi yang sudah terhubung (Beli 2 karung NPK) ditimpa TANPA peringatan — dicatat sebagai temuan UX.');
-    }
+  }
+  await page.waitForTimeout(400);
+  const bulkButton = await firstVisible(page.getByRole('button', { name: 'Hubungkan RAB', exact: true }));
+  if (!bulkButton) {
+    rec.finding('bug', 'bulk', 'Bulk bar / tombol "Hubungkan RAB" tidak muncul setelah memilih 2 transaksi.');
+  } else {
+    await bulkButton.click();
+    linkDialog = page.locator('.MuiDialog-paper').filter({ hasText: 'akan disambungkan ke item RAB' });
+    await expect(linkDialog).toBeVisible({ timeout: 15_000 });
+    await shot(page, rec.device, 'link-dialog-bulk');
+    await pickRabOptionAndVerify(page, rec, linkDialog, 'Pupuk NPK 200kg', /2 transaksi berhasil dihubungkan ke RAB/);
+    rec.finding('ok', 'bulk', 'Bulk link 2 transaksi ke satu item RAB berhasil (multi-link diizinkan).');
   }
 
-  rec.step('Bulk campuran jenis: pilih transaksi pendapatan + pengeluaran sekaligus');
+  rec.step('Bulk campuran jenis: tombol harus diblokir');
   if (isMobileDevice) {
-    rec.finding('logic', 'bulk-mixed', 'Mobile: skenario bulk campuran tidak bisa diuji — tidak ada checkbox seleksi di kartu transaksi.');
+    const cbIncome = await firstVisible(page.getByRole('checkbox', { name: 'Pilih transaksi Jual 100 kg cabai grade A' }));
+    const cbExpense = await firstVisible(page.getByRole('checkbox', { name: 'Pilih transaksi Beli 2 karung NPK' }));
+    if (cbIncome && cbExpense) {
+      await cbIncome.click();
+      await cbExpense.click();
+    }
   } else {
     await page.getByRole('row', { name: /Jual 100 kg cabai grade A/ }).first().click();
-    await page.getByRole('row', { name: /Beli 1 karung NPK tambahan/ }).first().click();
-    await page.waitForTimeout(400);
-    const bulkButton2 = await firstVisible(page.getByRole('button', { name: 'Hubungkan RAB', exact: true }));
-    if (bulkButton2) {
-      await bulkButton2.click();
-      linkDialog = page.locator('.MuiDialog-paper').filter({ hasText: 'akan disambungkan ke item RAB' });
-      await expect(linkDialog).toBeVisible({ timeout: 15_000 });
-      const mixedSubtitle = await firstVisible(linkDialog.getByText(/campuran/));
-      rec.finding(mixedSubtitle ? 'ok' : 'warn', 'bulk-mixed', mixedSubtitle
-        ? 'Subtitle mengonfirmasi pilihan campuran terdeteksi.'
-        : `Subtitle tidak menyebut campuran: "${(await linkDialog.innerText()).slice(0, 120)}"`);
-      const mixedMessage = linkDialog.getByText('Pilih transaksi dengan jenis yang sama sebelum menghubungkan RAB.');
-      const emptyMessage = linkDialog.getByText('Belum ada item RAB yang cocok dengan transaksi ini.');
-      const mixedShown = await anyVisible(mixedMessage) || await anyVisible(emptyMessage);
-      const optionCount = await linkDialog.getByRole('button', { name: /Hubungkan RAB / }).count();
-      rec.finding(mixedShown && optionCount === 0 ? 'logic' : 'bug', 'bulk-mixed', mixedShown
-        ? `Bulk campuran jenis: pesan peringatan tampil, opsi RAB = ${optionCount} (UX: lebih baik blokir tombol sejak awal daripada dialog kosong).`
-        : `Bulk campuran jenis: TIDAK ada pesan peringatan, opsi RAB tampil = ${optionCount} — RISIKO salah-link lintas jenis!`);
-      await shot(page, rec.device, 'link-dialog-mixed');
-      await linkDialog.getByRole('button', { name: 'Batal', exact: true }).click();
-      await expect(linkDialog).toBeHidden({ timeout: 10_000 });
-      const cancelButton = await firstVisible(page.getByRole('button', { name: 'Batalkan', exact: true }));
-      if (cancelButton) await cancelButton.click();
-    }
+    await page.getByRole('row', { name: /Beli 2 karung NPK/ }).first().click();
   }
+  await page.waitForTimeout(400);
+  const bulkButton2 = await firstVisible(page.getByRole('button', { name: 'Hubungkan RAB', exact: true }));
+  if (!bulkButton2) {
+    rec.finding('bug', 'bulk-mixed', 'Tombol bulk tidak ditemukan saat seleksi campuran.');
+  } else {
+    const mixedDisabled = await bulkButton2.isDisabled();
+    rec.finding(mixedDisabled ? 'ok' : 'bug', 'bulk-mixed', mixedDisabled
+      ? 'Tombol "Hubungkan RAB" DISABLED saat seleksi campuran (perbaikan UX-03 bekerja).'
+      : 'Tombol "Hubungkan RAB" masih AKTIF saat seleksi campuran — risiko salah-link lintas jenis.');
+    await shot(page, rec.device, 'bulk-mixed-disabled');
+  }
+  const cancelButton = await firstVisible(page.getByRole('button', { name: 'Batalkan', exact: true }));
+  if (cancelButton) await cancelButton.click();
+  await page.waitForTimeout(300);
 
-  rec.step('Filter status link (mobile-only chips)');
+  rec.step('Filter status link (mobile & desktop)');
   const linkedChip = await firstVisible(page.getByRole('button', { name: /RAB Terhubung|Terhubung RAB$/ }));
   const unlinkedChip = await firstVisible(page.getByRole('button', { name: /Belum Terhubung|Belum ke RAB$/ }));
-  if (isMobileDevice) {
-    if (unlinkedChip) {
-      await unlinkedChip.click();
-      await page.waitForTimeout(500);
-      const tenagaKerjaVisible = await anyVisible(page.getByText('Tenaga Kerja', { exact: true }));
-      const pupukVisible = await anyVisible(page.getByText('Pupuk', { exact: true }));
-      rec.finding(tenagaKerjaVisible && !pupukVisible ? 'ok' : 'bug', 'filter', `Filter "⚠ Belum ke RAB": Tenaga Kerja=${tenagaKerjaVisible}, Pupuk=${pupukVisible} (harusnya hanya Tenaga Kerja).`);
-      await shot(page, rec.device, 'filter-belum-terhubung');
-      await unlinkedChip.click();
-      await page.waitForTimeout(400);
-    } else {
-      rec.finding('bug', 'filter', 'Chip filter "Belum Terhubung" tidak ditemukan di mobile.');
-    }
-    if (linkedChip) {
-      await linkedChip.click();
-      await page.waitForTimeout(500);
-      const pupukVisible2 = await anyVisible(page.getByText('Pupuk', { exact: true }));
-      const tenagaKerjaVisible2 = await anyVisible(page.getByText('Tenaga Kerja', { exact: true }));
-      rec.finding(pupukVisible2 && !tenagaKerjaVisible2 ? 'ok' : 'bug', 'filter', `Filter "✓ Terhubung RAB": Pupuk=${pupukVisible2}, Tenaga Kerja=${tenagaKerjaVisible2}.`);
-      await linkedChip.click();
-      await page.waitForTimeout(400);
-    }
+  const tenagaKerjaRowOrCard = () => isMobileDevice
+    ? anyVisible(page.locator('[role="article"], .MuiCard-root').filter({ hasText: 'Tenaga Kerja' }))
+    : anyVisible(page.getByRole('row', { name: /Bayar borongan panen/ }));
+  const pupukRowOrCard = () => isMobileDevice
+    ? anyVisible(page.locator('[role="article"], .MuiCard-root').filter({ hasText: 'Beli 2 karung NPK' }))
+    : anyVisible(page.getByRole('row', { name: /Beli 2 karung NPK/ }));
+  if (!linkedChip || !unlinkedChip) {
+    rec.finding('bug', 'filter', 'Chip filter status RAB tidak ditemukan.');
   } else {
-    rec.finding(linkedChip || unlinkedChip ? 'ok' : 'logic', 'filter', 'Desktop: chip filter RAB Terhubung/Belum Terhubung TIDAK tersedia (hanya mobile) — pengguna desktop tidak bisa memfilter status link.');
+    await unlinkedChip.click();
+    await page.waitForTimeout(500);
+    const tenagaKerjaVisible = await tenagaKerjaRowOrCard();
+    const pupukVisible = await pupukRowOrCard();
+    rec.finding(tenagaKerjaVisible && !pupukVisible ? 'ok' : 'bug', 'filter', `Filter "⚠ Belum ke RAB": Tenaga Kerja=${tenagaKerjaVisible}, Pupuk=${pupukVisible} (harusnya hanya Tenaga Kerja).`);
+    await shot(page, rec.device, 'filter-belum-terhubung');
+    await unlinkedChip.click();
+    await page.waitForTimeout(400);
+    await linkedChip.click();
+    await page.waitForTimeout(500);
+    const pupukVisible2 = await pupukRowOrCard();
+    const tenagaKerjaVisible2 = await tenagaKerjaRowOrCard();
+    rec.finding(pupukVisible2 && !tenagaKerjaVisible2 ? 'ok' : 'bug', 'filter', `Filter "✓ Terhubung RAB": Pupuk=${pupukVisible2}, Tenaga Kerja=${tenagaKerjaVisible2}.`);
+    await linkedChip.click();
+    await page.waitForTimeout(400);
   }
 
-  rec.step('Logic test: hapus item RAB yang masih terhubung ke transaksi (dangling link)');
+  rec.step('Logic test: hapus item RAB yang masih terhubung ke transaksi (auto-cleanup)');
   await tablist.getByRole('tab', { name: 'RAB', exact: true }).click();
   await expect(page.getByTestId('finance-panel-rab')).toBeVisible({ timeout: 10_000 });
   dialog = await openRabItemDialog(page, rec);
@@ -481,6 +484,67 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
   linkDialog = await linkTransactionViaRow(page, rec, isMobileDevice, 'Tenaga Kerja');
   if (linkDialog) {
     await pickRabOptionAndVerify(page, rec, linkDialog, 'Alat Semprot Sekunder', /1 transaksi berhasil dihubungkan ke RAB/);
+    await page.waitForTimeout(600);
+    await getTxChipText(page, rec, 'Tenaga Kerja', 'Bayar borongan panen');
+  }
+
+  rec.step('Relink ke item lain → dialog konfirmasi "Ganti link RAB?" harus muncul');
+  linkDialog = await linkTransactionViaRow(page, rec, isMobileDevice, 'Tenaga Kerja');
+  if (linkDialog) {
+    await linkDialog.getByRole('button', { name: 'Hubungkan RAB Pupuk NPK 200kg' }).click();
+    const overwriteDialog = page.getByRole('dialog', { name: 'Ganti link RAB?' });
+    const overwriteShown = await overwriteDialog.isVisible().catch(() => false);
+    rec.finding(overwriteShown ? 'ok' : 'bug', 'relink-confirm', overwriteShown
+      ? 'Konfirmasi "Ganti link RAB?" muncul saat mengganti link yang sudah ada.'
+      : 'Konfirmasi penggantian link TIDAK muncul — link tertimpa diam-diam.');
+    await shot(page, rec.device, 'relink-confirm');
+    if (overwriteShown) {
+      await overwriteDialog.getByRole('button', { name: 'Ganti Link' }).click();
+      await expect(overwriteDialog).toBeHidden({ timeout: 10_000 });
+      await expect(linkDialog).toBeHidden({ timeout: 15_000 });
+      await page.waitForTimeout(600);
+      await getTxChipText(page, rec, 'Tenaga Kerja', 'Bayar borongan panen');
+    }
+
+    rec.step('Unlink: tombol "Putuskan RAB" memutus hubungan');
+    if (isMobileDevice) {
+      const expandButton = await firstVisible(page.getByRole('button', { name: 'Buka detail transaksi Tenaga Kerja' }));
+      if (expandButton) {
+        await expandButton.click();
+        await page.waitForTimeout(400);
+      }
+    } else {
+      await page.getByRole('row', { name: /Bayar borongan panen/ }).first().click();
+      await page.waitForTimeout(300);
+    }
+    const unlinkButton = await firstVisible(page.getByRole('button', { name: 'Putuskan RAB transaksi Tenaga Kerja' }));
+    if (!unlinkButton) {
+      rec.finding('bug', 'unlink', 'Tombol "Putuskan RAB transaksi Tenaga Kerja" tidak ditemukan.');
+    } else {
+      await unlinkButton.click();
+      const unlinkSnackbar = page.getByText('1 transaksi berhasil diputus dari RAB');
+      const unlinkShown = await unlinkSnackbar.first().isVisible().catch(() => false);
+      rec.finding(unlinkShown ? 'ok' : 'bug', 'unlink', unlinkShown
+        ? 'Snackbar "1 transaksi berhasil diputus dari RAB" muncul.'
+        : 'Snackbar putus link tidak terdeteksi.');
+      await page.waitForTimeout(600);
+      const chipAfterUnlink = await getTxChipText(page, rec, 'Tenaga Kerja', 'Bayar borongan panen');
+      rec.finding(chipAfterUnlink === '' ? 'ok' : 'bug', 'unlink', chipAfterUnlink === ''
+        ? 'Chip RAB hilang setelah diputus.'
+        : `Chip masih ada setelah unlink: "${chipAfterUnlink}"`);
+    }
+  }
+
+  rec.step('Hubungkan ulang T4 ke Alat Semprot lalu hapus item → link otomatis dibersihkan');
+  linkDialog = await linkTransactionViaRow(page, rec, isMobileDevice, 'Tenaga Kerja');
+  if (linkDialog) {
+    await linkDialog.getByRole('button', { name: 'Hubungkan RAB Alat Semprot Sekunder' }).click();
+    const overwriteDialog2 = page.getByRole('dialog', { name: 'Ganti link RAB?' });
+    if (await overwriteDialog2.isVisible().catch(() => false)) {
+      await overwriteDialog2.getByRole('button', { name: 'Ganti Link' }).click();
+      await expect(overwriteDialog2).toBeHidden({ timeout: 10_000 });
+    }
+    await expect(linkDialog).toBeHidden({ timeout: 15_000 });
   }
 
   await tablist.getByRole('tab', { name: 'RAB', exact: true }).click();
@@ -502,6 +566,11 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
     await deleteButton.click();
     const confirmDialog = page.getByRole('dialog', { name: 'Hapus item RAB?', exact: true });
     await expect(confirmDialog).toBeVisible({ timeout: 10_000 });
+    const confirmText = (await confirmDialog.innerText()).replace(/\s+/g, ' ');
+    rec.finding(confirmText.includes('1 transaksi terhubung') ? 'ok' : 'warn', 'dangling', confirmText.includes('1 transaksi terhubung')
+      ? 'Dialog konfirmasi hapus menyebut "1 transaksi terhubung akan otomatis diputus".'
+      : `Dialog konfirmasi tidak menyebut jumlah transaksi terhubung: "${confirmText.slice(0, 160)}"`);
+    await shot(page, rec.device, 'delete-rab-confirm');
     await confirmDialog.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(confirmDialog).toBeHidden({ timeout: 10_000 });
     await page.waitForTimeout(800);
@@ -523,22 +592,38 @@ async function runFlow(page: Page, rec: Recorder, isMobileDevice: boolean) {
   }
   const fallbackChip = page.getByText('RAB tersambung');
   const fallbackShown = await anyVisible(fallbackChip);
-  rec.finding(fallbackShown ? 'logic' : 'warn', 'dangling', fallbackShown
-    ? 'LOGIC: setelah item RAB dihapus, chip transaksi menjadi "RAB tersambung" (fallback) — link menggantung tanpa cara memutus dari UI (tidak ada unlink).'
-    : 'Chip fallback "RAB tersambung" TIDAK terlihat setelah item RAB dihapus — periksa apakah chip hilang total atau kembali kosong.');
+  rec.finding(fallbackShown ? 'bug' : 'ok', 'dangling', fallbackShown
+    ? 'Chip "RAB tersambung" masih muncul — auto-cleanup link tidak berjalan.'
+    : 'Auto-cleanup bekerja: tidak ada chip menggantung setelah item RAB dihapus.');
 
-  if (isMobileDevice) {
-    const linkedChip2 = await firstVisible(page.getByRole('button', { name: /RAB Terhubung|Terhubung RAB$/ }));
-    if (linkedChip2) {
-      await linkedChip2.click();
-      await page.waitForTimeout(500);
-      const danglingInLinked = await anyVisible(page.getByText('Tenaga Kerja', { exact: true }));
-      rec.finding(danglingInLinked ? 'logic' : 'ok', 'dangling', danglingInLinked
-        ? 'LOGIC: transaksi dengan rabItemId menggantung masih dihitung "Terhubung RAB" oleh filter padahal item RAB-nya sudah dihapus.'
-        : 'Filter "Terhubung RAB" tidak lagi menghitung transaksi dengan item RAB yang dihapus (bersih).');
-      await linkedChip2.click();
-    }
+  const linkedChip3 = await firstVisible(page.getByRole('button', { name: /RAB Terhubung|Terhubung RAB$/ }));
+  if (linkedChip3) {
+    await linkedChip3.click();
+    await page.waitForTimeout(500);
+    const danglingInLinked = isMobileDevice
+      ? await anyVisible(page.locator('[role="article"], .MuiCard-root').filter({ hasText: 'Bayar borongan panen' }))
+      : await anyVisible(page.getByRole('row', { name: /Bayar borongan panen/ }));
+    rec.finding(danglingInLinked ? 'bug' : 'ok', 'dangling', danglingInLinked
+      ? 'Transaksi bekas link masih dihitung "Terhubung RAB" padahal item sudah dihapus.'
+      : 'Filter "Terhubung RAB" bersih dari transaksi bekas link.');
+    await linkedChip3.click();
+    await page.waitForTimeout(400);
   }
+
+  rec.step('Realisasi: kartu & kolom Terealisasi di tab RAB');
+  await tablist.getByRole('tab', { name: 'RAB', exact: true }).click();
+  await expect(page.getByTestId('finance-panel-rab')).toBeVisible({ timeout: 10_000 });
+  await page.waitForTimeout(600);
+  const realizedIncomeVisible = await anyVisible(page.getByText('Pendapatan Terealisasi'));
+  const realizedExpenseVisible = await anyVisible(page.getByText('Biaya Terealisasi'));
+  rec.finding(realizedIncomeVisible && realizedExpenseVisible ? 'ok' : 'bug', 'realisasi', `Kartu realisasi tampil: Pendapatan=${realizedIncomeVisible}, Biaya=${realizedExpenseVisible}.`);
+  await expectAnyVisible(page.getByText(/Rp 2\.550\.000 \(2 tx\)/), 15_000);
+  rec.finding('ok', 'realisasi', 'Item "Pupuk NPK 200kg" menunjukkan realisasi Rp 2.550.000 (2 tx) — sesuai T1+T3.');
+  await checkOverflow(page, rec, 'tab RAB realisasi');
+  await shot(page, rec.device, 'rab-realized', true);
+
+  await tablist.getByRole('tab', { name: 'Buku Besar', exact: true }).click();
+  await expect(page.getByTestId('finance-panel-buku-besar')).toBeVisible({ timeout: 10_000 });
 
   await checkOverflow(page, rec, 'akhir alur');
   await shot(page, rec.device, 'final-state');

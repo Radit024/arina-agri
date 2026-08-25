@@ -64,9 +64,10 @@ export default function RabTransactionLinkDialog({ link }: Props) {
       onClose={link.closeDialog}
       maxWidth="sm"
       fullWidth
+      aria-labelledby="rab-transaction-link-title"
       slotProps={{ paper: { sx: { borderRadius: 3 } } }}
     >
-      <DialogTitle sx={{ pb: 1 }}>
+      <DialogTitle id="rab-transaction-link-title" sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontFamily: 'var(--font-sora)', fontWeight: 800 }}>

@@ -126,4 +126,36 @@ describe('suggestRabItemsForTransaction', () => {
     expect(suggestions[0].item.id).toBe('herbisida-item');
     expect(suggestions[0].score).toBeGreaterThanOrEqual(4);
   });
+
+  it('matches ledger category Pupuk without description to Saprodi RAB item', () => {
+    const testItems: RabItem[] = [
+      {
+        id: 'saprodi-item',
+        projectId: 'p1',
+        categoryId: 'saprodi',
+        categoryName: 'Saprodi',
+        type: 'expense',
+        name: 'Nutrisi Daun Organik',
+        volume: 2,
+        unit: 'Botol',
+        unitPrice: 75_000,
+        plannedTotal: 150_000,
+        aliases: [],
+        sortOrder: 1,
+      },
+    ];
+
+    const suggestions = suggestRabItemsForTransaction({
+      items: testItems,
+      transaction: {
+        jenis: 'pengeluaran',
+        kategori: 'Pupuk',
+        keterangan: '',
+      },
+    });
+
+    expect(suggestions.length).toBeGreaterThan(0);
+    expect(suggestions[0].item.id).toBe('saprodi-item');
+    expect(suggestions[0].score).toBeGreaterThan(0);
+  });
 });

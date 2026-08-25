@@ -240,6 +240,14 @@ export function useKeuanganController() {
       }
       return results;
     },
+    unlinkFromRab: async (transactionId: string) => {
+      await rabTransactionLink.unlinkFromRab(transactionId);
+      setSnackbar({
+        open: true,
+        message: '1 transaksi berhasil diputus dari RAB',
+        severity: 'success',
+      });
+    },
   };
 
   useEffect(() => {

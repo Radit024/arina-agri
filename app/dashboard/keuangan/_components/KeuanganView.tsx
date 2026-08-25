@@ -45,6 +45,7 @@ import DonutLargeIcon from '@mui/icons-material/DonutLarge';
 import DownloadIcon from '@mui/icons-material/Download';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LinkIcon from '@mui/icons-material/Link';
+import LinkOffIcon from '@mui/icons-material/LinkOff';
 import SearchIcon from '@mui/icons-material/Search';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -905,6 +906,21 @@ export default function KeuanganView({
 
                               {/* Action Footer Buttons */}
                               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, pt: 0.5 }}>
+                                {(tx.rabItemId || tx.rabCategoryId) && (
+                                  <IconButton
+                                    data-touch-target="44"
+                                    size="small"
+                                    aria-label={`Putuskan RAB transaksi ${tx.kategori}`}
+                                    onClick={() => rabTransactionLink.unlinkFromRab(tx._id)}
+                                    sx={(theme) => ({
+                                      width: 44,
+                                      height: 44,
+                                      ...financeActionIconButtonSx(theme, 'error'),
+                                    })}
+                                  >
+                                    <LinkOffIcon fontSize="small" />
+                                  </IconButton>
+                                )}
                                 <IconButton
                                   data-touch-target="44"
                                   size="small"
@@ -1144,6 +1160,20 @@ export default function KeuanganView({
                                       onClick={(e) => e.stopPropagation()}
                                       sx={{ display: 'inline-flex', gap: 0.5, flexShrink: 0 }}
                                     >
+                                      {(tx.rabItemId || tx.rabCategoryId) && (
+                                        <IconButton
+                                          size="small"
+                                          aria-label={`Putuskan RAB transaksi ${tx.kategori}`}
+                                          onClick={() => rabTransactionLink.unlinkFromRab(tx._id)}
+                                          sx={(theme) => ({
+                                            width: 34,
+                                            height: 34,
+                                            ...financeActionIconButtonSx(theme, 'error'),
+                                          })}
+                                        >
+                                          <LinkOffIcon fontSize="small" />
+                                        </IconButton>
+                                      )}
                                       <IconButton
                                         size="small"
                                         aria-label={`Hubungkan RAB transaksi ${tx.kategori}`}

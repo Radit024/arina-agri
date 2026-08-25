@@ -171,6 +171,10 @@ export function useRabTransactionLinkController({
     return rabItems.find((item) => item.id === transaction.rabItemId) ?? null;
   };
 
+  const unlinkFromRab = async (transactionId: string) => {
+    await updateTransaction(transactionId, { rabItemId: null, rabCategoryId: null });
+  };
+
   return {
     dialogOpen,
     targetTransactionIds,
@@ -184,6 +188,7 @@ export function useRabTransactionLinkController({
     openForTransactions,
     closeDialog,
     linkToRabItem,
+    unlinkFromRab,
     getLinkedRabItem,
   };
 }

@@ -348,6 +348,7 @@ function makeRabTransactionLink(overrides: Record<string, unknown> = {}) {
     openForTransactions: vi.fn(),
     closeDialog: vi.fn(),
     linkToRabItem: vi.fn(async () => ({ success: 0, failed: 0 })),
+    unlinkFromRab: vi.fn(async () => undefined),
     getLinkedRabItem: vi.fn(() => null),
     ...overrides,
   };

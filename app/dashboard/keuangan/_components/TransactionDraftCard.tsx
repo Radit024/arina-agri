@@ -55,99 +55,99 @@ export default function TransactionDraftCard({
   const isPendapatan = draft.jenis === 'pendapatan';
 
   return (
-    <Accordion
-      expanded={isExpanded}
-      onChange={onExpand}
-      disableGutters
-      elevation={0}
+    <Box
       sx={{
+        alignItems: 'stretch',
+        bgcolor: 'background.paper',
         border: '1px solid',
-        borderColor: hasError
-          ? 'error.main'
-          : isExpanded
-          ? 'primary.main'
-          : 'divider',
-        borderRadius: '12px !important',
-        '&:before': { display: 'none' },
+        borderColor: hasError ? 'error.main' : isExpanded ? 'primary.main' : 'divider',
+        borderRadius: '12px',
+        display: 'flex',
         overflow: 'hidden',
       }}
     >
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        sx={{
-          bgcolor: isExpanded ? alpha(theme.palette.primary.main, 0.04) : 'transparent',
-          minHeight: 56,
-          '& .MuiAccordionSummary-content': { alignItems: 'center', gap: 1.5 },
-        }}
+      <Accordion
+        expanded={isExpanded}
+        onChange={onExpand}
+        disableGutters
+        elevation={0}
+        sx={{ border: 'none', flex: 1, minWidth: 0, '&:before': { display: 'none' } }}
       >
-        <Box
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
           sx={{
-            width: 28,
-            height: 28,
-            borderRadius: '50%',
-            bgcolor: hasError ? 'error.main' : isPendapatan ? 'success.main' : 'primary.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            bgcolor: isExpanded ? alpha(theme.palette.primary.main, 0.04) : 'transparent',
+            minHeight: 56,
+            '& .MuiAccordionSummary-content': { alignItems: 'center', gap: 1.5 },
           }}
         >
-          {isPendapatan
-            ? <TrendingUpIcon sx={{ color: 'white', fontSize: 14 }} />
-            : <TrendingDownIcon sx={{ color: 'white', fontSize: 14 }} />}
-        </Box>
-
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-            {draft.kategori || `Transaksi ${index + 1}`}
-          </Typography>
-          {!isExpanded && nominalNum > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              {formatRupiah(nominalNum)} - {formatDateLong(draft.tanggal)}
-            </Typography>
-          )}
-        </Box>
-
-        {!isExpanded && draft.kategori && (
-          <Chip
-            label={isPendapatan ? 'Pendapatan' : 'Pengeluaran'}
-            size="small"
+          <Box
             sx={{
-              height: 20,
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              bgcolor: isPendapatan
-                ? alpha(theme.palette.success.main, 0.12)
-                : alpha(theme.palette.error.main, 0.12),
-              color: isPendapatan ? 'success.dark' : 'error.dark',
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              bgcolor: hasError ? 'error.main' : isPendapatan ? 'success.main' : 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}
-          />
-        )}
-
-        {canRemove && (
-          <IconButton
-            size="small"
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            aria-label="Hapus transaksi ini"
-            sx={{ color: 'error.main', flexShrink: 0 }}
           >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        )}
-      </AccordionSummary>
+            {isPendapatan
+              ? <TrendingUpIcon sx={{ color: 'white', fontSize: 14 }} />
+              : <TrendingDownIcon sx={{ color: 'white', fontSize: 14 }} />}
+          </Box>
 
-      <AccordionDetails sx={{ pt: 1.5, pb: 2, px: 2 }}>
-        <TransactionEntryForm
-          draft={draft}
-          kategoriList={kategoriList}
-          satuanList={satuanList}
-          errors={errors}
-          onFieldChange={onFieldChange}
-          onOpenKategoriDialog={onOpenKategoriDialog}
-          onOpenSatuanDialog={onOpenSatuanDialog}
-          rabSuggestion={isExpanded ? rabSuggestion : null}
-        />
-      </AccordionDetails>
-    </Accordion>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+              {draft.kategori || `Transaksi ${index + 1}`}
+            </Typography>
+            {!isExpanded && nominalNum > 0 && (
+              <Typography variant="caption" color="text.secondary">
+                {formatRupiah(nominalNum)} - {formatDateLong(draft.tanggal)}
+              </Typography>
+            )}
+          </Box>
+
+          {!isExpanded && draft.kategori && (
+            <Chip
+              label={isPendapatan ? 'Pendapatan' : 'Pengeluaran'}
+              size="small"
+              sx={{
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                bgcolor: isPendapatan ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.error.main, 0.12),
+                color: isPendapatan ? 'success.dark' : 'error.dark',
+              }}
+            />
+          )}
+        </AccordionSummary>
+
+        <AccordionDetails sx={{ pt: 1.5, pb: 2, px: 2 }}>
+          <TransactionEntryForm
+            draft={draft}
+            kategoriList={kategoriList}
+            satuanList={satuanList}
+            errors={errors}
+            onFieldChange={onFieldChange}
+            onOpenKategoriDialog={onOpenKategoriDialog}
+            onOpenSatuanDialog={onOpenSatuanDialog}
+            rabSuggestion={isExpanded ? rabSuggestion : null}
+          />
+        </AccordionDetails>
+      </Accordion>
+
+      {canRemove && (
+        <IconButton
+          size="small"
+          onClick={onRemove}
+          aria-label="Hapus transaksi ini"
+          sx={{ alignSelf: 'center', color: 'error.main', flexShrink: 0, mr: 1.5 }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      )}
+    </Box>
   );
 }

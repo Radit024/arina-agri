@@ -129,7 +129,7 @@ test.describe('regular cashflow mobile reports', () => {
 
       const scenarioTabs = page.getByRole('tablist', { name: 'Mode skenario keuangan' });
       await expect(scenarioTabs).toBeVisible();
-      await expect(scenarioTabs.getByRole('tab', { name: 'Realisasi', exact: true })).toHaveAttribute('aria-selected', 'true');
+      await expect(scenarioTabs.getByRole('tab', { name: 'Proyeksi', exact: true })).toHaveAttribute('aria-selected', 'true');
 
       const addTransaction = page.getByRole('button', { name: 'add', exact: true });
       await expect(addTransaction).toHaveCount(1);

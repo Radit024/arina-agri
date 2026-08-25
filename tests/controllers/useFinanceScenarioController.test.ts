@@ -36,16 +36,16 @@ afterEach(() => {
 });
 
 describe('useFinanceScenarioController', () => {
-  it('defaults the active mode to REALIZATION', () => {
+  it('defaults the active mode to PROJECTION', () => {
     const { result } = renderHook(() => useFinanceScenarioController('project-1'));
 
-    expect(result.current.activeMode).toBe('REALIZATION');
+    expect(result.current.activeMode).toBe('PROJECTION');
   });
 
   it('resolves activeScenario to the matching scenario row for the current mode', () => {
     const { result } = renderHook(() => useFinanceScenarioController('project-1'));
 
-    expect(result.current.activeScenario).toEqual(realization);
+    expect(result.current.activeScenario).toEqual(projection);
   });
 
   it('switching mode changes activeScenario', async () => {
@@ -84,7 +84,7 @@ describe('useFinanceScenarioController', () => {
     await waitFor(() => expect(projectA.current.activeMode).toBe('PROJECTION'));
 
     const { result: projectB } = renderHook(() => useFinanceScenarioController('project-b'));
-    expect(projectB.current.activeMode).toBe('REALIZATION');
+    expect(projectB.current.activeMode).toBe('PROJECTION');
   });
 
   it('returns null activeScenario when no scenario matches the active mode', () => {

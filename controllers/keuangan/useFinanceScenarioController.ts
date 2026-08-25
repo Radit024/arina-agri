@@ -9,12 +9,12 @@ import type { ScenarioMode, FinanceScenarioEntity } from '@/lib/finance/rabTypes
 /**
  * Manages the active scenario mode (PROJECTION | REALIZATION) per project.
  * Persists selection in localStorage so it survives page refreshes.
- * Default mode: REALIZATION (per audit §9.3).
+ * Default mode: PROJECTION — pengguna baru mulai dari rencana sebelum mencatat aktual.
  */
 export function useFinanceScenarioController(projectId: string | null | undefined) {
   const pid = projectId ?? null;
   const storageKey = `arina-finance-scenario-mode-${pid ?? 'none'}`;
-  const [activeMode, setActiveMode] = useLocalStorage<ScenarioMode>(storageKey, 'REALIZATION');
+  const [activeMode, setActiveMode] = useLocalStorage<ScenarioMode>(storageKey, 'PROJECTION');
 
   const { scenarios, loading, error } = useFinanceScenarios(pid);
 

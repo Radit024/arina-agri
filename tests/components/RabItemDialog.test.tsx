@@ -132,6 +132,12 @@ describe('RabItemDialog', () => {
     expect(within(dialog).getByRole('button', { name: /Simpan Perubahan/i })).toBeInTheDocument();
   });
 
+  it('shows the Indonesian validation alert when rabItemError is set', () => {
+    renderDialog({ rabItemError: 'Nama barang/jasa tidak boleh kosong' });
+
+    expect(screen.getByText('Nama barang/jasa tidak boleh kosong')).toBeInTheDocument();
+  });
+
   it('opens a custom RAB category manager from the item form', async () => {
     const addRabCategory = vi.fn(async () => null);
     renderDialog({

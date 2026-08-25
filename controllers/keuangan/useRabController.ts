@@ -127,7 +127,7 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
   return warnings;
 }
 
-function validateRabItemDraft(draft: RabItemDraft) {
+export function validateRabItemDraft(draft: RabItemDraft) {
   if (!draft.categoryName.trim()) return 'Pilihan kategori tidak boleh kosong';
   if (!draft.name.trim()) return 'Nama barang/jasa tidak boleh kosong';
   if (!Number.isFinite(draft.volume) || draft.volume <= 0) return 'Jumlah/volume harus lebih dari 0';

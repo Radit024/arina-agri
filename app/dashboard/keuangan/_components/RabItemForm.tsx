@@ -100,7 +100,6 @@ export default function RabItemForm({
         label="Nama Item"
         value={draft.name}
         onChange={(val) => onFieldChange('name', val)}
-        required
         placeholder="Contoh: Pupuk Urea"
       />
 
@@ -112,7 +111,6 @@ export default function RabItemForm({
             type="number"
             value={draft.volume}
             onChange={(val) => onFieldChange('volume', val)}
-            required
             min={0}
             step={0.01}
           />
@@ -123,7 +121,6 @@ export default function RabItemForm({
             label="Satuan"
             value={draft.unit}
             onChange={(val) => onFieldChange('unit', val)}
-            required
             placeholder="kg, karung, HOK"
           />
         </Grid>
@@ -134,7 +131,6 @@ export default function RabItemForm({
             type="number"
             value={draft.unitPrice}
             onChange={(val) => onFieldChange('unitPrice', val)}
-            required
             min={0}
             startIcon={<Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.875rem' }}>Rp</Typography>}
           />

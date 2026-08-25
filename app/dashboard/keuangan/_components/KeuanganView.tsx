@@ -30,6 +30,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import dynamic from 'next/dynamic';
 import MobileTabBar from '@/components/ui/MobileTabBar';
@@ -231,6 +232,7 @@ export default function KeuanganView({
   sortDir,
   toggleSort,
   selectedTxIds,
+  selectedTransactionsMixed,
   toggleSelectTx,
   clearSelectionTxs,
   bulkDeleteConfirm,
@@ -680,15 +682,20 @@ export default function KeuanganView({
                   >
                     Batalkan
                   </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    startIcon={<LinkIcon />}
-                    onClick={() => rabTransactionLink.openForTransactions(selectedTxIds)}
-                    sx={{ borderRadius: 2, textTransform: 'none', bgcolor: 'background.paper' }}
-                  >
-                    Hubungkan RAB
-                  </Button>
+                  <Tooltip title={selectedTransactionsMixed ? 'Pilih transaksi dengan jenis yang sama untuk menghubungkan RAB' : ''}>
+                    <span>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<LinkIcon />}
+                        disabled={selectedTransactionsMixed}
+                        onClick={() => rabTransactionLink.openForTransactions(selectedTxIds)}
+                        sx={{ borderRadius: 2, textTransform: 'none', bgcolor: 'background.paper' }}
+                      >
+                        Hubungkan RAB
+                      </Button>
+                    </span>
+                  </Tooltip>
                   <Button
                     size="small"
                     variant="contained"

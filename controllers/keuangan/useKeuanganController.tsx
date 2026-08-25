@@ -594,6 +594,11 @@ export function useKeuanganController() {
     [displayedTransactions, ledgerPage],
   );
 
+  const selectedTransactionsMixed = useMemo(() => {
+    const selected = transactions.filter((tx) => selectedTxIds.includes(tx._id));
+    return new Set(selected.map((tx) => tx.jenis)).size > 1;
+  }, [transactions, selectedTxIds]);
+
   return {
     t,
     bepHppInputs,
@@ -664,6 +669,7 @@ export function useKeuanganController() {
     sortDir,
     toggleSort,
     selectedTxIds,
+    selectedTransactionsMixed,
     toggleSelectTx,
     clearSelectionTxs,
     bulkDeleteConfirm,

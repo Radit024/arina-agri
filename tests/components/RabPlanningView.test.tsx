@@ -287,4 +287,14 @@ describe('RabPlanningView', () => {
     expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-pupuk-urea');
     expect(toggleSelectRabItem).toHaveBeenCalledWith('rab-penjualan');
   });
+
+  it('shows Rugi Rencana label when planned profit is negative', () => {
+    renderView({
+      totals: { plannedIncome: 6_000_000, plannedExpense: 8_500_000, plannedProfit: -2_500_000 },
+    });
+
+    expect(screen.getByText('Rugi Rencana')).toBeInTheDocument();
+    expect(screen.queryByText('Laba Rencana')).not.toBeInTheDocument();
+    expect(screen.getByText('Rp 2.500.000')).toBeInTheDocument();
+  });
 });

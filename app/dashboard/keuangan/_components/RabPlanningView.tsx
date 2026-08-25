@@ -222,7 +222,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <MetricCard
             intent={rab.totals.plannedProfit >= 0 ? 'success' : 'error'}
-            label="Laba Rencana"
+            label={rab.totals.plannedProfit >= 0 ? 'Laba Rencana' : 'Rugi Rencana'}
             loading={rab.loading}
             value={formatRupiah(Math.abs(rab.totals.plannedProfit))}
           />

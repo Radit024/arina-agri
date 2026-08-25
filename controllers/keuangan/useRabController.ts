@@ -147,6 +147,7 @@ export function useRabController(
   project: ApiFinanceProject | null,
   addTransaction?: (data: Parameters<typeof transactionApi.create>[0] & { scenarioId?: string | null }) => Promise<void>,
   scenario?: FinanceScenarioEntity | null,
+  cleanupRabLinks?: (rabItemIds: string[]) => Promise<void>,
 ) {
   const rabState = useRabItemsForScenario(scenario?.id ?? null);
   const [rabItemDialogOpen, setRabItemDialogOpen] = useState(false);
@@ -434,17 +435,20 @@ export function useRabController(
       await rabState.deleteItem(id);
       setRabItemDeleteError(null);
       setSelectedRabItemIds((prev) => prev.filter((itemId) => itemId !== id));
+      await cleanupRabLinks?.([id]);
     } catch (err) {
       setRabItemDeleteError(err instanceof Error ? err.message : 'Gagal menghapus item RAB');
     }
   };
 
   const handleBulkDeleteRabItems = async () => {
-    for (const id of selectedRabItemIds) {
+    const ids = [...selectedRabItemIds];
+    for (const id of ids) {
       await rabState.deleteItem(id);
     }
     setSelectedRabItemIds([]);
     setRabBulkDeleteConfirm(false);
+    await cleanupRabLinks?.(ids);
   };
 
   const executeParsedImport = async (parsed: ParsedRabWorkbook, file: File, targetScenarioId?: string) => {

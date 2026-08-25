@@ -27,6 +27,7 @@ import { useTransactionMasterController } from './useTransactionMasterController
 import { useMigrationController } from './useMigrationController';
 import { useProductionSalesController } from './useProductionSalesController';
 import { generatePdfReport } from '@/lib/pdfReport';
+import { findTransactionsLinkedToRabItems } from '@/lib/finance/rabLinks';
 
 type BepHppInputs = {
   totalBiaya: number;
@@ -111,7 +112,16 @@ export function useKeuanganController() {
       void reloadTransactions();
     },
   });
-  const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario);
+  const cleanupRabLinks = useCallback(
+    async (rabItemIds: string[]) => {
+      const linked = findTransactionsLinkedToRabItems(transactions, rabItemIds);
+      for (const tx of linked) {
+        await updateTransaction(tx._id, { rabItemId: null, rabCategoryId: null });
+      }
+    },
+    [transactions, updateTransaction],
+  );
+  const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario, cleanupRabLinks);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
   const clearSelectionTxs = () => setSelectedTxIds([]);
@@ -599,6 +609,15 @@ export function useKeuanganController() {
     return new Set(selected.map((tx) => tx.jenis)).size > 1;
   }, [transactions, selectedTxIds]);
 
+  const rabLinkCountsByItemId = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const tx of transactions) {
+      if (!tx.rabItemId) continue;
+      counts[tx.rabItemId] = (counts[tx.rabItemId] ?? 0) + 1;
+    }
+    return counts;
+  }, [transactions]);
+
   return {
     t,
     bepHppInputs,
@@ -650,6 +669,7 @@ export function useKeuanganController() {
     setLedgerPage,
     ledgerTotalPages,
     financeAccess,
+    rabLinkCountsByItemId,
     financeProject,
     financeScenario,
     rab,

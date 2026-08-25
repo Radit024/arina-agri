@@ -210,6 +210,7 @@ export default function KeuanganView({
   setLedgerPage,
   ledgerTotalPages,
   financeAccess,
+  rabLinkCountsByItemId,
   financeTab,
   setFinanceTab,
   financeProject,
@@ -1344,7 +1345,7 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <RabPlanningView financeProject={financeProject} rab={rab} />
+          <RabPlanningView financeProject={financeProject} rab={rab} rabLinkCountsByItemId={rabLinkCountsByItemId} />
         </Box>
       )}
       {financeTab === 'laba-rugi' && (

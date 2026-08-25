@@ -40,7 +40,9 @@ import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeua
 import type { RabItem } from '@/lib/finance/rabTypes';
 import { formatMonthYear, formatRupiah } from '@/lib/formatters';
 
-type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'>;
+type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'> & {
+  rabLinkCountsByItemId?: UseKeuanganControllerResult['rabLinkCountsByItemId'];
+};
 
 const ROW_DELETE_TRANSITION_MS = 220;
 
@@ -161,8 +163,9 @@ function RabMobileItemCard({
   );
 }
 
-export default function RabPlanningView({ financeProject, rab }: Props) {
+export default function RabPlanningView({ financeProject, rab, rabLinkCountsByItemId }: Props) {
   const [selectedRabItemId, setSelectedRabItemId] = useState<string | null>(null);
+  const linkedCountForDelete = selectedRabItemId ? (rabLinkCountsByItemId?.[selectedRabItemId] ?? 0) : 0;
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
 
   // Fades rows out first so the underlying multi-step delete (one request per item)
@@ -460,6 +463,7 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
             Item RAB ini akan dihapus permanen dan tidak dapat dikembalikan.
+            {linkedCountForDelete > 0 && ` ${linkedCountForDelete} transaksi terhubung akan otomatis diputus dari item ini.`}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -485,6 +489,10 @@ export default function RabPlanningView({ financeProject, rab }: Props) {
         <DialogContent>
           <Typography variant="body2" color="text.secondary">
             Item RAB yang dipilih akan dihapus permanen dan tidak dapat dikembalikan.
+            {(() => {
+              const linkedTotal = rab.selectedRabItemIds.reduce((sum, id) => sum + (rabLinkCountsByItemId?.[id] ?? 0), 0);
+              return linkedTotal > 0 ? ` ${linkedTotal} transaksi terhubung akan otomatis diputus dari item ini.` : '';
+            })()}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

@@ -53,7 +53,7 @@ import Checkbox from '@mui/material/Checkbox';
 import TableSortLabel from '@mui/material/TableSortLabel';
 
 
-import { formatDateLong, formatRupiah } from '@/lib/formatters';
+import { formatDateLong, formatDateShort, formatRupiah } from '@/lib/formatters';
 import { getPeriodeLabel } from '@/lib/pdfReport';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -1020,13 +1020,13 @@ export default function KeuanganView({
                           {t('ledger.columns.category')}
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
+                      <TableCell sx={{ ...ledgerHeaderCellSx, width: '16%' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                           <Box component="span">{t('ledger.columns.quantity')}</Box>
                           <Box component="span">{t('ledger.columns.unitPrice')}</Box>
                         </Box>
                       </TableCell>
-                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '18%' }}>
+                      <TableCell align="right" sx={{ ...ledgerHeaderCellSx, width: '20%' }}>
                         <TableSortLabel
                           active={sortColumn === 'nominal'}
                           direction={sortColumn === 'nominal' && sortDir ? sortDir : 'asc'}
@@ -1081,7 +1081,7 @@ export default function KeuanganView({
                               <Checkbox size="small" checked={isSelected} onChange={() => toggleSelectTx(tx._id)} />
                             </TableCell>
                             <TableCell sx={{ ...ledgerRowCellSx, fontSize: '0.82rem', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                              {formatDateLong(tx.tanggal)}
+                              {formatDateShort(tx.tanggal)}
                             </TableCell>
                             <TableCell sx={ledgerRowCellSx}>
                               <Badge
@@ -1112,6 +1112,7 @@ export default function KeuanganView({
                             </TableCell>
                             <TableCell
                               align="right"
+                              title={`${tx.jenis === 'pendapatan' ? '+' : '-'}${formatRupiah(tx.nominal)}`}
                               sx={{
                                 ...ledgerRowCellSx,
                                 fontWeight: 800,

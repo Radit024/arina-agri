@@ -633,6 +633,7 @@ export function useKeuanganController() {
       const entry = map[tx.rabItemId] ?? { total: 0, count: 0 };
       entry.total += tx.nominal;
       entry.count += 1;
+      map[tx.rabItemId] = entry;
     }
     return map;
   }, [transactions]);

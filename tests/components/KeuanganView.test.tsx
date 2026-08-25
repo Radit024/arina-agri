@@ -565,6 +565,7 @@ function KeuanganViewHarness({ overrides = {} }: { overrides?: Partial<KeuanganV
     sortDir: 'desc' as const,
     toggleSort: vi.fn(),
     selectedTxIds: [],
+    selectedTransactionsMixed: false,
     toggleSelectTx: vi.fn(),
     clearSelectionTxs: vi.fn(),
     bulkDeleteConfirm: false,

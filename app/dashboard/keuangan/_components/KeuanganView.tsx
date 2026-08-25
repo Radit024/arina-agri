@@ -212,6 +212,8 @@ export default function KeuanganView({
   ledgerTotalPages,
   financeAccess,
   rabLinkCountsByItemId,
+  realizedByRabItemId,
+  realizedRabTotals,
   financeTab,
   setFinanceTab,
   financeProject,
@@ -1404,7 +1406,13 @@ export default function KeuanganView({
           data-finance-fill-height="true"
           sx={financePanelSx}
         >
-          <RabPlanningView financeProject={financeProject} rab={rab} rabLinkCountsByItemId={rabLinkCountsByItemId} />
+          <RabPlanningView
+            financeProject={financeProject}
+            rab={rab}
+            rabLinkCountsByItemId={rabLinkCountsByItemId}
+            realizedByRabItemId={realizedByRabItemId}
+            realizedRabTotals={realizedRabTotals}
+          />
         </Box>
       )}
       {financeTab === 'laba-rugi' && (

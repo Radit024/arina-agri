@@ -146,12 +146,28 @@ function makeRab(overrides: Partial<RabController> = {}): RabController {
   } as RabController;
 }
 
-function renderView(rabOverrides: Partial<RabController> = {}, financeProjectOverrides: Partial<FinanceProject> = {}) {
+interface RenderViewExtraProps {
+  rabLinkCountsByItemId?: Record<string, number>;
+  realizedByRabItemId?: Record<string, { total: number; count: number }>;
+  realizedRabTotals?: { income: number; expense: number };
+}
+
+function renderView(
+  rabOverrides: Partial<RabController> = {},
+  financeProjectOverrides: Partial<FinanceProject> = {},
+  extraProps: RenderViewExtraProps = {},
+) {
   const rab = makeRab(rabOverrides);
   const financeProject = makeFinanceProject(financeProjectOverrides);
   const view = render(
     <ThemeProvider theme={theme}>
-      <RabPlanningView financeProject={financeProject} rab={rab} />
+      <RabPlanningView
+        financeProject={financeProject}
+        rab={rab}
+        rabLinkCountsByItemId={extraProps.rabLinkCountsByItemId}
+        realizedByRabItemId={extraProps.realizedByRabItemId}
+        realizedRabTotals={extraProps.realizedRabTotals}
+      />
     </ThemeProvider>,
   );
   return { rab, financeProject, ...view };
@@ -296,5 +312,17 @@ describe('RabPlanningView', () => {
     expect(screen.getByText('Rugi Rencana')).toBeInTheDocument();
     expect(screen.queryByText('Laba Rencana')).not.toBeInTheDocument();
     expect(screen.getByText('Rp 2.500.000')).toBeInTheDocument();
+  });
+
+  it('shows realized amounts per item and totals from linked transactions', () => {
+    renderView({}, {}, {
+      realizedByRabItemId: { 'rab-pupuk-urea': { total: 120_000, count: 2 } },
+      realizedRabTotals: { income: 650_000, expense: 120_000 },
+    });
+
+    expect(screen.getByText('Pendapatan Terealisasi')).toBeInTheDocument();
+    expect(screen.getByText('Biaya Terealisasi')).toBeInTheDocument();
+    expect(screen.getAllByText('Rp 120.000 (2 tx)').length).toBeGreaterThan(0);
+    expect(screen.getByText('Rp 650.000')).toBeInTheDocument();
   });
 });

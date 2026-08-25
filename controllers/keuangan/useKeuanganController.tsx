@@ -626,6 +626,29 @@ export function useKeuanganController() {
     return counts;
   }, [transactions]);
 
+  const realizedByRabItemId = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const tx of transactions) {
+      if (!tx.rabItemId) continue;
+      const entry = map[tx.rabItemId] ?? { total: 0, count: 0 };
+      entry.total += tx.nominal;
+      entry.count += 1;
+    }
+    return map;
+  }, [transactions]);
+
+  const realizedRabTotals = useMemo(() => {
+    const totals = { income: 0, expense: 0 };
+    for (const tx of transactions) {
+      if (!tx.rabItemId) continue;
+      const item = rab.items.find((candidate) => candidate.id === tx.rabItemId);
+      if (!item) continue;
+      if (item.type === 'income') totals.income += tx.nominal;
+      else totals.expense += tx.nominal;
+    }
+    return totals;
+  }, [transactions, rab.items]);
+
   return {
     t,
     bepHppInputs,
@@ -678,6 +701,8 @@ export function useKeuanganController() {
     ledgerTotalPages,
     financeAccess,
     rabLinkCountsByItemId,
+    realizedByRabItemId,
+    realizedRabTotals,
     financeProject,
     financeScenario,
     rab,

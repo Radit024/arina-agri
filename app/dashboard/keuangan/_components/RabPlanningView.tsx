@@ -42,6 +42,8 @@ import { formatMonthYear, formatRupiah } from '@/lib/formatters';
 
 type Props = Pick<UseKeuanganControllerResult, 'financeProject' | 'rab'> & {
   rabLinkCountsByItemId?: UseKeuanganControllerResult['rabLinkCountsByItemId'];
+  realizedByRabItemId?: UseKeuanganControllerResult['realizedByRabItemId'];
+  realizedRabTotals?: UseKeuanganControllerResult['realizedRabTotals'];
 };
 
 const ROW_DELETE_TRANSITION_MS = 220;
@@ -50,6 +52,7 @@ interface RabMobileItemCardProps {
   item: RabItem;
   isPendingDelete: boolean;
   isSelected: boolean;
+  realized?: { total: number; count: number };
   onDelete: () => void;
   onEdit: () => void;
   onSelect: () => void;
@@ -59,6 +62,7 @@ function RabMobileItemCard({
   item,
   isPendingDelete,
   isSelected,
+  realized,
   onDelete,
   onEdit,
   onSelect,
@@ -157,13 +161,19 @@ function RabMobileItemCard({
               {item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}
             </Typography>
           </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography color="text.secondary" variant="caption">Terealisasi</Typography>
+            <Typography sx={{ overflowWrap: 'anywhere' }} variant="body2">
+              {realized ? `${formatRupiah(realized.total)} (${realized.count} tx)` : '-'}
+            </Typography>
+          </Box>
         </Box>
       </CardContent>
     </Card>
   );
 }
 
-export default function RabPlanningView({ financeProject, rab, rabLinkCountsByItemId }: Props) {
+export default function RabPlanningView({ financeProject, rab, rabLinkCountsByItemId, realizedByRabItemId, realizedRabTotals }: Props) {
   const [selectedRabItemId, setSelectedRabItemId] = useState<string | null>(null);
   const linkedCountForDelete = selectedRabItemId ? (rabLinkCountsByItemId?.[selectedRabItemId] ?? 0) : 0;
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
@@ -228,6 +238,25 @@ export default function RabPlanningView({ financeProject, rab, rabLinkCountsByIt
             label={rab.totals.plannedProfit >= 0 ? 'Laba Rencana' : 'Rugi Rencana'}
             loading={rab.loading}
             value={formatRupiah(Math.abs(rab.totals.plannedProfit))}
+          />
+        </Box>
+      </Stack>
+
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <MetricCard
+            intent="success"
+            label="Pendapatan Terealisasi"
+            loading={rab.loading}
+            value={formatRupiah(realizedRabTotals?.income ?? 0)}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <MetricCard
+            intent="error"
+            label="Biaya Terealisasi"
+            loading={rab.loading}
+            value={formatRupiah(realizedRabTotals?.expense ?? 0)}
           />
         </Box>
       </Stack>
@@ -369,6 +398,7 @@ export default function RabPlanningView({ financeProject, rab, rabLinkCountsByIt
                       <TableCell>Satuan</TableCell>
                       <TableCell align="right">Harga Satuan</TableCell>
                       <TableCell align="right">Total</TableCell>
+                      <TableCell align="right">Terealisasi</TableCell>
                       <TableCell>Bulan Kas</TableCell>
                       <TableCell align="right">Aksi</TableCell>
                     </TableRow>
@@ -405,6 +435,11 @@ export default function RabPlanningView({ financeProject, rab, rabLinkCountsByIt
                           <TableCell>{item.unit}</TableCell>
                           <TableCell align="right">{formatRupiah(item.unitPrice)}</TableCell>
                           <TableCell align="right">{formatRupiah(item.plannedTotal)}</TableCell>
+                          <TableCell align="right">
+                            {realizedByRabItemId?.[item.id]
+                              ? `${formatRupiah(realizedByRabItemId[item.id].total)} (${realizedByRabItemId[item.id].count} tx)`
+                              : '-'}
+                          </TableCell>
                           <TableCell>{item.plannedCashMonth ? formatMonthYear(item.plannedCashMonth) : '-'}</TableCell>
                           <TableCell align="right" onClick={(event) => event.stopPropagation()}>
                             {isSelected && (
@@ -447,6 +482,7 @@ export default function RabPlanningView({ financeProject, rab, rabLinkCountsByIt
                 isPendingDelete={pendingDeleteIds.has(item.id)}
                 isSelected={rab.selectedRabItemIds.includes(item.id)}
                 item={item}
+                realized={realizedByRabItemId?.[item.id]}
                 onDelete={() => setSelectedRabItemId(item.id)}
                 onEdit={() => rab.openRabItemEditDialog(item)}
                 onSelect={() => rab.toggleSelectRabItem(item.id)}

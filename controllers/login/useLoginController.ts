@@ -54,11 +54,18 @@ export function useLoginController() {
     setLoading(true);
     setError(null);
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
       if (authError) throw authError;
+
+      if (authData.session?.access_token && typeof document !== 'undefined') {
+        const maxAge = authData.session.expires_in ?? 604800;
+        const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+        document.cookie = `sb-access-token=${authData.session.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+      }
+
       setLoginRedirecting(true);
       router.replace('/dashboard');
     } catch (err) {

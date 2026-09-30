@@ -60,10 +60,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearDevelopmentAuthMode();
       localStorage.setItem(ARINA_USER_ID_STORAGE_KEY, nextSession.user.id);
       if (typeof document !== 'undefined') {
+        if (nextSession.access_token) {
+          const maxAge = nextSession.expires_in ?? 604800;
+          const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+          document.cookie = `sb-access-token=${nextSession.access_token}; path=/; max-age=${maxAge}; SameSite=Lax${secure}`;
+        }
         document.cookie = 'arina_guest_session=; path=/; max-age=0; SameSite=Lax';
       }
     } else {
       localStorage.removeItem(ARINA_USER_ID_STORAGE_KEY);
+      if (typeof document !== 'undefined') {
+        document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
+      }
     }
   }, []);
 
@@ -98,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearLocalDevelopmentAuth();
     sessionStorage.clear();
     if (typeof document !== 'undefined') {
+      document.cookie = 'sb-access-token=; path=/; max-age=0; SameSite=Lax';
       document.cookie = 'arina_guest_session=; path=/; max-age=0; SameSite=Lax';
     }
     await supabase.auth.signOut();

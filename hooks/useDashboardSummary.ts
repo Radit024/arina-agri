@@ -59,7 +59,8 @@ export function useDashboardSummary(params: DashboardSummaryParams) {
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
     if (!enabled) {
-      setLoading(true);
+      setLoading(false);
+      setSummary(null);
       return;
     }
 

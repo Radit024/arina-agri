@@ -316,11 +316,41 @@ describe('RAB Excel parser — reconciliation & skip reporting (P0)', () => {
     expect(saprodi!.difference).toBe(0);
   });
 
-  it('does not produce a reconciliation entry for a category with no TOTAL row in the sheet', async () => {
+  it('reports a category with no TOTAL row as unchecked instead of omitting it', async () => {
     const workbook = await buildSampleRabWorkbook();
     const parsed = parseRabWorkbook(workbook);
 
-    expect(parsed.reconciliation.some((entry) => entry.categoryId === 'pendapatan')).toBe(false);
+    const pendapatan = parsed.reconciliation.find((entry) => entry.categoryId === 'pendapatan');
+    expect(pendapatan).toBeDefined();
+    expect(pendapatan!.checked).toBe(false);
+    expect(pendapatan!.difference).toBe(0);
+  });
+
+  it('never fabricates a declared total for a category the sheet has no TOTAL row for', async () => {
+    const workbook = await buildSampleRabWorkbook();
+    const parsed = parseRabWorkbook(workbook);
+
+    const pendapatan = parsed.reconciliation.find((entry) => entry.categoryId === 'pendapatan');
+    expect(pendapatan!.declaredTotal).toBe(pendapatan!.computedTotal);
+  });
+
+  it('marks income as checked when the sheet does provide a TOTAL PENDAPATAN row', async () => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('1. RAB PADI 1 Ha');
+    sheet.getCell('A2').value = 'Proyek Uji';
+    sheet.getCell('A3').value = 'MT Uji';
+    sheet.getCell('A5').value = 'E';
+    sheet.getCell('B5').value = 'ESTIMASI PENDAPATAN';
+    sheet.getRow(6).values = [1, 'Penerimaan', 1000, 'kg', 10_000, 10_000_000];
+    sheet.getCell('B7').value = 'TOTAL PENDAPATAN';
+    sheet.getCell('F7').value = 10_000_000;
+
+    const parsed = parseRabWorkbook(workbook);
+    const pendapatan = parsed.reconciliation.find((entry) => entry.categoryId === 'pendapatan');
+
+    expect(pendapatan).toBeDefined();
+    expect(pendapatan!.checked).toBe(true);
+    expect(pendapatan!.difference).toBe(0);
   });
 
   it('reports a skip reason for helper rows with an empty planned total', async () => {

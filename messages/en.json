@@ -1065,6 +1065,7 @@
   "Settings": {
     "title": "Settings",
     "pageSubtitle": "Customize appearance, profile, and account options",
+    "backToMenu": "Back to settings menu",
     "menuLabel": "Settings Menu",
     "general": {
       "tab": "General",

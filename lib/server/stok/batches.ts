@@ -34,6 +34,7 @@ interface CreateBatchPayload {
 }
 
 function mapBatchRow(row: DbHarvestBatchRow): ApiHarvestBatch {
+  const recomputedStatus = computeStockBatchStatus(row.stok_tersisa, row.berat_masuk, row.estimasi_kadaluarsa);
   return {
     _id: row.id,
     batchCode: row.batch_code,
@@ -46,7 +47,7 @@ function mapBatchRow(row: DbHarvestBatchRow): ApiHarvestBatch {
     lokasiPenyimpanan: row.lokasi_penyimpanan,
     estimasiKadaluarsa: row.estimasi_kadaluarsa,
     catatan: row.catatan ?? '',
-    status: row.status,
+    status: row.status === 'habis' ? 'habis' : recomputedStatus,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

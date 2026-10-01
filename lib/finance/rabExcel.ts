@@ -79,6 +79,13 @@ export interface RabCategoryReconciliation {
   declaredTotal: number;
   computedTotal: number;
   difference: number;
+  /**
+   * `false` bila file Excel tidak punya baris TOTAL untuk kategori ini sehingga
+   * angkanya tidak pernah dibandingkan. Kategori income sering falls ke kondisi ini
+   * karena file menutup bagian pendapatan dengan baris "Keuntungan"/"Laba", bukan
+   * "TOTAL PENDAPATAN" — tanpa penanda ini UI terlihat seolah semua sudah cocok.
+   */
+  checked: boolean;
 }
 
 export interface ParsedLedgerResult {
@@ -266,6 +273,11 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     const normalizedDescription = description.toLowerCase();
 
     if (/estimasi pendapatan|pendapatan|penerimaan/i.test(description) && volume === 0 && unitPrice === 0) {
+      // Baris penutup "TOTAL PENDAPATAN"/"TOTAL PENERIMAAN" juga lolos ke cabang ini
+      // karena namanya mengandung kata "pendapatan"/"penerimaan" dan tidak punya
+      // volume/harga. Tanpa penangkapan di sini, total pendapatan yang ditulis di file
+      // akan hilang diam-diam sehingga sisi pendapatan tidak pernah direkonsiliasi.
+      if (currentType === 'income') captureDeclaredTotal(normalizedDescription, plannedTotal);
       currentCategory = 'Pendapatan';
       currentType = 'income';
       skipSection = false;
@@ -358,17 +370,22 @@ export function parseRabWorkbook(workbook: ExcelJS.Workbook): ParsedRabWorkbook 
     computedTotals.set(categoryId, (computedTotals.get(categoryId) ?? 0) + finalPlannedTotal);
   });
 
+  // Semua kategori yang punya item selalu dilaporkan, termasuk yang tidak punya baris
+  // TOTAL di file. Kategori tanpa penanda `checked` akan disembunyikan oleh UI sebagai
+  // "tidak diperiksa" supaya pengguna tidak salah menyimpulkan sudah tervalidasi.
   const reconciliation: RabCategoryReconciliation[] = [];
-  for (const [categoryId, declaredTotal] of declaredTotals) {
+  for (const [categoryId, computedTotal] of computedTotals) {
     const category = categories.get(categoryId);
-    if (!category) continue; // total kategori yang semua itemnya ter-skip (mis. kategori kosong)
-    const computedTotal = computedTotals.get(categoryId) ?? 0;
+    if (!category) continue; // kategori yang itemnya ter-skip semua
+    const declaredTotal = declaredTotals.get(categoryId);
+    const checked = declaredTotal !== undefined;
     reconciliation.push({
       categoryId,
       categoryName: category.name,
-      declaredTotal,
+      declaredTotal: declaredTotal ?? computedTotal,
       computedTotal,
-      difference: computedTotal - declaredTotal,
+      difference: checked ? computedTotal - declaredTotal : 0,
+      checked,
     });
   }
 

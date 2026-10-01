@@ -179,6 +179,15 @@ function FullCard({ article }: { article: NewsArticle }) {
   const [imgError, setImgError] = useState(false);
   const formattedDate = formatRelativeDate(article.pub_date, t, locale);
 
+  const normalizedSnippet = (article.snippet ?? '').trim();
+  const normalizedTitle = (article.title ?? '').trim();
+  // Google News RSS sering memakai judul yang sama persis untuk `snippet`, sehingga
+  // setiap kartu memunculkan headline dua kali. Sama persis atau berbeda hanya spasi,
+  // snippet dianggap duplikat dan tidak dirender.
+  const showSnippet =
+    normalizedSnippet.length > 0 &&
+    normalizedSnippet.toLowerCase() !== normalizedTitle.toLowerCase();
+
   return (
     <Card
       elevation={0}
@@ -263,7 +272,7 @@ function FullCard({ article }: { article: NewsArticle }) {
           {article.title}
         </Typography>
 
-        {article.snippet ? (
+        {showSnippet ? (
           <Typography
             variant="body2"
             sx={{
@@ -278,7 +287,7 @@ function FullCard({ article }: { article: NewsArticle }) {
               mb: 1,
             }}
           >
-            {article.snippet}
+            {normalizedSnippet}
           </Typography>
         ) : null}
 

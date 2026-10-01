@@ -9,6 +9,7 @@ interface FinanceChartTransaction {
   kategori: string;
   keterangan?: string;
   nominal: number;
+  rabCategoryId?: string | null;
 }
 
 interface FinanceChartCategory extends FinanceCategoryDefinition {
@@ -20,6 +21,8 @@ interface BuildFinanceExpensePieDataInput {
   categories: FinanceChartCategory[];
   customColors: string[];
   emptyLabel?: string;
+  /** Nama kategori RAB berdasarkan id, dipakai sebagai sumber pengelompokan utama. */
+  rabCategoryNameById?: Map<string, string>;
 }
 
 export interface FinanceExpensePiePoint {
@@ -35,6 +38,7 @@ export function buildFinanceExpensePieData({
   categories,
   customColors,
   emptyLabel = 'Kosong',
+  rabCategoryNameById,
 }: BuildFinanceExpensePieDataInput): { data: FinanceExpensePiePoint[]; colors: string[] } {
   const totals = new Map<string, FinanceExpensePiePoint>();
   let customColorIndex = 0;
@@ -42,17 +46,35 @@ export function buildFinanceExpensePieData({
   for (const transaction of transactions) {
     if (transaction.jenis !== 'pengeluaran') continue;
 
-    const matched = resolveFinanceCategory({
-      jenis: 'pengeluaran',
-      kategori: transaction.kategori,
-      keterangan: transaction.keterangan,
-      categories,
-    });
-    const label = matched?.label ?? formatCustomFinanceCategoryLabel(transaction.kategori);
-    const color = matched?.color ?? customColors[customColorIndex % customColors.length] ?? '#0f766e';
+    // Transaksi yang tertaut ke RAB memakai kategori RAB sebagai kelompok utama supaya
+    // angkanya identik dengan tab RAB dan Laba Rugi. Kalau tidak, fuzzy-matching ke
+    // daftar kategori bawaan memecah satu kategori RAB menjadi beberapa label berbeda
+    // (mis. "SAPRODI" terbagi menjadi "Pupuk" dan "Pestisida") sehingga total per
+    // label tidak akan pernah cocok dengan subtotal di tab lain.
+    const rabCategoryName = transaction.rabCategoryId
+      ? rabCategoryNameById?.get(transaction.rabCategoryId)
+      : undefined;
 
-    if (!matched && !totals.has(label)) {
-      customColorIndex += 1;
+    let label: string;
+    let color: string;
+    let matched: FinanceCategoryDefinition | null = null;
+
+    if (rabCategoryName) {
+      label = rabCategoryName;
+      color = customColors[customColorIndex % customColors.length] ?? '#0f766e';
+      if (!totals.has(rabCategoryName.toLowerCase())) customColorIndex += 1;
+    } else {
+      matched = resolveFinanceCategory({
+        jenis: 'pengeluaran',
+        kategori: transaction.kategori,
+        keterangan: transaction.keterangan,
+        categories,
+      });
+      label = matched?.label ?? formatCustomFinanceCategoryLabel(transaction.kategori);
+      color = matched?.color ?? customColors[customColorIndex % customColors.length] ?? '#0f766e';
+      if (!matched && !totals.has(label)) {
+        customColorIndex += 1;
+      }
     }
 
     const key = label.toLowerCase();

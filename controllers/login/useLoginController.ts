@@ -27,7 +27,7 @@ export function useLoginController() {
   const [showPassword, setShowPassword] = useState(false);
   const { user, loading: authLoading, startLocalSession } = useAuth();
   const redirecting = loginRedirecting || (!authLoading && Boolean(user));
-  const localLoginEnabled = true;
+  const localLoginEnabled = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
     router.prefetch('/dashboard');
@@ -100,6 +100,16 @@ export function useLoginController() {
       await startLocalSession();
       setLoginRedirecting(true);
       router.replace('/dashboard');
+      // Sesi lokal sudah ditulis ke localStorage sebelum redirect dipicu. Kalau
+      // router.replace tidak berhasil (mis. transisi yang tertahan), pengguna akan
+      // terjebak di halaman login tanpa penjelasan — diam-diam saja.
+      window.setTimeout(() => {
+        if (window.location.pathname === '/login') {
+          setError(t('error.failed'));
+          setLoginRedirecting(false);
+          setLocalLoading(false);
+        }
+      }, 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error.failed'));
       setLoginRedirecting(false);

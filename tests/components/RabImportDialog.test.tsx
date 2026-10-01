@@ -112,7 +112,7 @@ describe('RabImportDialog', () => {
         transactions: [],
         skippedRows: [],
         reconciliation: [
-          { categoryId: 'cat-saprodi', categoryName: 'SAPRODI', declaredTotal: 500000, computedTotal: 500000, difference: 0 },
+          { categoryId: 'cat-saprodi', categoryName: 'SAPRODI', declaredTotal: 500000, computedTotal: 500000, difference: 0, checked: true },
         ],
         warnings: [],
       },

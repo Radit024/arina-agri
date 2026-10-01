@@ -1065,6 +1065,7 @@
   "Settings": {
     "title": "Pengaturan",
     "pageSubtitle": "Personalisasi tampilan, profil, dan opsi akun Anda",
+    "backToMenu": "Kembali ke menu Pengaturan",
     "menuLabel": "Menu Pengaturan",
     "general": {
       "tab": "Umum",

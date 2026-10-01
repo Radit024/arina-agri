@@ -457,6 +457,7 @@ function mapRabImport(row: DbRabImport): ApiRabImport {
 }
 
 function mapBatch(row: DbHarvestBatch): ApiHarvestBatch {
+  const recomputedStatus = computeStatus(row.stok_tersisa, row.berat_masuk, row.estimasi_kadaluarsa);
   return {
     _id: row.id,
     batchCode: row.batch_code,
@@ -469,7 +470,7 @@ function mapBatch(row: DbHarvestBatch): ApiHarvestBatch {
     lokasiPenyimpanan: row.lokasi_penyimpanan,
     estimasiKadaluarsa: row.estimasi_kadaluarsa,
     catatan: row.catatan ?? '',
-    status: row.status,
+    status: row.status === 'habis' ? 'habis' : recomputedStatus,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

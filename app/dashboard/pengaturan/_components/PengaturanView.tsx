@@ -352,8 +352,9 @@ export default function PengaturanView({
       {/* Header */}
       <Box sx={{ display: { xs: activeTab !== null ? 'flex' : 'block', md: 'block' }, alignItems: 'center', mb: 3, gap: 1 }}>
         {/* On Mobile when tab is selected, show back button */}
-        <IconButton 
-          onClick={onBackToMenu} 
+        <IconButton
+          aria-label={t('backToMenu')}
+          onClick={onBackToMenu}
           sx={{ display: { xs: activeTab !== null ? 'inline-flex' : 'none', md: 'none' }, ml: -1 }}
         >
           <ArrowBackIcon />

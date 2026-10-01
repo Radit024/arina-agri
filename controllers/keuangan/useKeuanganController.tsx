@@ -513,6 +513,11 @@ export function useKeuanganController() {
     [t, theme]
   );
 
+  const rabCategoryNameById = useMemo(
+    () => new Map((rab.categories ?? []).map((category) => [category.id, category.name])),
+    [rab.categories]
+  );
+
   const expensePie = useMemo(
     () =>
       buildFinanceExpensePieData({
@@ -526,8 +531,9 @@ export function useKeuanganController() {
           theme.palette.error.dark,
         ],
         emptyLabel: t('distribution.empty'),
+        rabCategoryNameById,
       }),
-    [expenseCategoryDefinitions, monthFilteredTransactions, t, theme]
+    [expenseCategoryDefinitions, monthFilteredTransactions, rabCategoryNameById, t, theme]
   );
 
   const finalPieData = expensePie.data;

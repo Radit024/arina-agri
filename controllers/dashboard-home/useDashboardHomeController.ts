@@ -7,7 +7,6 @@ import { useTheme } from '@mui/material/styles';
 import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import { useDashboardSummary } from '@/hooks/useDashboardSummary';
-import { useCommodityPrices } from '@/hooks/useCommodityPrices';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { farmerProfile } from '@/lib/mockData';
 import { formatRupiah } from '@/lib/formatters';
@@ -36,7 +35,7 @@ export function useDashboardHomeController() {
   const { user, session, loading: authLoading } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || farmerProfile.nama;
+  const userName = user?.user_metadata?.full_name?.trim() || farmerProfile.nama;
   const [financeProjectScopeId, setFinanceProjectScopeId] = useLocalStorage<string | null>(
     'arina-dashboard-finance-project-scope',
     null,
@@ -50,19 +49,19 @@ export function useDashboardHomeController() {
     financeProjectId: financeProjectScopeId,
     locationLabel: activeLocationLabel,
   });
-  const {
-    loading: priceLoading,
-    reload: reloadPrices,
-    todayPrice,
-    priceDelta,
-    priceDeltaPct,
-    isTrendingUp,
-  } = useCommodityPrices(30);
+  // Harga diambil dari ringkasan server, bukan `useCommodityPrices`. Hook itu query
+  // Supabase langsung dari browser sehingga selalu kosong tanpa sesi RLS yang benar,
+  // sementara `/api/dashboard/summary` sudah mengembalikan harga yang valid.
+  const priceLoading = summaryLoading;
+  const todayPrice = summary?.price.todayPrice ?? null;
+  const priceDelta = summary?.price.priceDelta ?? null;
+  const priceDeltaPct = summary?.price.priceDeltaPct ?? null;
+  const isTrendingUp = summary?.price.isTrendingUp ?? null;
 
   const pullToRefresh = usePullToRefresh({
     enabled: isMobile,
     onRefresh: async () => {
-      await Promise.all([reloadSummary(), reloadPrices()]);
+      await reloadSummary();
     },
   });
 

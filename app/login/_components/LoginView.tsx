@@ -107,6 +107,11 @@ export default function LoginView({
         component="form"
         aria-label={t('formLabel')}
         aria-busy={busy}
+        // Tanpa noValidate, validasi native browser memblokir submit sebelum Zod
+        // dipanggil dan memunculkan bubble berbahasa Inggris ("Please fill out this
+        // field."). noValidate membuat pesan Zod berbahasa Indonesia yang konsisten
+        // dengan form Daftar yang tampil.
+        noValidate
         onSubmit={handleSubmit(onSubmit)}
         sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
       >

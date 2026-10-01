@@ -106,6 +106,7 @@ function buildImportWarnings(parsed: ParsedRabWorkbook): string[] {
   const warnings: string[] = [];
 
   for (const entry of parsed.reconciliation) {
+    if (!entry.checked) continue;
     const tolerance = Math.max(
       RECONCILIATION_ABSOLUTE_TOLERANCE,
       Math.abs(entry.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE,
@@ -633,7 +634,7 @@ export function useRabController(
 
       const warnings = buildImportWarnings(parsed);
       const hasMaterialDiscrepancy = parsed.reconciliation.some(
-        (r) => Math.abs(r.difference) > Math.max(RECONCILIATION_ABSOLUTE_TOLERANCE, Math.abs(r.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE)
+        (r) => r.checked && Math.abs(r.difference) > Math.max(RECONCILIATION_ABSOLUTE_TOLERANCE, Math.abs(r.declaredTotal) * RECONCILIATION_RELATIVE_TOLERANCE)
       );
 
       if (!skipPreflightCheck && (hasMaterialDiscrepancy || warnings.length > 0)) {

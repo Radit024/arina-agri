@@ -6,28 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import useSessionStorage from '@/hooks/useSessionStorage';
 
 // ─── Mock data for unauthenticated users ──────────────────────────
-const MOCK_BATCHES: ApiHarvestBatch[] = [
-  {
-    _id: '1', batchCode: 'BATCH-001-A', tanggalPanen: '2026-04-12', grade: 'A',
-    beratMasuk: 400, stokTersisa: 280, hargaModal: 18000, hargaJual: 45000,
-    lokasiPenyimpanan: 'Gudang Utama', estimasiKadaluarsa: '2026-04-26',
-    catatan: 'Panen pagi kondisi optimal', status: 'aman',
-    createdAt: '2026-04-12T06:00:00Z', updatedAt: '2026-04-12T06:00:00Z',
-  },
-  {
-    _id: '2', batchCode: 'BATCH-002-B', tanggalPanen: '2026-04-15', grade: 'B',
-    beratMasuk: 350, stokTersisa: 60, hargaModal: 16000, hargaJual: 38000,
-    lokasiPenyimpanan: 'Gudang Cadangan', estimasiKadaluarsa: '2026-04-28',
-    catatan: 'Sortir ulang grade B', status: 'menipis',
-    createdAt: '2026-04-15T06:00:00Z', updatedAt: '2026-04-15T06:00:00Z',
-  },
-];
-
-const MOCK_MUTATIONS: ApiStockMutation[] = [
-  { _id: 'm1', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'masuk', berat: 400, tanggal: '2026-04-12', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-12T06:00:00Z' },
-  { _id: 'm2', batchId: '1', batchCode: 'BATCH-001-A', tipe: 'keluar', berat: 80, tujuan: 'Pasar Lokal', tanggal: '2026-04-14', catatan: 'Jual ke pasar pagi', createdAt: '2026-04-14T08:00:00Z' },
-  { _id: 'm3', batchId: '2', batchCode: 'BATCH-002-B', tipe: 'masuk', berat: 350, tanggal: '2026-04-15', catatan: 'Stok awal masuk gudang', createdAt: '2026-04-15T06:00:00Z' },
-];
+const EMPTY_BATCHES: ApiHarvestBatch[] = [];
+const EMPTY_MUTATIONS: ApiStockMutation[] = [];
 
 export const DEFAULT_GRADES: ApiGrade[] = [
   { id: 'default-A', nama: 'A', urutan: 0 },
@@ -95,14 +75,9 @@ export function computeLocalSummary(batches: ApiHarvestBatch[]): StokSummary {
 export function useStok() {
   const { user, loading: authLoading, isGuestMode } = useAuth();
   const storageKey = `arina-stok-${user?.id ?? 'guest'}`;
-  const [batches, setBatches] = useSessionStorage<ApiHarvestBatch[]>(`${storageKey}-batches`, MOCK_BATCHES);
-  const [mutations, setMutations] = useSessionStorage<ApiStockMutation[]>(`${storageKey}-mutations`, MOCK_MUTATIONS);
-  const [summary, setSummary] = useSessionStorage<StokSummary>(`${storageKey}-summary`, {
-    totalStokSiapJual: 0,
-    stokTerjualMingguIni: 0,
-    estimasiNilaiStok: 0,
-    batchHampirKadaluarsa: 0,
-  });
+  const [batches, setBatches] = useSessionStorage<ApiHarvestBatch[]>(`${storageKey}-batches`, EMPTY_BATCHES);
+  const [mutations, setMutations] = useSessionStorage<ApiStockMutation[]>(`${storageKey}-mutations`, EMPTY_MUTATIONS);
+  const [summary, setSummary] = useSessionStorage<StokSummary>(`${storageKey}-summary`, computeLocalSummary(EMPTY_BATCHES));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [buyers, setBuyers] = useState<ApiBuyer[]>([]);

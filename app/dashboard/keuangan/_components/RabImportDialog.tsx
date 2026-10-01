@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -24,6 +25,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import AppDialog from '@/components/ui/AppDialog';
 import { formatRupiah } from '@/lib/formatters';
@@ -96,6 +98,20 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId, onNa
       ? 'Rencana (Proyeksi)'
       : 'Aktual (Realisasi)'
     : 'Mode Skenario';
+
+  // Impor transaksi yang sudah lewat ke mode Rencana membuat tab Perbandingan
+  // menampilkan "Realisasi belum memiliki data" padahal file-nya berisi catatan nyata.
+  // Deteksi ini memberi kesempatan memilih mode yang tepat sebelum menyimpan.
+  const scenarioMismatchWarning = useMemo(() => {
+    if (!rab.preflightData || selectedScenarioObj?.mode !== 'PROJECTION') return null;
+    const today = new Date().toISOString().slice(0, 10);
+    const pastCount = rab.preflightData.transactions.filter((tx) => tx.tanggal < today).length;
+    if (pastCount === 0) return null;
+    return `${pastCount} dari ${rab.preflightData.transactions.length} transaksi sudah bertanggal sebelum hari ini, `
+      + `jadi ini catatan nyata — bukan rencana. Kalau disimpan ke "Rencana (Proyeksi)", `
+      + `tab Perbandingan akan menampilkan "Realisasi belum memiliki data". `
+      + `Pilih "Aktual (Realisasi)" lewat Batal lalu mulai ulang impor, atau lanjutkan bila memang ingin menyimpan sebagai rencana.`;
+  }, [rab.preflightData, selectedScenarioObj]);
 
   return (
     <AppDialog
@@ -247,6 +263,10 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId, onNa
                   </MenuItem>
                 ))}
               </Select>
+              <FormHelperText>
+                Rencana = biaya yang direncanakan sebelum mulai bertani. Aktual = catatan yang benar-benar sudah
+                terjadi. File yang berisi transaksi bertanggal lampau sebaiknya masuk ke Aktual.
+              </FormHelperText>
             </FormControl>
 
             <input
@@ -332,6 +352,12 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId, onNa
               </Typography>
             </Alert>
 
+            {scenarioMismatchWarning && (
+              <Alert severity="warning" sx={{ borderRadius: 2 }} data-testid="rab-import-scenario-warning">
+                <Typography variant="body2">{scenarioMismatchWarning}</Typography>
+              </Alert>
+            )}
+
             {/* Reconciliation table if discrepancy */}
             {rab.preflightData.reconciliation.length > 0 && (
               <Card variant="outlined" sx={{ borderRadius: 2 }}>
@@ -353,18 +379,22 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId, onNa
                       <TableBody>
                         {rab.preflightData.reconciliation.map((rec, idx) => (
                           <TableRow key={rec.categoryId || rec.categoryName || idx}>
-                            <TableCell sx={{ fontWeight: 600 }}>{rec.categoryName}</TableCell>
-                            <TableCell align="right">{formatRupiah(rec.declaredTotal)}</TableCell>
-                            <TableCell align="right">{formatRupiah(rec.computedTotal)}</TableCell>
-                            <TableCell
-                              align="right"
-                              sx={{
-                                fontWeight: 700,
-                                color: Math.abs(rec.difference) > 1000 ? 'warning.main' : 'text.secondary',
-                              }}
-                            >
-                              {formatRupiah(rec.difference)}
-                            </TableCell>
+<TableCell sx={{ fontWeight: 600 }}>{rec.categoryName}</TableCell>
+                          <TableCell align="right">
+                            {rec.checked ? formatRupiah(rec.declaredTotal) : '—'}
+                          </TableCell>
+                          <TableCell align="right">{formatRupiah(rec.computedTotal)}</TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{
+                              fontWeight: 700,
+                              color: rec.checked
+                                ? Math.abs(rec.difference) > 1000 ? 'warning.main' : 'text.secondary'
+                                : 'text.disabled',
+                            }}
+                          >
+                            {rec.checked ? formatRupiah(rec.difference) : 'tidak diperiksa'}
+                          </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -444,6 +474,40 @@ export default function RabImportDialog({ rab, scenarios, activeScenarioId, onNa
                 </Typography>
               </Card>
             </Box>
+
+            {rab.importSummary.skippedRows.length > 0 && (
+              <Card variant="outlined" sx={{ borderRadius: 2 }} data-testid="rab-import-skipped-rows">
+                <CardContent sx={{ p: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <InfoOutlinedIcon fontSize="small" />
+                    Baris yang tidak ikut terbaca ({rab.importSummary.skippedRows.length})
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 1.25 }}>
+                    Buka daftar ini kalau ada angka di file Excel-mu yang terasa tidak masuk semua ke aplikasi.
+                  </Typography>
+                  <TableContainer sx={{ maxHeight: 260 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, width: 64 }}>Baris</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Uraian</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>Alasan</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rab.importSummary.skippedRows.map((row, index) => (
+                          <TableRow key={`${row.rowNumber}-${index}`}>
+                            <TableCell sx={{ color: 'text.secondary' }}>{row.rowNumber}</TableCell>
+                            <TableCell>{row.description || '—'}</TableCell>
+                            <TableCell sx={{ color: 'text.secondary' }}>{row.reason}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+            )}
 
             {rab.importSummary.warnings.length > 0 && (
               <Alert severity="info" sx={{ borderRadius: 2 }}>

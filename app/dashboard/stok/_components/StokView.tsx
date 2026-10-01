@@ -14,6 +14,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -271,6 +272,33 @@ export default function StokView({
         )}
       />
 
+      {/* Mobile: `PageHeader` disembunyikan penuh di layar kecil sehingga aksi di
+          `actions` ikut hilang. Tanpa fallback ini, modul Stok tidak punya cara
+          mencatat panen sama sekali dari ponsel. */}
+      {isMobile && (
+        <Stack direction="row" spacing={1.5} sx={{ mb: 2.5 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<LocalShippingIcon />}
+            onClick={() => setStockOutDialogOpen(true)}
+            sx={{ minHeight: 44, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {t('buttons.stockOut')}
+          </Button>
+          <Button
+            data-guide-target="stock-add-batch-mobile"
+            fullWidth
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={openAddBatch}
+            sx={{ minHeight: 44, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {t('buttons.addBatch')}
+          </Button>
+        </Stack>
+      )}
+
       {/* Alert kadaluarsa */}
       {alertBatches.length > 0 && (
         <Alert severity="error" icon={<WarningAmberIcon />} sx={{ mb: 3, borderRadius: 3 }}>
@@ -341,10 +369,6 @@ export default function StokView({
                           <StatusChip status={b.status} t={t} />
                         </Box>
 
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <StatusChip status={b.status} t={t} />
-                          <GradeChip grade={b.grade} t={t} />
-                        </Box>
                         <Box sx={{ display: 'flex', gap: 1.25, mb: 1.5, alignItems: 'center' }}>
                           <GradeChip grade={b.grade} t={t} />
                           <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>

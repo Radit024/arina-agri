@@ -14,15 +14,28 @@ afterEach(() => {
 });
 
 describe('isCronAuthorized', () => {
-  it('allows requests in development without auth header', () => {
+  it('denies in development when secret is missing (fail-closed)', () => {
     Object.assign(process.env, { NODE_ENV: 'development' });
-    expect(isCronAuthorized(makeRequest())).toBe(true);
+    delete process.env.CRON_SECRET;
+    expect(isCronAuthorized(makeRequest())).toBe(false);
   });
 
   it('denies in production when secret is missing', () => {
     Object.assign(process.env, { NODE_ENV: 'production' });
     delete process.env.CRON_SECRET;
     expect(isCronAuthorized(makeRequest())).toBe(false);
+  });
+
+  it('denies when a stale auth header is present but secret is missing', () => {
+    Object.assign(process.env, { NODE_ENV: 'production' });
+    delete process.env.CRON_SECRET;
+    expect(isCronAuthorized(makeRequest('Bearer secret'))).toBe(false);
+  });
+
+  it('allows in development with correct header', () => {
+    Object.assign(process.env, { NODE_ENV: 'development' });
+    process.env.CRON_SECRET = 'secret';
+    expect(isCronAuthorized(makeRequest('Bearer secret'))).toBe(true);
   });
 
   it('denies in production with wrong header', () => {

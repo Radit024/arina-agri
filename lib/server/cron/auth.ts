@@ -1,9 +1,8 @@
 export function isCronAuthorized(request: Request): boolean {
-  if (process.env.NODE_ENV !== 'production') {
-    return true;
-  }
-
   const expected = process.env.CRON_SECRET;
+
+  // Fail-closed: tanpa konfigurasi, cron ditolak di setiap environment.
+  // Kegagalan konfigurasi tidak boleh berubah menjadi akses terbuka.
   if (!expected) return false;
 
   const auth = request.headers.get('authorization');

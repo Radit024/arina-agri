@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
@@ -7,6 +7,8 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import FormControl from '@mui/material/FormControl';
 import IconButton from '@mui/material/IconButton';
@@ -59,6 +61,28 @@ function PdfLogoIcon() {
       data-testid="finance-export-pdf-logo"
       sx={{ width: 20, height: 20, display: 'block' }}
     />
+  );
+}
+
+function StepNumber({ children, active }: { children: React.ReactNode; active?: boolean }) {
+  return (
+    <Box
+      aria-hidden="true"
+      sx={{
+        flexShrink: 0,
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
+        display: 'grid',
+        placeItems: 'center',
+        fontWeight: 800,
+        fontSize: '0.875rem',
+        bgcolor: active ? 'primary.main' : 'action.selected',
+        color: active ? 'primary.contrastText' : 'text.secondary',
+      }}
+    >
+      {children}
+    </Box>
   );
 }
 
@@ -428,6 +452,67 @@ export default function FinanceProjectToolbar({
           </Typography>
         )}
       </Box>
+
+      {/* Empty state awal: memberi urutan langkah, bukan sekadar "Pilih Proyek" */}
+      {financeProject.projects.length === 0 && (
+        <Card sx={{ mb: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 }, '&:last-child': { pb: { xs: 2, sm: 3 } } }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
+              Belum ada proyek keuangan
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Ikuti tiga langkah ini agar keuangan Anda tercatat rapi.
+            </Typography>
+
+            <Stack spacing={1.5}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                <StepNumber active>1</StepNumber>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Buat proyek usaha tani
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Isi luas lahan, kematian, dan musim tanam. Semua catatan keuangan dikelompokkan
+                    per proyek.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<AddCircleIcon />}
+                    onClick={financeProject.openCreateProjectDialog}
+                    sx={{ mt: 1.25, minHeight: 44, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    Buat Proyek Sekarang
+                  </Button>
+                </Box>
+              </Stack>
+
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                <StepNumber>2</StepNumber>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Masukkan rencana biaya (RAB)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Import dari Excel atau catat satu per satu. Tersedia setelah proyek dibuat.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
+                <StepNumber>3</StepNumber>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    Catat transaksi nyata
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Alihkan RAB ke mode Aktual. Laba rugi dan arus kas terhitung otomatis.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
 
       <FinanceProjectDialog financeProject={financeProject} />
 

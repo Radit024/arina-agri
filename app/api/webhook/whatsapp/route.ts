@@ -39,8 +39,9 @@ interface WhatsAppWebhookBody {
 function isValidSignature(rawBody: string, signatureHeader: string | null): boolean {
   const appSecret = process.env.WHATSAPP_APP_SECRET;
 
-  // Allow unsigned requests in non-production when secret is not configured.
-  if (!appSecret) return process.env.NODE_ENV !== 'production';
+  // Fail-closed: tanpa app secret, tandatangan tidak bisa diverifikasi dan
+  // request harus ditolak di setiap environment.
+  if (!appSecret) return false;
   if (!signatureHeader?.startsWith('sha256=')) return false;
 
   const expected = `sha256=${crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex')}`;

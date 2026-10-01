@@ -45,6 +45,23 @@ describe('Next.js Global Auth Middleware', () => {
     expect(resGuest.status).toBe(200);
   });
 
+  it('rejects guest session cookie on protected API routes', () => {
+    const reqApi = new NextRequest('http://localhost:3000/api/finance/transactions', {
+      method: 'POST',
+      headers: { cookie: 'arina_guest_session=1' },
+    });
+
+    expect(middleware(reqApi).status).toBe(401);
+  });
+
+  it('does not expose /api/news/trigger as a public route', () => {
+    const reqTrigger = new NextRequest('http://localhost:3000/api/news/trigger', {
+      method: 'POST',
+    });
+
+    expect(middleware(reqTrigger).status).toBe(401);
+  });
+
   it('allows authenticated user accessing /dashboard when Supabase auth cookie is present', () => {
     const reqAuth = new NextRequest('http://localhost:3000/dashboard/keuangan', {
       headers: {

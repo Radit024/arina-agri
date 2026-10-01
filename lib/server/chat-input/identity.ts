@@ -62,7 +62,13 @@ export async function resolveChatUser(
 
   // ── Telegram: try Chat ID first (numeric) ─────────────────────────────────
   const chatIdStr = senderId.trim();
-  
+
+  // `chatIdStr` disisipkan mentah ke filter `.or()` PostgREST di bawah, jadi
+  // bentuknya harus dijamin: chat id Telegram selalu numerik. Tanpa ini, nilai
+  // dari body webhook bisa mengubah semantik filter dan mengarahkan lookup ke
+  // profil milik pengguna lain.
+  if (!/^-?\d+$/.test(chatIdStr)) return null;
+
   // We check if the chat ID is stored in either `telegram_chat_id` OR mistakenly saved in `telegram_username`
   const { data: byId, error: idError } = await supabase
     .from('profiles')

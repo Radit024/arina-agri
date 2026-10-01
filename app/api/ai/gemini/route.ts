@@ -3,11 +3,14 @@ import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { generateGeminiReply } from '@/lib/server/ai/gemini';
 import { validateGeminiPayload } from '@/lib/server/ai/validators';
 import type { GeminiWeatherContext } from '@/lib/server/ai/gemini';
-import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
+import { guardRequest } from '@/lib/server/guards/requestGuard';
 import { recordEvent } from '@/lib/analytics/recordEvent';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+
+/** Batas keras ukuran body agar payload raksasa ditolak sebelum di-parse. */
+const MAX_BODY_BYTES = 50_000;
 
 interface GeminiHistoryMessage {
   role: 'user' | 'ai';
@@ -52,7 +55,13 @@ function shouldIncludeMarketInfo(prompt: string) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const guarded = await guardRequest(request, {
+      requireAuth: true,
+      maxBodyBytes: MAX_BODY_BYTES,
+    });
+    if ('response' in guarded) return guarded.response;
+
+    const body = guarded.context.body;
     const validation = validateGeminiPayload(body);
     if (!validation.valid) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });
@@ -61,7 +70,7 @@ export async function POST(request: Request) {
     const { prompt, history, userName, weatherContext } = body as GeminiRoutePayload;
 
     let context = '';
-    if (history && history.length > 0) {
+    if (Array.isArray(history) && history.length > 0) {
       context = history.map((msg) => `${msg.role === 'user' ? 'Petani' : 'Arina'}: ${msg.content}`).join('\n');
     }
 
@@ -88,9 +97,8 @@ export async function POST(request: Request) {
     const reply = await generateGeminiReply({ prompt, context, userName, weatherContext });
 
     try {
-      const userId = await resolveRequestUserId(request);
       await recordEvent({
-        userId,
+        userId: guarded.context.userId,
         feature: 'ai_chat',
         eventType: 'action',
         eventName: 'chat_message_sent',

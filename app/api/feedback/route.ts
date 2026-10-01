@@ -3,10 +3,15 @@ import { resolveRequestUserId } from '@/lib/server/auth/requestUser';
 import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 import { z } from 'zod';
 
+/**
+ * `deviceType` diterima sebagai alias agar klien yang memakai camelCase
+ * tidak ditolak, sekaligus menjaga kompatibilitas ke belakang.
+ */
 const feedbackSchema = z.object({
   category: z.enum(['bug', 'feature', 'question']),
-  message: z.string().min(5),
-  device_type: z.string().optional(),
+  message: z.string().min(5).max(2_000),
+  device_type: z.string().max(64).optional(),
+  deviceType: z.string().max(64).optional(),
 });
 
 export async function POST(request: Request) {
@@ -22,6 +27,7 @@ export async function POST(request: Request) {
 
     const { data: { user } } = await supabase.auth.admin.getUserById(userId);
     const userName = user?.user_metadata?.full_name || user?.email || 'Pengguna Anonim';
+    const deviceType = validatedData.device_type ?? validatedData.deviceType;
 
     const { error: insertError } = await supabase
       .from('user_feedbacks')
@@ -30,10 +36,14 @@ export async function POST(request: Request) {
         category: validatedData.category,
         message: validatedData.message,
         user_name: userName,
-        device_type: validatedData.device_type || 'unknown',
+        device_type: deviceType || 'unknown',
       });
 
     if (insertError) {
+      // User tidak ada di auth.users: ini masalah sesi, bukan galat server.
+      if (insertError.code === '23503') {
+        return NextResponse.json({ error: 'Sesi tidak valid, silakan masuk ulang' }, { status: 401 });
+      }
       console.error('Supabase insert error:', insertError);
       return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
@@ -56,9 +66,12 @@ export async function GET(request: Request) {
     }
 
     const supabase = getSupabaseAdmin();
+
+    // Hanya feedback milik pengguna yang meminta, bukan seluruh umpan balik.
     const { data, error } = await supabase
       .from('user_feedbacks')
       .select('id, category, message, created_at, user_name, device_type')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
 

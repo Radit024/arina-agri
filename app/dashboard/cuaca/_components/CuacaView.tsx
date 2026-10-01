@@ -1,10 +1,12 @@
-'use client';
+﻿'use client';
 
 import AirIcon from '@mui/icons-material/Air';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CloudIcon from '@mui/icons-material/Cloud';
 import GrainIcon from '@mui/icons-material/Grain';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import MyLocationIcon from '@mui/icons-material/MyLocation';
+import SearchIcon from '@mui/icons-material/Search';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
 import UmbrellaIcon from '@mui/icons-material/Umbrella';
@@ -22,6 +24,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
 import Skeleton from '@mui/material/Skeleton';
 import { alpha, useTheme } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
@@ -56,6 +63,13 @@ type WeatherMessages = {
   Weather?: {
     whatsapp?: {
       tutorialSteps?: string[];
+    };
+    location?: {
+      searchPlaceholder?: string;
+      searchLabel?: string;
+      searchHint?: string;
+      searchAction?: string;
+      searchError?: string;
     };
   };
 };
@@ -110,10 +124,18 @@ export default function CuacaView({
   handlePlatformChange,
   handleSaveNotificationContact,
   handleUseGpsLocation,
+  locationQuery,
+  handleLocationQueryChange,
+  locationResults,
+  locationSearchStatus,
+  locationSearchError,
+  searchLocations,
+  handleSelectLocation,
   handleTestNotification,
   handleSaveSchedule,
 }: UseCuacaControllerResult) {
   const intlMessages = useMessages() as WeatherMessages;
+  const locationMessages = intlMessages.Weather?.location;
 
   return (
     <PageShell>
@@ -146,6 +168,74 @@ export default function CuacaView({
             {gpsMessage}
           </Alert>
         )}
+        {/* Pencarian lokasi manual: alternatif ketika GPS tidak tersedia. */}
+        <Box sx={{ mt: 1.5 }}>
+          <TextField
+            fullWidth
+            size="small"
+            value={locationQuery}
+            onChange={(event) => handleLocationQueryChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void searchLocations(locationQuery);
+              }
+            }}
+            placeholder={locationMessages?.searchPlaceholder || 'Cari desa atau kecamatan'}
+slotProps={{
+              input: {
+                'aria-label': locationMessages?.searchLabel || 'Cari lokasi',
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: locationQuery.trim().length >= 3 ? (
+                  <InputAdornment position="end">
+                    {locationSearchStatus === 'loading' ? (
+                      <CircularProgress size={18} />
+                    ) : (
+                      <IconButton
+                        size="small"
+                        aria-label={locationMessages?.searchAction || 'Cari lokasi'}
+                        onClick={() => void searchLocations(locationQuery)}
+                      >
+                        <ArrowForwardIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+            {locationMessages?.searchHint || 'Ketik minimal 3 huruf, lalu tekan Enter.'}
+          </Typography>
+          {locationSearchError && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              {locationSearchError}
+            </Alert>
+          )}
+          {locationResults.length > 0 && (
+            <List
+              dense
+              disablePadding
+              sx={{ mt: 1, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}
+            >
+              {locationResults.map((result) => (
+                <ListItemButton
+                  key={result.adm4}
+                  onClick={() => handleSelectLocation(result)}
+                  data-touch-target="44"
+                  sx={{ py: 1 }}
+                >
+                  <ListItemText primary={result.label} secondary={result.detail} />
+                  <ArrowForwardIcon fontSize="small" color="action" />
+                </ListItemButton>
+              ))}
+            </List>
+          )}
+        </Box>
       </Box>
 
       <Grid container spacing={3}>

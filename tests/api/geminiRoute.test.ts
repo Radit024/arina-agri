@@ -61,30 +61,24 @@ describe('gemini route', () => {
     });
   });
 
-  it('still replies successfully for a guest (no resolvable user id)', async () => {
+  it('rejects a guest (no resolvable user id) before calling Gemini', async () => {
     resolveRequestUserId.mockResolvedValue(null);
-    generateGeminiReply.mockResolvedValue('Balasan AI untuk tamu');
     const { POST } = await import('@/app/api/ai/gemini/route');
 
     const response = await POST(new Request('http://localhost/api/ai/gemini', {
       method: 'POST',
       body: JSON.stringify({ prompt: 'Halo' }),
     }));
-    const json = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(json.data.reply).toBe('Balasan AI untuk tamu');
-    expect(recordEvent).toHaveBeenCalledWith({
-      userId: null,
-      feature: 'ai_chat',
-      eventType: 'action',
-      eventName: 'chat_message_sent',
-    });
+    expect(response.status).toBe(401);
+    expect(generateGeminiReply).not.toHaveBeenCalled();
+    expect(recordEvent).not.toHaveBeenCalled();
   });
 
-  it('still returns the AI reply when resolving the user id for analytics throws', async () => {
-    resolveRequestUserId.mockRejectedValue(new Error('missing supabase credentials'));
+  it('still returns the AI reply when recording analytics fails', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
     generateGeminiReply.mockResolvedValue('Balasan AI meski analytics gagal');
+    recordEvent.mockRejectedValue(new Error('analytics down'));
     const { POST } = await import('@/app/api/ai/gemini/route');
 
     const response = await POST(new Request('http://localhost/api/ai/gemini', {
@@ -96,6 +90,34 @@ describe('gemini route', () => {
 
     expect(response.status).toBe(200);
     expect(json.data.reply).toBe('Balasan AI meski analytics gagal');
-    expect(recordEvent).not.toHaveBeenCalled();
+  });
+
+  it('rejects a body larger than the hard limit without parsing it', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
+    const { POST } = await import('@/app/api/ai/gemini/route');
+
+    const oversized = JSON.stringify({ prompt: 'x'.repeat(60_000) });
+    const response = await POST(new Request('http://localhost/api/ai/gemini', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: oversized,
+    }));
+
+    expect(response.status).toBe(413);
+    expect(generateGeminiReply).not.toHaveBeenCalled();
+  });
+
+  it('rejects malformed JSON with a 400', async () => {
+    resolveRequestUserId.mockResolvedValue('user-1');
+    const { POST } = await import('@/app/api/ai/gemini/route');
+
+    const response = await POST(new Request('http://localhost/api/ai/gemini', {
+      method: 'POST',
+      headers: { authorization: 'Bearer token' },
+      body: '{bukan json',
+    }));
+
+    expect(response.status).toBe(400);
+    expect(generateGeminiReply).not.toHaveBeenCalled();
   });
 });

@@ -395,11 +395,16 @@
     "location": {
       "unknown": "Lokasi tidak diketahui",
       "active": "Lokasi aktif: {location}",
-      "gpsWithAccuracy": "{label} (akurasi {accuracy}m)"
+      "gpsWithAccuracy": "{label} (akurasi {accuracy}m)",
+      "searchPlaceholder": "Cari desa atau kecamatan",
+      "searchLabel": "Cari lokasi",
+      "searchHint": "Ketik minimal 3 huruf, lalu tekan Enter.",
+      "searchAction": "Cari lokasi",
+      "searchError": "Gagal mencari lokasi. Coba kata kunci lain."
     },
     "emptyWeather": {
       "title": "Belum ada data cuaca",
-      "subtitle": "Nyalakan GPS untuk mendapatkan data cuaca terkini."
+      "subtitle": "Nyalakan GPS atau cari nama desa Anda di bawah."
     },
     "errors": {
       "loadBmkg": "Gagal memuat data cuaca BMKG.",

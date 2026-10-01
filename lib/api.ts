@@ -1484,8 +1484,18 @@ async function apiGet<T>(endpoint: string): Promise<T> {
 
 async function buildAuthHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) return {};
-  return { Authorization: `Bearer ${session.access_token}` };
+  if (session?.access_token) return { Authorization: `Bearer ${session.access_token}` };
+
+  // Mode auth lokal dev tidak punya sesi Supabase, sehingga header kosong dan
+  // endpoint terlindungi membalas 401. Kirim token dev agar fitur tetap berfungsi.
+  if (process.env.NODE_ENV === 'development') {
+    const localUserId = readLocalDevelopmentUserId();
+    if (localUserId) {
+      return { Authorization: `Bearer ${buildDevelopmentAccessToken(localUserId)}` };
+    }
+  }
+
+  return {};
 }
 
 export const aiApi = {

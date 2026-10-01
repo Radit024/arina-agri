@@ -15,6 +15,7 @@ import {
   type BmkgForecastResponse,
   type BmkgWarningsResponse,
   type NotificationScheduleConfig,
+  type LocationSearchResult,
 } from '@/lib/api';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -73,6 +74,13 @@ export function useCuacaController() {
 
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [gpsMessage, setGpsMessage] = useState('');
+
+  // Pencarian lokasi manual: jalur keluar ketika GPS tidak tersedia.
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
+  const [locationSearchStatus, setLocationSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [locationSearchError, setLocationSearchError] = useState('');
+  const locationRequestIdRef = useRef(0);
   const [forecastData, setForecastData] = useState<BmkgForecastResponse | null>(null);
   const [warningsData, setWarningsData] = useState<BmkgWarningsResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
@@ -504,6 +512,53 @@ export function useCuacaController() {
     void requestGpsLocation();
   };
 
+  const handleLocationQueryChange = (value: string) => {
+    setLocationQuery(value);
+    if (!value.trim()) {
+      setLocationResults([]);
+      setLocationSearchStatus('idle');
+      setLocationSearchError('');
+      locationRequestIdRef.current += 1;
+    }
+  };
+
+  const searchLocations = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (trimmed.length < 3) return;
+
+    locationRequestIdRef.current += 1;
+    const requestId = locationRequestIdRef.current;
+    setLocationSearchStatus('loading');
+    setLocationSearchError('');
+
+    try {
+      const results = await locationApi.search({ query: trimmed, limit: 6 });
+      if (requestId !== locationRequestIdRef.current) return;
+      setLocationResults(results);
+      setLocationSearchStatus('idle');
+    } catch (error: unknown) {
+      if (requestId !== locationRequestIdRef.current) return;
+      setLocationResults([]);
+      setLocationSearchStatus('error');
+      setLocationSearchError(error instanceof Error ? error.message : t('location.searchError'));
+    }
+  }, [t]);
+
+  const handleSelectLocation = useCallback((selected: LocationSearchResult) => {
+    setGpsLocation({
+      latitude: selected.latitude,
+      longitude: selected.longitude,
+      accuracy: 0,
+      adm4: selected.adm4,
+      label: selected.label,
+    });
+    setGpsStatus('success');
+    setGpsMessage(t('gps.messages.gpsActive', { label: selected.label }));
+    setGpsAutoAttempted(true);
+    setLocationResults([]);
+    setLocationQuery('');
+  }, [setGpsAutoAttempted, setGpsLocation, t]);
+
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();
 
@@ -728,6 +783,13 @@ export function useCuacaController() {
     handlePlatformChange,
     handleSaveNotificationContact,
     handleUseGpsLocation,
+    locationQuery,
+    handleLocationQueryChange,
+    locationResults,
+    locationSearchStatus,
+    locationSearchError,
+    searchLocations,
+    handleSelectLocation,
     handleTestNotification,
     handleSaveSchedule,
   };

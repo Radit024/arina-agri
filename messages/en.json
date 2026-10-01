@@ -395,7 +395,12 @@
     "location": {
       "unknown": "Unknown location",
       "active": "Active location: {location}",
-      "gpsWithAccuracy": "{label} ({accuracy}m accuracy)"
+      "gpsWithAccuracy": "{label} ({accuracy}m accuracy)",
+      "searchPlaceholder": "Search village or district",
+      "searchLabel": "Search location",
+      "searchHint": "Type at least 3 letters, then press Enter.",
+      "searchAction": "Search location",
+      "searchError": "Location search failed. Try a different keyword."
     },
     "emptyWeather": {
       "title": "No weather data yet",

@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
+import { requireCronAuth } from '@/lib/server/cron/auth';
 import { fetchNewsAndUpsert } from '@/lib/server/news/fetch';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 
-export async function POST() {
+/**
+ * Pemicu manual fetch berita. Endpoint ini menjalankan fetch + scrape, jadi
+ * memakai CRON_SECRET yang sama dengan `/api/cron/news` agar tidak bisa
+ * dipicu publik.
+ */
+export async function POST(request: Request) {
+  const auth = requireCronAuth(request);
+  if (auth) return auth;
+
   try {
     const inserted = await fetchNewsAndUpsert();
     return NextResponse.json({

@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { buildNotificationDecision, type NotificationDecisionInput } from '@/lib/server/notifications/decision';
 import { sendDirectNotification } from '@/lib/server/notifications/channels';
+import { guardRequest } from '@/lib/server/guards/requestGuard';
+
+export const dynamic = 'force-dynamic';
+
+/** Batas keras ukuran body: memuat object weather + metadata bmkgWarnings. */
+const MAX_BODY_BYTES = 8_192;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -53,7 +59,10 @@ function validateDecisionPayload(body: unknown): { valid: boolean; message?: str
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const guarded = await guardRequest(request, { requireAuth: true, maxBodyBytes: MAX_BODY_BYTES });
+    if ('response' in guarded) return guarded.response;
+
+    const body = guarded.context.body;
     const validation = validateDecisionPayload(body);
     if (!validation.valid) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });

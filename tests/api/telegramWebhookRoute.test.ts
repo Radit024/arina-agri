@@ -32,6 +32,19 @@ describe('/api/webhook/telegram', () => {
     expect(response.status).toBe(401);
   });
 
+  it('rejects every request when TELEGRAM_WEBHOOK_SECRET is unset (fail-closed)', async () => {
+    delete process.env.TELEGRAM_WEBHOOK_SECRET;
+    const { POST } = await import('@/app/api/webhook/telegram/route');
+    const response = await POST(
+      new Request('http://localhost/api/webhook/telegram', {
+        method: 'POST',
+        body: JSON.stringify({ update_id: 102, message: { message_id: 202, chat: { id: 1 } } }),
+      }),
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.processInboundChatMessage).not.toHaveBeenCalled();
+  });
+
   it('accepts requests with the correct secret token', async () => {
     const { POST } = await import('@/app/api/webhook/telegram/route');
     const response = await POST(

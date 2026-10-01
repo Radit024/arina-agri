@@ -75,6 +75,24 @@ describe('/api/webhook/whatsapp', () => {
 
   // ── POST: incoming messages ─────────────────────────────────────────────────
 
+  it('returns 401 when WHATSAPP_APP_SECRET is unset, even in development', async () => {
+    const previousNodeEnv = process.env.NODE_ENV;
+    Object.assign(process.env, { NODE_ENV: 'development' });
+    delete process.env.WHATSAPP_APP_SECRET;
+
+    const { POST } = await import('@/app/api/webhook/whatsapp/route');
+    const response = await POST(
+      new Request('http://localhost/api/webhook/whatsapp', {
+        method: 'POST',
+        body: WA_BODY,
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(mocks.processInboundChatMessage).not.toHaveBeenCalled();
+    Object.assign(process.env, { NODE_ENV: previousNodeEnv });
+  });
+
   it('returns 401 for an invalid HMAC signature', async () => {
     const { POST } = await import('@/app/api/webhook/whatsapp/route');
     const response = await POST(

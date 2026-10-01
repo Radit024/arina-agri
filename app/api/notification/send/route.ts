@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import { sendDirectNotification } from '@/lib/server/notifications/channels';
+import { guardRequest } from '@/lib/server/guards/requestGuard';
+
+export const dynamic = 'force-dynamic';
+
+/** Batas keras ukuran body: pesan Telegram/WhatsApp tidak perlu besar. */
+const MAX_BODY_BYTES = 4_096;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
@@ -18,8 +24,16 @@ function validateSendPayload(body: unknown): { valid: boolean; message?: string 
     return { valid: false, message: 'Field "to" wajib diisi.' };
   }
 
+  if (body.to.length > 128) {
+    return { valid: false, message: 'Field "to" maksimal 128 karakter.' };
+  }
+
   if (!body.message || typeof body.message !== 'string') {
     return { valid: false, message: 'Field "message" wajib diisi.' };
+  }
+
+  if (body.message.length > 4_096) {
+    return { valid: false, message: 'Field "message" maksimal 4096 karakter.' };
   }
 
   return { valid: true };
@@ -27,7 +41,10 @@ function validateSendPayload(body: unknown): { valid: boolean; message?: string 
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const guarded = await guardRequest(request, { requireAuth: true, maxBodyBytes: MAX_BODY_BYTES });
+    if ('response' in guarded) return guarded.response;
+
+    const body = guarded.context.body;
     const validation = validateSendPayload(body);
     if (!validation.valid) {
       return NextResponse.json({ success: false, message: validation.message }, { status: 400 });

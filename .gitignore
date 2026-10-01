@@ -12,11 +12,9 @@
 
 # skills & ai
 .agents
-.docs
 .superpowers
 .claude
 .tmp
-docs
 
 
 # testing
@@ -49,19 +47,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-
-AUDIT_REVISI_MANAJEMEN_KEUANGAN.md
-
 # Microsoft Office Temporary Files
 ~$*
 .~lock.*
 
 # Playwright
-node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
-e2e

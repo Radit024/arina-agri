@@ -57,7 +57,6 @@ function StokViewHarness({ stockOutDialogOpen = true }: { stockOutDialogOpen?: b
       <StokView
         activeBatches={[]}
         alertBatches={[]}
-        backendOnline
         batchDialogOpen={false}
         batchForm={batchForm}
         closeConfirmId={null}

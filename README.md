@@ -30,13 +30,11 @@
 
 ## Status Aplikasi
 
-> Dokumentasi ini mencerminkan kondisi branch **`Reusable-UI`** per **22 Agustus 2026** — hasil refactor arsitektur komponen UI dan penghapusan backend Express legacy.
+> Dokumentasi ini mencerminkan kondisi repository per **2 Oktober 2026** — monolit Next.js App Router dengan design system reusable.
 
 Arina Agri berjalan sebagai **monolit Next.js App Router murni**. UI, autentikasi, API internal, integrasi AI, fetch cuaca, fetch berita, scraper harga, webhook, dan cron endpoint semuanya berada di dalam satu aplikasi Next.js — tidak ada lagi backend Express terpisah.
 
-Folder `backend/` (Express/Node.js lama) **sudah dihapus sepenuhnya** dari repository, termasuk dependency yang hanya dipakai olehnya (`axios`, `firebase-admin`, `mongodb`). Satu-satunya jalur development dan deployment sekarang adalah root project Next.js via `npm run dev`, `npm run build`, dan `npm run ci`.
-
-> ⚠️ **Catatan bersih-bersih**: folder `server/` (Express + MongoDB + Firebase Admin) masih tertinggal di repository sebagai kode yatim piatu — tidak direferensikan oleh script `package.json` manapun, dan dependency-nya (`mongodb`, `firebase-admin`, `axios`) sudah tidak ada lagi di `package.json`. Folder ini sebaiknya dihapus pada pembersihan berikutnya agar konsisten dengan status "monolit Next.js murni" di atas.
+Seluruh backend legacy sudah dihapus dari repository: `backend/` (Express/Node.js) dan `server/` (Express + MongoDB + Firebase Admin), beserta dependency yang hanya dipakai keduanya. Satu-satunya jalur development dan deployment sekarang adalah root project Next.js via `npm run dev`, `npm run build`, dan `npm run ci`.
 
 Status runtime saat ini:
 
@@ -46,7 +44,7 @@ Status runtime saat ini:
 | API utama | Aktif di `app/api/**/route.ts` |
 | Auth | Supabase Auth, dengan mock session otomatis saat `NODE_ENV=development`; middleware terpusat di `proxy.ts` (pengganti `middleware.ts` di Next.js 16) |
 | Database | Supabase/Postgres, migrasi terkelola di `supabase/migrations/**` |
-| Data fetching client | SWR (`lib/swr/fetcher.ts`) untuk data yang butuh cache/dedup/revalidate |
+| Data fetching client | `lib/api.ts` (typed API object per domain) dipanggil dari hooks di `hooks/` |
 | AI | Gemini untuk chat ensiklopedia (dengan markdown+KaTeX renderer terpisah) dan analisis laporan keuangan |
 | Cuaca | BMKG Open Data, lokasi manual/GPS, cache server |
 | Harga komoditas | Siskaperbapo Jawa Timur untuk Cabai Rawit Merah |
@@ -137,9 +135,9 @@ Sejak refactor "Reusable UI Foundation", komponen presentational lintas fitur di
 | `AppField` | `components/ui/AppField.tsx` | Wrapper field form standar (label, error, helper text) di atas komponen MUI. |
 | `MasterDataDialog` | `components/shared/forms/MasterDataDialog.tsx` | Dialog kelola data master (kategori, satuan, dll) yang dipakai bersama oleh Keuangan dan Stok — dulunya milik modul Stok saja. |
 | `FieldWithManageAction` | `components/shared/forms/FieldWithManageAction.tsx` | Field select dengan tombol aksi "kelola" di sampingnya (mis. buka `MasterDataDialog`). |
-| `MobileTabBar` | `components/shared/navigation/MobileTabBar.tsx` | Tab bar khusus mobile; `components/ui/MobileTabBar.tsx` kini hanya re-export kompatibilitas. |
+| `MobileTabBar` | `components/shared/navigation/MobileTabBar.tsx` | Tab bar khusus mobile. |
 
-Prinsip arsitektur: komponen di `components/ui` dan `components/shared` bersifat **presentational-only** — semua data, mutasi, validasi, dan state scenario/project tetap dipegang penuh oleh controller masing-masing fitur (`controllers/**`). Detail rencana refactor ada di `docs/superpowers/plans/2026-08-18-reusable-ui-foundation.md` dan `docs/superpowers/plans/2026-08-18-finance-cashflow-mobile.md`.
+Prinsip arsitektur: komponen di `components/ui` dan `components/shared` bersifat **presentational-only** — semua data, mutasi, validasi, dan state scenario/project tetap dipegang penuh oleh controller masing-masing fitur (`controllers/**`).
 
 ### Pengaturan, Navigasi, dan UX
 
@@ -176,7 +174,6 @@ arina-agri/
 +-- hooks/                # Hook data dan state client
 +-- lib/
 |   +-- server/           # Modul server-only untuk AI, BMKG, cron, news, notifikasi
-|   +-- swr/               # Fetcher SWR bersama (lib/swr/fetcher.ts)
 |   +-- finance/           # Kalkulasi RAB, cashflow, import/export Excel
 +-- messages/             # Terjemahan id/en untuk next-intl
 +-- supabase/
@@ -184,12 +181,14 @@ arina-agri/
 |   +-- config.toml
 +-- tests/                # Vitest, Testing Library, server/unit/component tests
 +-- e2e/                  # Playwright end-to-end smoke test
-+-- docs/                 # Deployment, database, audit, dan rencana refactor
++-- docs/                 # specs, plans, reports, deployment, database, audit
+|   +-- specs/            # Spesifikasi fitur (kabar pasar, notifikasi, harga, ...)
+|   +-- plans/            # Rencana implementasi yang belum selesai
+|   +-- reports/          # Hasil audit dan laporan evaluasi
 +-- public/               # Logo dan asset publik
++-- scripts/              # Tooling Node (i18n check, bundle report, smoke deploy)
 +-- proxy.ts              # Middleware Next.js 16 (proteksi route /dashboard dan /api)
 ```
-
-> **Legacy/orphaned**: folder `server/` (Express + MongoDB + Firebase Admin) masih ada di repo tapi tidak dipakai jalur manapun — lihat catatan di bagian [Status Aplikasi](#status-aplikasi).
 
 Alur data utama:
 
@@ -279,7 +278,7 @@ Migrasi schema dikelola di `supabase/migrations/` (urut kronologis, prefix times
 | `20260821000001_chat_input_channel_identities.sql` | Identitas channel input chat (WhatsApp/Telegram) |
 | `20260821000002_dashboard_performance_indexes.sql` | Indeks performa query dashboard |
 
-Referensi SQL tambahan (view/snapshot, bukan migrasi terurut) ada di `docs/database/`.
+`supabase/migrations/` adalah satu-satunya sumber SQL schema. Jalankan seluruh file di sana secara berurutan.
 
 Integrasi eksternal:
 
@@ -301,7 +300,7 @@ Integrasi eksternal:
 | Styling dan motion | Emotion, Framer Motion, CSS variables |
 | Form dan validasi | React Hook Form, Zod |
 | Auth dan data | Supabase JS |
-| Data fetching client | SWR (`lib/swr/fetcher.ts`) |
+| Data fetching client | `lib/api.ts` |
 | AI | `@google/generative-ai` |
 | Markdown & math rendering | `react-markdown`, `remark-gfm`, `remark-math`, `rehype-katex`, `katex` (khusus `ChatMarkdownRenderer`) |
 | Dokumen dan export | ExcelJS, jsPDF, jspdf-autotable, file-saver |
@@ -457,7 +456,7 @@ npx playwright install --with-deps
 npx playwright test
 ```
 
-> Folder `backend/` (Express legacy) sudah dihapus dari repository — tidak ada lagi jalur `cd backend && npm run dev`. Jika menemukan folder `server/` di root, folder itu adalah kode yatim piatu yang tidak dipakai jalur manapun (lihat [Status Aplikasi](#status-aplikasi)), bukan bagian dari alur development.
+> Semua backend legacy (`backend/` dan `server/`) sudah dihapus dari repository. Jika menemukan folder dengan nama serupa di root, folder itu bukan bagian dari alur development — lihat [Status Aplikasi](#status-aplikasi).
 
 ## Testing
 
@@ -537,9 +536,8 @@ Authorization: Bearer <CRON_SECRET>
 - Data cuaca memakai BMKG. Jika fetch gagal, UI menampilkan state error/fallback sesuai modul.
 - Data transaksi, kalender, dan stok memiliki mock fallback saat tidak ada session pengguna.
 - Development auth memakai mock user, sehingga untuk menguji multi-user atau policy RLS perlu menjalankan mode production-like dengan Supabase Auth asli.
-- `docs/database/dashboard-performance-indexes.sql` hanya berisi indeks, bukan schema lengkap; migrasi schema lengkap ada di `supabase/migrations/`.
-- Panggilan `/api/notification/schedule` untuk sesi Tamu (mock user) akan mengembalikan `401 Unauthorized` karena token Tamu bukan token Supabase asli — ini perilaku yang diketahui, dicatat di `docs/performance-audit-2026-08-21.md`.
-- Untuk audit performa terbaru (bundle size per halaman, temuan mobile, dan daftar perbaikan berprioritas), lihat `docs/performance-audit-2026-08-21.md`.
+- Panggilan `/api/notification/schedule` untuk sesi Tamu (mock user) akan mengembalikan `401 Unauthorized` karena token Tamu bukan token Supabase asli — ini perilaku yang diketahui, bukan bug.
+- Ringkasan ukuran bundle per halaman bisa dihasilkan ulang dengan `npm run perf:bundles`.
 
 <br>
 <img src="https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/grass.png" width="100%" alt="" />

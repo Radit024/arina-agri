@@ -28,7 +28,7 @@ export default function StokController() {
   }, []);
 
   const {
-    batches, mutations, summary, loading, backendOnline, buyers,
+    batches, mutations, summary, loading, buyers,
     grades, locations,
     addBatch, closeBatch, stockOut, refreshMutations,
     addGrade, renameGrade, removeGrade,
@@ -270,7 +270,6 @@ export default function StokController() {
     <StokView
       activeBatches={activeBatches}
       alertBatches={alertBatches}
-      backendOnline={backendOnline}
       batchDialogOpen={batchDialogOpen}
       batchForm={batchForm}
       closeConfirmId={closeConfirmId}

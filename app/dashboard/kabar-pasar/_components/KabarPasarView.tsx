@@ -16,7 +16,7 @@ import { PageHeader, PageShell } from '@/components/shared/page';
 import NewsCard, { NewsCardSkeleton } from '@/components/news/NewsCard';
 import { PriceTrendChart } from '@/components/dashboard/PriceCharts';
 import type { NewsArticle } from '@/lib/types/news';
-import { accentText, softBg, softHoverBg, softText } from '@/lib/themeColors';
+import { softBg, softText } from '@/lib/themeColors';
 import { StatusChip } from '@/components/ui/StatusBadge';
 
 type KabarPasarTranslator = (key: string, values?: Record<string, string | number>) => string;

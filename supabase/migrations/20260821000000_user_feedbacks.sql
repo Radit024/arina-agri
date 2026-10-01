@@ -1,5 +1,3 @@
--- docs/database/01-user-feedbacks.sql
-
 -- Buat tabel user_feedbacks
 CREATE TABLE IF NOT EXISTS public.user_feedbacks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -26,8 +26,6 @@ import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
 import InputAdornment from '@mui/material/InputAdornment';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
@@ -61,7 +59,7 @@ import { computeBatchPerformance } from '@/hooks/useStok';
 
 import StatusBadge, { type StatusIntent } from '@/components/ui/StatusBadge';
 import MetricCard, { type MetricCardIntent } from '@/components/ui/MetricCard';
-import MobileTabBar from '@/components/ui/MobileTabBar';
+import { MobileTabBar } from '@/components/shared/navigation/MobileTabBar';
 
 // Status badge
 type StockTranslator = ReturnType<typeof useTranslations>;
@@ -136,7 +134,6 @@ const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: The
 interface StokViewProps {
   activeBatches: ApiHarvestBatch[];
   alertBatches: ApiHarvestBatch[];
-  backendOnline: boolean;
   batchDialogOpen: boolean;
   batchForm: UseFormReturn<BatchFormInput, unknown, BatchFormOutput>;
   closeConfirmId: string | null;
@@ -195,7 +192,6 @@ interface StokViewProps {
 export default function StokView({
   activeBatches,
   alertBatches,
-  backendOnline,
   batchDialogOpen,
   batchForm,
   closeConfirmId,

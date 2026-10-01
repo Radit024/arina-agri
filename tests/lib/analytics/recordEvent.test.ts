@@ -49,7 +49,9 @@ describe('recordEvent', () => {
   });
 
   it('does not throw when getSupabaseAdmin itself throws', async () => {
-    getSupabaseAdmin.mockImplementation(() => {
+    // mockImplementation sekali pakai: test berikutnya butuh getSupabaseAdmin
+    // kembali normal, sedangkan mockReset di beforeEach hanya membersihkan call.
+    getSupabaseAdmin.mockImplementationOnce(() => {
       throw new Error('missing credentials');
     });
     const { recordEvent } = await import('@/lib/analytics/recordEvent');
@@ -60,5 +62,44 @@ describe('recordEvent', () => {
       eventType: 'page_view',
       eventName: 'page_view',
     })).resolves.toBeUndefined();
+  });
+
+  it('silently ignores FK violations (guest user not in users table)', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    insert.mockResolvedValue({
+      error: {
+        code: '23503',
+        message: 'insert or update on table "usage_events" violates foreign key constraint',
+      },
+    });
+    const { recordEvent } = await import('@/lib/analytics/recordEvent');
+
+    await expect(
+      recordEvent({
+        userId: '00000000-0000-4000-8000-000000000009',
+        feature: 'keuangan',
+        eventType: 'page_view',
+        eventName: 'test',
+      }),
+    ).resolves.toBeUndefined();
+    expect(consoleError).not.toHaveBeenCalled();
+
+    consoleError.mockRestore();
+  });
+
+  it('still logs other insert errors', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    insert.mockResolvedValue({ error: { code: '23505', message: 'duplicate key' } });
+    const { recordEvent } = await import('@/lib/analytics/recordEvent');
+
+    await recordEvent({
+      userId: 'user-1',
+      feature: 'keuangan',
+      eventType: 'action',
+      eventName: 'test',
+    });
+    expect(consoleError).toHaveBeenCalled();
+
+    consoleError.mockRestore();
   });
 });

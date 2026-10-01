@@ -162,7 +162,6 @@ function SummaryModernSection({
   labaRugi: number;
 }) {
   const isProfit = labaRugi >= 0;
-  const profitColor = isProfit ? 'success.main' : 'error.main';
   const badgeText = labaRugi > 0 ? 'SURPLUS (LABA)' : labaRugi < 0 ? 'DEFISIT (RUGI)' : 'IMPAS';
 
   return (

@@ -1,5 +1,4 @@
--- docs/sql/2026-06-09-grade-location-master.sql
--- Run in Supabase Dashboard → SQL Editor
+-- Jalankan lewat Supabase CLI: supabase db push
 
 CREATE TABLE IF NOT EXISTS stock_grades (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -145,7 +145,7 @@ export async function createFinanceCategory(
 
   if (error) {
     if (isSchemaMissingError(error)) {
-      throw new Error('Tabel finance_categories belum tersedia. Jalankan SQL docs/database/finance-categories.sql terlebih dahulu.');
+      throw new Error('Tabel finance_categories belum tersedia. Periksa migrasi di supabase/migrations/ sebelum memakai modul ini.');
     }
     throw new Error(error.message);
   }
@@ -196,7 +196,7 @@ export async function addFinanceCategoryAliases(
   const { data, error } = await query;
   if (error) {
     if (isSchemaMissingError(error)) {
-      throw new Error('Tabel finance_categories belum tersedia. Jalankan SQL docs/database/finance-categories.sql terlebih dahulu.');
+      throw new Error('Tabel finance_categories belum tersedia. Periksa migrasi di supabase/migrations/ sebelum memakai modul ini.');
     }
     throw new Error(error.message);
   }

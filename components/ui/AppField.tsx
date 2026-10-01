@@ -4,7 +4,6 @@ import * as React from 'react';
 import TextField, { type TextFieldProps } from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import InputAdornment from '@mui/material/InputAdornment';
-import { formatRupiah } from '@/lib/formatters';
 
 export type AppFieldType = 'text' | 'number' | 'currency' | 'date' | 'select';
 

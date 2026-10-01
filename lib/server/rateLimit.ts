@@ -1,10 +1,22 @@
 /**
  * Rate limit untuk endpoint yang menyentuh sumber daya mahal atau publik.
  *
- * Penyimpanan bawaan adalah Map in-memory. Ini cukup untuk satu instance Node,
- * tetapi TIDAK konsisten antar instance pada Vercel. Untuk production
- * multi-instance, ganti `createMemoryStore` dengan store Upstash Redis.
+ * Penyimpanan ada tiga backend, dipilih berurutan saat pertama kali dipakai:
+ *
+ * 1. Redis (Upstash REST) bila `UPSTASH_REDIS_REST_URL` dan
+ *    `UPSTASH_REDIS_REST_TOKEN` ter-set.
+ * 2. Supabase Postgres lewat RPC `hit_rate_limit` bila service role key tersedia.
+ *    Ini default production saat ini: latency satu round-trip per request yang
+ *    dilindungi, dan tabel rate limit mendapat write traffic yang biasanya kecil.
+ * 3. In-memory untuk local development dan unit test. TIDAK konsisten antar
+ *    instance Vercel, jadi hanya boleh dipakai tanpa credential.
+ *
+ * Rate limit hanya boleh dijalankan di satu tempat. Saat ini penerapannya ada
+ * di `proxy.ts`, sebelum handler dieksekusi. Proxy berjalan di Node.js runtime,
+ * jadi store berbasis HTTP (bukan socket) aman dipakai di sana.
  */
+
+import { getSupabaseAdmin } from '@/lib/server/supabaseAdmin';
 
 interface RateLimitRule {
   /** Jumlah permintaan maksimum dalam satu jendela waktu. */
@@ -21,7 +33,7 @@ interface RateLimitResult {
 }
 
 interface Store {
-  hit(key: string, rule: RateLimitRule): RateLimitResult;
+  hit(key: string, rule: RateLimitRule): Promise<RateLimitResult>;
 }
 
 const buckets = new Map<string, { count: number; resetAt: number }>();
@@ -35,7 +47,7 @@ function pruneExpired(now: number) {
 
 function createMemoryStore(): Store {
   return {
-    hit(key, rule) {
+    async hit(key, rule) {
       const now = Date.now();
       pruneExpired(now);
 
@@ -57,7 +69,162 @@ function createMemoryStore(): Store {
   };
 }
 
-const store = createMemoryStore();
+interface RedisPipelineResponse {
+  result?: unknown;
+}
+
+function createRedisStore(url: string, token: string): Store {
+  /**
+   * `INCR` lalu `PEXPIRE ... NX` dikirim sebagai satu pipeline agar hanya satu
+   * round-trip. `NX` membuat TTL hanya dipasang saat counter pertama dibuat;
+   * tanpa itu setiap request akan memperpanjang jendela tanpa batas.
+   */
+  async function runPipeline(key: string, rule: RateLimitRule): Promise<unknown[]> {
+    const commands = [
+      ['INCR', key],
+      ['PEXPIRE', key, String(rule.windowMs), 'NX'],
+    ];
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(commands),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upstash pipeline gagal dengan HTTP ${response.status}`);
+    }
+
+    const payload = (await response.json()) as RedisPipelineResponse;
+    return Array.isArray(payload.result) ? payload.result : [];
+  }
+
+  /** Mengembalikan nilai `TTL` (ms) yang dibaca dari pipeline terpisah. */
+  async function runPttl(key: string): Promise<number> {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([['PTTL', key]]),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return 0;
+    const payload = (await response.json()) as RedisPipelineResponse;
+    const ttl = Array.isArray(payload.result) ? payload.result[0] : payload.result;
+    const parsed = Number(ttl);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  return {
+    async hit(key, rule) {
+      const counter = Number((await runPipeline(key, rule))[0]);
+      if (!Number.isFinite(counter)) {
+        throw new Error('Respons Upstash tidak berisi counter yang valid.');
+      }
+
+      // Jendela yang tersisa dibaca dari Redis, bukan dari clock instance ini:
+      // jam tiap instance Vercel bisa berbeda beberapa detik.
+      const retryAfterMs = await runPttl(key);
+
+      return {
+        allowed: counter <= rule.max,
+        remaining: Math.max(0, rule.max - counter),
+        retryAfterMs,
+      };
+    },
+  };
+}
+
+interface SupabaseRpcRow {
+  hit_count?: unknown;
+  retry_after_ms?: unknown;
+}
+
+/**
+ * Store Postgres lewat RPC. `hit_rate_limit` melakukan satu INSERT dengan
+ * ON CONFLICT dalam satu pernyataan, jadi atomik tanpa lock eksplisit.
+ * Jendela dihitung dari clock database sehingga konsisten antar instance.
+ */
+function createSupabaseStore(): Store {
+  return {
+    async hit(key, rule) {
+      const supabase = getSupabaseAdmin();
+
+      // Housekeeping berjalan di sini: satu operasi kecil per hit. Menunda satu
+      // hit demi cleanup tidak sebanding dengan tabel yang tumbuh tanpa batas.
+      await supabase.rpc('purge_rate_limit_buckets');
+
+      const { data, error } = await supabase.rpc('hit_rate_limit', {
+        p_bucket_key: key,
+        p_window_ms: rule.windowMs,
+        p_max_hits: rule.max,
+      });
+
+      if (error) {
+        throw new Error(`RPC hit_rate_limit gagal: ${error.message}`);
+      }
+
+      const row = (Array.isArray(data) ? data[0] : null) as SupabaseRpcRow | null;
+      const counter = Number(row?.hit_count);
+      const retryAfterMs = Number(row?.retry_after_ms);
+
+      if (!Number.isFinite(counter)) {
+        throw new Error('Respons hit_rate_limit tidak berisi counter yang valid.');
+      }
+
+      return {
+        allowed: counter <= rule.max,
+        remaining: Math.max(0, rule.max - counter),
+        retryAfterMs: Number.isFinite(retryAfterMs) && retryAfterMs > 0 ? retryAfterMs : rule.windowMs,
+      };
+    },
+  };
+}
+
+function createStore(): Store {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (url && token) {
+    return createRedisStore(url, token);
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (supabaseUrl && serviceRoleKey) {
+    return createSupabaseStore();
+  }
+
+  return createMemoryStore();
+}
+
+let store: Store | null = null;
+
+function getStore(): Store {
+  if (!store) store = createStore();
+  return store;
+}
+
+/**
+ * True bila rate limit memakai store yang konsisten antar instance Vercel.
+ * False berarti in-memory: limit hanya berlaku per instance, jadi nilainya
+ * efektif `max x jumlah instance`.
+ */
+export function isRateLimitDistributed(): boolean {
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return true;
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  return Boolean(supabaseUrl && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
 
 /**
  * Aturan bawaan per path. Pers purposely dibuat ketat untuk endpoint yang
@@ -106,31 +273,26 @@ export function resolveClientKey(request: Request): string {
  * Mendaftarkan satu hit pada bucket tertentu. Dipakai oleh proxy yang sudah
  * memiliki pathname, token, dan aturan sehingga tidak perlu membuat Request.
  */
-export function hitRateLimit(
+export async function hitRateLimit(
   pathname: string,
   identity: string,
   rule: RateLimitRule,
-): { rule: RateLimitRule; result: RateLimitResult } {
-  return { rule, result: store.hit(`${pathname}|${identity}`, rule) };
-}
-
-/**
- * Rate limit dengan identitas pengguna bila token tersedia, supaya satu
- * pengguna tidak bisa menghabiskan jatah seluruh pengguna lain di IP yang sama.
- */
-export function checkRateLimit(
-  request: Request,
-  pathname: string,
-  userId: string | null,
-): { rule: RateLimitRule; result: RateLimitResult } | null {
-  const rule = getRateLimitRule(pathname);
-  if (!rule) return null;
-
-  const identity = userId ? `user:${userId}` : `ip:${resolveClientKey(request)}`;
-  return hitRateLimit(pathname, identity, rule);
+): Promise<{ rule: RateLimitRule; result: RateLimitResult }> {
+  const activeStore = getStore();
+  try {
+    const result = await activeStore.hit(`${pathname}|${identity}`, rule);
+    return { rule, result };
+  } catch (error) {
+    // Rate limiter tidak boleh membuat aplikasi mati total. Kalau store
+    // bermasalah, request diizinkan lewat supaya layanan tetap berfungsi.
+    // Memblokir semua traffic karena Redis down adalah kegagalan yang lebih buruk.
+    console.error('[rateLimit] Store bermasalah, request diizinkan:', error);
+    return { rule, result: { allowed: true, remaining: rule.max, retryAfterMs: 0 } };
+  }
 }
 
 /** Dipakai oleh unit test untuk Isolation antar skenario. */
 export function resetRateLimitStore() {
   buckets.clear();
+  store = null;
 }

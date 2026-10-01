@@ -50,11 +50,19 @@ function hasGuestSessionCookie(request: NextRequest): boolean {
   return request.cookies.get('arina_guest_session')?.value === '1';
 }
 
+interface RateLimitDecision {
+  limit: number;
+  remaining: number;
+  rejected: boolean;
+  retryAfterMs: number;
+}
+
 /**
  * Rate limit untuk endpoint publik atau yang menyentuh kuota pihak ketiga.
- * Dijalankan di proxy agar permintaan berlama-lama tertahan sebelum handler dan sebelum fetch keluar.
+ * Dijalankan di proxy agar permintaan berlama-lama tertahan sebelum handler dan
+ * sebelum fetch keluar. Satu-satunya tempat rate limit diterapkan.
  */
-function applyRateLimit(request: NextRequest, pathname: string): NextResponse | null {
+async function checkRateLimitForProxy(request: NextRequest, pathname: string): Promise<RateLimitDecision | null> {
   const rule = getRateLimitRule(pathname);
   if (!rule) return null;
 
@@ -62,54 +70,57 @@ function applyRateLimit(request: NextRequest, pathname: string): NextResponse | 
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
   const identity = token ? `user:${token.slice(0, 64)}` : `ip:${resolveClientKey(request)}`;
 
-  const { result } = hitRateLimit(pathname, identity, rule);
+  const { result } = await hitRateLimit(pathname, identity, rule);
 
-  if (result.allowed) {
-    const res = NextResponse.next();
-    res.headers.set('X-RateLimit-Limit', String(rule.max));
-    res.headers.set('X-RateLimit-Remaining', String(result.remaining));
-    return res;
-  }
-
-  const retryAfterSeconds = Math.max(1, Math.ceil(result.retryAfterMs / 1000));
-  return NextResponse.json(
-    {
-      success: false,
-      message: `Terlalu banyak permintaan. Coba lagi dalam ${retryAfterSeconds} detik.`,
-    },
-    {
-      status: 429,
-      headers: {
-        'Cache-Control': 'no-store',
-        'Retry-After': String(retryAfterSeconds),
-        'X-RateLimit-Limit': String(rule.max),
-        'X-RateLimit-Remaining': '0',
-      },
-    },
-  );
+  return {
+    limit: rule.max,
+    remaining: result.remaining,
+    rejected: !result.allowed,
+    retryAfterMs: result.retryAfterMs,
+  };
 }
 
-export function proxy(request: NextRequest) {
+function withRateLimitHeaders(response: NextResponse, decision: RateLimitDecision): NextResponse {
+  response.headers.set('X-RateLimit-Limit', String(decision.limit));
+  response.headers.set('X-RateLimit-Remaining', String(decision.rejected ? 0 : decision.remaining));
+  return response;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 0. Rate limit endpoint yang publik atau menyentuh kuota pihak ketiga
-  const limited = applyRateLimit(request, pathname);
-  if (limited) {
-    if (limited.status === 429) return limited;
-    // Lolos: teruskan dengan header sisa jatah, tanpa menghentikan alur.
-    const passthrough = NextResponse.next();
-    limited.headers.forEach((value, key) => passthrough.headers.set(key, value));
-    return passthrough;
+  const decision = await checkRateLimitForProxy(request, pathname);
+  if (decision?.rejected) {
+    const retryAfterSeconds = Math.max(1, Math.ceil(decision.retryAfterMs / 1000));
+    return withRateLimitHeaders(
+      NextResponse.json(
+        {
+          success: false,
+          message: `Terlalu banyak permintaan. Coba lagi dalam ${retryAfterSeconds} detik.`,
+        },
+        {
+          status: 429,
+          headers: {
+            'Cache-Control': 'no-store',
+            'Retry-After': String(retryAfterSeconds),
+          },
+        },
+      ),
+      decision,
+    );
   }
+
+  const proceed = () => (decision ? withRateLimitHeaders(NextResponse.next(), decision) : NextResponse.next());
 
   // 1. Allow public landing and auth pages
   if (PUBLIC_PAGES.has(pathname)) {
-    return NextResponse.next();
+    return proceed();
   }
 
   // 2. Allow public, cron, and webhook API routes
   if (isPublicApiRoute(pathname)) {
-    return NextResponse.next();
+    return proceed();
   }
 
   const isDev = process.env.NODE_ENV === 'development';
@@ -123,7 +134,7 @@ export function proxy(request: NextRequest) {
       loginUrl.searchParams.set('returnUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    return NextResponse.next();
+    return proceed();
   }
 
   // 4. Protect API routes (/api/*)
@@ -140,10 +151,10 @@ export function proxy(request: NextRequest) {
       );
     }
 
-    return NextResponse.next();
+    return proceed();
   }
 
-  return NextResponse.next();
+  return proceed();
 }
 
 export const middleware = proxy;

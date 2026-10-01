@@ -1,9 +1,16 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Dimock di level modul supaya store Supabase terikat ke mock ini sejak awal.
+const rpc = vi.fn();
+vi.mock('@/lib/server/supabaseAdmin', () => ({
+  getSupabaseAdmin: () => ({ rpc: (name: string, params?: unknown) => rpc(name, params) }),
+}));
+
 import {
   RATE_LIMIT_RULES,
-  checkRateLimit,
   getRateLimitRule,
   hitRateLimit,
+  isRateLimitDistributed,
   resetRateLimitStore,
   resolveClientKey,
 } from '@/lib/server/rateLimit';
@@ -60,59 +67,127 @@ describe('rate limit', () => {
     resetRateLimitStore();
   });
 
-  it('mengizinkan sampai batas maksimum', () => {
+  it('mengizinkan sampai batas maksimum', async () => {
     const rule = { max: 3, windowMs: 60_000 };
-    const results = [1, 2, 3].map(() => hitRateLimit('/api/test', 'user:a', rule).result);
+    const results = [];
+    for (let i = 0; i < 3; i += 1) {
+      results.push((await hitRateLimit('/api/test', 'user:a', rule)).result);
+    }
     expect(results.map((r) => r.allowed)).toEqual([true, true, true]);
     expect(results[2].remaining).toBe(0);
   });
 
-  it('menolak permintaan setelah batas terlampaui', () => {
+  it('menolak permintaan setelah batas terlampaui', async () => {
     const rule = { max: 2, windowMs: 60_000 };
-    hitRateLimit('/api/test', 'user:a', rule);
-    hitRateLimit('/api/test', 'user:a', rule);
-    const third = hitRateLimit('/api/test', 'user:a', rule);
+    await hitRateLimit('/api/test', 'user:a', rule);
+    await hitRateLimit('/api/test', 'user:a', rule);
+    const third = await hitRateLimit('/api/test', 'user:a', rule);
     expect(third.result.allowed).toBe(false);
     expect(third.result.retryAfterMs).toBeGreaterThan(0);
   });
 
-  it('memisahkan jatah antar identitas', () => {
+  it('memisahkan jatah antar identitas', async () => {
     const rule = { max: 1, windowMs: 60_000 };
-    expect(hitRateLimit('/api/test', 'user:a', rule).result.allowed).toBe(true);
-    expect(hitRateLimit('/api/test', 'user:a', rule).result.allowed).toBe(false);
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(false);
     // Pengguna lain tidak terpengaruh oleh jatah pengguna pertama.
-    expect(hitRateLimit('/api/test', 'user:b', rule).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'user:b', rule)).result.allowed).toBe(true);
   });
 
-  it('memisahkan jatah antar endpoint', () => {
+  it('memisahkan jatah antar endpoint', async () => {
     const rule = { max: 1, windowMs: 60_000 };
-    expect(hitRateLimit('/api/ai/gemini', 'user:a', rule).result.allowed).toBe(true);
-    expect(hitRateLimit('/api/location/search', 'user:a', rule).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/ai/gemini', 'user:a', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/location/search', 'user:a', rule)).result.allowed).toBe(true);
   });
 
-  it('memakai userId bila tersedia, bukan IP', () => {
-    const pathname = '/api/feedback';
-    const max = RATE_LIMIT_RULES[pathname].max;
-    for (let i = 0; i < max; i += 1) {
-      expect(checkRateLimit(makeRequest(), pathname, 'user-1')?.result.allowed).toBe(true);
-    }
-    expect(checkRateLimit(makeRequest(), pathname, 'user-1')?.result.allowed).toBe(false);
-    // Pengguna berbeda pada IP yang sama tetap punya jatah sendiri.
-    expect(checkRateLimit(makeRequest(), pathname, 'user-2')?.result.allowed).toBe(true);
-  });
-
-  it('memakai IP bila userId tidak tersedia', () => {
-    const pathname = '/api/feedback';
-    const max = RATE_LIMIT_RULES[pathname].max;
-    for (let i = 0; i < max; i += 1) {
-      expect(checkRateLimit(makeRequest('8.8.8.8'), pathname, null)?.result.allowed).toBe(true);
-    }
-    expect(checkRateLimit(makeRequest('8.8.8.8'), pathname, null)?.result.allowed).toBe(false);
+  it('memakai IP bila tidak ada identitas lain', async () => {
+    const rule = { max: 2, windowMs: 60_000 };
+    expect((await hitRateLimit('/api/test', 'ip:8.8.8.8', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'ip:8.8.8.8', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'ip:8.8.8.8', rule)).result.allowed).toBe(false);
     // IP berbeda tidak terpengaruh.
-    expect(checkRateLimit(makeRequest('9.9.9.9'), pathname, null)?.result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'ip:9.9.9.9', rule)).result.allowed).toBe(true);
+  });
+});
+
+describe('ketahanan store', () => {
+  beforeEach(() => {
+    resetRateLimitStore();
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
   });
 
-  it('mengembalikan null untuk endpoint tanpa aturan', () => {
-    expect(checkRateLimit(makeRequest(), '/api/news', null)).toBeNull();
+  it('meloloskan request ketika store tidak bisa dihubungi', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://redis.invalid.example';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    resetRateLimitStore();
+
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () => {
+      throw new Error('ECONNREFUSED');
+    }) as typeof fetch;
+
+    try {
+      const rule = { max: 1, windowMs: 60_000 };
+      // Rate limiter tidak boleh mematikan layanan: request tetap diizinkan.
+      expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+      expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+      resetRateLimitStore();
+    }
+  });
+
+  it('melaporkan apakah rate limit terdistribusi', () => {
+    // Tanpa credential apa pun: hanya in-memory, tidak konsisten antar instance.
+    expect(isRateLimitDistributed()).toBe(false);
+
+    // Hanya Supabase credential: tetap terdistribusi lewat RPC.
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    expect(isRateLimitDistributed()).toBe(true);
+
+    // Redis selalu diprioritaskan ketika keduanya tersedia.
+    process.env.UPSTASH_REDIS_REST_URL = 'https://redis.example';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token';
+    expect(isRateLimitDistributed()).toBe(true);
+
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    expect(isRateLimitDistributed()).toBe(false);
+  });
+});
+
+describe('store Supabase', () => {
+  beforeEach(() => {
+    rpc.mockReset();
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+    resetRateLimitStore();
+  });
+
+  it('menghitung counter lewat RPC dan menolak di atas batas', async () => {
+    let counter = 0;
+    rpc.mockImplementation(async (name: string) => {
+      if (name === 'purge_rate_limit_buckets') return { data: null, error: null };
+      counter += 1;
+      return { data: [{ hit_count: counter, retry_after_ms: 45_000 }], error: null };
+    });
+
+    const rule = { max: 2, windowMs: 60_000 };
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(false);
+  });
+
+  it('meloloskan request ketika RPC gagal', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'function does not exist' } });
+
+    const rule = { max: 1, windowMs: 60_000 };
+    // Migration belum dijalankan: aplikasi harus tetap bisa melayani traffic.
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
+    expect((await hitRateLimit('/api/test', 'user:a', rule)).result.allowed).toBe(true);
   });
 });

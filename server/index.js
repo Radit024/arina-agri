@@ -39,15 +39,15 @@ const calculateStatus = (batch) => {
   return 'aman';
 };
 
+// Health check hanya melaporkan liveness. Jangan pernah membocorkan status
+// konfigurasi (koneksi database, admin SDK aktif, API key terpasang) lewat
+// endpoint publik: itu memberi scanner peta gratis tentang permukaan attack.
 app.get('/api/health', (_req, res) => {
   res.json(
     response({
       status: 'ok',
       service: 'arina-agri-backend',
       time: nowIso(),
-      mongodbConnected: isMongoConnected(),
-      firebaseAdminConfigured: initFirebaseAdmin(),
-      geminiEnabled: Boolean(process.env.GEMINI_API_KEY),
     })
   );
 });

@@ -17,6 +17,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Menyembunyikan `X-Powered-By: Next.js` mengurangi informasi yang bisa
+  // dipakai scanner untuk memilih payload khusus versi framework tertentu.
+  poweredByHeader: false,
+
   // Tanpa ini,	dev server yang di-bind ke `localhost` akan menolak request yang
   // datang dari `127.0.0.1` (atau sebaliknya). Gejalanya sangat menyesatkan:
   // HTML tampil sempurna tapi React tidak pernah hydrate sehingga seluruh aplikasi

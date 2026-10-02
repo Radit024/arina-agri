@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from '@mui/material/styles';
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
@@ -15,12 +15,14 @@ import {
   type BmkgForecastResponse,
   type BmkgWarningsResponse,
   type NotificationScheduleConfig,
-  type LocationSearchResult,
 } from '@/lib/api';
 import { useLocale, useTranslations } from 'next-intl';
-
-const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
-const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
+import {
+  WEATHER_TELEGRAM_CONTACT_KEY,
+  WEATHER_WHATSAPP_PHONE_KEY,
+  scopedStorageKey,
+} from '@/lib/storageKeys';
+import { useCuacaoLocationSearch } from './useCuacaoLocationSearch';
 
 import { useAuth } from '@/context/AuthContext';
 import { useCalendar } from '@/hooks/useCalendar';
@@ -43,8 +45,27 @@ export function useCuacaController() {
     activeLocationLabel,
   } = useWeatherLocation();
 
-  const weatherWhatsappKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
-  const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
+  const {
+    gpsStatus,
+    gpsMessage,
+    setGpsStatus,
+    setGpsMessage,
+    locationQuery,
+    locationResults,
+    locationSearchStatus,
+    locationSearchError,
+    searchLocations,
+    handleUseGpsLocation,
+    handleLocationQueryChange,
+    handleSelectLocation,
+  } = useCuacaoLocationSearch({
+    t,
+    onLocationResolved: setGpsLocation,
+    onAttempted: () => setGpsAutoAttempted(true),
+  });
+
+  const weatherWhatsappKey = scopedStorageKey(WEATHER_WHATSAPP_PHONE_KEY, user?.id);
+  const weatherTelegramKey = scopedStorageKey(WEATHER_TELEGRAM_CONTACT_KEY, user?.id);
   const [storedWhatsapp, setStoredWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
   const [storedTelegram, setStoredTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
   const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('telegram');
@@ -72,15 +93,6 @@ export function useCuacaController() {
   const [scheduleReady, setScheduleReady] = useState(false);
   const [dbSchedule, setDbSchedule] = useState<NotificationScheduleConfig | null>(null);
 
-  const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [gpsMessage, setGpsMessage] = useState('');
-
-  // Pencarian lokasi manual: jalur keluar ketika GPS tidak tersedia.
-  const [locationQuery, setLocationQuery] = useState('');
-  const [locationResults, setLocationResults] = useState<LocationSearchResult[]>([]);
-  const [locationSearchStatus, setLocationSearchStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [locationSearchError, setLocationSearchError] = useState('');
-  const locationRequestIdRef = useRef(0);
   const [forecastData, setForecastData] = useState<BmkgForecastResponse | null>(null);
   const [warningsData, setWarningsData] = useState<BmkgWarningsResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
@@ -202,7 +214,7 @@ export function useCuacaController() {
     return () => {
       active = false;
     };
-  }, [gpsLocation, setGpsLocation, t]);
+  }, [gpsLocation, setGpsLocation, setGpsMessage, setGpsStatus, t]);
 
   useEffect(() => {
     let active = true;
@@ -425,139 +437,6 @@ export function useCuacaController() {
       setContactSaving(false);
     }
   };
-
-  const getGpsErrorMessage = useCallback((error: GeolocationPositionError) => {
-    if (error.code === 1) return t('gps.errors.permissionDenied');
-    if (error.code === 2) return t('gps.errors.unavailable');
-    if (error.code === 3) return t('gps.errors.timeout');
-    return error.message || t('gps.errors.generic');
-  }, [t]);
-
-  const getCurrentPosition = useCallback((options: PositionOptions) =>
-    new Promise<GeolocationPosition>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, options);
-    }), []);
-
-  const resolveGpsLocation = useCallback(async () => {
-    try {
-      return await getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 20000,
-        maximumAge: 0,
-      });
-    } catch (firstError) {
-      const geoError = firstError as GeolocationPositionError;
-      if (geoError.code !== 3) {
-        throw geoError;
-      }
-
-      return getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: 30000,
-        maximumAge: 600000,
-      });
-    }
-  }, [getCurrentPosition]);
-
-  const requestGpsLocation = useCallback(async () => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGpsStatus('error');
-      setGpsMessage(t('gps.errors.unsupported'));
-      return;
-    }
-
-    setGpsStatus('loading');
-    setGpsMessage(t('gps.messages.manualLoading'));
-
-    try {
-      const position = await resolveGpsLocation();
-      const latitude = Number(position.coords.latitude.toFixed(5));
-      const longitude = Number(position.coords.longitude.toFixed(5));
-      const accuracy = Number(position.coords.accuracy.toFixed(0));
-      let label = `GPS ${latitude}, ${longitude}`;
-      let adm4: string | undefined;
-
-      try {
-        const resolvedLocation = await locationApi.reverse({ lat: latitude, lon: longitude });
-        if (resolvedLocation && resolvedLocation.adm4) {
-          label = resolvedLocation.label;
-          adm4 = resolvedLocation.adm4;
-        } else if (resolvedLocation && resolvedLocation.label) {
-          // It resolved partially but no adm4 found
-          label = resolvedLocation.label;
-        }
-      } catch (err) {
-        console.warn('Reverse geocoding failed', err);
-      }
-
-      setGpsLocation({
-        latitude,
-        longitude,
-        accuracy,
-        label,
-        adm4,
-      });
-      setGpsStatus('success');
-      setGpsMessage(t('gps.messages.gpsActive', { label }));
-      setGpsAutoAttempted(true);
-    } catch (error) {
-      const geoError = error as GeolocationPositionError;
-      setGpsStatus('error');
-      setGpsMessage(getGpsErrorMessage(geoError));
-      setGpsAutoAttempted(true);
-    }
-  }, [getGpsErrorMessage, resolveGpsLocation, setGpsAutoAttempted, setGpsLocation, t]);
-
-  const handleUseGpsLocation = () => {
-    void requestGpsLocation();
-  };
-
-  const handleLocationQueryChange = (value: string) => {
-    setLocationQuery(value);
-    if (!value.trim()) {
-      setLocationResults([]);
-      setLocationSearchStatus('idle');
-      setLocationSearchError('');
-      locationRequestIdRef.current += 1;
-    }
-  };
-
-  const searchLocations = useCallback(async (query: string) => {
-    const trimmed = query.trim();
-    if (trimmed.length < 3) return;
-
-    locationRequestIdRef.current += 1;
-    const requestId = locationRequestIdRef.current;
-    setLocationSearchStatus('loading');
-    setLocationSearchError('');
-
-    try {
-      const results = await locationApi.search({ query: trimmed, limit: 6 });
-      if (requestId !== locationRequestIdRef.current) return;
-      setLocationResults(results);
-      setLocationSearchStatus('idle');
-    } catch (error: unknown) {
-      if (requestId !== locationRequestIdRef.current) return;
-      setLocationResults([]);
-      setLocationSearchStatus('error');
-      setLocationSearchError(error instanceof Error ? error.message : t('location.searchError'));
-    }
-  }, [t]);
-
-  const handleSelectLocation = useCallback((selected: LocationSearchResult) => {
-    setGpsLocation({
-      latitude: selected.latitude,
-      longitude: selected.longitude,
-      accuracy: 0,
-      adm4: selected.adm4,
-      label: selected.label,
-    });
-    setGpsStatus('success');
-    setGpsMessage(t('gps.messages.gpsActive', { label: selected.label }));
-    setGpsAutoAttempted(true);
-    setLocationResults([]);
-    setLocationQuery('');
-  }, [setGpsAutoAttempted, setGpsLocation, t]);
 
   const handleTestNotification = async () => {
     const targetContact = (savedContact || contactValue).trim();

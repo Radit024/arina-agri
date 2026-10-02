@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useFinanceProjects } from '@/hooks/useFinanceProjects';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import type { ApiFinanceProject } from '@/lib/api';
+import { SELECTED_FINANCE_PROJECT_KEY } from '@/lib/storageKeys';
 
 type FinanceProjectSelectionInput = {
   activeProjects: ApiFinanceProject[];
@@ -44,7 +45,7 @@ export function resolveFinanceProjectSelection({
 export function useFinanceProjectController() {
   const projectState = useFinanceProjects();
   const [selectedProjectId, setSelectedProjectId] = useLocalStorage<string | null>(
-    'arina-selected-finance-project',
+    SELECTED_FINANCE_PROJECT_KEY,
     null,
   );
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);

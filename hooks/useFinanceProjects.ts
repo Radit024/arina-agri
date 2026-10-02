@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSessionStorage from '@/hooks/useSessionStorage';
 import { financeProjectApi, type ApiFinanceProject } from '@/lib/api';
+import { SELECTED_FINANCE_PROJECT_KEY } from '@/lib/storageKeys';
 
 type ProjectDraft = Omit<ApiFinanceProject, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -103,9 +104,9 @@ export function useFinanceProjects() {
     try {
       if (typeof window !== 'undefined') {
         const userId = user?.id ?? 'guest';
-        const currentSelected = window.localStorage.getItem('arina-selected-finance-project');
+        const currentSelected = window.localStorage.getItem(SELECTED_FINANCE_PROJECT_KEY);
         if (currentSelected && (currentSelected === id || currentSelected.includes(id))) {
-          window.localStorage.removeItem('arina-selected-finance-project');
+          window.localStorage.removeItem(SELECTED_FINANCE_PROJECT_KEY);
         }
         window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-${id}`);
         window.sessionStorage.removeItem(`arina-scenario-rab-${userId}-guest-proj-${id}`);

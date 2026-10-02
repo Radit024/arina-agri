@@ -11,9 +11,11 @@ import useLocalStorage from '@/hooks/useLocalStorage';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeMode } from '@/context/ThemeContext';
 import { profileApi } from '@/lib/api';
-
-const WEATHER_WHATSAPP_PHONE_KEY = 'arina-weather-whatsapp-phone';
-const WEATHER_TELEGRAM_CONTACT_KEY = 'arina-weather-telegram-contact';
+import {
+  WEATHER_TELEGRAM_CONTACT_KEY,
+  WEATHER_WHATSAPP_PHONE_KEY,
+  scopedStorageKey,
+} from '@/lib/storageKeys';
 
 export type LanguageMode = 'id' | 'en';
 
@@ -54,8 +56,8 @@ export function useSettingsModalController() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [languageMode, setLanguageMode] = useState<LanguageMode>(locale as LanguageMode);
 
-  const weatherPhoneKey = `${WEATHER_WHATSAPP_PHONE_KEY}-${user?.id || 'guest'}`;
-  const weatherTelegramKey = `${WEATHER_TELEGRAM_CONTACT_KEY}-${user?.id || 'guest'}`;
+  const weatherPhoneKey = scopedStorageKey(WEATHER_WHATSAPP_PHONE_KEY, user?.id);
+  const weatherTelegramKey = scopedStorageKey(WEATHER_TELEGRAM_CONTACT_KEY, user?.id);
   const [weatherWhatsappPhone, setWeatherWhatsappPhone] = useLocalStorage<string>(weatherPhoneKey, '');
   const [, setWeatherTelegramContact] = useLocalStorage<string>(weatherTelegramKey, '');
 

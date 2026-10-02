@@ -9,11 +9,13 @@ const generateContentMock = vi.fn(async (prompt: string) => ({
 }));
 
 vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
-    getGenerativeModel: vi.fn(() => ({
-      generateContent: generateContentMock,
-    })),
-  })),
+  GoogleGenerativeAI: vi.fn().mockImplementation(function GoogleGenerativeAI(this: unknown) {
+    return {
+      getGenerativeModel: vi.fn(() => ({
+        generateContent: generateContentMock,
+      })),
+    };
+  }),
 }));
 
 describe('generateFinancialAnalysis finance planning context', () => {

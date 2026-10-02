@@ -11,7 +11,7 @@ const MobileBottomNav = dynamic(() => import('@/components/shared/MobileBottomNa
   ssr: false,
 });
 
-const SettingsModal = dynamic(() => import('@/components/shared/SettingsModal'), {
+const SettingsModal = dynamic(() => import('@/controllers/pengaturan/SettingsModal'), {
   ssr: false,
 });
 

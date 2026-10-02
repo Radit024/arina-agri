@@ -103,7 +103,7 @@ Sebuah komponen di `components/ui/` itu primitive yang sah HANYA bila:
 2. **Mengunci** token atau perilaku (mis. tinggi sentuh 44px, status palette, auto-disable saat loading), bukan sekadar meneruskan props ke MUI.
 
 Kalau hanya 1 pemakai → itu helper lokal. Pindahkan ke folder fitur atau hapus; jangan simpan sebagai design system.
-Kalau mengunci hal yang sama dengan komponen lain → gabungkan. Contoh: `ContentState` sudah mencakup `state="empty"`, sehingga `EmptyState` tidak perlu ada.
+Kalau mengunci hal yang sama dengan komponen lain → gabungkan. Contoh nyata: `components/ui/Badge.tsx` dan `components/ui/StatusBadge.tsx` sama-sama badge status; sebelum menambah yang ketiga, pastikan belum ada yang mengunci hal sama.
 Wrapper yang hanya meneruskan props tanpa mengunci apa pun → jangan dibuat. Pakai MUI langsung + theme.
 
 Token default jangan di-hardcode di `sx` wrapper. Pindahkan ke `MuiXxx.styleOverrides` di `lib/theme.ts` supaya theme jadi satu-satunya sumber.
@@ -179,13 +179,14 @@ Item berikut belum dirapikan. Saat menyentuh salah satunya, sekalian perbaiki; j
 
 | File | Masalah |
 | :--- | :--- |
-| `app/dashboard/keuangan/_components/KeuanganView.tsx` (~1850) | Tab `buku-besar` saja ~980 baris. Five tab lain sudah terpisah. |
+| `app/dashboard/keuangan/_components/FinanceLedgerView.tsx` (~1300) | Sudah dipisah dari shell, tapi masih satu tanggung jawab besar. Pecah jadi tabel + panel distribusi. |
 | `app/dashboard/stok/_components/StokView.tsx` (~1230) | Menerima ~53 props. |
 | `app/dashboard/ensiklopedia/_components/EnsiklopediaView.tsx` (~1100) | Belum dipetakan per section. |
-| `components/shared/SettingsModal.tsx` (~795) | Punya `useState`/`useEffect`/`useRouter` di dalam `components/`. Berpindah ke `controllers/pengaturan/`. |
 | `app/dashboard/cuaca/_components/CuacaView.tsx` (~780) | Belum dipetakan per section. |
 | `controllers/cuaca/useCuacaController.tsx` (~710) | Pecah per concern: cuaca, lokasi, notifikasi, kanal WhatsApp. |
 | `lib/finance/rabExcel.ts` (~956) | Belum dievaluasi. |
-| `components/ui/Badge.tsx`, `Card.tsx` | 1 pemakai — belum diputuskan primitive atau dihapus. |
+| `components/ui/Button.tsx` vs `lib/theme.ts` | Wrapper meng-hardcode `fontWeight: 700, fontSize: 1rem, borderRadius: 2`, sementara `MuiButton.styleOverrides` mengunci `fontWeight: 600, borderRadius: 8`. Dua sumber untuk nilai yang sama. Pilih salah satu sebelum lanjut. |
+| `components/ui/Badge.tsx` vs `StatusBadge.tsx` | Keduanya badge status; `StatusBadge` lebih lengkap (intent, mode, touch target 44px). Sepakatkan ke satu. |
+| `components/ui/Card.tsx` | 1 pemakai (`DashboardHomeView`) padahal sudah mengunci token kartu. View lain masih merakit `<Card>` MUI mentah. |
 <!-- END:verification -->
 

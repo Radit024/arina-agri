@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import Skeleton from '@mui/material/Skeleton';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -30,7 +32,6 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { PieChart } from '@mui/x-charts/PieChart';
 import { alpha, type Theme } from '@mui/material/styles';
 
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -53,6 +54,13 @@ import EmptyState from '@/components/ui/EmptyState';
 import UnclassifiedTransactionsBanner from './UnclassifiedTransactionsBanner';
 import { formatDateLong, formatDateShort, formatRupiah } from '@/lib/formatters';
 import type { UseKeuanganControllerResult } from '@/controllers/keuangan/useKeuanganController';
+
+// Chart dimuat di sisi klien saja: MUI x-charts menyentuh canvas yang tidak
+// ada saat SSR.
+const PieChart = dynamic(() => import('@mui/x-charts/PieChart').then((m) => ({ default: m.PieChart })), {
+  ssr: false,
+  loading: () => <Skeleton variant="rectangular" width={300} height={200} sx={{ borderRadius: 2 }} />,
+});
 
 export type FinanceLedgerViewProps = Pick<
   UseKeuanganControllerResult,

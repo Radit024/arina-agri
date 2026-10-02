@@ -18,6 +18,7 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
   const locale = useLocale();
   const theme = useTheme();
   const [hoveredRegion, setHoveredRegion] = useState<{ name: string; price: number | null } | null>(null);
+  const [hoveredGeoKey, setHoveredGeoKey] = useState<string | null>(null);
   const currentDate = useMemo(() => {
     return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'id-ID', {
       dateStyle: 'medium',
@@ -98,14 +99,16 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
           <Geographies geography="/jatim-kab.geojson">
             {({ geographies }) =>
               geographies.map((geo) => {
-                const geoData = getDataForGeo(geo.properties.NAME_2);
+                const geoName = geo.properties?.NAME_2 ?? '';
+                const geoData = getDataForGeo(geoName);
+                const isHovered = hoveredGeoKey === geo.rsmKey;
                 return (
                   <Tooltip
                     key={geo.rsmKey}
                     title={
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {geo.properties.NAME_2}
+                          {geoName}
                         </Typography>
                         <Typography variant="caption">
                           {geoData ? formatRupiah(geoData.price) : t('noData')}
@@ -120,18 +123,24 @@ const EastJavaMap: React.FC<EastJavaMapProps> = ({ data, averagePrice }) => {
                       fill={getColor(geoData?.price)}
                       stroke={theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.92) : '#ffffff'}
                       strokeWidth={0.6}
+                      tabIndex={-1}
                       style={{
-                        default: { outline: 'none', transition: 'opacity 0.15s' },
-                        hover: { opacity: 0.75, outline: 'none', cursor: 'pointer' },
-                        pressed: { opacity: 0.6, outline: 'none' },
+                        outline: 'none',
+                        transition: 'opacity 0.15s',
+                        opacity: isHovered ? 0.75 : 1,
+                        cursor: 'pointer',
                       }}
-                      onMouseEnter={() =>
+                      onMouseEnter={() => {
+                        setHoveredGeoKey(geo.rsmKey);
                         setHoveredRegion({
-                          name: geo.properties.NAME_2,
+                          name: geoName,
                           price: geoData?.price ?? null,
-                        })
-                      }
-                      onMouseLeave={() => setHoveredRegion(null)}
+                        });
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredGeoKey(null);
+                        setHoveredRegion(null);
+                      }}
                     />
                   </Tooltip>
                 );

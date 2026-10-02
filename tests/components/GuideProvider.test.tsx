@@ -301,10 +301,9 @@ describe('GuideProvider', () => {
     const OriginalMutationObserver = window.MutationObserver;
     const observe = vi.fn();
     const disconnect = vi.fn();
-    const mutationObserverConstructor = vi.fn().mockImplementation(() => ({
-      observe,
-      disconnect,
-    }));
+    const mutationObserverConstructor = vi.fn().mockImplementation(function MutationObserver(this: unknown) {
+      return { observe, disconnect };
+    });
 
     Object.defineProperty(window, 'matchMedia', {
       writable: true,

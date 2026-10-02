@@ -1,7 +1,8 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import type { Route } from 'next';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -40,7 +41,7 @@ import { softBg, softHoverBg, softText } from '@/lib/themeColors';
 const DRAWER_WIDTH_OPEN = 280;
 const DRAWER_WIDTH_CLOSED = 88;
 
-const navItems = [
+const navItems: { key: string; icon: ReactNode; path: Route; sectionStart?: boolean }[] = [
   { key: 'dashboard', icon: <DashboardOutlinedIcon />, path: '/dashboard' },
   { key: 'cuaca', icon: <CloudOutlinedIcon />, path: '/dashboard/cuaca' },
   { key: 'kabarPasar', icon: <NewspaperIcon />, path: '/dashboard/kabar-pasar' },
@@ -77,7 +78,7 @@ export default function Sidebar() {
     router.prefetch('/dashboard/pengaturan');
   }, [router]);
 
-  const isActive = (path: string) => {
+  const isActive = (path: Route) => {
     if (path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(path);
   };

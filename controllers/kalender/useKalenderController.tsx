@@ -9,7 +9,6 @@ import { useWeatherRiskSignal } from '@/hooks/useWeatherRiskSignal';
 import type { ApiCalendarEvent } from '@/lib/api';
 import { normalizeDateInputValue } from '@/lib/formatters';
 import { trackPageView } from '@/lib/analytics/trackPageView';
-import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
 import { getEventSchema, type EventFormData } from '@/lib/validators/eventSchema';
 
 type CalendarMessages = {
@@ -20,7 +19,7 @@ type CalendarMessages = {
   };
 };
 
-export default function KalenderController() {
+export function useKalenderController() {
   const t = useTranslations('Calendar');
 
   useEffect(() => {
@@ -105,35 +104,33 @@ export default function KalenderController() {
     .sort((a, b) => a.tanggal.localeCompare(b.tanggal))
     .slice(0, 7);
 
-  return (
-    <KalenderView
-      calendarCells={calendarCells}
-      control={form.control}
-      currentDate={currentDate}
-      dayNames={messages?.Calendar?.daysShort || []}
-      dialogOpen={dialogOpen}
-      editingEventId={editingEventId}
-      errors={form.formState.errors}
-      getDateStr={getDateStr}
-      getEventsForDate={getEventsForDate}
-      handleDelete={handleDelete}
-      handleSubmit={form.handleSubmit}
-      jenisLabels={messages?.Calendar?.jenisLabels || {}}
-      loading={loading}
-      month={month}
-      monthNames={messages?.Calendar?.months || []}
-      onRetry={reload}
-      onSubmit={onSubmit}
-      openAddDialog={openAddDialog}
-      openEditDialog={openEditDialog}
-      error={error}
-      setCurrentDate={setCurrentDate}
-      setDialogOpen={setDialogOpen}
-      todayStr={todayStr}
-      upcomingEvents={upcomingEvents}
-      weatherPlanningNote={weatherPlanningNote}
-      weatherWarningMessage={weatherWarningMessage}
-      year={year}
-    />
-  );
+  return {
+    calendarCells,
+    control: form.control,
+    currentDate,
+    dayNames: messages?.Calendar?.daysShort || [],
+    dialogOpen,
+    editingEventId,
+    errors: form.formState.errors,
+    getDateStr,
+    getEventsForDate,
+    handleDelete,
+    handleSubmit: form.handleSubmit,
+    jenisLabels: messages?.Calendar?.jenisLabels || {},
+    loading,
+    month,
+    monthNames: messages?.Calendar?.months || [],
+    onRetry: reload,
+    onSubmit,
+    openAddDialog,
+    openEditDialog,
+    error,
+    setCurrentDate,
+    setDialogOpen,
+    todayStr,
+    upcomingEvents,
+    weatherPlanningNote,
+    weatherWarningMessage,
+    year,
+  };
 }

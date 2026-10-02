@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type MouseEvent } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import type { Route } from 'next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Dialog from '@mui/material/Dialog';
@@ -61,7 +62,7 @@ type UserWithIdentities = {
 export default function SettingsModal() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
+  const pathname = usePathname() as Route;
   const t = useTranslations('Settings');
   const locale = useLocale();
   

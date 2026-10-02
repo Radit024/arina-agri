@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import { useNews } from '@/hooks/useNews';
 
 export const KABAR_PASAR_ITEMS_PER_PAGE = 16;
@@ -15,10 +16,11 @@ export const KABAR_PASAR_CATEGORIES = [
 ];
 
 export function useKabarPasarController() {
+  const t = useTranslations('KabarPasar');
   const [page, setPage] = useState(1);
   const [activeCategory, setActiveCategory] = useState('');
 
-  const { articles, total, isLoading, error, refetch } = useNews({
+  const { articles, total, isLoading, error, refetch: onRefetch } = useNews({
     limit: KABAR_PASAR_ITEMS_PER_PAGE,
     page,
     category: activeCategory,
@@ -26,12 +28,12 @@ export function useKabarPasarController() {
 
   const totalPages = Math.ceil(total / KABAR_PASAR_ITEMS_PER_PAGE);
 
-  const handlePageChange = (_: ChangeEvent<unknown>, value: number) => {
+  const onPageChange = (_: ChangeEvent<unknown>, value: number) => {
     setPage(value);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCategoryChange = (value: string) => {
+  const onCategoryChange = (value: string) => {
     setActiveCategory(value);
     setPage(1);
   };
@@ -44,10 +46,11 @@ export function useKabarPasarController() {
     isLoading,
     itemsPerPage: KABAR_PASAR_ITEMS_PER_PAGE,
     page,
-    refetch,
+    t,
     total,
     totalPages,
-    handleCategoryChange,
-    handlePageChange,
+    onCategoryChange,
+    onPageChange,
+    onRefetch,
   };
 }

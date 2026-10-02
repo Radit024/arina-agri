@@ -44,7 +44,7 @@ Status runtime saat ini:
 | API utama | Aktif di `app/api/**/route.ts` |
 | Auth | Supabase Auth, dengan mock session otomatis saat `NODE_ENV=development`; middleware terpusat di `proxy.ts` (pengganti `middleware.ts` di Next.js 16) |
 | Database | Supabase/Postgres, migrasi terkelola di `supabase/migrations/**` |
-| Data fetching client | `lib/api.ts` (typed API object per domain) dipanggil dari hooks di `hooks/` |
+| Data fetching client | `lib/api` (typed API object per domain) dipanggil dari hooks di `hooks/` |
 | AI | Gemini untuk chat ensiklopedia (dengan markdown+KaTeX renderer terpisah) dan analisis laporan keuangan |
 | Cuaca | BMKG Open Data, lokasi manual/GPS, cache server |
 | Harga komoditas | Siskaperbapo Jawa Timur untuk Cabai Rawit Merah |
@@ -175,10 +175,12 @@ arina-agri/
 |   |                     #   hanya stub yang memanggil use<Feature>Controller() lalu
 |   |                     #   merender View. Logika tidak pernah ada di *.tsx stub.
 |   +-- keuangan/, stok/  # Modul dengan logic terbanyak
-+-- hooks/                # Hook data client (SWR-free; memanggil lib/api.ts)
++-- hooks/                # Hook data client (memanggil lib/api)
 +-- lib/
 |   +-- server/           # Modul server-only untuk AI, BMKG, cron, news, notifikasi
 |   +-- finance/          # Kalkulasi RAB, cashflow, import/export Excel
+|   +-- api/              # Lapisan akses data, dipecah per domain. Semua impor
+|   |                     #   tetap lewat `@/lib/api` (barrel di api/index.ts).
 |   +-- validators/       # Skema zod untuk form (dipakai View + Controller)
 +-- messages/             # Terjemahan id/en untuk next-intl
 +-- supabase/
@@ -208,7 +210,7 @@ Alur data utama:
 ```text
 UI Dashboard
   -> controllers/hooks
-  -> lib/api.ts atau Supabase client
+  -> lib/api atau Supabase client
   -> app/api/** route handlers
   -> lib/server/**
   -> Supabase, Gemini, BMKG, Siskaperbapo, Google News RSS, WhatsApp/Telegram
@@ -313,7 +315,7 @@ Integrasi eksternal:
 | Styling dan motion | Emotion, Framer Motion, CSS variables |
 | Form dan validasi | React Hook Form, Zod |
 | Auth dan data | Supabase JS |
-| Data fetching client | `lib/api.ts` |
+| Data fetching client | `lib/api` |
 | AI | `@google/generative-ai` |
 | Markdown & math rendering | `react-markdown`, `remark-gfm`, `remark-math`, `rehype-katex`, `katex` (khusus `ChatMarkdownRenderer`) |
 | Dokumen dan export | ExcelJS, jsPDF, jspdf-autotable, file-saver |

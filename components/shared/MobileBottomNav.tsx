@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
 import Alert from '@mui/material/Alert';
 import BottomNavigation from '@mui/material/BottomNavigation';
@@ -32,7 +33,7 @@ import MobileFeatureSheet, {
 interface MobileNavItem {
   key: string;
   icon: ReactNode;
-  path: string | null;
+  path: Route | null;
   opensSheet?: boolean;
 }
 
@@ -75,11 +76,11 @@ const prefetchPaths = Array.from(
   new Set([
     ...mobileNavItems
       .map((item) => item.path)
-      .filter((path): path is string => Boolean(path)),
+      .filter((path): path is Route => Boolean(path)),
     ...mobileFeatureGroups
       .flatMap((group) => group.items)
       .map((item) => item.path)
-      .filter((path): path is string => Boolean(path)),
+      .filter((path): path is Route => Boolean(path)),
   ])
 );
 
@@ -114,7 +115,7 @@ export default function MobileBottomNav() {
     focusLainnyaButton();
   };
 
-  const navigateToPath = (path: string | null) => {
+  const navigateToPath = (path: Route | null) => {
     if (!path) {
       setShowUnavailableToast(true);
       return;

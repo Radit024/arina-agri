@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import type { Route } from 'next';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Divider from '@mui/material/Divider';
@@ -14,7 +15,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 export interface MobileFeatureItem {
   key: string;
   icon: ReactNode;
-  path: string | null;
+  path: Route | null;
   action?: 'guide' | 'settings' | 'feedback';
 }
 

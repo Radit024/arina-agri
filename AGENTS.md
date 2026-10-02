@@ -179,13 +179,11 @@ Item berikut belum dirapikan. Saat menyentuh salah satunya, sekalian perbaiki; j
 
 | File | Masalah |
 | :--- | :--- |
-| `app/dashboard/keuangan/_components/FinanceLedgerView.tsx` (~1300) | Sudah dipisah dari shell, tapi masih satu tanggung jawab besar. Pecah jadi tabel + panel distribusi. |
 | `app/dashboard/stok/_components/StokView.tsx` (~1230) | Menerima ~53 props. |
 | `app/dashboard/ensiklopedia/_components/EnsiklopediaView.tsx` (~1100) | Belum dipetakan per section. |
 | `app/dashboard/cuaca/_components/CuacaView.tsx` (~780) | Belum dipetakan per section. |
-| `controllers/cuaca/useCuacaController.tsx` (~710) | Pecah per concern: cuaca, lokasi, notifikasi, kanal WhatsApp. |
-| `lib/finance/rabExcel.ts` (~956) | Belum dievaluasi. |
-| `controllers/cuaca/useCuacaController.tsx` | `WEATHER_WHATSAPP_PHONE_KEY` dideklarasikan juga di `controllers/pengaturan/useSettingsModalController.ts`. Kalau prefix berubah di satu, notifikasi cuaca diam-diam membaca key berbeda. Ekstrak ke satu modul. |
+| `controllers/cuaca/useCuacaController.tsx` (~605) | Lokasi sudah terpisah; sisa concern yang belum dipisah: notifikasi, jadwal, kanal WhatsApp. |
+| `tests/components/KeuanganView.test.tsx` (~990) | Masih satu file untuk seluruh keuangan. |
 <!-- END:verification -->
 
 ## Token visual ada di theme, bukan di wrapper

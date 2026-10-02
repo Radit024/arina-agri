@@ -33,7 +33,7 @@ import { useAuth } from '@/context/AuthContext';
 import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 import { useGuide } from '@/components/shared/guide/GuideProvider';
-import FeedbackModal from '@/components/shared/FeedbackModal';
+import FeedbackModal from '@/controllers/feedback/FeedbackModal';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import { softBg, softHoverBg, softText } from '@/lib/themeColors';
 

@@ -9,7 +9,7 @@ import type {
   BatchFormOutput,
   StockOutFormInput,
   StockOutFormOutput,
-} from '@/app/dashboard/stok/_lib/stockSchemas';
+} from '@/lib/validators/stockSchemas';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,

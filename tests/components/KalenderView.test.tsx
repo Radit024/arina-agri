@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useForm } from 'react-hook-form';
 import { describe, expect, it, vi } from 'vitest';
 import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
-import type { EventFormData } from '@/app/dashboard/kalender/_lib/eventSchema';
+import type { EventFormData } from '@/lib/validators/eventSchema';
 import type { ApiCalendarEvent } from '@/lib/api';
 
 vi.mock('next-intl', () => ({

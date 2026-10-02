@@ -10,7 +10,7 @@ import type { ApiCalendarEvent } from '@/lib/api';
 import { normalizeDateInputValue } from '@/lib/formatters';
 import { trackPageView } from '@/lib/analytics/trackPageView';
 import KalenderView from '@/app/dashboard/kalender/_components/KalenderView';
-import { getEventSchema, type EventFormData } from '@/app/dashboard/kalender/_lib/eventSchema';
+import { getEventSchema, type EventFormData } from '@/lib/validators/eventSchema';
 
 type CalendarMessages = {
   Calendar?: {

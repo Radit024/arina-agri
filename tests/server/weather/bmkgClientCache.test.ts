@@ -12,7 +12,7 @@ describe('BMKG forecast cache', () => {
 
   it('keeps the requested manual location label when reusing cached forecast data', async () => {
     vi.stubEnv('NODE_ENV', 'development');
-    const fixture = await import('../../fixtures/bmkgForecast.json');
+    const fixture = await import('@/tests/fixtures/bmkgForecast.json');
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(fixture.default));
     vi.stubGlobal('fetch', fetchMock);
 

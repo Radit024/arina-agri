@@ -46,7 +46,7 @@ vi.mock('@/components/shared/guide/GuideProvider', () => ({
   useGuide: () => ({ openGuide: openGuideMock }),
 }));
 
-vi.mock('@/components/shared/FeedbackModal', () => ({
+vi.mock('@/controllers/feedback/FeedbackModal', () => ({
   default: () => null,
 }));
 

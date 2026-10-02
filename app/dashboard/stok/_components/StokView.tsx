@@ -52,7 +52,7 @@ import type {
   BatchFormOutput,
   StockOutFormInput,
   StockOutFormOutput,
-} from '../_lib/stockSchemas';
+} from '@/lib/validators/stockSchemas';
 import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
 import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
 import { computeBatchPerformance } from '@/hooks/useStok';

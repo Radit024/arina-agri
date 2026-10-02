@@ -19,7 +19,7 @@ import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import FeedbackModal from '@/components/shared/FeedbackModal';
+import FeedbackModal from '@/controllers/feedback/FeedbackModal';
 import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@mui/material/styles';

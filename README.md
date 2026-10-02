@@ -158,10 +158,11 @@ arina-agri/
 |   |                     #   health, location, news, notification, profile,
 |   |                     #   stok, weather, webhook
 |   +-- dashboard/        # Modul dashboard utama (keuangan, stok, cuaca, kalender,
-|   |                     #   kabar-pasar, ensiklopedia, pengaturan)
+|   |                     #   kabar-pasar, ensiklopedia, pengaturan). Tiap modul
+|   |                     #   punya _components/ untuk View-nya.
 |   +-- login/            # Auth email/password dan Google OAuth
 |   +-- register/
-+-- components/
++-- components/           # View presentational-only
 |   +-- ui/                    # Design system primitives (AppDialog, ContentState,
 |   |                          #   MetricCard, ResponsiveDataView, StatusBadge, AppField, ...)
 |   +-- shared/
@@ -170,21 +171,33 @@ arina-agri/
 |   |   +-- guide/             # Onboarding tour provider
 |   |   +-- page/              # Page-level layout helper
 |   +-- dashboard/, news/      # Komponen spesifik fitur (chart, peta, kartu berita)
-+-- controllers/          # Controller/hook presentational boundary per fitur
-+-- hooks/                # Hook data dan state client
++-- controllers/          # Semua logika & state per fitur. Pola: <Feature>Controller.tsx
+|   |                     #   hanya stub yang memanggil use<Feature>Controller() lalu
+|   |                     #   merender View. Logika tidak pernah ada di *.tsx stub.
+|   +-- keuangan/, stok/  # Modul dengan logic terbanyak
++-- hooks/                # Hook data client (SWR-free; memanggil lib/api.ts)
 +-- lib/
 |   +-- server/           # Modul server-only untuk AI, BMKG, cron, news, notifikasi
-|   +-- finance/           # Kalkulasi RAB, cashflow, import/export Excel
+|   +-- finance/          # Kalkulasi RAB, cashflow, import/export Excel
+|   +-- validators/       # Skema zod untuk form (dipakai View + Controller)
 +-- messages/             # Terjemahan id/en untuk next-intl
 +-- supabase/
-|   +-- migrations/       # Migrasi schema Postgres terkelola
+|   +-- migrations/       # Migrasi schema Postgres terkelola (sumber SQL tunggal)
 |   +-- config.toml
-+-- tests/                # Vitest, Testing Library, server/unit/component tests
++-- tests/                # Vitest + Testing Library, folder mencerminkan source
+|   +-- api/                  # Route handler di app/api
+|   +-- app/                  # page, layout, globals.css
+|   +-- components/           # View di components/ dan app/**/_components
+|   +-- controllers/          # Hook controller
+|   +-- hooks/, context/
+|   +-- lib/                  # Modul lib/ (analytics, api, finance, stok, ui)
+|   +-- server/               # Modul lib/server/
 +-- e2e/                  # Playwright end-to-end smoke test
-+-- docs/                 # specs, plans, reports, deployment, database, audit
++-- docs/                 # specs, plans, reports, deployment, diagrams
 |   +-- specs/            # Spesifikasi fitur (kabar pasar, notifikasi, harga, ...)
 |   +-- plans/            # Rencana implementasi yang belum selesai
 |   +-- reports/          # Hasil audit dan laporan evaluasi
+|   +-- deployment/       # Dokumentasi operasional CI/CD
 +-- public/               # Logo dan asset publik
 +-- scripts/              # Tooling Node (i18n check, bundle report, smoke deploy)
 +-- proxy.ts              # Middleware Next.js 16 (proteksi route /dashboard dan /api)
@@ -462,13 +475,20 @@ npx playwright test
 
 Test berada di dua lokasi:
 
-**`tests/`** (Vitest + Testing Library) mencakup:
+**`tests/`** (Vitest + Testing Library). Struktur folder mencerminkan lokasi source agar mudah ditelusuri:
 
-- server logic untuk BMKG, dashboard summary, cron auth, Gemini validator, news, notification schedule, price parser, dan validator schema Zod.
-- middleware/`proxy.ts` (proteksi route dashboard dan API).
-- component tests untuk primitives design system (`AppDialog`, `ContentState`, `MetricCard`, `ResponsiveDataView`, `StatusBadge`, `MasterDataDialog`), mobile navigation, guide provider, kartu mobile Keuangan (cash flow, financing, comparison), dan halaman cuaca.
-- hook tests untuk dashboard summary dan skenario RAB/transaksi.
-- script tests untuk CI/CD, bundle summary, dan smoke deploy.
+| Folder | Menguji |
+| :--- | :--- |
+| `tests/api/` | Route handler di `app/api/**` |
+| `tests/app/` | `page.tsx`, `app/layout.tsx`, `app/globals.css` |
+| `tests/components/` | View di `components/**` dan `app/**/_components/**` |
+| `tests/controllers/` | Hook controller di `controllers/**` |
+| `tests/hooks/`, `tests/context/` | Hook data dan context provider |
+| `tests/lib/` | Modul di `lib/` (`analytics`, `api`, `finance`, `stok`, `ui`) |
+| `tests/server/` | Modul di `lib/server/**` |
+| `tests/middleware/` | `proxy.ts` |
+| `tests/scripts/` | Isi `scripts/` dan konfigurasi CI |
+| `tests/a11y/` | Uji aksesibilitas lintas komponen |
 
 **`e2e/`** (Playwright) mencakup:
 

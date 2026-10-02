@@ -12,7 +12,7 @@ describe('BMKG weather routes', () => {
   });
 
   it('returns normalized forecast from BMKG JSON', async () => {
-    const fixture = await import('../../fixtures/bmkgForecast.json');
+    const fixture = await import('@/tests/fixtures/bmkgForecast.json');
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(fixture.default)));
 
     const response = await getForecast(new Request('http://localhost/api/weather/forecast?adm4=35.07.22.2008'));

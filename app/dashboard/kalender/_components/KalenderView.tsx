@@ -32,7 +32,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { formatDateInputValue, formatDateLong, normalizeDateInputValue } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 import type { ApiCalendarEvent } from '@/lib/api';
-import type { EventFormData } from '../_lib/eventSchema';
+import type { EventFormData } from '@/lib/validators/eventSchema';
 import CalendarCategoryIcon from './CalendarCategoryIcon';
 import CalendarDayCell from './CalendarDayCell';
 import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';

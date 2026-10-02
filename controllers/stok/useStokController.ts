@@ -9,7 +9,6 @@ import { trackPageView } from '@/lib/analytics/trackPageView';
 import { useStok, computeExpiryDate } from '@/hooks/useStok';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useSupplyItems } from '@/hooks/useSupplyItems';
-import StokView from '@/app/dashboard/stok/_components/StokView';
 import { isValidDateInputValue, normalizeDateInputValue } from '@/lib/formatters';
 import {
   batchSchema,
@@ -18,9 +17,9 @@ import {
   type BatchFormOutput,
   type StockOutFormInput,
   type StockOutFormOutput,
-} from '@/app/dashboard/stok/_lib/stockSchemas';
+} from '@/lib/validators/stockSchemas';
 
-export default function StokController() {
+export function useStokController() {
   const t = useTranslations('Stock');
 
   useEffect(() => {
@@ -266,63 +265,61 @@ export default function StokController() {
   const mutFromDateInvalid = mutFromDate ? !isValidDateInputValue(mutFromDate) : false;
   const mutToDateInvalid = mutToDate ? !isValidDateInputValue(mutToDate) : false;
 
-  return (
-    <StokView
-      activeBatches={activeBatches}
-      alertBatches={alertBatches}
-      batchDialogOpen={batchDialogOpen}
-      batchForm={batchForm}
-      closeConfirmId={closeConfirmId}
-      filteredMutations={filteredMutations}
-      loading={loading}
-      mutFilter={mutFilter}
-      mutFromDate={mutFromDate}
-      mutFromDateInvalid={mutFromDateInvalid}
-      mutToDate={mutToDate}
-      mutToDateInvalid={mutToDateInvalid}
-      onBatchSubmit={onBatchSubmit}
-      onStockOutSubmit={onStockOutSubmit}
-      openAddBatch={openAddBatch}
-      onCloseBatch={handleCloseBatch}
-      onConfirmClose={handleConfirmClose}
-      onCancelClose={() => setCloseConfirmId(null)}
-      onApplyDateFilter={handleApplyDateFilter}
-      onResetDateFilter={handleResetDateFilter}
-      setBatchDialogOpen={setBatchDialogOpen}
-      setMutFilter={setMutFilter}
-      setMutFromDate={setMutFromDate}
-      setMutToDate={setMutToDate}
-      setStockOutDialogOpen={setStockOutDialogOpen}
-      setTab={setTab}
-      stockOutDialogOpen={stockOutDialogOpen}
-      stockOutForm={stockOutForm}
-      summary={summary}
-      tab={tab}
-      buyers={buyers}
-      stockOutSelectedBatch={stockOutSelectedBatch}
-      batchEstimatedValue={batchEstimatedValue}
-      stockOutTotal={stockOutTotal}
-      stockOutHargaDiff={stockOutHargaDiff}
-      grades={grades}
-      locations={locations}
-      gradeDialogOpen={gradeDialogOpen}
-      locationDialogOpen={locationDialogOpen}
-      gradeDeleteError={gradeDeleteError}
-      locationDeleteError={locationDeleteError}
-      setGradeDialogOpen={setGradeDialogOpen}
-      setLocationDialogOpen={setLocationDialogOpen}
-      onAddGrade={addGrade}
-      onRenameGrade={renameGrade}
-      onRemoveGrade={handleRemoveGrade}
-      onAddLocation={addLocation}
-      onRenameLocation={renameLocation}
-      onRemoveLocation={handleRemoveLocation}
-      onClearGradeDeleteError={() => setGradeDeleteError(null)}
-      onClearLocationDeleteError={() => setLocationDeleteError(null)}
-      supplyItems={supplyItems}
-      supplyLoading={supplyLoading}
-      onAddSupplyItem={addSupplyItem}
-      onAddSupplyMutation={addSupplyMutation}
-    />
-  );
+  return {
+    activeBatches,
+    alertBatches,
+    batchDialogOpen,
+    batchForm,
+    closeConfirmId,
+    filteredMutations,
+    loading,
+    mutFilter,
+    mutFromDate,
+    mutFromDateInvalid,
+    mutToDate,
+    mutToDateInvalid,
+    onBatchSubmit,
+    onStockOutSubmit,
+    openAddBatch,
+    onCloseBatch: handleCloseBatch,
+    onConfirmClose: handleConfirmClose,
+    onCancelClose: () => setCloseConfirmId(null),
+    onApplyDateFilter: handleApplyDateFilter,
+    onResetDateFilter: handleResetDateFilter,
+    setBatchDialogOpen,
+    setMutFilter,
+    setMutFromDate,
+    setMutToDate,
+    setStockOutDialogOpen,
+    setTab,
+    stockOutDialogOpen,
+    stockOutForm,
+    summary,
+    tab,
+    buyers,
+    stockOutSelectedBatch,
+    batchEstimatedValue,
+    stockOutTotal,
+    stockOutHargaDiff,
+    grades,
+    locations,
+    gradeDialogOpen,
+    locationDialogOpen,
+    gradeDeleteError,
+    locationDeleteError,
+    setGradeDialogOpen,
+    setLocationDialogOpen,
+    onAddGrade: addGrade,
+    onRenameGrade: renameGrade,
+    onRemoveGrade: handleRemoveGrade,
+    onAddLocation: addLocation,
+    onRenameLocation: renameLocation,
+    onRemoveLocation: handleRemoveLocation,
+    onClearGradeDeleteError: () => setGradeDeleteError(null),
+    onClearLocationDeleteError: () => setLocationDeleteError(null),
+    supplyItems,
+    supplyLoading,
+    onAddSupplyItem: addSupplyItem,
+    onAddSupplyMutation: addSupplyMutation,
+  };
 }

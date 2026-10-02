@@ -142,7 +142,9 @@ Prinsip arsitektur: komponen di `components/ui` dan `components/shared` bersifat
 ### Pengaturan, Navigasi, dan UX
 
 - Bahasa Indonesia dan English melalui `next-intl`.
-- Pengaturan profil, notifikasi, dan informasi sistem.
+- Pengaturan profil, notifikasi, dan informasi sistem. Tidak punya route sendiri:
+  dibuka sebagai modal dari sidebar dan bottom navigation lewat query string
+  (`?settings=true&tab=profil`), sehingga tombol back browser tetap menutupnya.
 - Sidebar desktop yang bisa diciutkan.
 - Bottom navigation mobile dengan menu "Lainnya".
 - Onboarding guide per halaman.
@@ -158,8 +160,9 @@ arina-agri/
 |   |                     #   health, location, news, notification, profile,
 |   |                     #   stok, weather, webhook
 |   +-- dashboard/        # Modul dashboard utama (keuangan, stok, cuaca, kalender,
-|   |                     #   kabar-pasar, ensiklopedia, pengaturan). Tiap modul
-|   |                     #   punya _components/ untuk View-nya.
+|   |                     #   kabar-pasar, ensiklopedia). Tiap modul punya
+|   |                     #   _components/ untuk View-nya. Pengaturan tidak punya
+|   |                     #   route; ia modal di controllers/pengaturan/.
 |   +-- login/            # Auth email/password dan Google OAuth
 |   +-- register/
 +-- components/           # View presentational-only
@@ -229,7 +232,8 @@ UI Dashboard
 | `/dashboard/kabar-pasar` | Berita dan harga komoditas |
 | `/dashboard/ensiklopedia` | Chat AI penyakit/hama/budidaya |
 | `/dashboard/kalender` | Jadwal aktivitas tani |
-| `/dashboard/pengaturan` | Profil, notifikasi, sistem |
+
+Pengaturan tidak punya route. Ia dibuka dari sidebar dan bottom navigation lewat query string `?settings=true&tab=<profil|general|notifikasi|info>` pada halaman dashboard yang sedang aktif.
 
 Endpoint API utama:
 

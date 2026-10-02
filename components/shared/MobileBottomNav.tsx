@@ -21,6 +21,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import FeedbackModal from '@/controllers/feedback/FeedbackModal';
+import { openSettingsModal } from '@/controllers/pengaturan/openSettingsModal';
 import { useTranslations } from 'next-intl';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTheme } from '@mui/material/styles';
@@ -66,7 +67,7 @@ const mobileFeatureGroups: MobileFeatureGroup[] = [
     titleKey: 'pengaturanSection',
     items: [
       { key: 'guide', icon: <HelpOutlineOutlinedIcon />, path: null, action: 'guide' },
-      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: '/dashboard/pengaturan' },
+      { key: 'pengaturan', icon: <SettingsOutlinedIcon />, path: null, action: 'settings' },
       { key: 'beriMasukan', icon: <ChatBubbleOutlineOutlinedIcon />, path: null, action: 'feedback' },
     ],
   },
@@ -134,7 +135,7 @@ export default function MobileBottomNav() {
     }
 
     if (item.action === 'settings') {
-      router.push('/dashboard/pengaturan');
+      openSettingsModal(router, pathname);
       return;
     }
 

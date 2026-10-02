@@ -2,6 +2,11 @@ import * as React from 'react';
 import MuiButton, { ButtonProps as MuiButtonProps } from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 
+/**
+ * Token visual tombol (radius, font, padding) dikunci di
+ * `MuiButton.styleOverrides` pada `lib/theme.ts`. Wrapper ini hanya menambah
+ * perilaku `loading`, sehingga tombol MUI mentah dan tombol ini tetap sama.
+ */
 export interface ButtonProps extends MuiButtonProps {
   /**
    * If `true`, the button will show a loading spinner and become disabled.
@@ -31,14 +36,7 @@ export function Button({
     <MuiButton
       disabled={isDisabled}
       startIcon={renderStartIcon}
-      sx={{
-        py: 1.5,
-        borderRadius: 2,
-        textTransform: 'none',
-        fontWeight: 700,
-        fontSize: '1rem',
-        ...sx,
-      }}
+      sx={sx}
       {...props}
     >
       {content}

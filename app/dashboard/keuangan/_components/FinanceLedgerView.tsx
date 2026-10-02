@@ -49,7 +49,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
-import Badge from '@/components/ui/Badge';
+import StatusBadge from '@/components/ui/StatusBadge';
 import EmptyState from '@/components/ui/EmptyState';
 import UnclassifiedTransactionsBanner from './UnclassifiedTransactionsBanner';
 import { formatDateLong, formatDateShort, formatRupiah } from '@/lib/formatters';
@@ -1080,10 +1080,9 @@ const financePanelSx = {
                             {formatDateShort(tx.tanggal)}
                           </TableCell>
                           <TableCell sx={ledgerRowCellSx}>
-                            <Badge
+                            <StatusBadge
                               label={tx.jenis === 'pendapatan' ? t('common.income') : t('common.expense')}
-                              variant="soft"
-                              color={tx.jenis === 'pendapatan' ? 'success' : 'error'}
+                              intent={tx.jenis === 'pendapatan' ? 'success' : 'error'}
                               sx={{
                                 fontSize: '0.75rem',
                               }}

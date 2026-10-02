@@ -249,7 +249,8 @@ for (const device of [
   }
 
   // navigate back to dashboard for extra modules
-  await page.goto(BASE + '/dashboard/pengaturan', { waitUntil: 'load' });
+  // Pengaturan hanya berupa modal, jadi dibuka lewat query string.
+  await page.goto(BASE + '/dashboard?settings=true', { waitUntil: 'load' });
   await page.waitForTimeout(4000);
   await shot(page, `${device.name}-pengaturan`, true);
   console.log(`\n---- pengaturan (${device.name}) ----\n` + (await bodyText(page)).slice(0, 2000));

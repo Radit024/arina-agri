@@ -43,14 +43,26 @@ export const lightTheme = createTheme(lightBase, {
   },
   components: {
     MuiButton: {
-      styleOverrides: { root: { textTransform: 'none', borderRadius: 8, fontWeight: 600 } },
-    },
-    MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 24,
-          boxShadow: '0 8px 24px 0 rgba(44, 42, 41, 0.04), 0 2px 8px 0 rgba(44, 42, 41, 0.02)',
-          border: '1px solid rgba(44, 42, 41, 0.04)',
+          textTransform: 'none',
+          borderRadius: 16,
+          fontWeight: 700,
+          fontSize: '1rem',
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+      },
+    },
+    MuiCard: {
+      // Kartu sengaja rata tanpa bayangan: konsistensi dengan
+      // `components/ui/Card.tsx`, yang tidak lagi mengunci token sendiri.
+      styleOverrides: {
+        root: {
+          borderRadius: 32,
+          boxShadow: 'none',
+          border: '1px solid',
+          borderColor: 'divider',
         },
       },
     },
@@ -90,7 +102,16 @@ export const darkTheme = createTheme(darkBase, {
   },
   components: {
     MuiButton: {
-      styleOverrides: { root: { textTransform: 'none', borderRadius: 8, fontWeight: 600 } },
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          borderRadius: 16,
+          fontWeight: 700,
+          fontSize: '1rem',
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+      },
     },
     MuiCssBaseline: {
       styleOverrides: {
@@ -103,9 +124,10 @@ export const darkTheme = createTheme(darkBase, {
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 24,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-          border: '1px solid #1E2E21',
+          borderRadius: 32,
+          boxShadow: 'none',
+          border: '1px solid',
+          borderColor: 'divider',
         },
       },
     },

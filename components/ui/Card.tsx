@@ -4,6 +4,12 @@ import MuiCardHeader, { CardHeaderProps as MuiCardHeaderProps } from '@mui/mater
 import MuiCardContent, { CardContentProps as MuiCardContentProps } from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 
+/**
+ * Token visual kartu (radius 32px, border `divider`, tanpa bayangan) dikunci
+ * di `MuiCard.styleOverrides` pada `lib/theme.ts`. Wrapper ini hanya menambah
+ * bagian header — judul, subjudul, aksi, dan konten — sehingga kartu MUI mentah dan
+ * kartu ini tampil sama.
+ */
 export interface CardProps extends Omit<MuiCardProps, 'title'> {
   /**
    * Optional title for the card header.
@@ -45,16 +51,7 @@ export function Card({
   const hasHeader = title || subheader || action;
 
   return (
-    <MuiCard
-      sx={{
-        borderRadius: 4,
-        border: '1px solid',
-        borderColor: 'divider',
-        boxShadow: 'none',
-        ...sx,
-      }}
-      {...props}
-    >
+    <MuiCard sx={sx} {...props}>
       {hasHeader && (
         <MuiCardHeader
           title={

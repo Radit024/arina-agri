@@ -104,17 +104,7 @@ export const PAGE_GUIDES: GuideDefinition[] = [
       { key: 'reminder', target: 'calendar-upcoming', placement: 'left' },
     ],
   },
-  {
-    id: 'settings',
-    messageKey: 'pages.settings',
-    route: '/dashboard/pengaturan',
-    steps: [
-      { key: 'overview', target: 'settings-tabs', placement: 'right' },
-      { key: 'profile', target: ['settings-profile-save', 'settings-tab-profil'], placement: 'top' },
-      { key: 'preferences', target: 'settings-theme-toggle', placement: 'bottom' },
-    ],
-  },
-];
+  ];
 
 const GUIDE_DEFINITIONS = [GLOBAL_GUIDE, ...PAGE_GUIDES];
 

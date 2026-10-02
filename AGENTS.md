@@ -103,7 +103,7 @@ Sebuah komponen di `components/ui/` itu primitive yang sah HANYA bila:
 2. **Mengunci** token atau perilaku (mis. tinggi sentuh 44px, status palette, auto-disable saat loading), bukan sekadar meneruskan props ke MUI.
 
 Kalau hanya 1 pemakai → itu helper lokal. Pindahkan ke folder fitur atau hapus; jangan simpan sebagai design system.
-Kalau mengunci hal yang sama dengan komponen lain → gabungkan. Contoh nyata: `components/ui/Badge.tsx` dan `components/ui/StatusBadge.tsx` sama-sama badge status; sebelum menambah yang ketiga, pastikan belum ada yang mengunci hal sama.
+Kalau mengunci hal yang sama dengan komponen lain → gabungkan. Contoh nyata yang sudah diselesaikan: `Badge` dan `StatusBadge` sama-sama badge status, jadi semuanya diarahkan ke `StatusBadge` yang lebih lengkap (intent, mode, touch target 44px) dan `Badge` dihapus.
 Wrapper yang hanya meneruskan props tanpa mengunci apa pun → jangan dibuat. Pakai MUI langsung + theme.
 
 Token default jangan di-hardcode di `sx` wrapper. Pindahkan ke `MuiXxx.styleOverrides` di `lib/theme.ts` supaya theme jadi satu-satunya sumber.
@@ -185,8 +185,22 @@ Item berikut belum dirapikan. Saat menyentuh salah satunya, sekalian perbaiki; j
 | `app/dashboard/cuaca/_components/CuacaView.tsx` (~780) | Belum dipetakan per section. |
 | `controllers/cuaca/useCuacaController.tsx` (~710) | Pecah per concern: cuaca, lokasi, notifikasi, kanal WhatsApp. |
 | `lib/finance/rabExcel.ts` (~956) | Belum dievaluasi. |
-| `components/ui/Button.tsx` vs `lib/theme.ts` | Wrapper meng-hardcode `fontWeight: 700, fontSize: 1rem, borderRadius: 2`, sementara `MuiButton.styleOverrides` mengunci `fontWeight: 600, borderRadius: 8`. Dua sumber untuk nilai yang sama. Pilih salah satu sebelum lanjut. |
-| `components/ui/Badge.tsx` vs `StatusBadge.tsx` | Keduanya badge status; `StatusBadge` lebih lengkap (intent, mode, touch target 44px). Sepakatkan ke satu. |
-| `components/ui/Card.tsx` | 1 pemakai (`DashboardHomeView`) padahal sudah mengunci token kartu. View lain masih merakit `<Card>` MUI mentah. |
+| `controllers/cuaca/useCuacaController.tsx` | `WEATHER_WHATSAPP_PHONE_KEY` dideklarasikan juga di `controllers/pengaturan/useSettingsModalController.ts`. Kalau prefix berubah di satu, notifikasi cuaca diam-diam membaca key berbeda. Ekstrak ke satu modul. |
 <!-- END:verification -->
+
+## Token visual ada di theme, bukan di wrapper
+
+Token dasar tombol dan kartu **tidak boleh** ditulis di `sx` wrapper maupun di `components/ui/`. Satu-satunya sumber adalah `lib/theme.ts`:
+
+```ts
+MuiButton: { styleOverrides: { root: { /* radius, font, padding */ } } }
+MuiCard:   { styleOverrides: { root: { /* radius 32, border divider, tanpa bayangan */ } } }
+```
+
+Wrapper hanya boleh menambah **perilaku**, bukan nilai visual:
+
+- `components/ui/Button.tsx` — hanya `loading` → spinner + auto-disable
+- `components/ui/Card.tsx` — hanya header (judul, subjudul, aksi) + konten
+
+Kalau sebuah View memakai `<Card>` atau `<Button>` MUI mentah, ia **tetap dapat token yang sama** karena berasal dari theme. Memigrasikannya ke wrapper hanya perlu bila butuh perilaku header atau `loading` — sebelas pemakaian `CardHeader` yang sudah punya `sx` kustom tidak perlu diberi wrapper, karena itu justru menghilangkan kustomisasi tanpa imbalan.
 

@@ -846,7 +846,10 @@ describe('KeuanganView', () => {
 
     expect(getComputedStyle(generateAiButton).backgroundColor).toBe('rgb(82, 183, 136)');
     expect(getComputedStyle(generateAiButton).color).toBe('rgb(255, 255, 255)');
-  });
+  // Render dua kali penuh (ledger 1300 baris + chart) lalu membaca
+  // getComputedStyle di jsdom. Butuh waktu di atas batas default 25 detik
+  // saat full run, jadi diberi kuota sendiri.
+  }, 60_000);
 
   it('menonaktifkan input dan export ketika belum ada proyek', () => {
     const openForCreate = vi.fn();

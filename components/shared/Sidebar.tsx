@@ -35,6 +35,7 @@ import { farmerProfile } from '@/lib/mockData';
 import { useTranslations } from 'next-intl';
 import { useGuide } from '@/components/shared/guide/GuideProvider';
 import FeedbackModal from '@/controllers/feedback/FeedbackModal';
+import { openSettingsModal } from '@/controllers/pengaturan/openSettingsModal';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import { softBg, softHoverBg, softText } from '@/lib/themeColors';
 
@@ -75,7 +76,6 @@ export default function Sidebar() {
     navItems.forEach((item) => {
       router.prefetch(item.path);
     });
-    router.prefetch('/dashboard/pengaturan');
   }, [router]);
 
   const isActive = (path: Route) => {
@@ -334,7 +334,7 @@ export default function Sidebar() {
             <List sx={{ p: 0.5 }}>
               <ListItem disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
-                  onClick={() => router.push('/dashboard/pengaturan')}
+                  onClick={() => openSettingsModal(router, pathname)}
                   sx={{ borderRadius: 3, py: 1, '&:hover': { bgcolor: 'action.hover' } }}
                 >
                   <ListItemIcon sx={{ minWidth: 0, mr: 1.5, color: 'text.secondary' }}>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useTheme } from '@mui/material/styles';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -11,7 +11,6 @@ import { trackPageView } from '@/lib/analytics/trackPageView';
 import { useTransactionsForScenario } from '@/hooks/useTransactionsForScenario';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { buildFinanceExpensePieData } from './financeCategoryChart';
-import { nextLedgerSortState } from './ledgerSort';
 import { getModeLabel, getModeSlug } from '@/lib/finance/scenarioLabels';
 import { useFinanceExportController } from './useFinanceExportController';
 import { useFinanceProjectController } from './useFinanceProjectController';
@@ -24,6 +23,7 @@ import { useRabController } from './useRabController';
 import { useRabTransactionLinkController } from './useRabTransactionLinkController';
 import { useTransactionBatchController } from './useTransactionBatchController';
 import { useTransactionMasterController } from './useTransactionMasterController';
+import { useLedgerTable } from './useLedgerTable';
 import { useMigrationController } from './useMigrationController';
 import { useProductionSalesController } from './useProductionSalesController';
 import { generatePdfReport } from '@/lib/pdfReport';
@@ -39,7 +39,6 @@ type BepHppInputs = {
 
 
 const MAX_AI_REPORTS_PER_MONTH = 3;
-const LEDGER_PAGE_SIZE = 7;
 
 interface QuotaState {
   month: string; // format YYYY-MM
@@ -84,16 +83,7 @@ export function useKeuanganController() {
     message: string;
     severity: 'success' | 'error';
   }>({ open: false, message: '', severity: 'success' });
-  const [filterBulan, setFilterBulan] = useState('semua');
-  const [filterJenis, setFilterJenis] = useState<'semua' | 'pengeluaran' | 'pendapatan'>('semua');
-  const [filterRabLink, setFilterRabLink] = useState<'semua' | 'linked' | 'unlinked'>('semua');
   const [financeTab, setFinanceTab] = useState<'buku-besar' | 'rab' | 'laba-rugi' | 'arus-kas' | 'arus-kas-pasca-pembiayaan' | 'perbandingan'>('buku-besar');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortColumn, setSortColumn] = useState<'tanggal' | 'kategori' | 'nominal' | 'jenis' | null>('tanggal');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>('desc');
-  const [selectedTxIds, setSelectedTxIds] = useState<string[]>([]);
-  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
-  const [ledgerPage, setLedgerPage] = useState(1);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -124,7 +114,6 @@ export function useKeuanganController() {
   const rab = useRabController(financeProject.selectedProject, addTransaction, financeScenario.activeScenario, cleanupRabLinks);
   const transactionBatch = useTransactionBatchController(rab.items, addTransaction, updateTransaction);
   const transactionMaster = useTransactionMasterController();
-  const clearSelectionTxs = () => setSelectedTxIds([]);
   const rabTransactionLink = useRabTransactionLinkController({
     rabItems: rab.items,
     transactions,
@@ -160,6 +149,34 @@ export function useKeuanganController() {
     canInputFinance: hasSelectedProject,
     canExportFinance: hasSelectedProject,
   };
+  const {
+    filterBulan,
+    setFilterBulan,
+    filterJenis,
+    setFilterJenis,
+    filterRabLink,
+    setFilterRabLink,
+    searchQuery,
+    setSearchQuery,
+    sortColumn,
+    sortDir,
+    selectedTxIds,
+    bulkDeleteConfirm,
+    setBulkDeleteConfirm,
+    ledgerPage,
+    setLedgerPage,
+    bulanOptions,
+    getBulanLabel,
+    monthFilteredTransactions,
+    displayedTransactions,
+    pagedTransactions,
+    ledgerTotalPages,
+    selectedTransactionsMixed,
+    toggleSort,
+    toggleSelectTx,
+    clearSelectionTxs,
+  } = useLedgerTable({ transactions, bulanLabels: BULAN_LABELS });
+
   const financeExport = useFinanceExportController({
     project: financeProject.selectedProject,
     rabItems: rab.items,
@@ -271,18 +288,6 @@ export function useKeuanganController() {
     setSnackbar({ open: true, message: 'Transaksi berhasil dihapus', severity: 'success' });
   };
 
-  const toggleSort = (col: NonNullable<typeof sortColumn>) => {
-    const next = nextLedgerSortState({ column: sortColumn, dir: sortDir }, col);
-    setSortColumn(next.column);
-    setSortDir(next.dir);
-  };
-
-  const toggleSelectTx = (id: string) => {
-    setSelectedTxIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
   const handleBulkDeleteConfirm = async () => {
     const count = selectedTxIds.length;
     for (const id of selectedTxIds) {
@@ -304,17 +309,17 @@ export function useKeuanganController() {
 
       if (hpp !== null && hpp > 0) {
         if (field === 'targetHargaJual') {
-          // Harga jual berubah → hitung markup (keuntungan dari modal)
+          // Harga jual berubah â†’ hitung markup (keuntungan dari modal)
           next.targetMargin = numericValue > 0
             ? parseFloat(((numericValue / hpp - 1) * 100).toFixed(10))
             : 0;
         } else if (field === 'targetMargin') {
-          // Markup berubah → hitung harga jual: HPP × (1 + markup/100)
+          // Markup berubah â†’ hitung harga jual: HPP Ã— (1 + markup/100)
           next.targetHargaJual = numericValue > -100
             ? Math.round(hpp * (1 + numericValue / 100))
             : 0;
         } else {
-          // totalBiaya atau proyeksiPanen berubah → HPP berubah, sync markup dari hargaJual yang ada
+          // totalBiaya atau proyeksiPanen berubah â†’ HPP berubah, sync markup dari hargaJual yang ada
           if (next.targetHargaJual > 0) {
             next.targetMargin = parseFloat(((next.targetHargaJual / hpp - 1) * 100).toFixed(10));
           }
@@ -327,7 +332,7 @@ export function useKeuanganController() {
 
   const getBepHppInputDisplayValue = (value: number) => (value === 0 ? '' : String(value));
 
-  // ─── AI Quota helpers ──────────────────────────────────────────
+  // â”€â”€â”€ AI Quota helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const quotaThisMonth = aiReportQuota.month === currentMonth ? aiReportQuota.used : 0;
   const aiQuotaRemaining = MAX_AI_REPORTS_PER_MONTH - quotaThisMonth;
@@ -350,7 +355,7 @@ export function useKeuanganController() {
     setAiDialogOpen(true);
   };
 
-  // ─── Generate PDF (manual, tanpa AI) ─────────────────────────────────────────
+  // â”€â”€â”€ Generate PDF (manual, tanpa AI) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleGeneratePdfManual = async () => {
     const blockedMessage = getFinanceExportBlockedMessage();
     if (blockedMessage) {
@@ -380,7 +385,7 @@ export function useKeuanganController() {
     }
   };
 
-  // ─── Generate PDF (dengan AI Saran) ───────────────────────────────────────────
+  // â”€â”€â”€ Generate PDF (dengan AI Saran) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleGeneratePdfAI = async () => {
     if (aiQuotaRemaining <= 0) {
       setReportError(`Kuota laporan AI bulan ini sudah habis (${MAX_AI_REPORTS_PER_MONTH} laporan/bulan).`);
@@ -433,10 +438,6 @@ export function useKeuanganController() {
     }
   };
 
-  const monthFilteredTransactions = transactions.filter((tx) =>
-    filterBulan === 'semua' || tx.tanggal.startsWith(filterBulan)
-  );
-
   // Summaries
   let totalPendapatan = 0;
   let totalPengeluaran = 0;
@@ -449,7 +450,7 @@ export function useKeuanganController() {
   }
   const labaBersih = totalPendapatan - totalPengeluaran;
 
-  // BFA (Business Feasibility Analysis) — standalone planning tool, tidak terkait data transaksi
+  // BFA (Business Feasibility Analysis) â€” standalone planning tool, tidak terkait data transaksi
   const { totalBiaya, proyeksiPanen, targetHargaJual } = bepHppInputs;
 
   const bfaHpp = proyeksiPanen > 0 ? totalBiaya / proyeksiPanen : null;
@@ -539,89 +540,6 @@ export function useKeuanganController() {
   const finalPieData = expensePie.data;
   const finalPieColors = expensePie.colors;
 
-  const bulanOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          transactions
-            .map((t) => t.tanggal.slice(0, 7))
-            .filter((bulanKey) => /^\d{4}-\d{2}$/.test(bulanKey))
-        )
-      ).sort((a, b) => a.localeCompare(b)),
-    [transactions]
-  );
-
-  const getBulanLabel = (bulanKey: string) => {
-    const [tahun, bulan] = bulanKey.split('-');
-    const monthIndex = Number(bulan) - 1;
-    if (monthIndex < 0 || monthIndex > 11 || Number.isNaN(monthIndex)) {
-      return bulanKey;
-    }
-    return `${BULAN_LABELS[monthIndex]} ${tahun}`;
-  };
-
-  useEffect(() => {
-    if (filterBulan !== 'semua' && !bulanOptions.includes(filterBulan)) {
-      setFilterBulan('semua');
-    }
-  }, [bulanOptions, filterBulan, setFilterBulan]);
-
-  // Filtered + searched + sorted table data
-  const displayedTransactions = useMemo(() => {
-    let result = monthFilteredTransactions.filter(
-      (tx) => filterJenis === 'semua' || tx.jenis === filterJenis
-    );
-
-    if (filterRabLink === 'linked') {
-      result = result.filter((tx) => Boolean(tx.rabItemId || tx.rabCategoryId));
-    } else if (filterRabLink === 'unlinked') {
-      result = result.filter((tx) => !tx.rabItemId && !tx.rabCategoryId);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(
-        (tx) =>
-          tx.kategori.toLowerCase().includes(q) ||
-          String(tx.volume ?? '').includes(q) ||
-          (tx.satuan ?? '').toLowerCase().includes(q) ||
-          String(tx.hargaSatuan ?? '').includes(q) ||
-          String(tx.nominal ?? '').includes(q) ||
-          (tx.keterangan ?? '').toLowerCase().includes(q)
-      );
-    }
-
-    if (!sortColumn || !sortDir) return result;
-
-    return [...result].sort((a, b) => {
-      let cmp = 0;
-      if (sortColumn === 'tanggal') cmp = a.tanggal.localeCompare(b.tanggal);
-      else if (sortColumn === 'kategori') cmp = a.kategori.localeCompare(b.kategori);
-      else if (sortColumn === 'nominal') cmp = a.nominal - b.nominal;
-      else if (sortColumn === 'jenis') cmp = a.jenis.localeCompare(b.jenis);
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [monthFilteredTransactions, filterJenis, filterRabLink, searchQuery, sortColumn, sortDir]);
-
-  const ledgerTotalPages = Math.max(1, Math.ceil(displayedTransactions.length / LEDGER_PAGE_SIZE));
-
-  useEffect(() => {
-    setLedgerPage(1);
-  }, [filterBulan, filterJenis, filterRabLink, searchQuery, sortColumn, sortDir]);
-
-  useEffect(() => {
-    if (ledgerPage > ledgerTotalPages) setLedgerPage(ledgerTotalPages);
-  }, [ledgerPage, ledgerTotalPages]);
-
-  const pagedTransactions = useMemo(
-    () => displayedTransactions.slice((ledgerPage - 1) * LEDGER_PAGE_SIZE, ledgerPage * LEDGER_PAGE_SIZE),
-    [displayedTransactions, ledgerPage],
-  );
-
-  const selectedTransactionsMixed = useMemo(() => {
-    const selected = transactions.filter((tx) => selectedTxIds.includes(tx._id));
-    return new Set(selected.map((tx) => tx.jenis)).size > 1;
-  }, [transactions, selectedTxIds]);
 
   const rabLinkCountsByItemId = useMemo(() => {
     const counts: Record<string, number> = {};

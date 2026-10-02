@@ -6,13 +6,6 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
-import Chip from '@mui/material/Chip';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
@@ -30,8 +23,6 @@ import InputAdornment from '@mui/material/InputAdornment';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import Autocomplete from '@mui/material/Autocomplete';
-import LinearProgress from '@mui/material/LinearProgress';
-import Tooltip from '@mui/material/Tooltip';
 
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -45,7 +36,10 @@ import { Controller, type SubmitHandler, type UseFormReturn } from 'react-hook-f
 import { formatDateInputValue, formatDateShort, formatRupiah, normalizeDateInputValue } from '@/lib/formatters';
 import type { ApiHarvestBatch, ApiStockMutation, StokSummary, ApiBuyer, ApiGrade, ApiLocation, ApiSupplyItem, NewSupplyItem, NewSupplyMutation } from '@/lib/api';
 import MasterDataDialog from '@/components/shared/forms/MasterDataDialog';
+import StokBatchListView from './StokBatchListView';
+import StokMutationsView from './StokMutationsView';
 import SupplyItemsView from './SupplyItemsView';
+import { GradeChip, StatusChip, type StockTranslator } from './stockChips';
 import { useTranslations } from 'next-intl';
 import type {
   BatchFormInput,
@@ -54,50 +48,10 @@ import type {
   StockOutFormOutput,
 } from '@/lib/validators/stockSchemas';
 import { PageActionButton, PageHeader, PageShell } from '@/components/shared/page';
-import { accentText, softBg, softText, tableHoverBg } from '@/lib/themeColors';
-import { computeBatchPerformance } from '@/hooks/useStok';
+import { softBg, softText } from '@/lib/themeColors';
 
-import StatusBadge, { type StatusIntent } from '@/components/ui/StatusBadge';
 import MetricCard, { type MetricCardIntent } from '@/components/ui/MetricCard';
 import { MobileTabBar } from '@/components/shared/navigation/MobileTabBar';
-
-// Status badge
-type StockTranslator = ReturnType<typeof useTranslations>;
-
-const StatusChip = ({ status, t }: { status: ApiHarvestBatch['status']; t: StockTranslator }) => {
-  const map: Record<ApiHarvestBatch['status'], { label: string; intent: StatusIntent }> = {
-    aman: { label: t('status.safe'), intent: 'success' },
-    menipis: { label: t('status.low'), intent: 'warning' },
-    hampir_kadaluarsa: { label: t('status.expiring'), intent: 'error' },
-    habis: { label: t('status.empty'), intent: 'neutral' },
-  };
-  const s = map[status] ?? { label: status, intent: 'neutral' };
-  return (
-    <StatusBadge
-      label={s.label}
-      intent={s.intent}
-    />
-  );
-};
-
-// Grade badge (free-form strings)
-const GRADE_PALETTE: StatusIntent[] = ['success', 'info', 'warning', 'error', 'primary'];
-
-function gradeColorIndex(grade: string): number {
-  let hash = 0;
-  for (let i = 0; i < grade.length; i++) hash += grade.charCodeAt(i);
-  return hash % GRADE_PALETTE.length;
-}
-
-const GradeChip = ({ grade, t }: { grade: string; t: StockTranslator }) => {
-  const intent = GRADE_PALETTE[gradeColorIndex(grade)];
-  return (
-    <StatusBadge
-      label={`${t('table.grade')} ${grade}`}
-      intent={intent}
-    />
-  );
-};
 
 const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: Theme; t: StockTranslator }) => (
   <Box sx={{
@@ -131,7 +85,7 @@ const BatchInfoCard = ({ batch, theme, t }: { batch: ApiHarvestBatch; theme: The
   </Box>
 );
 
-interface StokViewProps {
+export interface StokViewProps {
   activeBatches: ApiHarvestBatch[];
   alertBatches: ApiHarvestBatch[];
   batchDialogOpen: boolean;
@@ -342,344 +296,36 @@ export default function StokView({
 
         {/* Tab 1: Batch List */}
         {tab === 0 && (
-          <CardContent sx={{ p: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            {isMobile ? (
-              <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {loading ? (
-                  <Typography variant="body2" align="center" color="text.secondary" sx={{ py: 6 }}>
-                    {t('table.loading')}
-                  </Typography>
-                ) : activeBatches.length === 0 ? (
-                  <Box sx={{ py: 8, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
-                    <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
-                  </Box>
-                ) : (
-                  activeBatches.map((b) => (
-                    <Card key={b._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider', boxShadow: 'none' }}>
-                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                          <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
-                            {b.batchCode}
-                          </Typography>
-                          <StatusChip status={b.status} t={t} />
-                        </Box>
-
-                        <Box sx={{ display: 'flex', gap: 1.25, mb: 1.5, alignItems: 'center' }}>
-                          <GradeChip grade={b.grade} t={t} />
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                            {b.stokTersisa} kg / {b.beratMasuk} kg
-                          </Typography>
-                        </Box>
-
-                        <Grid container spacing={1.5} sx={{ mb: 2 }}>
-                          <Grid size={{ xs: 6 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-                              {t('table.price')}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                              {formatRupiah(b.hargaJual)}
-                            </Typography>
-                          </Grid>
-                          <Grid size={{ xs: 6 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-                              {t('table.expiry')}
-                            </Typography>
-                            <Typography variant="body2">
-                              {formatDateShort(b.estimasiKadaluarsa)}
-                            </Typography>
-                          </Grid>
-                          <Grid size={{ xs: 6 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-                              {t('table.harvestDate')}
-                            </Typography>
-                            <Typography variant="body2">
-                              {formatDateShort(b.tanggalPanen)}
-                            </Typography>
-                          </Grid>
-                          <Grid size={{ xs: 6 }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
-                              {t('table.location')}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" noWrap>
-                              {b.lokasiPenyimpanan}
-                            </Typography>
-                          </Grid>
-                        </Grid>
-
-                        {/* BEP Performance Panel */}
-                        {(() => {
-                          const perf = computeBatchPerformance({ hargaModal: b.hargaModal, beratMasuk: b.beratMasuk, stokTersisa: b.stokTersisa, hargaJual: b.hargaJual });
-                          if (perf.bepKg === null) return (
-                            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 1.5 }}>
-                              {t('batchPerformance.hargaJualBelumDiisi')}
-                            </Typography>
-                          );
-                          return (
-                            <Box sx={{ mb: 1.5 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                <Typography variant="caption" color="text.secondary">
-                                  {t('batchPerformance.bepProgress')}
-                                </Typography>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: perf.sudahBalikModal ? 'success.main' : 'text.secondary' }}>
-                                  {perf.sudahBalikModal
-                                    ? t('batchPerformance.sudahBalikModal')
-                                    : t('batchPerformance.sisaBep', { kg: perf.sisaBepKg.toFixed(1) })}
-                                </Typography>
-                              </Box>
-                              <Tooltip title={`${t('batchPerformance.sudahTerjual')}: ${perf.sudahTerjual} kg / ${t('batchPerformance.bepKg')}: ${perf.bepKg.toFixed(1)} kg`}>
-                                <LinearProgress
-                                  variant="determinate"
-                                  value={perf.bepProgress * 100}
-                                  color={perf.sudahBalikModal ? 'success' : 'primary'}
-                                  sx={{ height: 6, borderRadius: 3 }}
-                                />
-                              </Tooltip>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                {t('batchPerformance.estimasiLaba')}: <strong>{formatRupiah(perf.estimasiLabaJikaHabis)}</strong>
-                              </Typography>
-                            </Box>
-                          );
-                        })()}
-
-                        <Divider sx={{ mb: 1.5 }} />
-
-                        <Box sx={{ display: 'flex', gap: 1.5 }}>
-                          <Button
-                            fullWidth
-                            variant="outlined"
-                            size="small"
-                            startIcon={<LocalShippingIcon />}
-                            onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
-                            sx={{ borderRadius: 2, height: 40, textTransform: 'none', fontWeight: 600 }}
-                          >
-                            {t('buttons.stockOut')}
-                          </Button>
-                          <Button
-                            color="warning"
-                            variant="outlined"
-                            size="small"
-                            onClick={() => onCloseBatch(b._id)}
-                            sx={{ borderRadius: 2, minWidth: 44, width: 44, height: 40 }}
-                            aria-label="Tutup batch"
-                          >
-                            <InventoryIcon fontSize="small" />
-                          </Button>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </Box>
-            ) : (
-              <TableContainer sx={{ maxHeight: 520 }}>
-                <Table stickyHeader size="small">
-                  <TableHead>
-                    <TableRow>
-                      {[t('table.batchId'), t('table.harvestDate'), t('table.grade'), t('table.initialWeight'), t('table.remainingWeight'), t('table.price'), t('batchPerformance.bepProgress'), t('table.location'), t('table.expiry'), t('table.status'), t('table.action')].map((h) => (
-                        <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>
-                          {h}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {loading ? (
-                      <TableRow><TableCell colSpan={11} align="center" sx={{ py: 6 }}>{t('table.loading')}</TableCell></TableRow>
-                    ) : activeBatches.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={11} align="center" sx={{ py: 8 }}>
-                          <Typography variant="body2" color="text.secondary">{t('table.empty')}</Typography>
-                          <Button size="small" onClick={openAddBatch} sx={{ mt: 1 }}>+ {t('table.addFirst')}</Button>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      activeBatches.map((b) => (
-                        <TableRow key={b._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
-                          <TableCell sx={{ fontWeight: 700, fontSize: '0.8rem', fontFamily: 'monospace' }}>{b.batchCode}</TableCell>
-                          <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(b.tanggalPanen)}</TableCell>
-                          <TableCell><GradeChip grade={b.grade} t={t} /></TableCell>
-                          <TableCell sx={{ fontSize: '0.8rem' }}>{b.beratMasuk} kg</TableCell>
-                          <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem', color: b.stokTersisa < b.beratMasuk * 0.2 ? softText(theme, 'error') : softText(theme, 'success') }}>
-                            {b.stokTersisa} kg
-                          </TableCell>
-                          <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600 }}>{formatRupiah(b.hargaJual)}</TableCell>
-                          <TableCell sx={{ minWidth: 120 }}>
-                            {(() => {
-                              const perf = computeBatchPerformance({ hargaModal: b.hargaModal, beratMasuk: b.beratMasuk, stokTersisa: b.stokTersisa, hargaJual: b.hargaJual });
-                              if (perf.bepKg === null) return <Typography variant="caption" color="text.disabled">—</Typography>;
-                              return (
-                                <Tooltip title={`${t('batchPerformance.sudahTerjual')}: ${perf.sudahTerjual} kg / BEP: ${perf.bepKg.toFixed(1)} kg`}>
-                                  <Box>
-                                    <LinearProgress
-                                      variant="determinate"
-                                      value={perf.bepProgress * 100}
-                                      color={perf.sudahBalikModal ? 'success' : 'primary'}
-                                      sx={{ height: 5, borderRadius: 3, mb: 0.5 }}
-                                    />
-                                    <Typography variant="caption" color={perf.sudahBalikModal ? 'success.main' : 'text.secondary'}>
-                                      {perf.sudahBalikModal ? '✓' : `${perf.sisaBepKg.toFixed(1)} kg`}
-                                    </Typography>
-                                  </Box>
-                                </Tooltip>
-                              );
-                            })()}
-                          </TableCell>
-                          <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{b.lokasiPenyimpanan}</TableCell>
-                          <TableCell sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{formatDateShort(b.estimasiKadaluarsa)}</TableCell>
-                          <TableCell><StatusChip status={b.status} t={t} /></TableCell>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              <IconButton size="small" aria-label="Ship batch" onClick={() => { stockOutForm.setValue('batchId', b._id); setStockOutDialogOpen(true); }}
-                                sx={{ color: softText(theme, 'info'), bgcolor: softBg(theme, 'info', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.info.main, color: accentText(theme, 'info') } }}>
-                                <LocalShippingIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" aria-label="Tutup batch" onClick={() => onCloseBatch(b._id)}
-                                sx={{ color: softText(theme, 'warning'), bgcolor: softBg(theme, 'warning', 0.14), borderRadius: 1.5, '&:hover': { bgcolor: theme.palette.warning.main, color: accentText(theme, 'warning') } }}>
-                                <InventoryIcon fontSize="small" />
-                              </IconButton>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
+          <StokBatchListView
+            activeBatches={activeBatches}
+            isMobile={isMobile}
+            loading={loading}
+            onCloseBatch={onCloseBatch}
+            openAddBatch={openAddBatch}
+            setStockOutDialogOpen={setStockOutDialogOpen}
+            stockOutForm={stockOutForm}
+            t={t}
+          />
         )}
 
         {/* Tab 2: Mutasi */}
         {tab === 1 && (
-          <CardContent sx={{ p: isMobile ? 2 : 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>{t('mutationTable.filterGrade')}</InputLabel>
-                <Select value={mutFilter} label={t('mutationTable.filterGrade')} onChange={(e) => setMutFilter(e.target.value)}>
-                  <MenuItem value="semua">{t('mutationTable.allGrades')}</MenuItem>
-                  {grades.map((g) => (
-                    <MenuItem key={g.id} value={g.nama}>{g.nama}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                label="Dari Tanggal"
-                size="small"
-                value={formatDateInputValue(mutFromDate)}
-                onChange={(e) => setMutFromDate(normalizeDateInputValue(e.target.value))}
-                error={mutFromDateInvalid}
-                helperText={mutFromDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
-                placeholder="05-06-2026"
-                sx={{ minWidth: 170 }}
-              />
-              <TextField
-                label="Sampai Tanggal"
-                size="small"
-                value={formatDateInputValue(mutToDate)}
-                onChange={(e) => setMutToDate(normalizeDateInputValue(e.target.value))}
-                error={mutToDateInvalid}
-                helperText={mutToDateInvalid ? 'Format tanggal harus dd-MM-yyyy' : ''}
-                placeholder="05-06-2026"
-                sx={{ minWidth: 170 }}
-              />
-              <Button variant="contained" size="small" onClick={onApplyDateFilter} disabled={mutFromDateInvalid || mutToDateInvalid} sx={{ height: 40, borderRadius: 2, px: 2 }}>
-                Terapkan
-              </Button>
-              {(mutFromDate || mutToDate) && (
-                <Button variant="text" size="small" onClick={onResetDateFilter} sx={{ height: 40, borderRadius: 2, color: 'text.secondary' }}>
-                  Reset
-                </Button>
-              )}
-            </Box>
-
-            {isMobile ? (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                {filteredMutations.length === 0 ? (
-                  <Typography variant="body2" align="center" color="text.secondary" sx={{ py: 6 }}>
-                    Belum ada data mutasi.
-                  </Typography>
-                ) : (
-                  filteredMutations.map((m) => (
-                    <Card key={m._id} variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider', boxShadow: 'none' }}>
-                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {formatDateShort(m.tanggal)}
-                          </Typography>
-                          <Chip
-                            label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
-                            size="small"
-                            sx={{
-                              bgcolor: m.tipe === 'masuk' ? softBg(theme, 'success', 0.14) : softBg(theme, 'error', 0.14),
-                              color: m.tipe === 'masuk' ? softText(theme, 'success') : softText(theme, 'error'),
-                              fontWeight: 700,
-                              borderRadius: 1.5,
-                              fontSize: '0.72rem'
-                            }}
-                          />
-                        </Box>
-
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 1 }}>
-                          <Typography variant="subtitle2" sx={{ fontFamily: 'monospace', fontWeight: 800 }}>
-                            {m.batchCode}
-                          </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                            {m.berat} kg
-                          </Typography>
-                        </Box>
-
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mt: 1 }}>
-                          {m.tujuan && (
-                            <Typography variant="caption" color="text.secondary">
-                              <strong>Tujuan:</strong> {m.tujuan}
-                            </Typography>
-                          )}
-                          {m.catatan && (
-                            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                              <strong>Catatan:</strong> {m.catatan}
-                            </Typography>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </Box>
-            ) : (
-              <TableContainer sx={{ maxHeight: 480 }}>
-                <Table stickyHeader size="small">
-                  <TableHead>
-                    <TableRow>
-                      {[t('mutationTable.date'), t('mutationTable.batch'), t('mutationTable.type'), t('mutationTable.weight'), t('mutationTable.target'), t('mutationTable.note')].map((h) => (
-                        <TableCell key={h} sx={{ fontWeight: 700, fontSize: '0.75rem', color: 'text.secondary', textTransform: 'uppercase', bgcolor: 'background.paper' }}>{h}</TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredMutations.map((m) => (
-                      <TableRow key={m._id} sx={{ '&:hover': { bgcolor: tableHoverBg(theme) } }}>
-                        <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateShort(m.tanggal)}</TableCell>
-                        <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 600 }}>{m.batchCode}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={m.tipe === 'masuk' ? t('mutationTable.in') : t('mutationTable.out')}
-                            size="small"
-                            sx={{ bgcolor: m.tipe === 'masuk' ? softBg(theme, 'success', 0.14) : softBg(theme, 'error', 0.14), color: m.tipe === 'masuk' ? softText(theme, 'success') : softText(theme, 'error'), fontWeight: 700, borderRadius: 1.5 }}
-                          />
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 700, fontSize: '0.85rem' }}>{m.berat} kg</TableCell>
-                        <TableCell sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>{m.tujuan || '—'}</TableCell>
-                        <TableCell sx={{ fontSize: '0.78rem', color: 'text.secondary', maxWidth: 200 }}>
-                          <Typography variant="caption" noWrap sx={{ display: 'block' }}>{m.catatan || '—'}</Typography>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-          </CardContent>
+          <StokMutationsView
+            filteredMutations={filteredMutations}
+            grades={grades}
+            isMobile={isMobile}
+            mutFilter={mutFilter}
+            mutFromDate={mutFromDate}
+            mutFromDateInvalid={mutFromDateInvalid}
+            mutToDate={mutToDate}
+            mutToDateInvalid={mutToDateInvalid}
+            onApplyDateFilter={onApplyDateFilter}
+            onResetDateFilter={onResetDateFilter}
+            setMutFilter={setMutFilter}
+            setMutFromDate={setMutFromDate}
+            setMutToDate={setMutToDate}
+            t={t}
+          />
         )}
 
         {/* Tab 3: Bahan Pendukung */}

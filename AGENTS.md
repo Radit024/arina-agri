@@ -179,9 +179,9 @@ Item berikut belum dirapikan. Saat menyentuh salah satunya, sekalian perbaiki; j
 
 | File | Masalah |
 | :--- | :--- |
-| `app/dashboard/stok/_components/StokView.tsx` (~1230) | Menerima ~53 props. |
 | `app/dashboard/ensiklopedia/_components/EnsiklopediaView.tsx` (~1100) | Belum dipetakan per section. |
 | `app/dashboard/cuaca/_components/CuacaView.tsx` (~780) | Belum dipetakan per section. |
+| `tests/components/StokView.test.tsx` | Tidak pernah merender isi tab stok, jadi refactor tab StokView tidak punya pengaman. |
 | `controllers/cuaca/useCuacaController.tsx` (~605) | Lokasi sudah terpisah; sisa concern yang belum dipisah: notifikasi, jadwal, kanal WhatsApp. |
 | `tests/components/KeuanganView.test.tsx` (~990) | Masih satu file untuk seluruh keuangan. |
 <!-- END:verification -->

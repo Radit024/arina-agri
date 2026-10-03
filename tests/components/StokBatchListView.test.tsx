@@ -12,43 +12,26 @@ import type {
   StockOutFormInput,
   StockOutFormOutput,
 } from '@/lib/validators/stockSchemas';
+import messages from '@/messages/id.json';
 
 const theme = createTheme();
 
-const MESSAGES: Record<string, string> = {
-  'table.loading': 'Memuat batch...',
-  'table.empty': 'Belum ada batch panen.',
-  'table.addFirst': 'Tambah Batch Pertama',
-  'table.batchId': 'Kode Batch',
-  'table.grade': 'Grade',
-  'table.initialWeight': 'Berat Masuk',
-  'table.remainingWeight': 'Sisa',
-  'table.price': 'Harga Jual',
-  'table.expiry': 'Kadaluarsa',
-  'table.harvestDate': 'Tanggal Panen',
-  'table.location': 'Lokasi',
-  'table.status': 'Status',
-  'table.action': 'Aksi',
-  'batchPerformance.hargaJualBelumDiisi': 'Harga jual belum diisi',
-  'batchPerformance.bepProgress': 'Progres BEP',
-  'batchPerformance.sudahBalikModal': 'Modal sudah balik',
-  'batchPerformance.sisaBep': 'Sisa BEP {kg} kg',
-  'batchPerformance.sudahTerjual': 'Sudah terjual',
-  'batchPerformance.bepKg': 'BEP',
-  'batchPerformance.estimasiLaba': 'Estimasi laba:',
-  'buttons.stockOut': 'Catat Keluar',
-  'status.safe': 'Aman',
-  'status.low': 'Menipis',
-  'status.expiring': 'Hampir Kadaluarsa',
-  'status.empty': 'Habis',
-};
+const stockMessages = messages.Stock as Record<string, unknown>;
+
+function readPath(path: string): string {
+  const value = path.split('.').reduce<unknown>(
+    (node, key) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined),
+    stockMessages,
+  );
+  return typeof value === 'string' ? value : path;
+}
 
 function translate(key: string, values?: Record<string, string | number>): string {
-  const message = MESSAGES[key] ?? key;
-  if (!values) return message;
+  const template = readPath(key);
+  if (!values) return template;
   return Object.entries(values).reduce(
-    (text, [name, value]) => text.replace(`{${name}}`, String(value)),
-    message,
+    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+    template,
   );
 }
 
@@ -111,6 +94,7 @@ function renderView(overrides: Partial<StokBatchListViewProps> = {}) {
     t,
     ...overrides,
   };
+
   render(
     <ThemeProvider theme={theme}>
       <StokBatchListView {...props} />
@@ -122,18 +106,54 @@ describe('StokBatchListView', () => {
   it('shows a loading message instead of the empty state while batches are still loading', () => {
     renderView({ activeBatches: [], loading: true });
 
-    expect(screen.getByText('Memuat batch...')).toBeInTheDocument();
-    expect(screen.queryByText('Belum ada batch panen.')).not.toBeInTheDocument();
+    expect(screen.getByText('Memuat data...')).toBeInTheDocument();
+    expect(screen.queryByText('Belum ada data batch stok.')).not.toBeInTheDocument();
   });
 
   it('invites the farmer to register a first batch when no batch exists yet', () => {
     const openAddBatch = vi.fn();
     renderView({ activeBatches: [], openAddBatch });
 
-    expect(screen.getByText('Belum ada batch panen.')).toBeInTheDocument();
+    expect(screen.getByText('Belum ada data batch stok.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '+ Tambah Batch Pertama' }));
     expect(openAddBatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a loading message instead of the empty state on narrow screens', () => {
+    renderView({ activeBatches: [], isMobile: true, loading: true });
+
+    expect(screen.getByText('Memuat data...')).toBeInTheDocument();
+    expect(screen.queryByText('Belum ada data batch stok.')).not.toBeInTheDocument();
+  });
+
+  it('invites the farmer to register a first batch on narrow screens', () => {
+    const openAddBatch = vi.fn();
+    renderView({ activeBatches: [], isMobile: true, openAddBatch });
+
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getByText('Belum ada data batch stok.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Tambah Batch Pertama' }));
+    expect(openAddBatch).toHaveBeenCalledTimes(1);
+  });
+
+  it('names every column the farmer reads on a wide screen', () => {
+    renderView({ activeBatches: [batchAman] });
+
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'ID Batch',
+      'Tgl Masuk',
+      'Grade',
+      'Berat Awal',
+      'Stok Tersisa',
+      'Harga Jual/kg',
+      'Progress BEP',
+      'Lokasi',
+      'Kadaluarsa',
+      'Status',
+      'Aksi',
+    ]);
   });
 
   it('lists every batch with its code, entry weight, and weight left', () => {
@@ -150,43 +170,28 @@ describe('StokBatchListView', () => {
     expect(within(rows[2]).getByText('15 kg')).toBeInTheDocument();
   });
 
-  it('shows a loading message instead of the empty state on narrow screens', () => {
-    renderView({ activeBatches: [], isMobile: true, loading: true });
-
-    expect(screen.getByText('Memuat batch...')).toBeInTheDocument();
-    expect(screen.queryByText('Belum ada batch panen.')).not.toBeInTheDocument();
-  });
-
-  it('invites the farmer to register a first batch on narrow screens', () => {
-    const openAddBatch = vi.fn();
-    renderView({ activeBatches: [], isMobile: true, openAddBatch });
-
-    expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.getByText('Belum ada batch panen.')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: '+ Tambah Batch Pertama' }));
-    expect(openAddBatch).toHaveBeenCalledTimes(1);
-  });
-
   it('stacks each batch as its own card instead of a table on narrow screens', () => {
     renderView({ activeBatches: [batchAman], isMobile: true });
 
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
     expect(screen.getByText('BCH-2026-001')).toBeInTheDocument();
     expect(screen.getByText('70 kg / 100 kg')).toBeInTheDocument();
+    expect(screen.getByText('Gudang Utama')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Catat Keluar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tutup batch' })).toBeInTheDocument();
   });
 
-  it('warns about a depleted batch by colouring the weight left in red', () => {
+  it('flags a nearly depleted batch so the farmer notices it before it runs out', () => {
     renderView({ activeBatches: [batchMenipis, batchAman] });
 
     const [, depletedRow, healthyRow] = screen.getAllByRole('row');
 
+    expect(within(depletedRow).getByText('Menipis')).toBeInTheDocument();
     expect(within(depletedRow).getByText('15 kg')).toHaveStyle({
       color: theme.palette.error.dark,
     });
+
+    expect(within(healthyRow).getByText('Aman')).toBeInTheDocument();
     expect(within(healthyRow).getByText('70 kg')).toHaveStyle({
       color: theme.palette.success.dark,
     });
@@ -211,16 +216,17 @@ describe('StokBatchListView', () => {
   it('explains the missing break-even bar on narrow screens when a batch has no selling price', () => {
     renderView({ activeBatches: [batchTanpaHargaJual], isMobile: true });
 
-    expect(screen.getByText('Harga jual belum diisi')).toBeInTheDocument();
+    expect(screen.getByText('Isi harga jual untuk melihat BEP')).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
   it('tells the farmer how far the batch is from breaking even and the profit it could still make', () => {
     renderView({ activeBatches: [batchAman], isMobile: true });
 
-    expect(screen.getByText('Progres BEP')).toBeInTheDocument();
-    expect(screen.getByText('Sisa BEP 20.0 kg')).toBeInTheDocument();
-    expect(screen.getByText('Rp 1.050.000')).toBeInTheDocument();
+    expect(screen.getByText('Progress BEP')).toBeInTheDocument();
+    expect(screen.getByText('20.0 kg lagi untuk balik modal')).toBeInTheDocument();
+    expect(screen.getByText('Estimasi laba jika habis:')).toBeInTheDocument();
+    expect(screen.getByText(/Rp\s?1\.050\.000/)).toBeInTheDocument();
   });
 
   it('opens the stock-out flow for the batch whose action was pressed', () => {

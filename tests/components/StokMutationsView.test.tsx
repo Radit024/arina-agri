@@ -7,24 +7,18 @@ import StokMutationsView, {
 } from '@/app/dashboard/stok/_components/StokMutationsView';
 import type { StockTranslator } from '@/app/dashboard/stok/_components/stockChips';
 import type { ApiGrade, ApiStockMutation } from '@/lib/api';
+import messages from '@/messages/id.json';
 
 const theme = createTheme();
 
-const MESSAGES: Record<string, string> = {
-  'mutationTable.filterGrade': 'Filter Grade',
-  'mutationTable.allGrades': 'Semua Grade',
-  'mutationTable.date': 'Tanggal',
-  'mutationTable.batch': 'Batch',
-  'mutationTable.type': 'Tipe',
-  'mutationTable.weight': 'Berat',
-  'mutationTable.target': 'Tujuan',
-  'mutationTable.note': 'Catatan',
-  'mutationTable.in': 'Masuk',
-  'mutationTable.out': 'Keluar',
-};
+const stockMessages = messages.Stock as Record<string, unknown>;
 
 function translate(key: string): string {
-  return MESSAGES[key] ?? key;
+  const value = key.split('.').reduce<unknown>(
+    (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined),
+    stockMessages,
+  );
+  return typeof value === 'string' ? value : key;
 }
 
 const t = translate as unknown as StockTranslator;
@@ -84,8 +78,10 @@ function renderView(overrides: Partial<StokMutationsViewProps> = {}) {
 }
 
 describe('StokMutationsView', () => {
-  it('lists every grade plus the unfiltered choice so the ledger can be narrowed', () => {
+  it('labels the grade filter and lists every grade plus the unfiltered choice', () => {
     renderView();
+
+    expect(screen.getByText('Filter Grade', { selector: 'label' })).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole('combobox'));
 
@@ -187,7 +183,7 @@ describe('StokMutationsView', () => {
     expect(onResetDateFilter).toHaveBeenCalledTimes(1);
   });
 
-  it('shows each ledger entry with its type, weight, destination, and note', () => {
+  it('shows each ledger entry in named columns and dashes the details that were never recorded', () => {
     renderView({ filteredMutations: [entryMasuk, entryKeluar] });
 
     const rows = screen.getAllByRole('row');
@@ -196,21 +192,28 @@ describe('StokMutationsView', () => {
       'Tanggal',
       'Batch',
       'Tipe',
-      'Berat',
+      'Berat (kg)',
       'Tujuan',
       'Catatan',
     ]);
 
-    expect(within(rows[1]).getByText('1 Jun 2026')).toBeInTheDocument();
-    expect(within(rows[1]).getByText('Masuk')).toBeInTheDocument();
-    expect(within(rows[1]).getByText('100 kg')).toBeInTheDocument();
-    expect(within(rows[1]).getByText('—')).toBeInTheDocument();
-    expect(within(rows[1]).getByText('Panen pagi')).toBeInTheDocument();
+    const masukCells = within(rows[1]).getAllByRole('cell');
+    const keluarCells = within(rows[2]).getAllByRole('cell');
+    expect(masukCells).toHaveLength(6);
+    expect(keluarCells).toHaveLength(6);
 
-    expect(within(rows[2]).getByText('8 Jun 2026')).toBeInTheDocument();
-    expect(within(rows[2]).getByText('Keluar')).toBeInTheDocument();
-    expect(within(rows[2]).getByText('30 kg')).toBeInTheDocument();
-    expect(within(rows[2]).getByText('Pasar Lokal')).toBeInTheDocument();
+    expect(within(masukCells[0]).getByText('1 Jun 2026')).toBeInTheDocument();
+    expect(within(masukCells[1]).getByText('BCH-2026-001')).toBeInTheDocument();
+    expect(within(masukCells[2]).getByText('↓ Masuk')).toBeInTheDocument();
+    expect(within(masukCells[3]).getByText('100 kg')).toBeInTheDocument();
+    expect(within(masukCells[4]).getByText('—')).toBeInTheDocument();
+    expect(within(masukCells[5]).getByText('Panen pagi')).toBeInTheDocument();
+
+    expect(within(keluarCells[0]).getByText('8 Jun 2026')).toBeInTheDocument();
+    expect(within(keluarCells[2]).getByText('↑ Keluar')).toBeInTheDocument();
+    expect(within(keluarCells[3]).getByText('30 kg')).toBeInTheDocument();
+    expect(within(keluarCells[4]).getByText('Pasar Lokal')).toBeInTheDocument();
+    expect(within(keluarCells[5]).getByText('—')).toBeInTheDocument();
   });
 
   it('tells the farmer there is nothing to show when no entry matches on narrow screens', () => {
@@ -224,12 +227,11 @@ describe('StokMutationsView', () => {
     renderView({ filteredMutations: [entryMasuk, entryKeluar], isMobile: true });
 
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.queryAllByRole('columnheader')).toHaveLength(0);
     expect(screen.getAllByText('1 Jun 2026')).toHaveLength(1);
     expect(screen.getAllByText('8 Jun 2026')).toHaveLength(1);
     expect(screen.getAllByText('BCH-2026-001')).toHaveLength(2);
     expect(screen.getByText('100 kg')).toBeInTheDocument();
-    expect(screen.getByText('Masuk')).toBeInTheDocument();
+    expect(screen.getByText('↓ Masuk')).toBeInTheDocument();
     expect(screen.getByText('Panen pagi')).toBeInTheDocument();
     expect(screen.getByText('Tujuan:')).toBeInTheDocument();
     expect(screen.getByText('Pasar Lokal')).toBeInTheDocument();

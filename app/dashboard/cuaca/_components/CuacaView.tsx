@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import AirIcon from '@mui/icons-material/Air';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -69,66 +69,39 @@ type WeatherMessages = {
   };
 };
 
-export default function CuacaView({
-  theme,
-  t,
-  todayDate,
-  notificationPlatform,
-  savedContact,
-  contactValue,
-  notifAktif,
-  setNotifAktif,
-  isSendingTest,
-  testStatus,
-  testFeedback,
-  contactSaving,
-  contactSaveStatus,
-  contactSaveFeedback,
-  isCurrentContactSaved,
-  scheduleEnabled,
-  setScheduleEnabled,
-  scheduleTime,
-  setScheduleTime,
-  schedulePlatform,
-  setSchedulePlatform,
-  scheduleStatus,
-  setScheduleStatus,
-  scheduleError,
-  gpsStatus,
-  gpsMessage,
-  forecastData,
-  warningsData,
-  weatherLoading,
-  weatherError,
-  fForecast,
-  fAlerts,
-  displayedCurrentWeather,
-  dayNames,
-  isRainy,
-  isSunny,
-  isCloudy,
-  currentWeatherCardBackground,
-  forecastSectionBackground,
-  getForecastDayBackground,
-  isWhatsappPlatform,
-  contactLabel,
-  contactPlaceholder,
-  contactHelper,
-  getConditionLabel,
-  handleContactValueChange,
-  handlePlatformChange,
-  handleSaveNotificationContact,
-  handleUseGpsLocation,
-  locationQuery,
-  handleLocationQueryChange,
-  locationResults,
-  locationSearchStatus,
-  locationSearchError,
-  searchLocations,
-  handleSelectLocation,
-  handleTestNotification,
-  handleSaveSchedule,
-}: UseCuacaControllerResult) {
+export default function CuacaView(props: UseCuacaControllerResult) {
+  const {
+    theme,
+    t,
+    todayDate,
+    gpsStatus,
+    gpsMessage,
+    forecastData,
+    warningsData,
+    weatherLoading,
+    weatherError,
+    fForecast,
+    fAlerts,
+    displayedCurrentWeather,
+    dayNames,
+    isRainy,
+    isSunny,
+    isCloudy,
+    currentWeatherCardBackground,
+    forecastSectionBackground,
+    getForecastDayBackground,
+    getConditionLabel,
+    handleUseGpsLocation,
+    locationQuery,
+    handleLocationQueryChange,
+    locationResults,
+    locationSearchStatus,
+    locationSearchError,
+    searchLocations,
+    handleSelectLocation,
+    notificationSettings,
+    notificationSchedule,
+  } = props;
   const intlMessages = useMessages() as WeatherMessages;
   const locationMessages = intlMessages.Weather?.location;
 
@@ -588,40 +561,47 @@ slotProps={{
           </Card>
         </Grid>
 
-        {/* Notification Integration */}
         <CuacaNotificationPanel
           theme={theme}
           t={t}
-          notificationPlatform={notificationPlatform}
-          setNotifAktif={setNotifAktif}
-          notifAktif={notifAktif}
-          savedContact={savedContact}
-          contactValue={contactValue}
-          handleContactValueChange={handleContactValueChange}
-          handlePlatformChange={handlePlatformChange}
-          handleSaveNotificationContact={handleSaveNotificationContact}
-          isCurrentContactSaved={isCurrentContactSaved}
-          contactLabel={contactLabel}
-          contactPlaceholder={contactPlaceholder}
-          contactHelper={contactHelper}
-          isWhatsappPlatform={isWhatsappPlatform}
-          contactSaving={contactSaving}
-          contactSaveStatus={contactSaveStatus}
-          contactSaveFeedback={contactSaveFeedback}
-          handleTestNotification={handleTestNotification}
-          isSendingTest={isSendingTest}
-          testStatus={testStatus}
-          testFeedback={testFeedback}
-          scheduleEnabled={scheduleEnabled}
-          setScheduleEnabled={setScheduleEnabled}
-          scheduleTime={scheduleTime}
-          setScheduleTime={setScheduleTime}
-          schedulePlatform={schedulePlatform}
-          setSchedulePlatform={setSchedulePlatform}
-          scheduleStatus={scheduleStatus}
-          setScheduleStatus={setScheduleStatus}
-          scheduleError={scheduleError}
-          handleSaveSchedule={handleSaveSchedule}
+          settings={
+            notificationSettings ?? {
+              notificationPlatform: props.notificationPlatform,
+              setNotifAktif: props.setNotifAktif,
+              notifAktif: props.notifAktif,
+              savedContact: props.savedContact,
+              contactValue: props.contactValue,
+              handleContactValueChange: props.handleContactValueChange,
+              handlePlatformChange: props.handlePlatformChange,
+              handleSaveNotificationContact: props.handleSaveNotificationContact,
+              isCurrentContactSaved: props.isCurrentContactSaved,
+              contactLabel: props.contactLabel,
+              contactPlaceholder: props.contactPlaceholder,
+              contactHelper: props.contactHelper,
+              isWhatsappPlatform: props.isWhatsappPlatform,
+              contactSaving: props.contactSaving,
+              contactSaveStatus: props.contactSaveStatus,
+              contactSaveFeedback: props.contactSaveFeedback,
+              handleTestNotification: props.handleTestNotification,
+              isSendingTest: props.isSendingTest,
+              testStatus: props.testStatus,
+              testFeedback: props.testFeedback,
+            }
+          }
+          schedule={
+            notificationSchedule ?? {
+              scheduleEnabled: props.scheduleEnabled,
+              setScheduleEnabled: props.setScheduleEnabled,
+              scheduleTime: props.scheduleTime,
+              setScheduleTime: props.setScheduleTime,
+              schedulePlatform: props.schedulePlatform,
+              setSchedulePlatform: props.setSchedulePlatform,
+              scheduleStatus: props.scheduleStatus,
+              setScheduleStatus: props.setScheduleStatus,
+              scheduleError: props.scheduleError,
+              handleSaveSchedule: props.handleSaveSchedule,
+            }
+          }
         />
 
       </Grid>

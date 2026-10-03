@@ -15,13 +15,11 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme } from '@mui/material/styles';
 
 import TelegramIcon from '@mui/icons-material/Telegram';
 import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import { useMessages } from 'next-intl';
-
-import type { UseCuacaControllerResult } from '@/controllers/cuaca/useCuacaController';
 
 type CuacaNotificationMessages = {
   Weather?: {
@@ -31,41 +29,48 @@ type CuacaNotificationMessages = {
   };
 };
 
-export type CuacaNotificationPanelProps = Pick<
-  UseCuacaControllerResult,
-    | 'theme'
-    | 't'
-    | 'notificationPlatform'
-    | 'setNotifAktif'
-    | 'notifAktif'
-    | 'savedContact'
-    | 'contactValue'
-    | 'handleContactValueChange'
-    | 'handlePlatformChange'
-    | 'handleSaveNotificationContact'
-    | 'isCurrentContactSaved'
-    | 'contactLabel'
-    | 'contactPlaceholder'
-    | 'contactHelper'
-    | 'isWhatsappPlatform'
-    | 'contactSaving'
-    | 'contactSaveStatus'
-    | 'contactSaveFeedback'
-    | 'handleTestNotification'
-    | 'isSendingTest'
-    | 'testStatus'
-    | 'testFeedback'
-    | 'scheduleEnabled'
-    | 'setScheduleEnabled'
-    | 'scheduleTime'
-    | 'setScheduleTime'
-    | 'schedulePlatform'
-    | 'setSchedulePlatform'
-    | 'scheduleStatus'
-    | 'setScheduleStatus'
-    | 'scheduleError'
-    | 'handleSaveSchedule'
->;
+export interface CuacaNotificationSettingsProps {
+  notificationPlatform: 'whatsapp' | 'telegram';
+  setNotifAktif: React.Dispatch<React.SetStateAction<boolean>>;
+  notifAktif: boolean;
+  savedContact: string;
+  contactValue: string;
+  handleContactValueChange: (value: string) => void;
+  handlePlatformChange: (_event: React.MouseEvent<HTMLElement>, value: 'whatsapp' | 'telegram' | null) => void;
+  handleSaveNotificationContact: () => Promise<void>;
+  isCurrentContactSaved: boolean;
+  contactLabel: string;
+  contactPlaceholder: string;
+  contactHelper: string;
+  isWhatsappPlatform: boolean;
+  contactSaving: boolean;
+  contactSaveStatus: 'idle' | 'success' | 'error';
+  contactSaveFeedback: string;
+  handleTestNotification: () => Promise<void>;
+  isSendingTest: boolean;
+  testStatus: 'idle' | 'success' | 'error' | 'skipped';
+  testFeedback: string;
+}
+
+export interface CuacaNotificationScheduleProps {
+  scheduleEnabled: boolean;
+  setScheduleEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  scheduleTime: string;
+  setScheduleTime: React.Dispatch<React.SetStateAction<string>>;
+  schedulePlatform: 'whatsapp' | 'telegram';
+  setSchedulePlatform: React.Dispatch<React.SetStateAction<'whatsapp' | 'telegram'>>;
+  scheduleStatus: 'idle' | 'success' | 'error';
+  setScheduleStatus: React.Dispatch<React.SetStateAction<'idle' | 'success' | 'error'>>;
+  scheduleError: string;
+  handleSaveSchedule: () => Promise<void>;
+}
+
+export interface CuacaNotificationPanelProps {
+  theme: Theme;
+  t: (key: string, values?: Record<string, string | number>) => string;
+  settings: CuacaNotificationSettingsProps;
+  schedule: CuacaNotificationScheduleProps;
+}
 
 /**
  * Panel integrasi notifikasi: kanal pengiriman, kontak tujuan, tombol uji,
@@ -77,38 +82,45 @@ export type CuacaNotificationPanelProps = Pick<
 export function CuacaNotificationPanel({
   theme,
   t,
-  notificationPlatform,
-  setNotifAktif,
-  notifAktif,
-  savedContact,
-  contactValue,
-  handleContactValueChange,
-  handlePlatformChange,
-  handleSaveNotificationContact,
-  isCurrentContactSaved,
-  contactLabel,
-  contactPlaceholder,
-  contactHelper,
-  isWhatsappPlatform,
-  contactSaving,
-  contactSaveStatus,
-  contactSaveFeedback,
-  handleTestNotification,
-  isSendingTest,
-  testStatus,
-  testFeedback,
-  scheduleEnabled,
-  setScheduleEnabled,
-  scheduleTime,
-  setScheduleTime,
-  schedulePlatform,
-  setSchedulePlatform,
-  scheduleStatus,
-  setScheduleStatus,
-  scheduleError,
-  handleSaveSchedule,
+  settings,
+  schedule,
 }: CuacaNotificationPanelProps) {
   const intlMessages = useMessages() as CuacaNotificationMessages;
+
+  const {
+    notificationPlatform,
+    setNotifAktif,
+    notifAktif,
+    savedContact,
+    contactValue,
+    handleContactValueChange,
+    handlePlatformChange,
+    handleSaveNotificationContact,
+    isCurrentContactSaved,
+    contactLabel,
+    contactPlaceholder,
+    contactHelper,
+    isWhatsappPlatform,
+    contactSaving,
+    contactSaveStatus,
+    contactSaveFeedback,
+    handleTestNotification,
+    isSendingTest,
+    testStatus,
+    testFeedback,
+  } = settings;
+
+  const {
+    scheduleEnabled,
+    setScheduleEnabled,
+    scheduleTime,
+    setScheduleTime,
+    schedulePlatform,
+    setSchedulePlatform,
+    scheduleStatus,
+    scheduleError,
+    handleSaveSchedule,
+  } = schedule;
 
   return (
           <Grid size={{ xs: 12, lg: 4 }}>
@@ -292,7 +304,6 @@ export function CuacaNotificationPanel({
                       value={scheduleTime}
                       onChange={(e) => {
                         setScheduleTime(e.target.value);
-                        setScheduleStatus('idle');
                       }}
                       slotProps={{ inputLabel: { shrink: true } }}
                     />

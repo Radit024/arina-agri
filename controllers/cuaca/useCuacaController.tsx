@@ -1,40 +1,28 @@
 'use client';
 
 import { useTheme } from '@mui/material/styles';
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 
-import useLocalStorage from '@/hooks/useLocalStorage';
+import { useAuth } from '@/context/AuthContext';
 import { useWeatherLocation } from '@/hooks/useWeatherLocation';
 import {
-  eventApi,
   locationApi,
-  notificationApi,
-  notificationScheduleApi,
-  profileApi,
   weatherApi,
   type BmkgForecastResponse,
   type BmkgWarningsResponse,
-  type NotificationScheduleConfig,
 } from '@/lib/api';
-import { useLocale, useTranslations } from 'next-intl';
-import {
-  WEATHER_TELEGRAM_CONTACT_KEY,
-  WEATHER_WHATSAPP_PHONE_KEY,
-  scopedStorageKey,
-} from '@/lib/storageKeys';
-import { useCuacaoLocationSearch } from './useCuacaoLocationSearch';
-
-import { useAuth } from '@/context/AuthContext';
-import { useCalendar } from '@/hooks/useCalendar';
 import { filterWeatherWarningsByLocation } from '@/lib/dashboard/summary';
 
-export function useCuacaController() {
+import { useCuacaoLocationSearch } from './useCuacaoLocationSearch';
+import { useNotificationSettings } from './useNotificationSettings';
+import { useNotificationSchedule } from './useNotificationSchedule';
 
+export function useCuacaController() {
   const theme = useTheme();
   const t = useTranslations('Weather');
   const locale = useLocale();
   const { user } = useAuth();
-  const { events } = useCalendar();
   const todayDate = new Intl.DateTimeFormat('en-CA').format(new Date());
 
   const {
@@ -64,118 +52,15 @@ export function useCuacaController() {
     onAttempted: () => setGpsAutoAttempted(true),
   });
 
-  const weatherWhatsappKey = scopedStorageKey(WEATHER_WHATSAPP_PHONE_KEY, user?.id);
-  const weatherTelegramKey = scopedStorageKey(WEATHER_TELEGRAM_CONTACT_KEY, user?.id);
-  const [storedWhatsapp, setStoredWhatsapp] = useLocalStorage<string>(weatherWhatsappKey, '');
-  const [storedTelegram, setStoredTelegram] = useLocalStorage<string>(weatherTelegramKey, '');
-  const [notificationPlatform, setNotificationPlatform] = useState<'whatsapp' | 'telegram'>('telegram');
-  const contactStorageKey = notificationPlatform === 'whatsapp' ? weatherWhatsappKey : weatherTelegramKey;
-  const [savedContact, setSavedContact] = useLocalStorage<string>(contactStorageKey, '');
-  const [contactValue, setContactValue] = useState(savedContact);
-  const [notifAktif, setNotifAktif] = useState(true);
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [testStatus, setTestStatus] = useState<'idle' | 'success' | 'error' | 'skipped'>('idle');
-  const [testFeedback, setTestFeedback] = useState('');
-  const [contactSaving, setContactSaving] = useState(false);
-  const [contactSaveStatus, setContactSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [contactSaveFeedback, setContactSaveFeedback] = useState('');
-  const isCurrentContactSaved = contactValue.trim().length > 0 && contactValue.trim() === savedContact.trim();
-
-
-  const [scheduleEnabled, setScheduleEnabled] = useState(true);
-  const [scheduleTime, setScheduleTime] = useState('07:00');
-  const [scheduleTimezone, setScheduleTimezone] = useState('Asia/Jakarta');
-  const [schedulePlatform, setSchedulePlatform] = useState<'whatsapp' | 'telegram'>('telegram');
-  const [scheduleTo, setScheduleTo] = useState('');
-  const [scheduleMessage, setScheduleMessage] = useState(t('whatsapp.defaultScheduleMessage'));
-  const [scheduleStatus, setScheduleStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [scheduleError, setScheduleError] = useState('');
-  const [scheduleReady, setScheduleReady] = useState(false);
-  const [dbSchedule, setDbSchedule] = useState<NotificationScheduleConfig | null>(null);
-
   const [forecastData, setForecastData] = useState<BmkgForecastResponse | null>(null);
   const [warningsData, setWarningsData] = useState<BmkgWarningsResponse | null>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const [weatherError, setWeatherError] = useState('');
-  const scheduleContactFallback = schedulePlatform === 'telegram' ? storedTelegram : storedWhatsapp;
   const gpsAdm4LookupAttemptsRef = useRef(new Set<string>());
   const weatherAdm4LookupAttemptsRef = useRef(new Set<string>());
 
   const missingBmkgLocationMessage = t('errors.missingBmkgLocation');
   const loadBmkgErrorMessage = t('errors.loadBmkg');
-
-  useEffect(() => {
-    setContactValue(savedContact);
-    setContactSaveStatus('idle');
-    setContactSaveFeedback('');
-  }, [savedContact]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let active = true;
-
-    profileApi
-      .get()
-      .then((profile) => {
-        if (!active) return;
-
-        if (profile.whatsappPhone) {
-          setStoredWhatsapp(profile.whatsappPhone);
-        }
-        if (profile.telegramContact) {
-          setStoredTelegram(profile.telegramContact);
-        }
-
-        const currentProfileContact = notificationPlatform === 'telegram'
-          ? profile.telegramContact
-          : profile.whatsappPhone;
-
-        if (currentProfileContact) {
-          setSavedContact(currentProfileContact);
-          setContactValue(currentProfileContact);
-        }
-      })
-      .catch(() => {
-        // Local storage remains a fallback when profile sync is unavailable.
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [notificationPlatform, setSavedContact, setStoredTelegram, setStoredWhatsapp, user?.id]);
-
-  useEffect(() => {
-    notificationScheduleApi
-      .get()
-      .then((schedule) => {
-        setScheduleEnabled(Boolean(schedule.enabled));
-        setScheduleTime(schedule.time || '07:00');
-        setScheduleTimezone(schedule.timezone || 'Asia/Jakarta');
-        setSchedulePlatform(schedule.platform || 'whatsapp');
-        const fallbackContact = schedule.platform === 'telegram' ? storedTelegram : storedWhatsapp;
-        setScheduleTo(schedule.to || fallbackContact || '');
-        if (schedule.customMessage) {
-          setScheduleMessage(schedule.customMessage);
-        }
-        setDbSchedule(schedule);
-        setScheduleReady(true);
-      })
-      .catch(() => {
-        const fallback = storedWhatsapp || storedTelegram;
-        if (fallback) setScheduleTo(fallback);
-        setScheduleReady(true);
-      });
-  }, [storedWhatsapp, storedTelegram]);
-
-
-  useEffect(() => {
-    if (!scheduleReady) return;
-    const fallback = scheduleContactFallback?.trim();
-    if (fallback) {
-      setScheduleTo(fallback);
-    }
-  }, [schedulePlatform, scheduleContactFallback, scheduleReady]);
 
   useEffect(() => {
     if (!gpsLocation || gpsLocation.adm4) return;
@@ -370,18 +255,35 @@ export function useCuacaController() {
   };
 
   const recipientName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('farmerFallback');
-  const isWhatsappPlatform = notificationPlatform === 'whatsapp';
-  const contactLabel = isWhatsappPlatform ? t('whatsapp.phoneLabel') : t('whatsapp.telegramLabel');
-  const contactPlaceholder = isWhatsappPlatform ? t('whatsapp.phonePlaceholder') : t('whatsapp.telegramPlaceholder');
-  const contactHelper = isWhatsappPlatform
-    ? t('whatsapp.phoneHelper')
-    : t('whatsapp.telegramHelper');
 
-  const handleContactValueChange = (value: string) => {
-    setContactValue(isWhatsappPlatform ? value.replace(/\D/g, '') : value);
-    setContactSaveStatus('idle');
-    setContactSaveFeedback('');
-  };
+  const scheduleMessageRef = useRef('');
+
+  const notificationSettings = useNotificationSettings({
+    user,
+    t,
+    locale,
+    recipientName,
+    displayedCurrentWeather,
+    warningsData,
+    todayDate,
+    getScheduleMessage: () => scheduleMessageRef.current,
+  });
+
+  const notificationSchedule = useNotificationSchedule({
+    user,
+    t,
+    recipientName,
+    activeAdm4,
+    activeLocationLabel,
+    displayedLocation: displayedCurrentWeather.lokasi,
+    missingBmkgLocationMessage,
+    storedWhatsapp: notificationSettings.storedWhatsapp,
+    storedTelegram: notificationSettings.storedTelegram,
+  });
+
+  useEffect(() => {
+    scheduleMessageRef.current = notificationSchedule.scheduleMessage;
+  }, [notificationSchedule.scheduleMessage]);
 
   const getConditionLabel = (condition: string) => {
     const key = condition.toLowerCase();
@@ -393,250 +295,32 @@ export function useCuacaController() {
     return condition;
   };
 
-  const handlePlatformChange = (_event: MouseEvent<HTMLElement>, value: 'whatsapp' | 'telegram' | null) => {
-    if (value) {
-      setNotificationPlatform(value);
-      setContactSaveStatus('idle');
-      setContactSaveFeedback('');
-    }
-  };
-
-  const handleSaveNotificationContact = async () => {
-    const nextContact = contactValue.trim();
-    if (!nextContact) return;
-
-    setContactSaving(true);
-    setContactSaveStatus('idle');
-    setContactSaveFeedback('');
-
-    try {
-      const savedProfile = await profileApi.save({
-        fullName: recipientName,
-        ...(isWhatsappPlatform
-          ? { whatsappPhone: nextContact }
-          : { telegramContact: nextContact }),
-      });
-
-      const savedValue = isWhatsappPlatform
-        ? savedProfile.whatsappPhone
-        : savedProfile.telegramContact;
-
-      setSavedContact(savedValue);
-      setContactValue(savedValue);
-      if (isWhatsappPlatform) {
-        setStoredWhatsapp(savedValue);
-      } else {
-        setStoredTelegram(savedValue);
-      }
-      setContactSaveStatus('success');
-      setContactSaveFeedback(t('whatsapp.saved'));
-    } catch (error: unknown) {
-      setContactSaveStatus('error');
-      setContactSaveFeedback(error instanceof Error ? error.message : 'Gagal menyimpan kontak notifikasi');
-    } finally {
-      setContactSaving(false);
-    }
-  };
-
-  const handleTestNotification = async () => {
-    const targetContact = (savedContact || contactValue).trim();
-
-    if (!targetContact || !notifAktif) {
-      setTestStatus('error');
-      setTestFeedback(t('whatsapp.testNoContact', { platform: isWhatsappPlatform ? 'WhatsApp' : 'Telegram' }));
-      return;
-    }
-
-    setIsSendingTest(true);
-    setTestStatus('idle');
-    setTestFeedback('');
-
-    try {
-      let calendarEvents = events;
-      try {
-        const latestEvents = await eventApi.getAll();
-        if (latestEvents.length) {
-          calendarEvents = latestEvents;
-        }
-      } catch {
-        calendarEvents = events;
-      }
-
-      const todayEvents = calendarEvents
-        .filter((event) => event.tanggal === todayDate)
-        .map((event) => ({
-          title: event.judul,
-          time: event.waktu || undefined,
-          category: event.jenis,
-          note: event.catatan || undefined,
-        }));
-
-      const result = await notificationApi.decideAndSend({
-        platform: notificationPlatform,
-        to: isWhatsappPlatform ? targetContact.replace(/\D/g, '') : targetContact,
-        recipientName,
-        notificationsEnabled: notifAktif,
-        weather: {
-          kondisi: displayedCurrentWeather.kondisi,
-          suhu: displayedCurrentWeather.suhu,
-          kelembapan: displayedCurrentWeather.kelembapan,
-          curahHujan: displayedCurrentWeather.curahHujan,
-          kecepatanAngin: displayedCurrentWeather.kecepatanAngin,
-          lokasi: displayedCurrentWeather.lokasi,
-        },
-        metadata: {
-          source: 'weather-dashboard-test-button',
-          customMessage: scheduleMessage.trim() || undefined,
-          dailyEvents: todayEvents,
-          forceSend: true,
-          locale: locale === 'en' ? 'en' : 'id',
-          bmkgWarnings: warningsData?.warnings || [],
-        },
-      });
-
-      if (result.sent) {
-        setTestStatus('success');
-        setTestFeedback(t('whatsapp.testSuccess', { level: result.decision.riskLevel, score: result.decision.riskScore }));
-      } else {
-        setTestStatus('skipped');
-        setTestFeedback(t('whatsapp.testSkipped', { reason: result.decision.reason }));
-      }
-    } catch (error: unknown) {
-      setTestStatus('error');
-      setTestFeedback(error instanceof Error ? error.message : t('whatsapp.testError'));
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
-  const handleSaveSchedule = async () => {
-    const targetContact = scheduleContactFallback?.trim() || scheduleTo.trim();
-    if (!targetContact) {
-      setScheduleStatus('error');
-      setScheduleError(t('whatsapp.scheduleNoContact'));
-      return;
-    }
-
-    if (scheduleEnabled && !activeAdm4) {
-      setScheduleStatus('error');
-      setScheduleError(missingBmkgLocationMessage);
-      return;
-    }
-
-    try {
-      setScheduleStatus('idle');
-      setScheduleError('');
-      await notificationScheduleApi.set({
-        enabled: scheduleEnabled,
-        time: scheduleTime,
-        timezone: scheduleTimezone,
-        platform: schedulePlatform,
-        to: targetContact,
-        recipientName,
-        customMessage: scheduleMessage.trim(),
-        weatherAdm4: activeAdm4,
-        weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
-        userId: user?.id,
-      });
-      setScheduleStatus('success');
-    } catch (error: unknown) {
-      setScheduleStatus('error');
-      setScheduleError(t('whatsapp.scheduleError', { error: error instanceof Error ? error.message : '' }));
-    }
-  };
-
-  // Auto-sync weather location to database when resolved/changed
-  useEffect(() => {
-    if (!scheduleReady || !activeAdm4 || !user?.id) return;
-
-    const needsSync = !dbSchedule ||
-      dbSchedule.weatherAdm4 !== activeAdm4 ||
-      dbSchedule.weatherLocationLabel !== activeLocationLabel;
-
-    if (needsSync) {
-      const targetContact = scheduleTo || scheduleContactFallback || '';
-      
-      const doSync = async () => {
-        try {
-          const res = await notificationScheduleApi.set({
-            enabled: scheduleEnabled,
-            time: scheduleTime,
-            timezone: scheduleTimezone,
-            platform: schedulePlatform,
-            to: targetContact,
-            recipientName,
-            customMessage: scheduleMessage.trim(),
-            weatherAdm4: activeAdm4,
-            weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
-            userId: user.id,
-          });
-
-          if (res && res.success) {
-            console.log('[useCuacaController] Synced weather location to database:', activeLocationLabel);
-            setDbSchedule((prev) => ({
-              enabled: prev?.enabled ?? scheduleEnabled,
-              time: prev?.time ?? scheduleTime,
-              timezone: prev?.timezone ?? scheduleTimezone,
-              platform: prev?.platform ?? schedulePlatform,
-              to: prev?.to ?? targetContact,
-              recipientName: prev?.recipientName ?? recipientName,
-              customMessage: prev?.customMessage ?? scheduleMessage.trim(),
-              userId: prev?.userId ?? user.id,
-              ...(prev ?? {}),
-              weatherAdm4: activeAdm4,
-              weatherLocationLabel: activeLocationLabel || displayedCurrentWeather.lokasi,
-            }));
-          }
-        } catch (err) {
-          console.error('[useCuacaController] Auto-sync location failed:', err);
-        }
-      };
-
-      void doSync();
-    }
-  }, [
-    scheduleReady,
-    activeAdm4,
-    activeLocationLabel,
-    dbSchedule,
-    user?.id,
-    scheduleEnabled,
-    scheduleTime,
-    scheduleTimezone,
-    schedulePlatform,
-    scheduleTo,
-    scheduleContactFallback,
-    recipientName,
-    scheduleMessage,
-    displayedCurrentWeather.lokasi,
-  ]);
-
   return {
     theme,
     t,
     todayDate,
     gpsLocation,
-    notificationPlatform,
-    savedContact,
-    contactValue,
-    notifAktif,
-    setNotifAktif,
-    isSendingTest,
-    testStatus,
-    testFeedback,
-    contactSaving,
-    contactSaveStatus,
-    contactSaveFeedback,
-    isCurrentContactSaved,
-    scheduleEnabled,
-    setScheduleEnabled,
-    scheduleTime,
-    setScheduleTime,
-    schedulePlatform,
-    setSchedulePlatform,
-    scheduleStatus,
-    setScheduleStatus,
-    scheduleError,
+    notificationPlatform: notificationSettings.notificationPlatform,
+    savedContact: notificationSettings.savedContact,
+    contactValue: notificationSettings.contactValue,
+    notifAktif: notificationSettings.notifAktif,
+    setNotifAktif: notificationSettings.setNotifAktif,
+    isSendingTest: notificationSettings.isSendingTest,
+    testStatus: notificationSettings.testStatus,
+    testFeedback: notificationSettings.testFeedback,
+    contactSaving: notificationSettings.contactSaving,
+    contactSaveStatus: notificationSettings.contactSaveStatus,
+    contactSaveFeedback: notificationSettings.contactSaveFeedback,
+    isCurrentContactSaved: notificationSettings.isCurrentContactSaved,
+    scheduleEnabled: notificationSchedule.scheduleEnabled,
+    setScheduleEnabled: notificationSchedule.setScheduleEnabled,
+    scheduleTime: notificationSchedule.scheduleTime,
+    setScheduleTime: notificationSchedule.setScheduleTime,
+    schedulePlatform: notificationSchedule.schedulePlatform,
+    setSchedulePlatform: notificationSchedule.setSchedulePlatform,
+    scheduleStatus: notificationSchedule.scheduleStatus,
+    setScheduleStatus: notificationSchedule.setScheduleStatus,
+    scheduleError: notificationSchedule.scheduleError,
     gpsStatus,
     gpsMessage,
     forecastData,
@@ -653,14 +337,14 @@ export function useCuacaController() {
     currentWeatherCardBackground,
     forecastSectionBackground,
     getForecastDayBackground,
-    isWhatsappPlatform,
-    contactLabel,
-    contactPlaceholder,
-    contactHelper,
+    isWhatsappPlatform: notificationSettings.isWhatsappPlatform,
+    contactLabel: notificationSettings.contactLabel,
+    contactPlaceholder: notificationSettings.contactPlaceholder,
+    contactHelper: notificationSettings.contactHelper,
     getConditionLabel,
-    handleContactValueChange,
-    handlePlatformChange,
-    handleSaveNotificationContact,
+    handleContactValueChange: notificationSettings.handleContactValueChange,
+    handlePlatformChange: notificationSettings.handlePlatformChange,
+    handleSaveNotificationContact: notificationSettings.handleSaveNotificationContact,
     handleUseGpsLocation,
     locationQuery,
     handleLocationQueryChange,
@@ -669,8 +353,10 @@ export function useCuacaController() {
     locationSearchError,
     searchLocations,
     handleSelectLocation,
-    handleTestNotification,
-    handleSaveSchedule,
+    handleTestNotification: notificationSettings.handleTestNotification,
+    handleSaveSchedule: notificationSchedule.handleSaveSchedule,
+    notificationSettings,
+    notificationSchedule,
   };
 }
 

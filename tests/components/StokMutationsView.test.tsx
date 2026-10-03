@@ -13,12 +13,21 @@ const theme = createTheme();
 
 const stockMessages = messages.Stock as Record<string, unknown>;
 
-function translate(key: string): string {
-  const value = key.split('.').reduce<unknown>(
-    (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined),
+function readPath(path: string): string {
+  const value = path.split('.').reduce<unknown>(
+    (node, key) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined),
     stockMessages,
   );
-  return typeof value === 'string' ? value : key;
+  return typeof value === 'string' ? value : path;
+}
+
+function translate(key: string, values?: Record<string, string | number>): string {
+  const template = readPath(key);
+  if (!values) return template;
+  return Object.entries(values).reduce(
+    (text, [name, value]) => text.replaceAll(`{${name}}`, String(value)),
+    template,
+  );
 }
 
 const t = translate as unknown as StockTranslator;

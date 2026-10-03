@@ -26,6 +26,12 @@ describe('theme colour helpers', () => {
     expect(softText(lightTheme)).toBe('#2D6A4F');
   });
 
+  it('follows the requested palette intent instead of always reading success', () => {
+    expect(softText(lightTheme, 'error')).toBe('#C85A3F');
+    expect(softBg(darkTheme, 'warning')).toBe('rgba(212, 192, 96, 0.14)');
+    expect(accentText(lightTheme, 'warning')).toBe('#2C2A29');
+  });
+
   it('lets a dark-mode status chip carry any alpha from fully clear to fully opaque', () => {
     expect(softBg(darkTheme, 'success', 0)).toBe('rgba(104, 201, 154, 0)');
     expect(softBg(darkTheme, 'success', 1)).toBe('rgba(104, 201, 154, 1)');
@@ -35,7 +41,7 @@ describe('theme colour helpers', () => {
     expect(softHoverBg(darkTheme, 'success')).toBe('rgba(104, 201, 154, 0.2)');
   });
 
-  it('leaves the light-mode hover on the palette tint token', () => {
+  it('returns the same tint as the resting light-mode chip because light mode ignores the hover alpha', () => {
     expect(softHoverBg(lightTheme, 'success')).toBe('#D8F3DC');
   });
 
@@ -69,9 +75,6 @@ describe('theme colour helpers', () => {
   });
 
   it('keeps the dark-mode blur while letting the caller weaken the shadow opacity', () => {
-    const softened = elevatedShadow(darkTheme, LIGHT_ELEVATION, 0.1);
-
-    expect(softened.startsWith('0 8px 28px ')).toBe(true);
-    expect(softened.endsWith('rgba(0, 0, 0, 0.1)')).toBe(true);
+    expect(elevatedShadow(darkTheme, LIGHT_ELEVATION, 0.1)).toBe('0 8px 28px rgba(0, 0, 0, 0.1)');
   });
 });

@@ -180,6 +180,7 @@ Item berikut belum dirapikan. Saat menyentuh salah satunya, sekalian perbaiki; j
 | File | Masalah |
 | :--- | :--- |
 | `app/dashboard/keuangan/_components/FinanceLedgerView.tsx` (~1190) | Panel distribusi sudah terpisah; sisa concerns: tabel desktop, kartu batch mobile, form filter. |
+| `lib/themeColors.ts` (~38) | Tiga fallback `??` tak terjangkau: MUI `augmentColor` selalu mengisi `light`/`dark`/`contrastText`. Akibatnya `softHoverBg` di light mode mengembalikan tint yang sama dengan `softBg`, jadi `&:hover` berbasis helper ini no-op di light mode. Perlu keputusan: hapus sebagai dead code, atau simpan sebagai defensif. |
 | `tests/components/StokView.test.tsx` | Tidak pernah merender isi tab stok, jadi refactor tab StokView tidak punya pengaman. |
 | `controllers/cuaca/useCuacaController.tsx` (~605) | Lokasi sudah terpisah; sisa concern yang belum dipisah: notifikasi, jadwal, kanal WhatsApp. |
 | `tests/components/KeuanganView.test.tsx` (~990) | Masih satu file untuk seluruh keuangan. |
